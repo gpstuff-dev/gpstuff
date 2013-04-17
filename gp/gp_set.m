@@ -426,7 +426,6 @@ function gp = gp_set(varargin)
           % all changes in the log predictive densities and the log marginal
           % likelihood are smaller than tol.
           ipep=iparser(ipep,'addParamValue','tol',1e-4, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
-          ipep=iparser(ipep,'addParamValue','LALRSinit','off', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default off
           % Following options are only for robust-EP
           % max number of initial parallel iterations
           ipep=iparser(ipep,'addParamValue','ninit', 10, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x));
@@ -452,6 +451,9 @@ function gp = gp_set(varargin)
           ipep=iparser(ipep,'addParamValue','up_mode', 'ep', @(x) ischar(x) && ismember(x,{'ep' 'grad'}));
           % step size limit (1 suitable for ep updates)
           ipep=iparser(ipep,'addParamValue','df_lim', 1, @(x) isreal(x) && isfinite(x));
+          % whether to do one inner loop-iteration per site ('on') or until
+          % convergence ('off') in nester ep
+          ipep=iparser(ipep,'addParamValue','incremental', 'on', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default on                    
           ipep=iparser(ipep,'parse',latent_opt);
           optim_method = ipep.Results.optim_method;
           if ~isempty(optim_method)
@@ -488,9 +490,6 @@ function gp = gp_set(varargin)
               gp.latent_opt.df = ipep.Results.df;
             end
           end
-          if init || ~ismember('LALRSinit',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'LALRSinit')
-            gp.latent_opt.LALRSinit = ipep.Results.LALRSinit;
-          end
           if strcmp(gp.latent_opt.optim_method, 'robust-EP')
             if init || ~ismember('ninit',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'ninit')
               gp.latent_opt.ninit = ipep.Results.ninit;
@@ -526,6 +525,14 @@ function gp = gp_set(varargin)
               gp.latent_opt.df_lim = ipep.Results.df_lim;
             end
             if init || ~ismember('display',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'display')
+              gp.latent_opt.display = ipep.Results.display;
+            end
+          end
+          if isfield(gp.lik, 'nondiagW')
+            if init || ~ismember('display',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'display')
+              gp.latent_opt.display = ipep.Results.display;
+            end
+            if init || ~ismember('incremental',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'incremental')
               gp.latent_opt.display = ipep.Results.display;
             end
           end

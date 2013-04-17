@@ -86,7 +86,7 @@
 \begin{document}
 
 \title{Bayesian Modeling with Gaussian Processes using the
-  \proglang{MATLAB} Toolbox \pkg{GPstuff} (v3.4)}
+   \pkg{GPstuff} Toolbox}
 
 \author{\name Jarno Vanhatalo\thanks{Work done mainly while at the
     Department of Biomedical
@@ -112,7 +112,7 @@
 \maketitle
 
 \begin{abstract}%   <- trailing '%' for backward compatibility of .sty file
-Gaussian processes (GP) are powerful tools for probabilistic
+  Gaussian processes (GP) are powerful tools for probabilistic
   modeling purposes. They can be used to define prior distributions
   over latent functions in hierarchical Bayesian models. The prior
   over functions is defined implicitly by the mean and covariance
@@ -121,12 +121,11 @@ Gaussian processes (GP) are powerful tools for probabilistic
   function space by evaluating or approximating the posterior process.
   Despite their attractive theoretical properties GPs provide
   practical challenges in their implementation. \pkg{GPstuff} is a
-  versatile collection of computational tools for GP models. It has
-  been implemented for Linux and Windows \proglang{MATLAB} and
-  includes, among others, various inference methods, sparse
-  approximations and tools for model assessment. In this work, we
-  review these tools and demonstrate the use of \pkg{GPstuff} in
-  several models.
+  versatile collection of computational tools for GP models compatible
+  with Linux and Windows \proglang{MATLAB} and Octave.  It includes,
+  among others, various inference methods, sparse approximations and
+  tools for model assessment. In this work, we review these tools and
+  demonstrate the use of \pkg{GPstuff} in several models.
 \end{abstract}
 
 \begin{keywords}
@@ -140,10 +139,14 @@ Gaussian process, Bayesian hierarchical model, nonparametric Bayes
 \section{Introduction}
 
 This work reviews a free open source toolbox \pkg{GPstuff} (version
-3.3) which implements a collection of inference methods and tools for
+4.0) which implements a collection of inference methods and tools for
 inference for various Gaussian process (GP) models. The toolbox is
-written for \proglang{MATLAB} \citep{MATLAB:2010} and it is available
-from \url{http://becs.aalto.fi/en/research/bayes/gpstuff/}.
+compatible with Unix and Windows \proglang{MATLAB} \citep{MATLAB:2010}
+(r2009b or later, earlier versions may work, but has not been tested
+extensively) and \proglang{Octave} \citep{octave:2012} (3.6.4 or
+later, compact support covariance functions are not currently working
+in Octave). It is available from
+\url{http://becs.aalto.fi/en/research/bayes/gpstuff/}.
 
 GP is a stochastic process, which provides a powerful tool for
 probabilistic inference directly on distributions over functions
@@ -1616,21 +1619,21 @@ Weibull distribution parametrized in \pkg{GPstuff} as
   h_0(y) = r y^{r-1},
 \end{equation}
 where $r>0$ is the shape parameter. This follows the parametrization
-used in \citet{Martino:2011}. The observation model is defined as
+used in \citet{Martino:2011}. The likelihood defined as
 \begin{equation}
-  \y |\f,\mathbf{z}, r  \sim \prod_{i=1}^n r^{1-z_i} \exp \left( (1-z_i)f(\x_i)+(1-z_i)(r-1)\log(y_i)-\exp(f(\x_i))y_i^r \right),
+  L = \prod_{i=1}^n r^{1-z_i} \exp \left( (1-z_i)f(\x_i)+(1-z_i)(r-1)\log(y_i)-\exp(f(\x_i))y_i^r \right),
 \end{equation}
 where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
-observation $i$. The use of Weibull model with survival data is
+observation $i$. Here we present only the likelihood function because we don't have observation model for the censoring. The use of Weibull model with survival data is
 demonstrated in \code{demo\_survival\_weibull}.
 
 \subsubsection{Log-Gaussian}
 With Log-Gaussian survival model the logarithms of survival times are assumed to be normally distributed.
 
-The observation model is defined as
+The likelihood is defined as
 \begin{eqnarray}
-  \y |\f,\mathbf{z}, \sigma \sim && \prod_{i=1}^n (2\pi \sigma^2)^{-(1-z_i)/2}y_i^{1-z_i} \exp \left(-\frac{1}{2\sigma^2}(1-z_i)(\log (y_i) - f(\x_i))^2\right) \\ \nonumber
+  L = && \prod_{i=1}^n (2\pi \sigma^2)^{-(1-z_i)/2}y_i^{1-z_i} \exp \left(-\frac{1}{2\sigma^2}(1-z_i)(\log (y_i) - f(\x_i))^2\right) \\ \nonumber
   &\times & \left(1 - \Phi \left(\frac{\log(y_i) - f(\x_i)}{\sigma}\right)\right)^{z_i} 
 \end{eqnarray}
 where $\sigma$ is the scale parameter.
@@ -1640,12 +1643,12 @@ where $\sigma$ is the scale parameter.
 %                            *(1-norm_cdf((log(y_i)-f_i)/s))^z_i ]
 \subsubsection{Log-logistic}
 
-The observation model is defined as
+The log-logistic likelihood is defined as
 
 \begin{equation}
-  \y |\f,\mathbf{z}, r  \sim \prod_{i=1}^n \left( \frac{ry^{r-1}}{\exp(f(\x_i))} \right)^{1-z} \left( 1 + \left(\frac{y}{\exp(f(\x_i))}\right)^r \right)^{z-2}
+  L = \prod_{i=1}^n \left( \frac{ry^{r-1}}{\exp(f(\x_i))} \right)^{1-z_i} \left( 1 + \left(\frac{y}{\exp(f(\x_i))}\right)^r \right)^{z_i-2},
 \end{equation}
-
+where $r$ is the shape parameter and $z_i$ the censoring indicators.
 %    The likelihood is defined as follows:
 %                  __ n
 %      p(y|f, z) = || i=1 [ (r/exp(f_i)*(y_i/exp(f_i))^(r-1)/
@@ -1979,7 +1982,10 @@ posterior becomes non-Gaussian and analytically exact inference is
 intractable. \pkg{GPstuff} supports MCMC and Laplace approximation to
 integrate over the latent variables. The use of Gaussian process Cox
 proportional hazard model is demonstrated in
-\code{demo\_survival\_coxph}.
+\code{demo\_survival\_coxph}. The Gaussian process Cox proportional
+hazard model implemented with GPstuff was used in reference
+\citep{Joensuu+etal:2012a} to model risk of gastrointestinal stromal
+tumour recurrence after surgery.
 
 %    creates a proportional hazard model where a piecewise log-constant
 %    baseline hazard is assumed.  
@@ -2118,6 +2124,21 @@ use again Laplace's method.
 the function \code{lgpdens}. The usage of the function is demonstrated
 in \code{demo\_lgpdens}.
 
+\begin{figure}[]
+  \begin{center}
+    \subfigure[Student-$t$ data with $\nu=4$ and $\sigma=1$.]{
+      \label{}
+      \includegraphics[width=5.5cm]{demo_lgpdens_fig1}
+    }
+    ~
+    \subfigure[Old faithful data.]{ 
+      \label{}
+      \includegraphics[width=5.5cm]{demo_lgpdens_fig2}
+    }
+    \caption[]{Density estimates for two different distributions. Figures are from \code{demo\_lgpdens}. On the left thick blue line is density estimation of Student-$t$ distribution while gray area is 95\% mean region and on the right is 2D density estimation with countours based on Old faithful data.}\label{fig_demo_lgpdens}
+  \end{center}
+\end{figure}
+
 %    The likelihood is defined as follows:
 %               __ n
 %      p(y|f) = || i=1 exp(f_i) / Sum_{j=1}^n exp(f_j),
@@ -2159,7 +2180,7 @@ constant noise.
 % missing description
 
 \subsubsection{Input-dependent overdispersed Weibull}
-In input-dependent Weibull model additional latent variable is used for modeling dispersion parameter $r$ of the standard Weibull model. 
+In input-dependent Weibull model additional latent variable is used for modeling shape parameter $r$ of the standard Weibull model. 
 
 The likelihood is defined as
 \begin{eqnarray}
@@ -2168,7 +2189,7 @@ The likelihood is defined as
 \end{eqnarray}
 where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
-observation $i$. Latent variable $f_2$ is used for modeling the dispersion parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness. Input-dependent Weibull is demonstrated in \code{demo\_inputdependentweibull}.
+observation $i$. Latent variable $f_2$ is used for modeling the shape parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness. Input-dependent Weibull is demonstrated in \code{demo\_inputdependentweibull}.
 
 
 \section{Mean functions}
@@ -2725,6 +2746,19 @@ The Laplace approximation, EP and integration methods can be used with
 the same commands as with full GP. This is demonstrated in
 \code{demo\_spatial1}.
 
+\subsection{Predictive active set selection for classification}
+
+Predictive active set selection for Gaussian processes \citep[PASS-GP,
+][]{Henao+Winther:2012} is a sparse approximation for classification
+models. PASS-GP uses predictive distributions to estimate which data
+points to include in the active set, so that it will include points
+with potentially high impact to the classifier decision process while
+removing those that are less relevant.
+%
+Function \code{passgp} accepts classification GP with latent method
+set to EP or Laplace, and selects the active set and optimises the
+hyperparameters. Its use is demonstrated in \code{demo\_passgp}.
+
 \section{Modifying the covariance functions}\label{sec:modifying_covariance}
 
 \subsection{Additive models}\label{sec_additive_models}
@@ -2897,9 +2931,11 @@ illustrated in \code{demo\_regression\_hier}.
 \section{Model assessment and comparison}\label{sec:model_assessment}
 
 There are various means to assess the goodness of the model and its
-predictive performance. \pkg{GPstuff} provides four basic approaches:
-marginal likelihood, cross-validation, deviance information
-criterion and widely applicable information criterion.
+predictive performance \citep[for extensive review,
+see][]{Vehtari+Ojanen:2012}. \pkg{GPstuff} provides four basic
+approaches: marginal likelihood, cross-validation, deviance
+information criterion (DIC) and widely applicable information
+criterion (WAIC).
 
 \subsection{Marginal likelihood}
 
@@ -2932,7 +2968,7 @@ computed in case of Gaussian likelihood using an analytical
 solution \citep{Sundararajan+Keerthi:2001a} and in case of
 non-Gaussian likelihood using EP approximation
 \citep{Opper+Winther:2000,Rasmussen+Williams:2006} or Laplace
-approximation using linear response approach (to be submitted),
+approximation using linear response approach (in preparation),
 which have been implemented in \code{gp\_loopred}.
 %
 If set of hyperparameters have been obtained using \code{gp\_mc} or
@@ -3175,7 +3211,7 @@ approximation and $\tilde{\mb{\Sigma}}^{-1}$ in the case of EP.
 As described in the previous sections, \pkg{GPstuff} is build
 modularly so that the full model is constructed by combining separate
 building blocks. Each building block, such as the covariance function
-or likelihood, is written in a \proglang{MATLAB} m-file which contains
+or likelihood, is written in a m-file which contains
 all the functions and parameters specific to it. This construction
 makes it easier to add new model blocks in the package. For example, new
 covariance functions can be written by copying one of the existing
@@ -3348,26 +3384,25 @@ toolbox is available from
 
 \section*{Acknowledgments}
 
-The research leading to \pkg{GPstuff} was funded by the Academy of
-Finland, Finnish Funding Agency for Technology and Innovation
-(TEKES), and the Graduate School in Electronics and
-Telecommunications and Automation (GETA). The first author also
-thanks the Finnish Foundation for Economic and Technology Sciences
-KAUTE, Finnish Cultural Foundation, and Emil Aaltonen Foundation
-for supporting his post graduate studies during which the code
-package was prepared. 
+The research leading to \pkg{GPstuff} has been funded by the Academy
+of Finland (grant 218248), Finnish Funding Agency for Technology and
+Innovation (TEKES), and the Graduate School in Electronics and
+Telecommunications and Automation (GETA). The first author also thanks
+the Finnish Foundation for Economic and Technology Sciences KAUTE,
+Finnish Cultural Foundation, and Emil Aaltonen Foundation for
+supporting his post graduate studies during which the code package was
+prepared.
 
-The package contains pieces of code written by other people than
-the authors. In the Department of Biomedical Engineering and
-Computational Science at Aalto University these persons are (in
-alphabetical order): Toni Auranen, Roberto Calandra, Pasi Jylänki,
-Tuomas Nikoskinen, Eero Pennala, Heikki Peura, Ville Pietiläinen,
-Markus Siivola, Simo Särkkä and Ville Tolvanen. People outside
-Aalto University are (in alphabetical order): Christopher M.
-Bishop, Timothy A. Davis, Matthew D. Hoffman, Kurt Hornik, Dirk-Jan
-Kroon, Iain Murray, Ian T. Nabney, Radford M. Neal and Carl E.
-Rasmussen. We want to thank them all for sharing their code under a
-free software license.
+The package contains pieces of code written by other people than the
+authors. In the Department of Biomedical Engineering and Computational
+Science at Aalto University these persons are (in alphabetical order):
+Toni Auranen, Pasi Jylänki, Tuomas Nikoskinen, Tomi Peltola, Eero
+Pennala, Heikki Peura, Ville Pietiläinen, Markus Siivola, Simo Särkkä
+and Ernesto Ulloa. People outside Aalto University are (in
+alphabetical order): Christopher M.  Bishop, Timothy A. Davis, Matthew
+D. Hoffman, Kurt Hornik, Dirk-Jan Kroon, Iain Murray, Ian T. Nabney,
+Radford M. Neal and Carl E. Rasmussen. We want to thank them all for
+sharing their code under a free software license.
 
 \bibliography{GPstuff-nodoi}
 
@@ -3379,20 +3414,13 @@ free software license.
 GPML and FBM}\label{appendix:compasison}
 
 
+
    \scriptsize
  \begin{longtable}{p{5.5cm}p{3cm}p{3cm}p{3cm}}
-%    \caption[The comparison of features in GPstuff, GPML and FBM
-%    toolboxes.]{The comparison of features in GPstuff, GPML and FBM
-%      toolboxes. In case of model blocks the notation x means that it
-%      can be inferred with any inference method (EP, Laplace, MCMC and
-%      in case of GPML also with VB). In case of sparse approximations,
-%      inference methods and model assessment methods x means
-%      that the method is available for all model blocks.\label{table:comparison}}\\
-   %\small
    & GPstuff & GPML & FBM \\
    \textbf{Covariance functions} &  &  & \\
    \hline
-   number of elementary functions & 13 & 6 & 13 \\
+   number of elementary functions & 13 & 10 & 13 \\
    sums of elements  & x & x & x \\
    products of elements & x & x &  \\
    positive scaling of elements & x & x &  \\
@@ -3446,11 +3474,11 @@ GPML and FBM}\label{appendix:compasison}
    CS & x &  & \\
    FIC & x &  & \\
    FIC+CS & x &  & \\
-   FITC & x & MCMC/EP/Laplace & \\
+   FITC & x & exact/EP/Laplace & \\
    PIC & x &  & \\
-   VAR & Gaussian/EP only &  & \\
-   DTC & Gaussian/EP only &  & \\
-   SOR & Gaussian/EP only &  & \\
+   VAR & Gaussian/EP &  & \\
+   DTC & Gaussian/EP &  & \\
+   SOR & Gaussian/EP &  & \\
    PASS-GP & Laplace/EP & & \\
     \multicolumn{4}{l}{\textbf{Latent inference}} \\
     \hline
@@ -3459,7 +3487,9 @@ GPML and FBM}\label{appendix:compasison}
     Parallel EP, Robust-EP  & x & & \\
     Variational Bayes (VB) & & x & \\
     Scaled Metropolis, HMC & x &  & x \\
-    Scaled HMC, Elliptical slice sampling  & x & x & \\
+    Scaled HMC (whitening with approximate posterior covariance) & x  &  & \\
+    Scaled HMC (with inverse of prior cov.) &  & x & \\
+    Elliptical slice sampling  & x & x & \\
     \multicolumn{4}{l}{\textbf{Hyperparameter inference}} \\
     \hline
     Type II ML  & x & x & x \\
@@ -3481,14 +3511,6 @@ GPML and FBM}\label{appendix:compasison}
    DIC & x &  & \\
    WAIC & x &  & \\
    average predictive comparison & x &  & \\
- %   \textbf{Optimization} &  &  & \\
- %   \hline 
- %   conjugate gradient & x &  & x\\
- %   scaled conjugate gradient & x &  & \\
- %   LBFGS & x & x & \\
- %   any Matlab optimization function & x &  & \\
-%   \textbf{Other} &  &  & \\
-%   \hline 
    \caption[The comparison of features in GPstuff, GPML and FBM
    toolboxes.]{The comparison of features in GPstuff, GPML and FBM
      toolboxes. In case of model blocks the notation x means that it
@@ -3770,6 +3792,79 @@ The binomial observation model with the probability of success $p_i =
 Here, $z_i$ denotes the number of trials and $y_i$ is the number of
 successes.
 
+\subsection*{Weibull (\code{lik\_weibull})}
+
+The Weibull likelihood is defined as
+\begin{equation}
+  L = \prod_{i=1}^n r^{1-z_i} \exp \left( (1-z_i)f(\x_i)+(1-z_i)(r-1)\log(y_i)-\exp(f(\x_i))y_i^r \right),
+\end{equation}
+where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
+uncensored event and $z_i = 1$ for right censored event for
+observation $i$ and $r$ is the shape parameter. Here we present only the likelihood function because we don't have observation model for the censoring.
+
+\subsection*{Log-Gaussian (\code{lik\_loggaussian})}
+
+The Log-Gaussian likelihood is defined as
+\begin{eqnarray}
+  L =  && \prod_{i=1}^n (2\pi \sigma^2)^{-(1-z_i)/2}y_i^{1-z_i} \exp \left(-\frac{1}{2\sigma^2}(1-z_i)(\log (y_i) - f(\x_i))^2\right) \\ \nonumber
+  &\times & \left(1 - \Phi \left(\frac{\log(y_i) - f(\x_i)}{\sigma}\right)\right)^{z_i} 
+\end{eqnarray}
+where $\sigma$ is the scale parameter.
+
+\subsection*{Log-logistic (\code{lik\_loglogistic})}
+The log-logistic likelihood is defined as
+\begin{equation}
+ L = \prod_{i=1}^n \left( \frac{ry^{r-1}}{\exp(f(\x_i))} \right)^{1-z_i} \left( 1 + \left(\frac{y}{\exp(f(\x_i))}\right)^r \right)^{z_i-2}
+\end{equation}
+
+\subsection*{Cox proportional hazard model (\code{lik\_coxph})}
+
+The likelihood contribution for the possibly right censored $i$th
+observation $(y_i,\delta_i)$ is assumed to be
+\begin{equation}
+l_i=h_i(y_i)^{(1-\delta_i)} \exp \left(
+  -\int_0^{y_i}h_i(t)dt \right).
+\end{equation}
+Using the piecewise log-constant assumption for the hazard rate
+function, the contribution of the observation $i$ for the likelihood
+results in
+\begin{equation}
+l_i=[\lambda_k \exp(\eta_i)]^{(1-\delta_i)}\exp \left( -[(y_i-s_{k-1})\lambda_k
+  + \sum_{g=1}^{k-1}(s_g-s_{g-1})\lambda_g ]\exp(\eta_i) \right),
+\end{equation}
+where $y_i\in(s_{k-1},s_k]$
+
+\subsection*{Input-dependent noise (\code{lik\_inputdependentnoise})}
+
+The input-dependent noise observation model is defined as
+\begin{align}
+  \y|\f^{(1)}, \f^{(2)}, \sigma^2 \sim \prod_{i=1}^n N(y_i | f_i^{(1)}, \sigma^2 \exp(f_i^{(2)})),
+\end{align}
+with latent function $f^{(1)}$ defining the mean and $f^{(2)}$
+defining the variance.
+
+\subsection*{Input-dependent Weibull (\code{lik\_inputdependentweibull})}
+
+The input-dependent Weibull observation model is defined as
+\begin{eqnarray}
+\y |\f^{(1)}, \f^{(2)},\mathbf{z}  \sim && \prod_{i=1}^n \exp(f_i^{(2)})^{1-z_i} \exp \Big{(} (1-z_i)f^{(1)}_i \\ \nonumber
+ &+&(1-z_i)(\exp(f_i^{(2)})-1)\log(y_i)\exp(f^{(1)}_i)y_i^{\exp(f_i^{(2)})} \Big{)}, \nonumber
+\end{eqnarray}
+where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
+uncensored event and $z_i = 1$ for right censored event for
+observation $i$. 
+
+\subsection*{Zero-inflated Negative-Binomial (\code{lik\_zinegbin})}
+The Zero-Inflated Negative-Binomial observation model is defined as 
+\begin{equation}
+ \y |\f,\mb{e}, r  \sim \prod_{i=1}^n
+ \frac{\Gamma(r+y_i)}{y_i!\Gamma(r)}
+\left(\frac{r}{r+\mu_i}\right)^r \left(\frac{\mu_i}{r+\mu_i}\right)^{y_i},
+\end{equation}
+%
+where $\mu_i = e_i\exp(f(\x_i))$ and $r$ is the dispersion parameter
+governing the variance.
+
 %===========================================================
 
 
@@ -3999,7 +4094,7 @@ values. If the new likelihood does not have parameters, see for example,
 
 Function handles to the subfunctions provide object-oriented
 behaviour (at time when GPstuff project was started, real classes
-in Matlab were too inefficient).
+in Matlab were too inefficient and Octave still lacks proper support).
 % , that toolboxes by Mathworks did not use it in computationally
 % intensive cases (e.g. Neural network toolbox).
 If some of the subfunctions have not been implemented,
@@ -4146,7 +4241,7 @@ euclidean metric case.
 
 Function handles to the subfunctions provide object-oriented
 behaviour (at time when GPstuff project was started, real classes
-in Matlab were too inefficient).
+in Matlab were too inefficient and Octave still lacks proper support).
 % At time when GPstuff project was started, real classes in Matlab
 % were so inefficient, that toolboxes by Mathworks did not use it
 % in computationally intensive cases (e.g. Neural network toolbox).
@@ -4273,7 +4368,7 @@ corresponding lines can be removed (see, e.g., \code{prior\_unif}).
 
 Function handles to the subfunctions provide object-oriented
 behaviour (at time when GPstuff project was started, real classes
-in Matlab were too inefficient).
+in Matlab were too inefficient and Octave still lacks proper support).
 % At time when GPstuff project was started, real classes in Matlab
 % were so inefficient, that toolboxes by Mathworks did not use it
 % in computationally intensive cases (e.g. Neural network toolbox).

@@ -232,6 +232,9 @@ data.timeTotal=tic;
   % Calculate the initial error and gradient
   data.initialStepLength=1;
   [data,fval,grad]=gradient_function(data.xInitial,funfcn, data, optim);
+  if isnan(fval) || any(isnan(grad))
+    error('fminlbfgs: Initial function value or gradient is NaN');
+  end
   data.gradient=grad;
   data.dir = -data.gradient;
   data.fInitial = fval;
@@ -598,7 +601,11 @@ function data = sectioningPhase(funfcn, data, optim)
 % containing acceptable points. Notice that funcCount counts the total number of
 % function evaluations including those of the bracketing phase.
 
+alphaPrev = 0;
+here_be_dragons=false;
+
 while(true)
+  %  fPrev = f_alpha;
 
   % Pick alpha in reduced bracket
   brcktEndpntA = data.a + min(optim.tau2,optim.sigma)*(data.b - data.a);
@@ -614,12 +621,24 @@ while(true)
   % Calculate value (and gradient if no extra time cost) of current alpha
   if ~isequal(optim.GradConstr,'on')
     [data,f_alpha, grad]=gradient_function(data.xInitial(:)+alpha*data.dir(:),funfcn, data, optim);
+    while isnan(f_alpha) || isinf(f_alpha) || any(isnan(grad)) || any(isinf(grad))
+      % NaN or Inf encountered, switch to safe mode
+      here_be_dragons=true;
+      alpha = alphaPrev+0.25*(alpha-alphaPrev);
+      [data,f_alpha, grad]=gradient_function(data.xInitial(:)+alpha*data.dir(:),funfcn, data, optim);
+    end
     fPrime_alpha = grad'*data.dir(:);
   else
     gstep=data.initialStepLength/1e6;
     if(gstep>optim.DiffMaxChange), gstep=optim.DiffMaxChange; end
     if(gstep<optim.DiffMinChange), gstep=optim.DiffMinChange; end
     [data,f_alpha]=gradient_function(data.xInitial(:)+alpha*data.dir(:),funfcn, data,optim);
+    while isnan(f_alpha) || isinf(f_alpha)
+      % NaN or Inf encountered, switch to safe mode
+      here_be_dragons=true;
+      alpha = alphaPrev+0.25*(alpha-alphaPrev);
+      [data,f_alpha]=gradient_function(data.xInitial(:)+alpha*data.dir(:),funfcn, data, optim);
+    end
     [data,f_alpha2]=gradient_function(data.xInitial(:)+(alpha+gstep)*data.dir(:),funfcn, data, optim);
     fPrime_alpha=(f_alpha2-f_alpha)/gstep;
   end
@@ -627,6 +646,13 @@ while(true)
   % Store values linesearch
   data.storefx=[data.storefx f_alpha]; data.storex=[data.storex alpha];
 
+  if here_be_dragons
+    % near NaN or Inf, safer to return
+    % Update bracket B to current alpha
+    data.b = alpha; data.f_b = f_alpha; data.fPrime_b = fPrime_alpha;
+    data.section_exitflag = []; return,
+  end
+    
   % Store current bracket position of A
   aPrev = data.a;
   f_aPrev = data.f_a;

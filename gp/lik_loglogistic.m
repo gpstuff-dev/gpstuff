@@ -469,17 +469,27 @@ function [lpy, Ey, Vary] = lik_loglogistic_predy(lik, Ef, Varf, yt, zt)
 
   % Evaluate the posterior predictive densities of the given observations
   lpy = zeros(length(yt),1);
-  for i1=1:length(yt)
-    if abs(Ef(i1))>700
-      lpy(i1) = NaN;
-    else
-      % get a function handle of the likelihood times posterior
-      % (likelihood * posterior = Negative-binomial * Gaussian)
-      % and useful integration limits
-      [pdf,minf,maxf]=init_loglogistic_norm(...
-        yt(i1),Ef(i1),Varf(i1),yc(i1),r);
-      % integrate over the f to get posterior predictive distribution
-      lpy(i1) = log(quadgk(pdf, minf, maxf));
+  if (min(size(Ef))>1) && (min(size(Varf))>1)
+    % Approximate integral with sum of grid points when using corrected
+    % marginal posterior pf
+    for i1=1:length(yt)
+      py = arrayfun(@(f) exp(lik.fh.ll(lik, yt(i1), f, zt(i1))), Ef(i1,:));
+      pf = Varf(i1,:)./sum(Varf(i1,:));
+      lpy(i1) = log(sum(py.*pf));
+    end
+  else
+    for i1=1:length(yt)
+      if abs(Ef(i1))>700
+        lpy(i1) = NaN;
+      else
+        % get a function handle of the likelihood times posterior
+        % (likelihood * posterior = Negative-binomial * Gaussian)
+        % and useful integration limits
+        [pdf,minf,maxf]=init_loglogistic_norm(...
+          yt(i1),Ef(i1),Varf(i1),yc(i1),r);
+        % integrate over the f to get posterior predictive distribution
+        lpy(i1) = log(quadgk(pdf, minf, maxf));
+      end
     end
   end
 end
@@ -512,15 +522,20 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
 
   % Set the limits for integration
   if yc==0
-    % with yy==0, the mode of the likelihood is not defined
-    % use the mode of the Gaussian (cavity or posterior) as a first guess
-    modef = myy_i;
+    % with yc==0, the mode of the likelihood is not defined
+    if myy_i>log(yy)
+      % the log likelihood is flat on this side
+      % use the mode of the Gaussian (cavity or posterior)
+      modef = myy_i;
+    else
+      % the log likelihood is approximately f on this side
+      modef = min(myy_i+sigm2_i,log(yy)+r/sqrt(2));
+    end
   else
     % use precision weighted mean of the Gaussian approximation
     % of the loglogistic likelihood and Gaussian
-    mu=-log(yc.^(1/r)./yy);
-    s2=-r^2.*yc.*(-1-yc)./(1+yc).^2;
-%     s2=1;
+    mu=log(yy);
+    s2=r.^2/2;
     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
   end
   % find the mode of the integrand using Newton iterations
@@ -558,6 +573,7 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
     end
   end
   maxld=ld(maxf, ldconst, yc, r, yy, myy_i, sigm2_i);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
@@ -574,7 +590,7 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
   function integrand = loglogistic_norm(f, ldconst, yc, r, yy, myy_i, sigm2_i)
   % loglogistic * Gaussian
     integrand = exp(ldconst ...
-                     - yc.*r.*f +(-1-yc).*log(1+(yy./exp(f)).^r) ...
+                    -yc.*r.*f +(-1-yc).*log(1+(yy./exp(f)).^r) ...
                     -0.5*(f-myy_i).^2./sigm2_i);
   end
 
@@ -583,11 +599,16 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
   % log_loglogistic_norm is used to avoid underflow when searching
   % integration interval
     log_int = ldconst ...
-               -yc.*r.*f +(-1-yc).*log(1+(yy./exp(f)).^r) ...
+              -yc.*r.*f +(-1-yc).*log(1+(yy./exp(f)).^r) ...
               -0.5*(f-myy_i).^2./sigm2_i;
   end
+<<<<<<< HEAD
 
   function g = log_loglogistic_norm_g(f, ldconst, yc, r, yy, myy_i, sigm2_i)
+=======
+  
+  function g = log_loglogistic_norm_g(f)
+>>>>>>> develop
   % d/df log(loglogistic * Gaussian)
   % derivative of log_loglogistic_norm
     g = -r.*yc - (-1-yc).*r.*(yy./exp(f)).^r./(1+(yy./exp(f)).^r) ...
@@ -632,7 +653,7 @@ function cdf = lik_loglogistic_predcdf(lik, Ef, Varf, yt)
   end
 end
 
-function p = lik_loglogistic_invlink(lik, f)
+function p = lik_loglogistic_invlink(lik, f, z)
 %LIK_loglogistic Returns values of inverse link function
 %             
 %  Description 
@@ -688,7 +709,7 @@ function reclik = lik_loglogistic_recappend(reclik, ri, lik)
   else
     % Append to the record
     reclik.shape(ri,:)=lik.shape;
-    if ~isempty(lik.p)
+    if ~isempty(lik.p.shape)
       reclik.p.shape = lik.p.shape.fh.recappend(reclik.p.shape, ri, lik.p.shape);
     end
   end

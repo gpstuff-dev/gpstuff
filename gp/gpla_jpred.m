@@ -145,7 +145,9 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
       % ============================================================
       % FULL
       % ============================================================
-      [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, L, W, p] = deal(p.f, p.L, p.La2, p.p);
 
       ntest=size(xt,1);
       K_nf = gp_cov(gp,xt,x,predcf);
@@ -222,7 +224,9 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
 
       m = size(u,1);
 
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, L, La2] = deal(p.f, p.L, p.La2);
 
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       ntest=size(xt,1);
@@ -316,7 +320,9 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
       B=Luu\(K_fu');
       B2 = Luu\(K_nu');        
 
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, La2] = deal(p.f, p.La2);
 
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
 
@@ -386,7 +392,9 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
       u = gp.X_u;
       m = length(u);
 
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, La2] = deal(p.f, p.La2);
       
       % Indexes to all non-compact support and compact support covariances.
       cf1 = [];

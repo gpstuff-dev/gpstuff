@@ -31,7 +31,7 @@ function [samples, logp, diagn] = hmc_nuts(f, theta0, opt)
 %
 %    Note that when used from gp_mc, opt.M and opt.Madapt are both 0 or
 %    1 (hmc_nuts returns only one sample to gp_mc). Number of epsilon 
-%    adaptations should be set in hmc options structure hmc_opt.nadapt, in 
+%    adaptations should be set in hmc options structure hmc_opt.Madapt, in 
 %    gp_mc(... ,'hmc_opt', hmc_opt).
 %
 %    The returned structure diagn includes step-size vector
@@ -195,7 +195,7 @@ for m = 2:M+Madapt+1,
     opt.epsilon(end+1) = epsilon;
     opt.epsilonbar = epsilonbar;
     opt.Hbar = Hbar;
-    diagn.rej = diagn.rej + rej;
+    diagn.rej = diagn.rej + rej/j;
 end
 
 diagn.opt = opt;

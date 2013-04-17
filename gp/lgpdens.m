@@ -55,21 +55,20 @@ function [p,pq,xx] = lgpdens(x,varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LGPDENS';
-  ip=iparser(ip,'addRequired','x', @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
+  ip=iparser(ip,'addRequired','x', @(x) isnumeric(x) && all(isfinite(x(:))) ...
+                 && (size(x,2)==1 || size(x,2)==2));
   ip=iparser(ip,'addOptional','xt',NaN, @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
   ip=iparser(ip,'addParamValue','gridn',[], @(x) isnumeric(x));
   ip=iparser(ip,'addParamValue','range',[], @(x) isempty(x)||isreal(x)&&(length(x)==2||length(x)==4));
   ip=iparser(ip,'addParamValue','gpcf',@gpcf_sexp,@(x) ischar(x) || isa(x,'function_handle'));
   ip=iparser(ip,'addParamValue','latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace' 'MCMC'}));
-  %ip=iparser(ip,'addParamValue','latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace'}))
   ip=iparser(ip,'addParamValue','int_method','mode', @(x) ismember(x,{'mode' 'CCD', 'grid'}));
   ip=iparser(ip,'addParamValue','normalize',false, @islogical);
   ip=iparser(ip,'addParamValue','display', 'off', @(x) islogical(x) || ...
                    ismember(x,{'on' 'off' 'iter'}));
   ip=iparser(ip,'addParamValue','speedup',[], @(x) ismember(x,{'on' 'off'}));
   ip=iparser(ip,'addParamValue','cond_dens',[], @(x) ismember(x,{'on' 'off'}));
-  ip=iparser(ip,'addParamValue','basis_function',[], @(x) ismember(x,{'on' 'off'}));
-  
+  ip=iparser(ip,'addParamValue','basis_function',[], @(x) ismember(x,{'on' 'off'}));  
   ip=iparser(ip,'parse',x,varargin{:});
   x=ip.Results.x;
   xt=ip.Results.xt;
@@ -83,7 +82,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
   speedup=ip.Results.speedup;
   cond_dens=ip.Results.cond_dens;
   basis_function=ip.Results.basis_function;
-  
+
   [n,m]=size(x);
   
   switch m
@@ -227,11 +226,16 @@ function [p,pq,xx] = lgpdens(x,varargin)
       else
         xx=xt;
         gridn=[length(unique(xx(:,1))) length(unique(xx(:,2)))];
+        z1=reshape(xx(:,1),gridn(2),gridn(1));
+        z2=reshape(xx(:,2),gridn(2),gridn(1));
+        nz=numel(z1);
       end
       yy=zeros(nz,1);
       zi=interp2(z1,z2,reshape(1:nz,gridn(2),gridn(1)),xu(:,1),xu(:,2),'nearest');
       for i1=1:nu
-        yy(zi(i1),1)=yy(zi(i1),1)+counts(i1);
+        if ~isnan(zi(i1))
+          yy(zi(i1),1)=yy(zi(i1),1)+counts(i1);
+        end
       end
       %ye=ones(nz,1)./nz.*n;
       
@@ -393,16 +397,19 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
     gpcf1 = gpcf();
   end
   
-  % weakly informative prior
-  pm = prior_logunif();
-  pl = prior_t('s2', 10^2, 'nu', 4);
-  pa = prior_t('s2', 10^2, 'nu', 4);
+  % weakly informative priors
+  % prior based on guess of maximum differences in log densities
+  pm = prior_sqrtt('s2',10^2,'nu',4);
+  % Prior width for lengthscale using Silverman's rule of thumb of min grid distance
+  h=min(diff(xx(1:2,end)).^2,sum(yy).^-1/5);
+  pl = prior_invt('s2', 1./h, 'nu', 1);
+  pa = prior_t('s2', 20^2, 'nu', 1);
   %pm = prior_sqrtt('s2', 10^2, 'nu', 4);
-  %pl = prior_t('s2', 1^2, 'nu', 4);
+  %pl = prior_sinvchi2('s2', 1, 'nu', 1);
   %pa = prior_t('s2', 10^2, 'nu', 4);
   % different covariance functions have different parameters
   if isfield(gpcf1,'magnSigma2')
-     gpcf1 = gpcf(gpcf1, 'magnSigma2', .5, 'magnSigma2_prior', pm);
+     gpcf1 = gpcf(gpcf1, 'magnSigma2', 1, 'magnSigma2_prior', pm);
   end
   if isfield(gpcf1,'lengthScale')
      gpcf1 = gpcf(gpcf1, 'lengthScale', .5, 'lengthScale_prior', pl);
@@ -411,7 +418,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
     gpcf1 = gpcf(gpcf1, 'alpha', 20, 'alpha_prior', pa);
   end
   if isfield(gpcf1,'biasSigma2')
-    gpcf1 = gpcf(gpcf1, 'biasSigma2', 10, 'weightSigma2', 10,'biasSigma2_prior',prior_logunif(),'weightSigma2_prior',prior_logunif());
+    gpcf1 = gpcf(gpcf1, 'biasSigma2', 10, 'weightSigma2', 10,'biasSigma2_prior',prior_sinvchi2('s2',1^2,'nu',1),'weightSigma2_prior',prior_sinvchi2('s2',1^2,'nu',1));
   end
   
   if ~isempty(cond_dens) && strcmp(cond_dens, 'on')
@@ -425,7 +432,6 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   if ~isempty(basis_function) && strcmp(basis_function, 'off')
     gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
   else
-    %gpmfco = gpmf_constant('prior_mean',0,'prior_cov',100);
     gpmflin = gpmf_linear('prior_mean',0,'prior_cov',100);
     gpmfsq = gpmf_squared('prior_mean',0,'prior_cov',100);
     gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, 'meanf', {gpmflin,gpmfsq});
@@ -452,13 +458,10 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
       gp.latent_opt.fft=1;
     end
   end
-  
-  if exist('fminunc')
-    gp=gp_optim(gp,xx,yy,'opt',opt, 'optimf', @fminunc);
-  else
-    gp=gp_optim(gp,xx,yy,'opt',opt, 'optimf', @fminlbfgs);
-  end
+
+  gp=gp_optim(gp,xx,yy,'opt',opt, 'optimf', @fminlbfgs);
   %gradcheck(gp_pak(gp), @gpla_nd_e, @gpla_nd_g, gp, xx, yy);
+  %gp_pak(gp)
   
   if strcmpi(latent_method,'MCMC')
     gp = gp_set(gp, 'latent_method', 'MCMC');

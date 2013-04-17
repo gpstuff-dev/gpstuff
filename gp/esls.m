@@ -16,10 +16,10 @@ function [f, energ, diagn] = esls(f, opt, gp, x, y, z, angle_range)
 %    function in an inference problem.
 %
 %  Reference:
-%   Elliptical slice sampling
-%   Iain Murray, Ryan Prescott Adams and David J.C. MacKay.
-%   The Proceedings of the 13th International Conference on Artificial
-%   Intelligence and Statistics (AISTATS), JMLR W&CP 9:541-548, 2010.
+%    Elliptical slice sampling
+%    Iain Murray, Ryan Prescott Adams and David J.C. MacKay.
+%    The Proceedings of the 13th International Conference on Artificial
+%    Intelligence and Statistics (AISTATS), JMLR W&CP 9:541-548, 2010.
 %
 %  See also
 %    GP_MC

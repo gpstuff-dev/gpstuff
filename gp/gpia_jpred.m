@@ -101,9 +101,9 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
-    ip=iparser(ip,'parse',gp, x, y, varargin{:});
+    ip=iparser(ip,'parse',gp_array, x, y, varargin{:});
   else
-    ip=iparser(ip,'parse',gp, x, y, [], varargin{:});
+    ip=iparser(ip,'parse',gp_array, x, y, [], varargin{:});
   end
   xt=ip.Results.xt;
   yt=ip.Results.yt;
@@ -114,10 +114,10 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   if isempty(xt)
     xt=x;
     if isempty(tstind)
-      if iscell(gp)
-        gptype=gp{1}.type;
+      if iscell(gp_array)
+        gptype=gp_array{1}.type;
       else
-        gptype=gp.type;
+        gptype=gp_array.type;
       end
       switch gptype
         case {'FULL' 'VAR' 'DTC' 'SOR'}
@@ -126,9 +126,9 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
           tstind = 1:size(x,1);
         case 'PIC'
           if iscell(gp)
-            tstind = gp{1}.tr_index;
+            tstind = gp_array{1}.tr_index;
           else
-            tstind = gp.tr_index;
+            tstind = gp_array.tr_index;
           end
       end
     end
@@ -142,11 +142,11 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   
   % pass these forward
   options=struct();
-  if ~isempty(ip.Results.yt);options.yt=ip.Results.yt;end
-  if ~isempty(ip.Results.z);options.z=ip.Results.z;end
-  if ~isempty(ip.Results.zt);options.zt=ip.Results.zt;end
-  if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
-  if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
+  if ~isempty(yt);options.yt=yt;end
+  if ~isempty(z);options.z=z;end
+  if ~isempty(zt);options.zt=zt;end
+  if ~isempty(predcf);options.predcf=predcf;end
+  if ~isempty(tstind);options.tstind=tstind;end
   
   if nargout > 2 && isempty(yt)
     pyt = NaN;
@@ -161,9 +161,9 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   % Make predictions with different models in gp_array
   for j = 1:nGP
     if isempty(yt)
-      [Eft_grid(j,:), Covft_grid(:,:,j)]=gp_pred(gp_array{j},x,y,xt,options);            
+      [Eft_grid(j,:), Covft_grid(:,:,j)]=gp_jpred(gp_array{j},x,y,xt,options);            
     else
-      [Eft_grid(j,:), Covft_grid(:,:,j), ljpyt_grid(j), Eyt_grid(j,:), Covyt_grid(:,:,j)]=gp_pred(gp_array{j},x,y,xt, options);
+      [Eft_grid(j,:), Covft_grid(:,:,j), ljpyt_grid(j), Eyt_grid(j,:), Covyt_grid(:,:,j)]=gp_jpred(gp_array{j},x,y,xt, options);
     end
   end
   
@@ -172,7 +172,15 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   pft = zeros(N*size(Eft_grid,1), 1);
   ft = [];
   for j = 1 : size(Eft_grid,1)
-    ftt = repmat(Eft_grid(j,:),N,1)+(chol(Covft_grid(:,:,j))'*randn(size(Covft_grid(:,:,j),1),N))';
+    [predcov,notpositivedefinite] = chol(Covft_grid(:,:,j),'lower');
+    if notpositivedefinite
+      % use eigendecomposition
+      [V,D] = eig(Covft_grid(:,:,j));
+      D=diag(D)';
+      D(D<0)=0;
+      predcov=bsxfun(@times,V,sqrt(D));
+    end
+    ftt = repmat(Eft_grid(j,:),N,1)+(predcov*randn(size(Covft_grid(:,:,j),1),N))';
     ft = [ft; ftt];
   end
   
@@ -183,7 +191,7 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   % Calculate jpyt with weight given in P_TH.
   if nargout > 2
     if ~isempty(yt)
-      ljpyt = log(sum(exp(ljpyt_grid)'.*P_TH);
+      ljpyt = log(sum(exp(ljpyt_grid)'.*P_TH));
     else
       error('yt must be provided to get ljpyt');
     end

@@ -35,13 +35,13 @@
 %
 %    Laplace, EP, and MCMC approximations are compared. Laplace and
 %    MCMC results are similar to results in Gelman et al (2004),
-%    who used equivalent but explicitely parametrized model.
+%    who used equivalent but explicitly parametrized model.
 %
 %  Reference
 %    Gelman et al (2004). Bayesian data Analysis, second edition,
 %      Chapman & Hall/CRC.
 %
-%  See also DEMO_BINOMIAL1, DEMO_BINOMIAL_APC
+%  See also DEMO_BINOMIAL1, DEMO_BINOMIAL_APC, DEMO_IMPROVEMARGINALS2
 
 % Copyright (c) 2010-2011 Jaakko Riihim�ki, Aki Vehtari
 
@@ -66,8 +66,8 @@ Ntgrid=ones(size(xgrid))*5;
 % Create parts of the covariance function
 % Half-Student's t-prior is used to give flat prior in the
 % interesting region with respect to the likelihood
-cfc = gpcf_constant('constSigma2_prior',prior_t('s2',100));
-cfl = gpcf_linear('coeffSigma2_prior',prior_t('s2',100));
+cfc = gpcf_constant('constSigma2_prior',prior_t('s2',100^2));
+cfl = gpcf_linear('coeffSigma2_prior',prior_t('s2',100^2));
 % Create the GP structure
 gp = gp_set('lik', lik_binomial(), 'cf', {cfc cfl}, 'jitterSigma2', 1e-8);
 
@@ -90,11 +90,11 @@ gpia=gp_ia(gp,x,y,'z',N,'int_method','grid');
 [Eft, Varft] = gp_pred(gpia, x, y, xgrid(1), 'z', N, 'zt', Ntgrid(1),'predcf',2);
 pbetapositive=normcdf(0,Eft,sqrt(Varft));
 
-% Get samples fom the joint distribution of the latent values at 0 and 1
-% which in this case correspond to linear model parameters alpha and beta
+% Get samples from the joint distribution of the latent values at 0 and 1
+% to compute the corresponding linear model parameters alpha and beta
 % in Gelman et al (2004)
 fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000);
-a=fs(1,:);b=fs(2,:);
+a=fs(1,:);b=fs(2,:)-fs(1,:);
 % compute samples from the LD50 given b>0 (see, Gelman et al (2004))
 ld50s=-a(b>0)./b(b>0);
 
@@ -175,11 +175,11 @@ gpia=gp_ia(gp,x,y,'z',N,'int_method','grid');
 [Eft, Varft] = gp_pred(gpia, x, y, xgrid(1), 'z', N, 'zt', Ntgrid(1),'predcf',2);
 pbetapositive=normcdf(0,Eft,sqrt(Varft));
 
-% Get samples fom the joint distribution of the latent values at 0 and 1
-% which in this case correspond to linear model parameters alpha and beta
+% Get samples from the joint distribution of the latent values at 0 and 1
+% to compute the corresponding linear model parameters alpha and beta
 % in Gelman et al (2004)
 fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000);
-a=fs(1,:);b=fs(2,:);
+a=fs(1,:);b=fs(2,:)-fs(1,:);
 % compute samples from the LD50 given b>0 (see, Gelman et al (2004))
 ld50s=-a(b>0)./b(b>0);
 
@@ -241,7 +241,7 @@ fprintf('MCMC approximation         ')
 
 gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-4);
 
-[rgp,g,opt] = gp_mc(gp, x, y, 'z', N, 'nsamples', 500, 'repeat', 4, 'display', 0);
+[rgp,g,opt] = gp_mc(gp, x, y, 'z', N, 'nsamples', 500, 'repeat', 4, 'display', 10);
 rgp=thin(rgp,101);
 
 % First make predictions just with the linear part to get
@@ -249,11 +249,11 @@ rgp=thin(rgp,101);
 [Efts, Varfts] = gpmc_preds(rgp, x, y, xgrid(1), 'z', N, 'zt', Ntgrid(1),'predcf',2);
 pbetapositive=mean((Efts+randn(size(Efts)).*sqrt(Varfts))<0);
 
-% Get samples fom the joint distribution of the latent values at 0 and 1
-% which in this case correspond to linear model parameters alpha and beta
+% Get samples from the joint distribution of the latent values at 0 and 1
+% to compute the corresponding linear model parameters alpha and beta
 % in Gelman et al (2004)
 fs = gp_rnd(rgp, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000);
-a=fs(1,:);b=fs(2,:);
+a=fs(1,:);b=fs(2,:)-fs(1,:);
 % compute samples from the LD50 given b>0 (see, Gelman et al (2004))
 ld50s=-a(b>0)./b(b>0);
 

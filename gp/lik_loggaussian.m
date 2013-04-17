@@ -245,7 +245,7 @@ function llg = lik_loggaussian_llg(lik, y, f, param, z)
       llg = sum(-(1-z)./(2.*s2) + (1-z).*r.^2./(2.*s2^2) + z./(1-norm_cdf(r/sqrt(s2))) ... 
              .* (r./(sqrt(2.*pi).*2.*s2.^(3/2)).*exp(-1/(2.*s2).*r.^2)));
       % correction for the log transformation
-      llg = llg.*lik.sigma2;
+      llg = llg.*s2;
     case 'latent'
       llg = (1-z)./s2.*r + z./(1-norm_cdf(r/sqrt(s2))).*(1/sqrt(2*pi*s2) .* exp(-1/(2.*s2).*r.^2));
   end
@@ -333,7 +333,7 @@ function llg3 = lik_loggaussian_llg3(lik, y, f, param, z)
               - 1./(1-norm_cdf(r./sqrt(s2))).^1.*r./(sqrt(2*pi)*s2^(5/2)).*exp(-r.^2/(2*s2)) ...
               + 1./(1-norm_cdf(r./sqrt(s2))).^1.*r.^3./(sqrt(2*pi)*2*s2^(7/2)).*exp(-r.^2/(2*s2)));
       % correction due to the log transformation
-      llg3 = llg3.*lik.sigma2;
+      llg3 = llg3.*s2;
   end
 end
 
@@ -484,17 +484,27 @@ function [lpy, Ey, Vary] = lik_loggaussian_predy(lik, Ef, Varf, yt, zt)
 
   % Evaluate the posterior predictive densities of the given observations
   lpy = zeros(length(yt),1);
-  for i1=1:length(yt)
-    if abs(Ef(i1))>700
-      lpy(i1) = NaN;
-    else
-      % get a function handle of the likelihood times posterior
-      % (likelihood * posterior = Negative-binomial * Gaussian)
-      % and useful integration limits
-      [pdf,minf,maxf]=init_loggaussian_norm(...
-        yt(i1),Ef(i1),Varf(i1),yc(i1),s2);
-      % integrate over the f to get posterior predictive distribution
-      lpy(i1) = log(quadgk(pdf, minf, maxf));
+  if (min(size(Ef))>1) && (min(size(Varf))>1)
+    % Approximate integral with sum of grid points when using corrected
+    % marginal posterior pf
+    for i1=1:length(yt)
+      py = arrayfun(@(f) exp(lik.fh.ll(lik, yt(i1), f, zt(i1))), Ef(i1,:));
+      pf = Varf(i1,:)./sum(Varf(i1,:));
+      lpy(i1) = log(sum(py.*pf));
+    end
+  else
+    for i1=1:length(yt)
+      if abs(Ef(i1))>700
+        lpy(i1) = NaN;
+      else
+        % get a function handle of the likelihood times posterior
+        % (likelihood * posterior = Negative-binomial * Gaussian)
+        % and useful integration limits
+        [pdf,minf,maxf]=init_loggaussian_norm(...
+          yt(i1),Ef(i1),Varf(i1),yc(i1),s2);
+        % integrate over the f to get posterior predictive distribution
+        lpy(i1) = log(quadgk(pdf, minf, maxf));
+      end
     end
   end
 end
@@ -527,15 +537,19 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
 
   % Set the limits for integration
   if yc==0
-    % with yy==0, the mode of the likelihood is not defined
-    % use the mode of the Gaussian (cavity or posterior) as a first guess
-    modef = myy_i;
+    % with yc==0, the mode of the likelihood is not defined
+    if myy_i>log(yy)
+      % the log likelihood is flat on this side
+      % use the mode of the Gaussian (cavity or posterior)
+      modef = myy_i;
+    else
+      % the log likelihood is approximately f on this side
+      modef = min(myy_i+sigm2_i,log(yy)+sqrt(s2));
+    end
   else
     % use precision weighted mean of the Gaussian approximation
     % of the loggaussian likelihood and Gaussian
     mu=log(yy);
-    %s2=1./(yc+1./sigm2_i);
-%     s2=s2;
     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
   end
   % find the mode of the integrand using Newton iterations
@@ -573,6 +587,7 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
     end
   end
   maxld=ld(maxf, ldconst, yy, yc, s2, myy_i, sigm2_i);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
@@ -649,7 +664,7 @@ function cdf = lik_loggaussian_predcdf(lik, Ef, Varf, yt)
   
 end
 
-function p = lik_loggaussian_invlink(lik, f)
+function p = lik_loggaussian_invlink(lik, f, z)
 %LIK_LOGGAUSSIAN Returns values of inverse link function
 %             
 %  Description 
@@ -705,7 +720,7 @@ function reclik = lik_loggaussian_recappend(reclik, ri, lik)
   else
     % Append to the record
     reclik.sigma2(ri,:)=lik.sigma2;
-    if ~isempty(lik.p)
+    if ~isempty(lik.p.sigma2)
       reclik.p.sigma2 = lik.p.sigma2.fh.recappend(reclik.p.sigma2, ri, lik.p.sigma2);
     end
   end

@@ -1,19 +1,20 @@
 function [r2, bb] = rsqr(p, y, z, t, varargin)
-%RSQR R^2 statistic given probabilities at time point T.
+%RSQR R^2 statistic given probabilities at time point T
 %
 %  Description
-%    [R2, BB] = RSQR(P,Y,Z,T,OPTIONS) Returns R^2 statistic given vector
-%    P of estimated probabilities of presenting event before time T and
-%    its density estimate using Bayesian bootstrap. Y are observed event or 
-%    censoring times and Z are the corresponding censoring indicators
-%    (0=event, 1=censored). With these inputs, the implemented estimator is
-%    R^2 estimator attributed to Pencina et al. in the reference, with 
-%    restriction to time T.
+%    [R2, BB] = RSQR(P,Y,Z,T,OPTIONS) Returns R^2 statistic given
+%    vector P of estimated probabilities of presenting event before
+%    time T and its density estimate using Bayesian bootstrap. Y are
+%    observed event or censoring times and Z are the corresponding
+%    censoring indicators (0=event, 1=censored). With these inputs,
+%    the implemented estimator is R^2 estimator attributed to Pencina
+%    et al. in the reference, with restriction to time T.
 %
-%    [R2, BB] = RSQR(P,OPTIONS) Returns R^2 statistic given vector
-%    P of estimated probabilities of presenting event before time T and
+%    [R2, BB] = RSQR(P,OPTIONS) Returns R^2 statistic given vector P
+%    of estimated probabilities of presenting event before time T and
 %    its density estimate using Bayesian bootstrap. Here, the
-%    model-based estimator is used (the "new estimator" in the reference).
+%    model-based estimator is used (the "new estimator" in the
+%    reference).
 %
 %    OPTIONS is optional parameter-value pair
 %      rsubstream - number of a random stream to be used for

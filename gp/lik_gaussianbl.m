@@ -8,7 +8,7 @@ function lik = lik_gaussianbl(varargin)
 %    parameters are set to default values.
 %
 %    LIK = LIK_GAUSSIANBL(LIK,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
-%    modify a likelihhod function structure with the named
+%    modify a likelihood function structure with the named
 %    parameters altered with the specified values.
 %
 %    Parameters for Gaussian likelihood function [default]
@@ -93,10 +93,10 @@ function lik = lik_gaussianbl(varargin)
   end
   
   function [w s] = lik_gaussianbl_pak(lik)
-  %LIK_gaussianbl_PAK  Combine likelihood parameters into one vector.
+  %LIK_GAUSSIANBL_PAK  Combine likelihood parameters into one vector.
   %
   %  Description
-  %    W = LIK_gaussianbl_PAK(LIK) takes a likelihood structure LIK
+  %    W = LIK_GAUSSIANBL_PAK(LIK) takes a likelihood structure LIK
   %    and combines the parameters into a single row vector W.
   %    This is a mandatory subfunction used for example in energy 
   %    and gradient computations.
@@ -105,7 +105,7 @@ function lik = lik_gaussianbl(varargin)
   %             (hyperparameters of lik.magnSigma2)]'
   %     
   %  See also
-  %    LIK_gaussianbl_UNPAK
+  %    LIK_GAUSSIANBL_UNPAK
 
     w = []; s = {};
     if ~isempty(lik.p.sigma2)
@@ -123,10 +123,10 @@ function lik = lik_gaussianbl(varargin)
   end
 
   function [lik, w] = lik_gaussianbl_unpak(lik, w)
-  %LIK_gaussianbl_UNPAK  Extract likelihood parameters from the vector.
+  %LIK_GAUSSIANBL_UNPAK  Extract likelihood parameters from the vector.
   %
   %  Description
-  %    W = LIK_gaussianbl_UNPAK(W, LIK) takes a likelihood structure
+  %    W = LIK_GAUSSIANBL_UNPAK(W, LIK) takes a likelihood structure
   %    LIK and extracts the parameters from the vector W to the LIK
   %    structure. This is a mandatory subfunction used for example 
   %    in energy and gradient computations.
@@ -136,7 +136,7 @@ function lik = lik_gaussianbl(varargin)
   %             (hyperparameters of lik.magnSigma2)]'
   %
   %  See also
-  %    LIK_gaussianbl_PAK
+  %    LIK_GAUSSIANBL_PAK
     
     if ~isempty(lik.p.sigma2)
       i2=length(lik.sigma2);
@@ -150,7 +150,7 @@ function lik = lik_gaussianbl(varargin)
   end
 
   function lp = lik_gaussianbl_lp(lik)
-  %LIK_gaussianbl_LP  Evaluate the log prior of likelihood parameters
+  %LIK_GAUSSIANBL_LP  Evaluate the log prior of likelihood parameters
   %
   %  Description
   %    LP = LIK_T_LP(LIK) takes a likelihood structure LIK and
@@ -158,7 +158,7 @@ function lik = lik_gaussianbl(varargin)
   %    subfunction is needed when there are likelihood parameters.
   %
   %  See also
-  %    LIK_gaussianbl_PAK, LIK_gaussianbl_UNPAK, LIK_gaussianbl_G, GP_E
+  %    LIK_GAUSSIANBL_PAK, LIK_GAUSSIANBL_UNPAK, LIK_GAUSSIANBL_G, GP_E
 
     lp = 0;
 
@@ -169,17 +169,17 @@ function lik = lik_gaussianbl(varargin)
   end
 
   function lpg = lik_gaussianbl_lpg(lik)
-  %LIK_gaussianbl_LPG  Evaluate gradient of the log prior with respect
+  %LIK_GAUSSIANBL_LPG  Evaluate gradient of the log prior with respect
   %                  to the parameters.
   %
   %  Description
-  %    LPG = LIK_gaussianbl_LPG(LIK) takes a Gaussian likelihood
+  %    LPG = LIK_GAUSSIANBL_LPG(LIK) takes a Gaussian likelihood
   %    function structure LIK and returns LPG = d log (p(th))/dth,
   %    where th is the vector of parameters. This subfunction is
   %    needed when there are likelihood parameters.
   %
   %  See also
-  %    LIK_gaussianbl_PAK, LIK_gaussianbl_UNPAK, LIK_gaussianbl_E, GP_G
+  %    LIK_GAUSSIANBL_PAK, LIK_GAUSSIANBL_UNPAK, LIK_GAUSSIANBL_E, GP_G
 
     lpg = [];
 
@@ -196,7 +196,7 @@ function lik = lik_gaussianbl(varargin)
   end
 
   function DKff = lik_gaussianbl_cfg(lik, x, x2)
-  %LIK_gaussianbl_CFG  Evaluate gradient of covariance with respect to
+  %LIK_GAUSSIANBL_CFG  Evaluate gradient of covariance with respect to
   %                 Gaussian noise
   %
   %  Description
@@ -204,14 +204,14 @@ function lik = lik_gaussianbl(varargin)
   %    analytically combined with covariance functions and thus we
   %    compute gradient of covariance instead of gradient of likelihood.
   %
-  %    DKff = LIK_gaussianbl_CFG(LIK, X) takes a Gaussian likelihood
+  %    DKff = LIK_GAUSSIANBL_CFG(LIK, X) takes a Gaussian likelihood
   %    function structure LIK, a matrix X of input vectors and
   %    returns DKff, the gradients of Gaussian noise covariance
   %    matrix Kff = k(X,X) with respect to th (cell array with
   %    matrix elements). This subfunction is needed only in 
   %    Gaussian likelihoods.
   %
-  %    DKff = LIK_gaussianbl_CFG(LIK, X, X2) takes a Gaussian
+  %    DKff = LIK_GAUSSIANBL_CFG(LIK, X, X2) takes a Gaussian
   %    likelihood function structure LIK, a matrix X of input
   %    vectors and returns DKff, the gradients of Gaussian noise
   %    covariance matrix Kff = k(X,X) with respect to th (cell
@@ -219,7 +219,7 @@ function lik = lik_gaussianbl(varargin)
   %    Gaussian likelihoods.
   %
   %  See also
-  %    LIK_gaussianbl_PAK, LIK_gaussianbl_UNPAK, LIK_gaussianbl_E, GP_G
+  %    LIK_GAUSSIANBL_PAK, LIK_GAUSSIANBL_UNPAK, LIK_GAUSSIANBL_E, GP_G
 
     [n, m] =size(x);
 
@@ -235,18 +235,18 @@ function lik = lik_gaussianbl(varargin)
   end
   
   function DKff  = lik_gaussianbl_ginput(lik, x, t, g_ind, gdata_ind, gprior_ind, varargin)
-  %LIK_gaussianbl_GINPUT  Evaluate gradient of likelihood function with 
+  %LIK_GAUSSIANBL_GINPUT  Evaluate gradient of likelihood function with 
   %                     respect to x.
   %
   %  Description
-  %    DKff = LIK_gaussianbl_GINPUT(LIK, X) takes a likelihood
+  %    DKff = LIK_GAUSSIANBL_GINPUT(LIK, X) takes a likelihood
   %    function structure LIK, a matrix X of input vectors and
   %    returns DKff, the gradients of likelihood matrix Kff =
   %    k(X,X) with respect to X (cell array with matrix elements).
   %    This subfunction is needed when computing gradients with 
   %    respect to inducing inputs in sparse approximations.
   %
-  %    DKff = LIK_gaussianbl_GINPUT(LIK, X, X2) takes a likelihood
+  %    DKff = LIK_GAUSSIANBL_GINPUT(LIK, X, X2) takes a likelihood
   %    function structure LIK, a matrix X of input vectors and
   %    returns DKff, the gradients of likelihood matrix Kff =
   %    k(X,X2) with respect to X (cell array with matrix elements).
@@ -254,22 +254,22 @@ function lik = lik_gaussianbl(varargin)
   %    respect to inducing inputs in sparse approximations.
   %
   %  See also
-  %    LIK_gaussianbl_PAK, LIK_gaussianbl_UNPAK, LIK_gaussianbl_E, GP_G
+  %    LIK_GAUSSIANBL_PAK, LIK_GAUSSIANBL_UNPAK, LIK_GAUSSIANBL_E, GP_G
 
   end
 
   function C = lik_gaussianbl_trcov(lik, x)
-  %LIK_gaussianbl_TRCOV  Evaluate training covariance matrix
+  %LIK_GAUSSIANBL_TRCOV  Evaluate training covariance matrix
   %                    corresponding to Gaussian noise
   %  Description
-  %    C = LIK_gaussianbl_TRCOV(GP, TX) takes in covariance function
+  %    C = LIK_GAUSSIANBL_TRCOV(GP, TX) takes in covariance function
   %    of a Gaussian process GP and matrix TX that contains
   %    training input vectors. Returns covariance matrix C. Every
   %    element ij of C contains covariance between inputs i and j
   %    in TX. This subfunction is needed only in Gaussian likelihoods.
   %
   %  See also
-  %    LIK_gaussianbl_COV, LIK_gaussianbl_TRVAR, GP_COV, GP_TRCOV
+  %    LIK_GAUSSIANBL_COV, LIK_GAUSSIANBL_TRVAR, GP_COV, GP_TRCOV
 
     [n, m] =size(x);
 
@@ -287,18 +287,18 @@ function lik = lik_gaussianbl(varargin)
   end
 
   function C = lik_gaussianbl_trvar(lik, x)
-  %LIK_gaussianbl_TRVAR  Evaluate training variance vector
+  %LIK_GAUSSIANBL_TRVAR  Evaluate training variance vector
   %                    corresponding to Gaussian noise
   %
   %  Description
-  %    C = LIK_gaussianbl_TRVAR(LIK, TX) takes in covariance function
+  %    C = LIK_GAUSSIANBL_TRVAR(LIK, TX) takes in covariance function
   %    of a Gaussian process LIK and matrix TX that contains
   %    training inputs. Returns variance vector C. Every element i
   %    of C contains variance of input i in TX. This subfunction is 
   %    needed only in Gaussian likelihoods.
   %
   %  See also
-  %    LIK_gaussianbl_COV, GP_COV, GP_TRCOV
+  %    LIK_GAUSSIANBL_COV, GP_COV, GP_TRCOV
 
     [n, m] =size(x);
     
@@ -317,7 +317,7 @@ function lik = lik_gaussianbl(varargin)
   %RECAPPEND  Record append
   %
   %  Description
-  %    RECCF = LIK_gaussianbl_RECAPPEND(RECCF, RI, LIK) takes a
+  %    RECCF = LIK_GAUSSIANBL_RECAPPEND(RECCF, RI, LIK) takes a
   %    likelihood function record structure RECCF, record index RI
   %    and likelihood function structure LIK with the current MCMC
   %    samples of the parameters. Returns RECCF which contains all

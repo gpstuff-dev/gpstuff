@@ -1052,16 +1052,25 @@ function [lpy, Ey, Vary] = lik_t_predy(lik, Ef, Varf, y, z)
       end
   end
   
-
+  
   lpy = zeros(length(y),1);
-  for i2 = 1:length(y)
-    mean_app = Ef(i2);
-    sigm_app = sqrt(Varf(i2));
-    
-    pd = @(f) t_pdf(y(i2), nu, f, sigma).*norm_pdf(f,Ef(i2),sqrt(Varf(i2)));
-    lpy(i2) = log(quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app));
+  if (min(size(Ef))>1) && (min(size(Varf))>1)
+    % Approximate integral with sum of grid points when using corrected
+    % marginal posterior
+    for i2=1:length(y)
+      py = t_pdf(y(i2), nu, Ef(i2,:), sigma);
+      pf = Varf(i1,:)./sum(Varf(i1,:));
+      lpy(i1) = log(sum(py.*pf));
+    end
+  else
+    for i2 = 1:length(y)
+      mean_app = Ef(i2);
+      sigm_app = sqrt(Varf(i2));
+      
+      pd = @(f) t_pdf(y(i2), nu, f, sigma).*norm_pdf(f,Ef(i2),sqrt(Varf(i2)));
+      lpy(i2) = log(quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app));
+    end
   end
-
   
 end
 

@@ -55,12 +55,14 @@ ip=iparser(ip,'addParamValue','predcf', [], @(x) isempty(x) || ...
 ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
 ip=iparser(ip,'addParamValue','nsamp', 1, @(x) isreal(x) && isscalar(x));
+ip=iparser(ip,'addParamValue','fcorr', 'off', @(x) ismember(x, {'fact','cm2','off','on'}));
 ip=iparser(ip,'parse',gp, x, y, xt, varargin{:});
 z=ip.Results.z;
 zt=ip.Results.zt;
 predcf=ip.Results.predcf;
 tstind=ip.Results.tstind;
 nsamp=ip.Results.nsamp;
+fcorr=ip.Results.fcorr;
 
 tn = size(x,1);
 
@@ -87,15 +89,16 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               Ef = Ef + repmat(RB,1,nsamp);
               pcov = pcov + RAR;
           end
+          rr=randn(size(Ef));
           predcov = chol(pcov,'lower');
-          sampft = Ef + predcov*randn(size(Ef));
+          sampft = Ef + predcov*rr;
           if nargout > 1
             pcov = C2 - K'*ldlsolve(LD,K);
             if  isfield(gp,'meanf')
                 pcov = pcov + RAR;
             end
             predcov = chol(pcov,'lower');
-            sampyt = Ef + predcov*randn(size(Ef));
+            sampyt = Ef + predcov*rr;
           end        
         else
           L = chol(C,'lower');
@@ -110,17 +113,50 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               Ef = Ef + repmat(RB,1,nsamp);
               pcov = pcov + RAR;
           end
-          predcov = chol(pcov,'lower');
-          sampft = Ef + predcov*randn(size(Ef));
+          rr=randn(size(Ef));
+          [predcov,notpositivedefinite] = chol(pcov,'lower');
+          if notpositivedefinite
+            % use eigendecomposition
+            [V,D] = eig(pcov);
+            D=diag(D)';
+            D(D<0)=0;
+            predcov=bsxfun(@times,V,sqrt(D));
+          end
+          sampft = Ef + predcov*rr;
           if nargout > 1
             pcov = C2-v'*v;
             if  isfield(gp,'meanf')
                 pcov = pcov + RAR;
             end
-            predcov = chol(pcov,'lower');
-            sampyt = Ef + predcov*randn(size(Ef));
+            [predcov,notpositivedefinite] = chol(pcov,'lower');
+            if notpositivedefinite
+              % use eigendecomposition
+              [V,D] = eig(pcov);
+              D=diag(D)';
+              D(D<0)=0;
+              predcov=bsxfun(@times,V,sqrt(D));
+            end
+            sampyt = Ef + predcov*rr;
           end
-        end   
+        end 
+        switch fcorr
+          case 'fact'
+            fgrid = arrayfun(linspace(@(min,max) linspace(min,max,40), Ef-5.*sqrt(diag(pcov)), Ef+5.*sqrt(diag(pcov))));
+            for i=1:size(xt,1)
+              fvec=fgrid(i,:);
+              [p_pred(:,i), pc_pred(:,i), c_pred(:,i)] = gpla_fact(gp,x,y,fvec,xt, 'z', N, 'ind', i);
+              fsnc(i,:)= normcdf(sampft(i,:), Ef(i), sqrt(diag(pcov(i,i))));
+              fsc(i,:)=interp1(cumsum(pc_pred(:,i)./sum(pc_pred(:,i))),fvec(:,i),fsnc(i,:));
+              sampft=fsc;
+            end
+          case 'cm2'
+            if isequal(gp.latent_method, 'EP')
+              error('Cannot use cm2 corrections for marginal posterior with EP (use fact)');
+            end
+            fgrid = arrayfun(linspace(@(min,max) linspace(min,max,40), Ef-5.*sqrt(diag(pcov)), Ef+5.*sqrt(diag(pcov))));
+          otherwise
+            % Do nothing
+        end
         
       case 'FIC'    
         % Here tstind = 1 if the prediction is made for the training set 
@@ -516,27 +552,6 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
 % $$$     predcov = chol(K2-v'*v)';
 % $$$     sampft = Ef + predcov*randn(size(Ef));
         
-      case 'SSGP'
-        if nargin > 4
-          error(['Prediction with a subset of original ' ...
-                 'covariance functions not currently implemented with SSGP']);
-        end
-
-        [Phi_f, S] = gp_trcov(gp, x);
-        Phi_a = gp_trcov(gp, xt);
-        m = size(Phi_f,2);
-        ns = eye(m,m)*S(1,1);
-        
-        L = chol(Phi_f'*Phi_f + ns,'lower');
-        Ef = Phi_a*(L'\(L\(Phi_f'*y)));
-
-        
-        if nargout > 1
-          Covf = sum(Phi_a/L',2)*S(1,1);
-        end
-        if nargout > 2
-          error('gp_pred with three output arguments is not implemented for SSGP!')
-        end
     end
     
 
@@ -550,7 +565,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
 
         switch gp.latent_method
           case 'Laplace'
-            [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, param] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [f, L] = deal(param.f, param.L);
             
             W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
             deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
@@ -581,7 +598,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             end
           case 'EP'
             
-            [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
             
             [K, C]=gp_trcov(gp,x);
             K = gp_trcov(gp, xt, predcf);
@@ -594,11 +613,11 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
               
               if issparse(L)
-                z=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
+                zz=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
               else
-                z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+                zz=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
               end
-              Ef=K_nf*(nutilde-z);
+              Ef=K_nf*(nutilde-zz);
 
               % Compute variance
               if issparse(L)
@@ -609,7 +628,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
                 Covf = K - V'*V;
               end
             else
-              z=tautilde.*(L'*(L*nutilde));
+              zz=tautilde.*(L'*(L*nutilde));
               Ef=K_nf*(nutilde-z);
               
               S = diag(tautilde);
@@ -620,7 +639,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         
         predcov = chol(Covf,'lower');
         Ef = repmat(Ef,1,nsamp);
-        sampft = Ef + predcov*randn(size(Ef));
+        sampft = Ef + predcov*randn(size(Ef));       
         
         % ---------------------------
       case 'FIC'
@@ -644,7 +663,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
             m = size(u,1);
             
-            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [f, L, La2] = deal(p.f, p.L, p.La2);
 
             deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             ntest=size(xt,1);
@@ -706,7 +727,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             sampft = Ef + predcov*randn(size(Ef));
             
           case 'EP'
-            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [L, La, b] = deal(p.L, p.La2, p.b);
 
             % Here tstind = 1 if the prediction is made for the training set 
             if nargin > 6
@@ -786,7 +809,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         switch gp.latent_method
           case 'Laplace'
             
-            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [f, La2] = deal(p.f, p.La2);
             
             deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             
@@ -841,7 +866,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
           case 'EP'
             
-            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [L, La, b] = deal(p.L, p.La2, p.b);
             
             p = b';
 
@@ -942,7 +969,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
           case 'Laplace'
             
             
-            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [f, La2] = deal(p.f, p.La2);
             
 
             deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
@@ -1017,7 +1046,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
           case 'EP'
             
-            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [L, La, b] = deal(p.L, p.La2, p.b);
 
             p = b';
             ntest=size(xt,1);
@@ -1068,6 +1099,29 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
         end
     end
+   if ~isequal(fcorr, 'off')
+     % Do marginal corrections for samples
+     fsc=zeros(size(sampft));
+     [pc_predm, fvecm] = gp_predcm(gp, x, y, xt, 'z', z, 'ind', 1:size(xt,1), 'fcorr', fcorr);
+     for i=1:size(xt,1)
+       % Remove NaNs and zeros
+       pc_pred=pc_predm(:,i);
+       dii=isnan(pc_pred)|pc_pred==0;
+       pc_pred(dii)=[];
+       fvec=fvecm(:,i);
+       fvec(dii)=[];
+       % compute cdf
+       cumsumpc = cumsum(pc_pred)/sum(pc_pred);
+       % Remove non-unique values from grid vector & distribution
+       [cumsumpc, inds] = unique(cumsumpc);
+       fvec = fvec(inds);
+       % use inverse cdf to make marginal transformation
+       fsnc = normcdf(sampft(i,:), Ef(i,1), sqrt(diag(Covf(i,i))));
+       fsc(i,:)=interp1(cumsumpc,fvec,fsnc);
+     end
+     sampft=fsc;
+   end
+    
   end
 elseif isstruct(gp) && numel(gp.jitterSigma2)>1
   % MCMC
@@ -1087,22 +1141,46 @@ elseif isstruct(gp) && numel(gp.jitterSigma2)>1
       if isfield(gp, 'latentValues') && ~isempty(gp.latentValues)
         % Non-Gaussian likelihood. The latent variables should be used in
         % place of observations
-        y = gp.latentValues';
-        ii=i1;
+        for ni=1:nsampi
+          if ni==1
+            % use stored latent values
+            f = gp.latentValues(i1,:);
+          else
+            % need to resample latent values
+            opt=scaled_mh();
+            f=scaled_mh(f, opt, Gp, x, y, z);
+          end
+          if nargout<2
+            tsampft = gp_rnd(Gp, x, f', xt, 'nsamp', 1, ...
+                             'z', z, 'zt', zt, 'predcf', predcf, ...
+                             'tstind', tstind);
+            sampft=[sampft tsampft];
+          else
+            [tsampft, tsampyt] = gp_rnd(Gp, x, f', xt, 'nsamp', ...
+                                        1, 'z', z, 'zt', zt, ...
+                                        'predcf', predcf, 'tstind', tstind);
+                                      
+                 
+            sampyt=[sampyt tsampyt];
+            sampft=[sampft tsampft];
+          end
+
+          
+        end
       else         
-        ii=1;
-      end
-      if nargout<2
-        tsampft = gp_rnd(Gp, x, y(:,ii), xt, 'nsamp', nsampi, ...
-                         'z', z, 'zt', zt, 'predcf', predcf, ...
-                         'tstind', tstind);
-        sampft=[sampft tsampft];
-      else
-        [tsampft, tsampyt] = gp_rnd(Gp, x, y(:,ii), xt, 'nsamp', ...
-                                    nsampi, 'z', z, 'zt', zt, ...
-                                    'predcf', predcf, 'tstind', tstind);
-        sampft=[sampft tsampft];
-        sampyt=[sampyt tsampyt];
+        % Gaussian likelihood
+        if nargout<2
+          tsampft = gp_rnd(Gp, x, y, xt, 'nsamp', nsampi, ...
+                           'z', z, 'zt', zt, 'predcf', predcf, ...
+                           'tstind', tstind);
+          sampft=[sampft tsampft];
+        else
+          [tsampft, tsampyt] = gp_rnd(Gp, x, y, xt, 'nsamp', ...
+                                      nsampi, 'z', z, 'zt', zt, ...
+                                      'predcf', predcf, 'tstind', tstind);
+          sampft=[sampft tsampft];
+          sampyt=[sampyt tsampyt];
+        end
       end
     end
   end
@@ -1118,7 +1196,7 @@ elseif iscell(gp)
   end
   % resample nsamp cases from nmc samples
   % strafied resampling has has higher variance than deterministic
-  % resapmling, but has smaller bias, and thus it shoould be more
+  % resampling, but has a smaller bias, and thus it should be more
   % suitable for unequal weights
   gi=resampstr(gw,nsamp,1);
   sampft=[];sampyt=[];
@@ -1127,11 +1205,13 @@ elseif iscell(gp)
     if nsampi>0
       if nargout<2
         tsampft = gp_rnd(gp{i1}, x, y, xt, 'nsamp', nsampi, ...
-                         'z', z, 'zt', zt, 'predcf', predcf, 'tstind', tstind);
+                         'z', z, 'zt', zt, 'predcf', predcf, ...
+                         'tstind', tstind, 'fcorr', fcorr);
         sampft=[sampft tsampft];
       else
         [tsampft, tsampyt] = gp_rnd(gp{i1}, x, y, xt, 'nsamp', nsampi, ...
-                                    'z', z, 'zt', zt, 'predcf', predcf, 'tstind', tstind);
+                                    'z', z, 'zt', zt, 'predcf', predcf, ...
+                                    'tstind', tstind, 'fcorr', fcorr);
         sampft=[sampft tsampft];
         sampyt=[sampyt tsampyt];
       end

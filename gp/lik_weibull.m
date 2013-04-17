@@ -489,14 +489,24 @@ function [lpy, Ey, Vary] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
 
   % Evaluate the posterior predictive densities of the given observations
   lpy = zeros(length(yt),1);
-  for i1=1:length(yt)
-    % get a function handle of the likelihood times posterior
-    % (likelihood * posterior = Weibull * Gaussian)
-    % and useful integration limits
-    [pdf,minf,maxf]=init_weibull_norm(...
-      yt(i1),Ef(i1),Varf(i1),yc(i1),r);
-    % integrate over the f to get posterior predictive distribution
-    lpy(i1) = log(quadgk(pdf, minf, maxf));
+  if (min(size(Ef))>1) && (min(size(Varf))>1)
+    % Approximate integral with sum of grid points when using corrected
+    % marginal posterior
+    for i1=1:length(yt)
+      py = arrayfun(@(f) exp(lik.fh.ll(lik, yt(i1), f, zt(i1))), Ef(i1,:));
+      pf = Varf(i1,:)./sum(Varf(i1,:));
+      lpy(i1) = log(sum(py.*pf));      
+    end    
+  else
+    for i1=1:length(yt)
+      % get a function handle of the likelihood times posterior
+      % (likelihood * posterior = Weibull * Gaussian)
+      % and useful integration limits
+      [pdf,minf,maxf]=init_weibull_norm(...
+        yt(i1),Ef(i1),Varf(i1),yc(i1),r);
+      % integrate over the f to get posterior predictive distribution
+      lpy(i1) = log(quadgk(pdf, minf, maxf));
+    end
   end
 end
 
@@ -519,8 +529,6 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   ldconst = yc*log(r)+yc*(r-1)*log(yy)...
             - log(sigm2_i)/2 - log(2*pi)/2;
   
-   
-  
   % Create function handle for the function to be integrated
   df = @(f) weibull_norm(f, ldconst, yc, yy, r, myy_i, sigm2_i);
   % use log to avoid underflow, and derivates for faster search
@@ -530,15 +538,20 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
 
   % Set the limits for integration
   if yc==0
-    % with yy==0, the mode of the likelihood is not defined
-    % use the mode of the Gaussian (cavity or posterior) as a first guess
-    modef = myy_i;
+    % with yc==0, the mode of the likelihood is not defined
+    if myy_i>log(yy)
+      % the log likelihood is flat on this side
+      % use the mode of the Gaussian (cavity or posterior)
+      modef = myy_i;
+    else
+      % the log likelihood is approximately f on this side
+      modef = min(myy_i+sigm2_i,log(yy)+1);
+    end
   else
     % use precision weighted mean of the Gaussian approximation
     % of the Weibull likelihood and Gaussian
-    mu=-log(yc./(yy.^r));
-    %s2=1./(yc+1./sigm2_i);
-    s2=1./yc;
+    mu=log(yy);
+    s2=1;
     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
   end
   % find the mode of the integrand using Newton iterations
@@ -576,6 +589,7 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
     end
   end
   maxld=ld(maxf, ldconst, yc, yy, r, myy_i, sigm2_i);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
@@ -615,7 +629,7 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   function g2 = log_weibull_norm_g2(f, ldconst, yc, yy, r, myy_i, sigm2_i)
   % d^2/df^2 log(Weibull * Gaussian)
   % second derivate of log_weibull_norm
-    g2 = - exp(-f).*yy.^r ...
+    g2 = -exp(-f).*yy.^r ...
          -1/sigm2_i;
   end
 
@@ -650,7 +664,7 @@ function cdf = lik_weibull_predcdf(lik, Ef, Varf, yt)
   end
 end
 
-function p = lik_weibull_invlink(lik, f)
+function p = lik_weibull_invlink(lik, f, z)
 %LIK_WEIBULL Returns values of inverse link function
 %             
 %  Description 
@@ -707,7 +721,7 @@ function reclik = lik_weibull_recappend(reclik, ri, lik)
   else
     % Append to the record
     reclik.shape(ri,:)=lik.shape;
-    if ~isempty(lik.p)
+    if ~isempty(lik.p.shape)
       reclik.p.shape = lik.p.shape.fh.recappend(reclik.p.shape, ri, lik.p.shape);
     end
   end

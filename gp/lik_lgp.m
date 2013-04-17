@@ -401,6 +401,7 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
     end
   end
   maxld=ld(maxf, ldconst, avgE, yy, myy_i, sigm2_i);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;

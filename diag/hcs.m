@@ -3,11 +3,11 @@ function [c,bb] = hcs(riskscore,y,z,t,varargin)
 %
 %  Description
 %    [C, BB] = HCS(RISKSCORE,Y,Z,T,OPTIONS) Given a risk score vector
-%    RISKSCORE, an observed time vector Y, a censoring indicator column
-%    vector Z (0=event, 1=censored) and time T, returns
-%    Harrell's C at time T and its estimated density using
-%    Bayesian Bootstrap method. Large value of RISKSCORE should predict
-%    early event.
+%    RISKSCORE, an observed time vector Y, a censoring indicator
+%    column vector Z (0=event, 1=censored) and time T, returns
+%    Harrell's C at time T and its estimated density using Bayesian
+%    Bootstrap method. Large value of RISKSCORE should predict early
+%    event.
 %
 %    The implemented estimator is called ExtAUC(t)_Count in the reference.
 %

@@ -2,6 +2,11 @@ function prevstream = setrandstream(seed, stream)
 %SETRANDSTREAM Set random stream
 %
 %  Description
+%    SETRANDSTREAM is a compatibility function which calls appropriate
+%    functions depdening on the Matlab version or Octave (Matlab has
+%    changed random number syntax three times during the existence of
+%    GPstuff and Octave naturally has its own syntax).
+%
 %    CURRSTREAM = SETRANDSTREAM()
 %    Return current random stream as a random stream object CURRSTREAM.
 %

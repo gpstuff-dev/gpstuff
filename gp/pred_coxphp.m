@@ -121,8 +121,8 @@ else
   if size(y,2) ~= size(yt,2)
     error('size(y,2) ~= size(yt,2)');
   end
-  if (any(yt(:,2) > gp.lik.stime))
-    error('YT has to be scaled to same interval as the timeprocess');
+  if (any(yt(:,2) > gp.lik.stime(end)))
+    error('YT has to be scaled to the same interval as the time process');
   end
   % Integrate from yt(:,1) to yt(:,2)
   sb=sum(bsxfun(@gt,yt(:,1),gp.lik.stime),2);

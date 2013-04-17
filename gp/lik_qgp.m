@@ -35,11 +35,11 @@ function lik = lik_qgp(varargin)
 %  See also
 %    GP_SET, PRIOR_*, LIK_*
 %
-%   References
-%     Boukouvalas et al. (2012). Direct Gaussian Process Quantile Regression
-%     Using Expectation Propagation. Appearing in Proceedings of the 29th
-%     International Conference on Machine Learning, Edinburg, Scotland, UK,
-%     2012.
+%   Reference
+%     Boukouvalas et al. (2012). Direct Gaussian Process Quantile
+%     Regression Using Expectation Propagation. In Proceedings of the
+%     29th International Conference on Machine Learning, Edinburgh,
+%     Scotland, UK, 2012.
 %     
   
 % Copyright (c) 2012 Ville Tolvanen
@@ -438,14 +438,24 @@ function [lpy, Ey, Vary] = lik_qgp_predy(lik, Ef, Varf, yt, zt)
   
   % Evaluate the posterior predictive densities of the given observations
   lpy = zeros(length(yt),1);
-  for i1=1:length(yt)
-    % get a function handle of the likelihood times posterior
-    % (likelihood * posterior = Quantile-GP * Gaussian)
-    % and useful integration limits
-    [pdf,minf,maxf]=init_qgp_norm(...
-      yt(i1),Ef(i1),Varf(i1),sigma2, tau);
-    % integrate over the f to get posterior predictive distribution
-    lpy(i1) = log(quadgk(pdf, minf, maxf));
+  if (min(size(Ef))>1) && (min(size(Varf))>1)
+    % Approximate integral with sum of grid points when using corrected
+    % marginal posterior
+    for i1=1:length(yt)
+      py = arrayfun(@(f) exp(lik.fh.ll(lik, yt(i1), f, [])), Ef(i1,:));
+      pf = Varf(i1,:)./sum(Varf(i1,:));
+      lpy(i1) = log(sum(py.*pf));
+    end
+  else
+    for i1=1:length(yt)
+      % get a function handle of the likelihood times posterior
+      % (likelihood * posterior = Quantile-GP * Gaussian)
+      % and useful integration limits
+      [pdf,minf,maxf]=init_qgp_norm(...
+        yt(i1),Ef(i1),Varf(i1),sigma2, tau);
+      % integrate over the f to get posterior predictive distribution
+      lpy(i1) = log(quadgk(pdf, minf, maxf));
+    end
   end
 end
 
@@ -530,6 +540,7 @@ function [df,minf,maxf] = init_qgp_norm(yy,myy_i,sigm2_i,sigma2,tau)
     end
   end
   maxld=ld(maxf, ldconst, yy, sigma2, tau, myy_i, sigm2_i);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*sqrt(sigm2_i);
@@ -602,7 +613,7 @@ function reclik = lik_qgp_recappend(reclik, ri, lik)
     reclik.type = 'Quantile-GP';
 
     % Initialize parameter
-    reclik.sigma2 = [];
+    reclik.sigma2 = [];   
 
     % Set the function handles
     reclik.fh.pak = @lik_qgp_pak;
@@ -623,11 +634,12 @@ function reclik = lik_qgp_recappend(reclik, ri, lik)
       reclik.p.sigma2 = ri.p.sigma2;
     end
   else
-    
+        
     % Append to the record
-    reclik.sigma2(ri,:)=lik.sigma2;
-    if ~isempty(lik.p)
+    reclik.sigma2(ri,:)=lik.sigma2;    
+    if ~isempty(lik.p.sigma2)
       reclik.p.sigma2 = lik.p.sigma2.fh.recappend(reclik.p.sigma2, ri, lik.p.sigma2);
     end
+    reclik.tau = lik.tau;
   end
 end

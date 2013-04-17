@@ -11,17 +11,15 @@ function gpcf = gpcf_scaled(varargin)
 %      cf        - covariance function to be scaled (compulsory)
 %      scaler    - the input that is used for scaling [1]
 %
+%    For more information on models leading to scaled covariance function see,
+%    for example: 
+%      Gelfand, Kim, Sirmans, and Banerjee (2003). Spatial Modeling With
+%      Spatially Varying Coefficient Processes. Journal of the American
+%      Statistical Association June 2003, Vol. 98, No. 462
+%
 %  See also
 %    GP_SET, GPCF_*
 
-% For more information on models leading to scaled covariance function see,
-% for example: 
-%
-% GELFAND, KIM, SIRMANS, and BANERJEE (2003). Spatial Modeling With
-% Spatially Varying Coefficient Processes. Journal of the American
-% Statistical Association June 2003, Vol. 98, No. 462
-%
-  
 % Copyright (c) 2009-2012 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

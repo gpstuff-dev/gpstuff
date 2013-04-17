@@ -60,7 +60,7 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, varargin)
 %    covariances.
 %
 %    NOTE! When making predictions with a subset of covariance
-%    functions with FIC approximation the predictive variance can
+%    functions with FIC approximation the predictive covariance can
 %    in some cases be ill-behaved i.e. negative or
 %    unrealistically small. This may happen because of the
 %    approximative nature of the prediction.
@@ -197,11 +197,10 @@ if nargout > 2 && isempty(yt)
   ljpyt=[];
 end
 
-% Evaluate this if sparse model is used
 switch gp.type
   case 'FULL'
       
-    if ~isfield(gp.lik, 'nondiagW') && ismember(gp.lik.type, {'LGP', 'LGPC'})
+    if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP', 'LGPC'})
         %evaluate a = C\y;
         % -------------------
         [c, C]=gp_trcov(gp,x);
@@ -232,8 +231,7 @@ switch gp.type
           Eft = Eft + RB;
         end
         
-        % Evaluate variance
-        % Vector of diagonal elements of covariance matrix
+        % Evaluate covariance
         if nargout > 1
           
           V = gp_trcov(gp,xt,predcf);
@@ -700,7 +698,7 @@ switch gp.type
         B2=Luu\(K_nu');
         iLaKfu = La\K_fu;
         
-        % Calculate the predictive variance according to the type
+        % Calculate the predictive covariance according to the type
         % covariance functions used for making the prediction
         if ptype == 1 || ptype == 3                            
             % FIC part of the covariance
@@ -840,30 +838,9 @@ switch gp.type
           case 'SOR'
             Covyt = Covft + Cnn_v - sum(B2.^2,1)';
         end
+        if ~isempty(yt)
+          ljpyt = mnorm_lpdf(yt', Eyt', Covyt);
+        end
     end
-    if nargout > 4
-        pyt = norm_pdf(y, Eyt, sqrt(Covyt));
-    end  
-    
-  case 'SSGP'
-    if nargin > 4
-        error(['Prediction with a subset of original ' ...
-               'covariance functions not currently implemented with SSGP']);
-    end
-
-    [Phi_f, S] = gp_trcov(gp, x);
-    Phi_a = gp_trcov(gp, xt);
-    m = size(Phi_f,2);
-    ns = eye(m,m)*S(1,1);
-    
-    L = chol(Phi_f'*Phi_f + ns,'lower');
-    Eft = Phi_a*(L'\(L\(Phi_f'*y)));
-
-    
-    if nargout > 1
-        Covft = sum(Phi_a/L',2)*S(1,1);
-    end
-    if nargout > 2
-        error('gp_pred with three output arguments is not implemented for SSGP!')
-    end
+   
 end

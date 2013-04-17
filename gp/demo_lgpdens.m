@@ -37,7 +37,7 @@ prevstream=setrandstream(0,'mrg32k3a');
 figure(1)
 subplot(2,2,1)
 % t_4
-stream.Substream = 1;
+setrandstream(0,'mrg32k3a');
 x=trnd(4,1,100)';
 xt=linspace(-7,7,400)';
 lgpdens(x,xt);
@@ -47,20 +47,22 @@ title('t_4')
 p0=t_pdf(xt,4,0,1);
 line(xt,p0,'color','k')
 %sum(p0.*log(p))
+drawnow
 
 subplot(2,2,2)
 % Mixture of two t_4
-stream.Substream = 1;
+setrandstream(0,'mrg32k3a');
 n1=sum(rand(100,1)<3/4);
 n2=100-n1;
-x=[trnd(4,n1,1); 3+trnd(4,n2,1)/4];
-xt=linspace(-6,6,400)';
+x=[trnd(4,n1,1); 3+trnd(4,n2,1)/2];
+xt=linspace(-7,7,400)';
 lgpdens(x,xt);
 axis tight
 title('Mixture of two t_4')
 % true density
-p0=t_pdf(xt,4,0,1)*2/3+t_pdf(xt,4,3,1/4)*1/3;
+p0=t_pdf(xt,4,0,1)*2/3+t_pdf(xt,4,3,1/2)*1/3;
 line(xt,p0,'color','k')
+drawnow
 
 subplot(2,2,3)
 % Galaxy data
@@ -72,10 +74,11 @@ lgpdens(x,xt);
 axis tight
 title('Galaxy data')
 % true density is unknown
+drawnow
 
 subplot(2,2,4)
 % Gamma(1,1)
-stream.Substream = 1;
+setrandstream(0,'mrg32k3a');
 x=gamrnd(1,1,100,1);
 xt=linspace(0,5,400)';
 lgpdens(x,xt);
@@ -83,7 +86,7 @@ axis tight
 title('Gamma(1,1)')
 p0=gam_pdf(xt,1,1);
 line(xt,p0,'color','k')
-
+drawnow
 
 % =====================================
 % 1) 2D-examples
@@ -95,7 +98,7 @@ subplot(2,2,1)
 % t_4
 n=100;
 Sigma = [1 .7; .7 1];R = chol(Sigma);
-stream.Substream = 1;
+setrandstream(0,'mrg32k3a');
 x=trnd(8,n,2)*R;
 lgpdens(x);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
@@ -113,7 +116,7 @@ title('Old faithful')
 subplot(2,2,3)
 % Banana-shaped
 n=100;
-stream.Substream = 1;
+setrandstream(0,'mrg32k3a');
 b=0.02;x=randn(n,2);x(:,1)=x(:,1)*10;x(:,2)=x(:,2)+b*x(:,1).^2-10*b;
 lgpdens(x,'range',[-30 30 -5 20],'gridn',26);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
@@ -123,7 +126,7 @@ title('Banana')
 subplot(2,2,4)
 % Ring
 n=100;
-stream.Substream = 1;
+setrandstream(0,'mrg32k3a');
 phi=(rand(n,1)-0.5)*2*pi;
 x=[1.5*cos(phi)+randn(n,1)*0.2 1.5*sin(phi)+randn(n,1)*0.2];
 lgpdens(x,'gridn',30);
@@ -180,7 +183,7 @@ figure(5)
 clf
 subplot(2,1,1)
 % t_4
-stream.Substream = 1;
+setrandstream(0,'mrg32k3a');
 x=[trnd(4,1,100)]';
 xt=linspace(-6,6,200)';
 [p,pq]=lgpdens(x,xt);

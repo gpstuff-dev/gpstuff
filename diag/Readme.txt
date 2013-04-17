@@ -7,7 +7,10 @@ Maintainer: Aki Vehtari <Aki.Vehtari@hut.fi>
 In 1999 Simo Särkkä implemented several MCMC diagnostics in Matlab
 at Helsinki University of Technology, Laboratory of Computational
 Engineering <http://www.lce.hut.fi>. Later Aki Vehtari added a few
-additonal utilities, fixed bugs and improved the documentation.
+additonal utilities, fixed bugs and improved the documentation. 
+
+Several diagnostics have been added and now this directory is part of
+the GPstuff.
 
 This software is distributed under the GNU General Public Licence
 (version 3 or later); please refer to the file Licence.txt,
