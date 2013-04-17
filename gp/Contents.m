@@ -58,6 +58,7 @@
 %   GP_JPRED      Joint predictions with Gaussian process 
 %   GP_PREPRCTMU  Percentiles of the distribution of the location parameter
 %   GP_PREPRCTY   Percentiles of the predictive distribution at test points
+%   GP_PREDCM     Corrections for latent marginal posterior
 %   GP_MC         Markov chain sampling for Gaussian process models
 %   GPMC_PREDS    Conditional predictions with Gaussian Process MCMC
 %                 approximation.
@@ -106,6 +107,10 @@
 %                           observations
 %   DEMO_HURDLE             Demonstration of Logit Negative-binomial hurdle model
 %                           using Gaussian process prior
+%   DEMO_IMPROVEMARGINALS   Demonstration of marginal posterior improvements 
+%                           in Laplace and EP algorithms.
+%   DEMO_IMPROVEMARGINALS2  Demonstration of joint marginal posterior improvements 
+%                           in Laplace and EP algorithms.
 %   DEMO_LGCP               Demonstration for a log Gaussian Cox process
 %                           with inference via EP or Laplace approximation
 %   DEMO_MODELASSESMENT1    Demonstration for model assesment with DIC, number 

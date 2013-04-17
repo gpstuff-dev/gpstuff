@@ -43,6 +43,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, the expected 
 %               value for the ith case. 
+%      fcorr  - Method used for latent marginal posterior corrections. 
+%               Default is 'off'. For Laplace possible methods are
+%               'fact' and 'cm2'.  If method is 'on', 'cm2' is used
+%               for Laplace.
 %
 %    NOTE! In case of FIC and PIC sparse approximation the
 %    prediction for only some PREDCF covariance functions is just

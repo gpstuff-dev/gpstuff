@@ -9,8 +9,12 @@
 %    corrected posterior distributions are compared to true posterior
 %    evaluated in grid and to MCMC samples.
 %
+%   Reference
+%     Cseke & Heskes (2011). Approximate Marginals in Latent Gaussian
+%     Models. Journal of Machine Learning Research 12 (2011), 417-454
+%
 %  See also
-%    GP_PREDCM, GP_RND, DEMO_BINOMIAL2
+%    GP_PREDCM, GP_RND, DEMO_BINOMIAL2, DEMO_IMPROVEMARGINALS
 %
 
 % Copyright (c) 2013 Aki Vehtari
