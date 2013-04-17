@@ -335,16 +335,18 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
           % Use NUTS hmc
           w = gp_pak(gp);
           lp = @(w) deal(-gpmc_e(w,gp,x,y,f,z), -gpmc_g(w,gp,x,y,f,z));
+          opt2=opt;
           if k<opt.hmc_opt.Madapt
             % Take one sample while adjusting step length
-            opt.hmc_opt.Madapt = 1; 
-            opt.hmc_opt.M = 0; 
+            opt2.hmc_opt.Madapt = 1; 
+            opt2.hmc_opt.M = 0; 
           else
             % Take one sample without adjusting step length
-            opt.hmc_opt.Madapt = 0; 
-            opt.hmc_opt.M = 1; 
+            opt2.hmc_opt.Madapt = 0; 
+            opt2.hmc_opt.M = 1; 
           end
-          [w, energies, diagnh] = hmc_nuts(lp, w, opt.hmc_opt);
+          [w, energies, diagnh] = hmc_nuts(lp, w, opt2.hmc_opt);
+          diagnh.opt.Madapt=opt.hmc_opt.Madapt;
           opt.hmc_opt = diagnh.opt;
           hmcrej=hmcrej+diagnh.rej/opt.repeat;
           w=w(end,:);
