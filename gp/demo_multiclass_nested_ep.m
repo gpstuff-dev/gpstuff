@@ -71,7 +71,7 @@ latent_opt.incremental='on';
 gpep = gp_set('lik', lik_multinomprobit, 'cf', {gpcf1}, 'jitterSigma2', 1e-6, 'latent_method', 'EP', 'latent_opt', latent_opt);
 
 % Optimization options
-opt=optimset('TolX',1e-2,'TolFun',1e-2,'display','iter','derivativecheck','off');
+opt=optimset('TolX',1e-2,'TolFun',1e-2,'Display','iter','derivativecheck','off');
 
 disp('Optimize the hyperparameters')
 gpep=gp_optim(gpep,x,y,'opt',opt, 'optimf', @fminlbfgs);
