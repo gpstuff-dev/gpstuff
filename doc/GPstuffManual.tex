@@ -3473,111 +3473,191 @@ GPML and FBM}\label{appendix:compasison}
 
 
 
-   \scriptsize
- \begin{longtable}{p{5.5cm}p{3cm}p{3cm}p{3cm}}
-   & GPstuff & GPML & FBM \\
-   \textbf{Covariance functions} &  &  & \\
-   \hline
-   number of elementary functions & 13 & 10 & 13 \\
-   sums of elements  & x & x & x \\
-   products of elements & x & x &  \\
-   positive scaling of elements & x & x &  \\
-   masking of inputs & x & x & x \\
-   delta distance & x & & x \\
-   \multicolumn{4}{l}{\textbf{Mean functions}} \\
-   \hline 
-   number of elementary functions & 4 & 4 & 0 \\
-   marginalized parameters  & x &  &  \\
-   sums of elements & x & x & \\
-   products of elements &  & x &  \\
-   power of an element &  & x &  \\
-   scaling of elements &  & x &  \\
-   masking of inputs & x & x &  \\
-   \multicolumn{4}{l}{\textbf{Single latent likelihood/observation models}}  \\
-   \hline 
-   Gaussian & x & x &  \\
-   Gaussian scale mixture & MCMC &  & MCMC\\
-   binomial & x &  & \\
-   Poisson & x & Laplace/EP/MCMC & MCMC \\
-   negative binomial & x &  & \\
-   zero truncated negative binomial  & x & & \\
-   log-Gaussian Cox process & x &  & \\
-   logistic/logit & x & x & MCMC\\
-   erf/probit & x & x & MCMC\\
-   sech-squared &  & x & \\
-   Laplacian &  & EP,VB,MCMC & \\
-   Student's-$t$ & x & Laplace/VB/MCMC & \\
-   Weibull with censoring & x & & \\
-   log-Gaussian with censoring & x & & \\
-   log-logistic with censoring & x & & \\
-   derivative observations & for sexp covf only &  & \\
-   mixture of likelihoods &   &  Laplace/EP/MCMC  & \\
-   uniform for classification & & x & \\
-   quantile regression & MCMC/EP & & \\
-   \multicolumn{4}{l}{\textbf{Multilatent likelihood/observation models}} \\
-   \hline 
-   multinomial & MCMC/Laplace &  &  \\
-   softmax & MCMC/Laplace &  & \\
-   Cox proportional hazard model  & MCMC/Laplace &  & \\
-   density estimation  & MCMC/Laplace &  &  \\
-   density regression  & MCMC/Laplace &  & \\
-   input dependent noise   & MCMC/Laplace &  & \\
-   input dependent overdispersion in Weibull   & MCMC/Laplace &  & \\
-   zero-inflated negative binomial  & MCMC/Laplace &  & \\
-   \multicolumn{4}{l}{\textbf{Priors for parameters ($\vartheta$)}}  \\
+\begin{table}
+  \scriptsize
+  %\begin{tabular}{p{5.5cm}p{3cm}p{3cm}p{3cm}}
+  \begin{tabular}{p{9.5cm}p{2.3cm}p{2.1cm}p{0.9cm}}
+    & GPstuff & GPML & FBM \\
+    \textbf{Covariance functions} &  &  & \\
     \hline
-   several priors, hierarchical priors & x & & x \\
-   \multicolumn{4}{l}{\textbf{Sparse models}} \\
-   \hline 
-   CS & x &  & \\
-   FIC & x &  & \\
-   FIC+CS & x &  & \\
-   FITC & x & exact/EP/Laplace & \\
-   PIC & x &  & \\
-   VAR & Gaussian/EP &  & \\
-   DTC & Gaussian/EP &  & \\
-   SOR & Gaussian/EP &  & \\
-   PASS-GP & Laplace/EP & & \\
+    number of elementary functions & 13 & 10 & 4 \\
+    sums of elements, masking of inputs  & x & x & x \\
+    delta distance & x & & x \\
+    products, positive scaling of elements & x & x &  \\    
+    \multicolumn{4}{l}{\textbf{Mean functions}} \\
+    \hline
+    number of elementary functions & 4 & 4 & 0 \\
+    sums of elements, masking of inputs & x & x & \\
+    products, power, scaling of elements &  & x &  \\
+    marginalized parameters  & x &  &  \\
+    \multicolumn{4}{l}{\textbf{Single latent likelihood/observation models}}  \\
+    \hline
+    Gaussian & x & x & x \\
+    logistic/logit, erf/probit & x & x & MCMC\\
+    Poisson & x & LA/EP/MCMC & MCMC \\
+    Gaussian scale mixture & MCMC &  & MCMC\\
+    Student-$t$ & x & LA/VB/MCMC & \\
+    Laplacian &  & EP/VB/MCMC & \\
+    mixture of likelihoods &   &  LA/EP/MCMC  & \\
+    sech-squared, uniform for classification &  & x & \\
+    derivative observations & for sexp covf only &  & \\
+    \hangindent=0.3cm binomial, negative binomial, zero-trunc. negative binomial, 
+    log-Gaussian Cox process; Weibull, log-Gaussian and log-logistic with censoring & x &  & \\
+    quantile regression & MCMC/EP & & \\
+    \multicolumn{4}{l}{\textbf{Multilatent likelihood/observation models}} \\
+    \hline
+    \hangindent=0.3cm multinomial, Cox proportional hazard model, density estimation,
+    density regression, input dependent noise, input dependent overdispersion in Weibull,
+    zero-inflated negative binomial  & MCMC/LA &  &  \\
+    multinomial logit (softmax) & MCMC/LA & & MCMC \\
+    multinomial probit & EP & & MCMC \\
+    \multicolumn{4}{l}{\textbf{Priors for parameters ($\vartheta$)}}  \\
+    \hline
+    several priors, hierarchical priors & x & & x \\
+    \multicolumn{4}{l}{\textbf{Sparse models}} \\
+    \hline
+    FITC & x & exact/EP/LA & \\
+    CS, FIC, CS+FIC, PIC, VAR, DTC, SOR & x &  & \\
+    PASS-GP & LA/EP & & \\
     \multicolumn{4}{l}{\textbf{Latent inference}} \\
     \hline
-    Exact (Gaussian only) & x & x & x  \\
-    Laplace, EP   & x & x & \\
-    Parallel EP, Robust-EP  & x & & \\
-    Variational Bayes (VB) & & x & \\
-    Scaled Metropolis, HMC & x &  & x \\
-    Scaled HMC (whitening with approximate posterior covariance) & x  &  & \\
-    Scaled HMC (with inverse of prior cov.) &  & x & \\
-    Elliptical slice sampling  & x & x & \\
+    exact (Gaussian only) & x & x & x  \\
+    scaled Metropolis, HMC & x &  & x \\
+    LA, EP, elliptical slice sampling   & x & x & \\
+    variational Bayes (VB) & & x & \\
+    scaled HMC (with inverse of prior cov.) &  & x & \\
+    scaled HMC (whitening with approximate posterior covariance) & x  &  & \\
+    parallel EP, Robust-EP  & x & & \\
+    marginal corrections (cm2 and fact) & x & & \\
     \multicolumn{4}{l}{\textbf{Hyperparameter inference}} \\
     \hline
-    Type II ML  & x & x & x \\
-    Type II MAP  & x & & x \\
+    type II ML  & x & x & x \\
+    type II MAP, Metropolis, HMC  & x & & x \\
     LOO-CV for Gaussian & x & x & \\
-    Laplace/EP LOO-CV for non-Gaussian & x & & \\
-    Least squares LOO-CV for non-Gaussian & & some likelihoods &\\
-    k-fold CV & x & & \\
-    Metropolis, HMC  & x &  & x \\
-    NUTS, Slice Sampling (SLS), Surrogate SLS,
-    Shrinking-rank SLS, Covariance-matching SLS  & x & & \\
-    Grid, CCD, Importance sampling  & x & & \\
-   \multicolumn{4}{l}{\textbf{Model assessment}} \\
-   \hline 
-   marginal likelihood & MAP,ML & ML & \\
-   k-fold CV & x &  & \\
-   LOO-CV for fixed hyperparameters & x & x & \\
-   LOO-CV for integrated hyperparameters & x &  & \\
-   DIC & x &  & \\
-   WAIC & x &  & \\
-   average predictive comparison & x &  & \\
-   \caption[The comparison of features in GPstuff, GPML and FBM
-   toolboxes.]{The comparison of features in GPstuff, GPML and FBM
-     toolboxes. In case of model blocks the notation x means that it
-     can be inferred with any inference method (EP, Laplace, MCMC and
-     in case of GPML also with VB). In case of sparse approximations,
-     inference methods and model assessment methods x means
-     that the method is available for all model blocks.\label{table:comparison}}\\
- \end{longtable}
-\normalsize
+    least squares LOO-CV for non-Gaussian & & some likelihoods &\\
+    LA/EP LOO-CV for non-Gaussian, k-fold CV & x & & \\
+    \hangindent=0.3cm NUTS, slice sampling (SLS), surrogate SLS,
+    shrinking-rank SLS, covariance-matching SLS, grid, CCD, importance sampling  & x & & \\
+    \multicolumn{4}{l}{\textbf{Model assessment}} \\
+    \hline
+    marginal likelihood & MAP,ML & ML & \\
+    LOO-CV for fixed hyperparameters & x & x & \\
+    LOO-CV for integrated hyperparameters, k-fold CV, WAIC, DIC & x &  &  \\
+    average predictive comparison & x &  & 
+  \end{tabular}
+  \normalsize
+  \caption{The comparison of features in GPstuff (v4.1), GPML (v3.2) and FBM (2004-11-10)
+    toolboxes. In case of model blocks the notation x means that it
+    can be inferred with any inference method (EP, LA (Laplace), MCMC and
+    in case of GPML also with VB). In case of sparse approximations,
+    inference methods and model assessment methods x means
+    that the method is available for all model blocks.\label{table:comparison}}
+\end{table}
+%    \scriptsize
+%  \begin{longtable}{p{5.5cm}p{3cm}p{3cm}p{3cm}}
+%    & GPstuff & GPML & FBM \\
+%    \textbf{Covariance functions} &  &  & \\
+%    \hline
+%    number of elementary functions & 13 & 10 & 13 \\
+%    sums of elements  & x & x & x \\
+%    products of elements & x & x &  \\
+%    positive scaling of elements & x & x &  \\
+%    masking of inputs & x & x & x \\
+%    delta distance & x & & x \\
+%    \multicolumn{4}{l}{\textbf{Mean functions}} \\
+%    \hline 
+%    number of elementary functions & 4 & 4 & 0 \\
+%    marginalized parameters  & x &  &  \\
+%    sums of elements & x & x & \\
+%    products of elements &  & x &  \\
+%    power of an element &  & x &  \\
+%    scaling of elements &  & x &  \\
+%    masking of inputs & x & x &  \\
+%    \multicolumn{4}{l}{\textbf{Single latent likelihood/observation models}}  \\
+%    \hline 
+%    Gaussian & x & x &  \\
+%    Gaussian scale mixture & MCMC &  & MCMC\\
+%    binomial & x &  & \\
+%    Poisson & x & Laplace/EP/MCMC & MCMC \\
+%    negative binomial & x &  & \\
+%    zero truncated negative binomial  & x & & \\
+%    log-Gaussian Cox process & x &  & \\
+%    logistic/logit & x & x & MCMC\\
+%    erf/probit & x & x & MCMC\\
+%    sech-squared &  & x & \\
+%    Laplacian &  & EP,VB,MCMC & \\
+%    Student's-$t$ & x & Laplace/VB/MCMC & \\
+%    Weibull with censoring & x & & \\
+%    log-Gaussian with censoring & x & & \\
+%    log-logistic with censoring & x & & \\
+%    derivative observations & for sexp covf only &  & \\
+%    mixture of likelihoods &   &  Laplace/EP/MCMC  & \\
+%    uniform for classification & & x & \\
+%    quantile regression & MCMC/EP & & \\
+%    \multicolumn{4}{l}{\textbf{Multilatent likelihood/observation models}} \\
+%    \hline 
+%    multinomial & MCMC/Laplace &  &  \\
+%    softmax & MCMC/Laplace &  & \\
+%    Cox proportional hazard model  & MCMC/Laplace &  & \\
+%    density estimation  & MCMC/Laplace &  &  \\
+%    density regression  & MCMC/Laplace &  & \\
+%    input dependent noise   & MCMC/Laplace &  & \\
+%    input dependent overdispersion in Weibull   & MCMC/Laplace &  & \\
+%    zero-inflated negative binomial  & MCMC/Laplace &  & \\
+%    \multicolumn{4}{l}{\textbf{Priors for parameters ($\vartheta$)}}  \\
+%     \hline
+%    several priors, hierarchical priors & x & & x \\
+%    \multicolumn{4}{l}{\textbf{Sparse models}} \\
+%    \hline 
+%    CS & x &  & \\
+%    FIC & x &  & \\
+%    FIC+CS & x &  & \\
+%    FITC & x & exact/EP/Laplace & \\
+%    PIC & x &  & \\
+%    VAR & Gaussian/EP &  & \\
+%    DTC & Gaussian/EP &  & \\
+%    SOR & Gaussian/EP &  & \\
+%    PASS-GP & Laplace/EP & & \\
+%     \multicolumn{4}{l}{\textbf{Latent inference}} \\
+%     \hline
+%     Exact (Gaussian only) & x & x & x  \\
+%     Laplace, EP   & x & x & \\
+%     Parallel EP, Robust-EP  & x & & \\
+%     Variational Bayes (VB) & & x & \\
+%     Scaled Metropolis, HMC & x &  & x \\
+%     Scaled HMC (whitening with approximate posterior covariance) & x  &  & \\
+%     Scaled HMC (with inverse of prior cov.) &  & x & \\
+%     Elliptical slice sampling  & x & x & \\
+%     \multicolumn{4}{l}{\textbf{Hyperparameter inference}} \\
+%     \hline
+%     Type II ML  & x & x & x \\
+%     Type II MAP  & x & & x \\
+%     LOO-CV for Gaussian & x & x & \\
+%     Laplace/EP LOO-CV for non-Gaussian & x & & \\
+%     Least squares LOO-CV for non-Gaussian & & some likelihoods &\\
+%     k-fold CV & x & & \\
+%     Metropolis, HMC  & x &  & x \\
+%     NUTS, Slice Sampling (SLS), Surrogate SLS,
+%     Shrinking-rank SLS, Covariance-matching SLS  & x & & \\
+%     Grid, CCD, Importance sampling  & x & & \\
+%    \multicolumn{4}{l}{\textbf{Model assessment}} \\
+%    \hline 
+%    marginal likelihood & MAP,ML & ML & \\
+%    k-fold CV & x &  & \\
+%    LOO-CV for fixed hyperparameters & x & x & \\
+%    LOO-CV for integrated hyperparameters & x &  & \\
+%    DIC & x &  & \\
+%    WAIC & x &  & \\
+%    average predictive comparison & x &  & \\
+%    \caption[The comparison of features in GPstuff, GPML and FBM
+%    toolboxes.]{The comparison of features in GPstuff, GPML and FBM
+%      toolboxes. In case of model blocks the notation x means that it
+%      can be inferred with any inference method (EP, Laplace, MCMC and
+%      in case of GPML also with VB). In case of sparse approximations,
+%      inference methods and model assessment methods x means
+%      that the method is available for all model blocks.\label{table:comparison}}\\
+%  \end{longtable}
+% \normalsize
 
 \section{Covariance functions}\label{covariance_functions}
 
