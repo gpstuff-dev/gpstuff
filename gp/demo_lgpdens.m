@@ -69,7 +69,7 @@ subplot(2,2,3)
 S = which('demo_lgpdens');
 L = strrep(S,'demo_lgpdens.m','demodata/galaxy.txt');
 x=load(L);
-xt=linspace(0,40000,200)';
+xt=linspace(7000,36000,400)';
 lgpdens(x,xt);
 axis tight
 title('Galaxy data')
