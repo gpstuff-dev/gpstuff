@@ -50,7 +50,7 @@ leukemiadata=load(L);
 y0=leukemiadata(:,1);
 y=y0;
 % scale survival times (so that constant term for the latent function can be small)
-y=y0/lmean(y0);
+y=y0/geomean(y0);
 
 ye=1-leukemiadata(:,2); % event indicator, ye = 0 for uncensored event
                         %                  ye = 1 for right censored event
@@ -107,10 +107,10 @@ i1=2;i2=1;
 [pmu,~,xtc]=gp_cpred(gpia, x, y, x, [i1 i2], 'z', ye, 'target','mu');
 xtc{1}=denormdata(xtc{1},xmean(i2),xstd(i2));
 xtc{2}=denormdata(xtc{2},xmean(i2),xstd(i2));
-h1=semilogy(xtc{1},pmu{1}*lmean(y0),'k--');
+h1=semilogy(xtc{1},pmu{1}*geomean(y0),'k--');
 set(h1(2),'LineWidth',2)
 hold on
-h2=semilogy(xtc{2},pmu{2}*lmean(y0),'k-');
+h2=semilogy(xtc{2},pmu{2}*geomean(y0),'k-');
 set(h2(2),'LineWidth',2)
 hold off
 set(gca,'ytick',[10 30 100 300 1000 3000],'yticklabel',{'10' '30' '100' '300' '1000' '3000'},'ylim',[20 2000])
@@ -123,10 +123,10 @@ i1=2;i2=3;
 [pmu,~,xtc]=gp_cpred(gpia, x, y, x, [i1 i2], 'z', ye, 'target','mu');
 xtc{1}=denormdata(xtc{1},xmean(i2),xstd(i2));
 xtc{2}=denormdata(xtc{2},xmean(i2),xstd(i2));
-h1=semilogy(xtc{1},pmu{1}*lmean(y0),'k--');
+h1=semilogy(xtc{1},pmu{1}*geomean(y0),'k--');
 set(h1(2),'LineWidth',2)
 hold on
-h2=semilogy(xtc{2},pmu{2}*lmean(y0),'k-');
+h2=semilogy(xtc{2},pmu{2}*geomean(y0),'k-');
 set(h2(2),'LineWidth',2)
 hold off
 set(gca,'ytick',[10 30 100 300 1000 3000],'yticklabel',{'10' '30' '100' '300' '1000' '3000'},'ylim',[20 2000])
@@ -140,10 +140,10 @@ i1=2;i2=4;
 [pmu,~,xtc]=gp_cpred(gpia, x, y, x, [i1 i2], 'z', ye, 'target','mu');
 xtc{1}=denormdata(xtc{1},xmean(i2),xstd(i2));
 xtc{2}=denormdata(xtc{2},xmean(i2),xstd(i2));
-h1=semilogy(xtc{1},pmu{1}*lmean(y0),'k--');
+h1=semilogy(xtc{1},pmu{1}*geomean(y0),'k--');
 set(h1(2),'LineWidth',2)
 hold on
-h2=semilogy(xtc{2},pmu{2}*lmean(y0),'k-');
+h2=semilogy(xtc{2},pmu{2}*geomean(y0),'k-');
 set(h2(2),'LineWidth',2)
 hold off
 set(gca,'ytick',[10 30 100 300 1000 3000],'yticklabel',{'10' '30' '100' '300' '1000' '3000'},'ylim',[20 2000])
@@ -156,12 +156,12 @@ subplot('position',[0.79 0.21 0.20 0.77]);
 i2=3;cla
 [pmu,~,xtc]=gp_cpred(gpia, x, y, x, i2, 'z', ye,'var',[NaN -1 NaN -.368],'target','mu');
 xtc=denormdata(xtc,xmean(i2),xstd(i2));
-h1=semilogy(xtc,pmu*lmean(y0),'k--');
+h1=semilogy(xtc,pmu*geomean(y0),'k--');
 set(h1(2),'LineWidth',2)
 [pmu,~,xtc]=gp_cpred(gpia, x, y, x, i2, 'z', ye,'var',[NaN -1 NaN 1.56],'target','mu');
 xtc=denormdata(xtc,xmean(i2),xstd(i2));
 hold on
-h2=semilogy(xtc,pmu*lmean(y0),'k-');
+h2=semilogy(xtc,pmu*geomean(y0),'k-');
 set(h2(2),'LineWidth',2)
 hold off
 set(gca,'ytick',[10 30 100 300 1000 3000],'yticklabel',{'10' '30' '100' '300' '1000' '3000'},'ylim',[20 2000])

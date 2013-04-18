@@ -163,7 +163,7 @@ subplot('position',[0.79 0.21 0.20 0.77]);
 i2=0;cla
 [Ef,Varf,xtc]=gp_cpred(gp, x, y, x, i2, 'z', ye);
 %gp_cpred(gp, x, y, x, i2, 'z', ye);
-xtc=xtc*lmean(y0)/365;
+xtc=xtc*500/365;
 h1=plot(xtc,Ef,'k-',xtc,Ef-1.64*sqrt(Varf),'k-',xtc,Ef+1.64*sqrt(Varf),'k-');
 set(h1(1),'LineWidth',2)
 ylim([-5 3])
