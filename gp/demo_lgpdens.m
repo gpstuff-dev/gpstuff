@@ -1,5 +1,5 @@
 % DEMO_LGPDENS  Demonstration of Logistic-Gaussian Process density estimate
-%               for 1D and 2D data 
+%               for 1D and 2D data and density regression
 %
 %  Description 
 %
