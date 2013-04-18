@@ -64,10 +64,10 @@ xgrid=linspace(-1.5,1.5,100)';
 Ntgrid=ones(size(xgrid))*5;
 
 % Create parts of the covariance function
-% Half-Student's t-prior is used to give flat prior in the
-% interesting region with respect to the likelihood
-cfc = gpcf_constant('constSigma2_prior',prior_t('s2',100^2));
-cfl = gpcf_linear('coeffSigma2_prior',prior_t('s2',100^2));
+% S-InvChi2 prior produces t_nu-prior for weights
+% Scales are approximately as suggested by Gelman
+cfc = gpcf_constant('constSigma2_prior',prior_sinvchi2('s2',10^2,'nu',4));
+cfl = gpcf_linear('coeffSigma2_prior',prior_sinvchi2('s2',2.5^2,'nu',4));
 % Create the GP structure
 gp = gp_set('lik', lik_binomial(), 'cf', {cfc cfl}, 'jitterSigma2', 1e-8);
 

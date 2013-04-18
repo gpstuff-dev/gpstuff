@@ -21,6 +21,10 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
 %               for ith case. 
+%      fcorr  - Method used for latent marginal posterior corrections. 
+%               Default is 'off'. Possible methods are 'fact' for EP
+%               and either 'fact' or 'cm2' for Laplace. If method is
+%               'on', 'fact' is used for EP and 'cm2' for Laplace.
 %
 %    If likelihood is non-Gaussian and gp.latent_method is either
 %    Laplace or EP, the samples are drawn from the Gaussian

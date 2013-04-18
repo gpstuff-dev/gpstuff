@@ -2,7 +2,7 @@ function [p,xx,sh]=kernelp(x,xx)
 %KERNELP 1D Kernel density estimation of data, with automatic kernel width
 %
 %  [P,XX]=KERNELP(X,XX) return density estimates P in points XX,
-%  given data and optionally ecvaluation points XX. Density
+%  given data and optionally evaluation points XX. Density
 %  estimate is based on simple Gaussian kernel density estimate
 %  where all kernels have equal width and this width is selected by
 %  optimising plug-in partial predictive density. Works well with

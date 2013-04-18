@@ -1,10 +1,10 @@
 function lik = lik_multinom(varargin)
-%LIK_MULTINOM    Create a multinom likelihood structure 
+%LIK_MULTINOM  Create a multinomial likelihood structure 
 %
 %  Description
-%    LIK = LIK_MULTINOM creates multinom likelihood for multi-class
-%    count data. The observed numbers in each class with C classes is given
-%    as 1xC vector.
+%    LIK = LIK_MULTINOM creates multinomial likelihood for multi-class
+%    count data. The observed numbers in each class with C classes is
+%    given as 1xC vector.
 %
 %    The likelihood is defined as follows:
 %                              __ n                __ C             

@@ -8,8 +8,13 @@
 %    posterior distributions are compared to histograms of MCMC
 %    samples to assess the quality of corrections.
 %
+%   Reference
+%     Cseke & Heskes (2011). Approximate Marginals in Latent Gaussian
+%     Models. Journal of Machine Learning Research 12 (2011), 417-454
+%
 %  See also
-%    GP_PREDCM
+%    GP_PREDCM, DEMO_IMPROVEMARGINALS2
+%
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 

@@ -1,11 +1,11 @@
 function lik = lik_softmax(varargin)
-%LIK_SOFTMAX    Create a softmax likelihood structure 
+%LIK_SOFTMAX  Create a softmax (multinomial logit) likelihood structure 
 %
 %  Description
-%    LIK = LIK_SOFTMAX creates Softmax likelihood for multi-class
-%    classification problem. The observed class label with C
-%    classes is given as 1xC vector where C-1 entries are 0 and the
-%    observed class label is 1.
+%    LIK = LIK_SOFTMAX creates softmax (multinomial logit) likelihood
+%    for multi-class classification problem. The observed class label
+%    with C classes is given as 1xC vector where C-1 entries are 0 and
+%    the observed class label is 1.
 %
 %    The likelihood is defined as follows:
 %                             __ n                   
