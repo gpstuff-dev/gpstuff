@@ -1,15 +1,29 @@
 %DEMO_MEMORYSAVE  Demonstration of memory save option in GPstuff
 %
 %  Description
-%    This demo consists of various combinations of covariance functions,
-%    likelihoods and full/sparse approximations. This demo is intended for
-%    showing how to use memory save option in GPstuff. Unfortunately MATLAB
-%    doesn't have memory usage monitoring, so the purpose of the demo is only
-%    to test that results are the same whether you use memory save or not
-%    and to show that the running times with memory saving are little bit longer
-%    (more overhead). Memory saving can be enabled with the following command
+%    GP = GP_SET(..., 'savememory', 'on');
 %
-%       gp = gp_set(..., 'savememory', 'on');
+%    This demo consists of various combinations of covariance
+%    functions, likelihoods and full/sparse approximations. This demo
+%    is intended for showing how to use memory save option in
+%    GPstuff. Unfortunately MATLAB doesn't have memory usage
+%    monitoring, so the purpose of the demo is only to test that
+%    results are the same whether you use memory save or not and to
+%    show that the running times with memory saving are little bit
+%    longer (more overhead). Memory saving can be enabled with the
+%    following command
+%
+%    Usually GPstuff computes covariance matrix derivatives with
+%    respect to all covariance function parameters at once which
+%    avoids repeating computations common to each derivatibe, but
+%    requires storage of Q NxN matrices, where Q is the number of
+%    covariance function parameters. Q can be large, for example, if
+%    there are many covariates each having own lengthsacle
+%    parameter. With memory save option on, each matrix derivative is
+%    computed separately, increasing the computation time little, but
+%    reducing the memory usage. In an application, which motivated the
+%    implementation of the option, the memory requirement of GPstuff
+%    was reduced from over 60GB to less than 6GB.
 %
 %  See also 
 %    GP_SET

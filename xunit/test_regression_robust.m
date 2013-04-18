@@ -39,6 +39,6 @@ assertElementsAlmostEqual(mean(values.real.Varft), mean(values.test.Varft), 'rel
 function testMCMCSamples
 values.real = load('realValuesRegression_robust', 'w');
 values.test = load(strrep(which('test_regression_robust.m'), 'test_regression_robust.m', 'testValues/testRegression_robust'), 'w');
-assertElementsAlmostEqual(mean(values.real.w), mean(values.test.w), 'relative', 0.01);
-assertElementsAlmostEqual(mean(values.real.w), mean(values.test.w), 'relative', 0.01);
+assertElementsAlmostEqual(mean(values.real.w), mean(values.test.w), 'absolute', 0.5);
+assertElementsAlmostEqual(mean(values.real.w), mean(values.test.w), 'absolute', 0.5);
 

@@ -10,6 +10,7 @@
 %     Regression Using Expectation Propagation. In Proceedings of the
 %     29th International Conference on Machine Learning, Edinburgh,
 %     Scotland, UK, 2012.
+%
 %  See also  LIK_QGP, DEMO_*
 %
 
