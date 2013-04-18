@@ -69,7 +69,7 @@ initTestSuite;
     values.real.p_eff_latent(isnan(values.real.p_eff_latent)) = 0;
      values.test = load(strrep(which('test_modelassesment2.m'), 'test_modelassesment2.m', 'testValues/testModelAssesment2.mat'),'p_eff_latent');
      values.test.p_eff_latent(isnan(values.test.p_eff_latent)) = 0;
-    assertVectorsAlmostEqual(values.real.p_eff_latent, values.test.p_eff_latent, 'relative', 0.05);
+    assertVectorsAlmostEqual(values.real.p_eff_latent, values.test.p_eff_latent, 'absolute', 0.5);
         
         
 	function testPeffLatent2
@@ -77,7 +77,7 @@ initTestSuite;
     values.real.p_eff_latent2(isnan(values.real.p_eff_latent2)) = 0;
     values.test = load(strrep(which('test_modelassesment2.m'), 'test_modelassesment2.m', 'testValues/testModelAssesment2.mat'),'p_eff_latent2');
     values.test.p_eff_latent2(isnan(values.test.p_eff_latent2)) = 0;
-    assertVectorsAlmostEqual(values.real.p_eff_latent2, values.test.p_eff_latent2, 'relative', 0.25);
+    assertVectorsAlmostEqual(values.real.p_eff_latent2, values.test.p_eff_latent2, 'absolute', 0.5);
         
         
 	function testLogPredDensity10foldCV

@@ -218,7 +218,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     if isfield(opt.hmc_opt, 'nuts') && opt.hmc_opt.nuts
       % Number of step-size adapting stept in hmc_nuts
       if ~isfield(opt.hmc_opt, 'Madapt')
-        opt.hmc_opt.Madapt = 20;
+        opt.hmc_opt.nadapt = opt.nsamples/10;
       end
       if opt.display>0
         if isfield(gp,'latent_method')

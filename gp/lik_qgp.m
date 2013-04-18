@@ -640,6 +640,6 @@ function reclik = lik_qgp_recappend(reclik, ri, lik)
     if ~isempty(lik.p.sigma2)
       reclik.p.sigma2 = lik.p.sigma2.fh.recappend(reclik.p.sigma2, ri, lik.p.sigma2);
     end
-    reclik.tau = lik.tau;
+    reclik.quantile = lik.quantile;
   end
 end

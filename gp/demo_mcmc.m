@@ -117,7 +117,7 @@ fprintf('Sampling of hyperparameters with HMC-NUTS.\n')
 % For NUTS, we only need to specify that we use NUTS-HMC instead of
 % original HMC, and the number of adaptation steps of step-size parameter
 hmc_opt.nuts = 1; % True or false
-hmc_opt.nadapt = 20; % Number of step-size adaptation steps (Burn-in)
+hmc_opt.Madapt = 20; % Number of step-size adaptation steps (Burn-in)
 
 % Generate samples
 [rgp,g,opt]=gp_mc(gp, x, y, 'z', z, 'repeat',1, 'hmc_opt', hmc_opt, 'nsamples', 100);
