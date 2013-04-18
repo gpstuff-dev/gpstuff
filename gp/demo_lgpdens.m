@@ -159,7 +159,7 @@ figure(4)
 % Galaxy data with finer grid, 1D
 L = strrep(S,'demo_lgpdens.m','demodata/galaxy.txt');
 x=load(L);
-xt=linspace(0,40000,800)';
+xt=linspace(7000,36000,800)';
 subplot(2,2,1)
 tic,lgpdens(x,xt,'speedup', 'off');t0=toc;
 axis tight
