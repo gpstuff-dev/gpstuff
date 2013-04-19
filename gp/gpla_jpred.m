@@ -131,7 +131,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
       end
     end
     if isempty(yt)
-      yt=y;
+      yt=y;gi
     end
     if isempty(zt)
       zt=z;
@@ -140,7 +140,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
 
   [tn, tnin] = size(x);
   if isfield(gp.lik, 'nondiagW')
-    [Eft,Covft]=gpla_pred(gp, x, y, 'z', z);
+    [Eft,Covft]=gpla_pred(gp, x, y, xt, 'z', z, 'tstind', tstind, 'predcf', predcf);
   else
     switch gp.type
       case 'FULL'
