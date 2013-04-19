@@ -781,207 +781,207 @@ function lik = lik_coxph(varargin)
   end
 
   
-  function [logM_0, m_1, sigm2hati1] = lik_coxph_tiltedMoments(lik, y, i1, S2_i, M_i, z)
-    %LIK_COXPH_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
-    %
-    %  Description
-    %    [M_0, M_1, M2] = LIK_COXPH_TILTEDMOMENTS(LIK, Y, I, S2,
-    %    MYY, Z) takes a likelihood structure LIK, incedence counts
-    %    Y, expected counts Z, index I and cavity variance S2 and
-    %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
-    %    variance M_2 of the posterior marginal (see Rasmussen and
-    %    Williams (2006): Gaussian processes for Machine Learning,
-    %    page 55). This subfunction is needed when using EP for 
-    %    inference with non-Gaussian likelihoods.
-    %
-    %  See also
-    %    GPEP_E
-    
-      [n,ny]=size(y);
-    
-      % M_i(end);
-      % S2_i(end,end);
-      fgrid=M_i(end)+sqrt(S2_i(end,end))*[-6 6];
-      fg=linspace(fgrid(1),fgrid(2),15);
-      ng=length(fg);
-      
-      if isfield(gp.lik, 'stratificationVariables')
-        ntime=size(lik.xtime,1)*gp.lik.n_u;
-      else
-        ntime=size(lik.xtime,1);
-      end
-      
-      %f11=f(1:ntime);
-      %f2=f((ntime+1):(ntime+n));
-      %la1=exp(f1);
-      %eta2=exp(f2);
-      
-      nu=1-z;
-      sd=lik.stime(2)-lik.stime(1);
-      if ny==1
-        sb=1;
-        se=sum(bsxfun(@gt,y(i1,1),lik.stime),2);
-      end
-      indf=sb:se;
-      sdvec=[ones(se-1,1)*sd; y(i1)-lik.stime(se)];
-      nutmp=zeros(se,1);
-      nutmp(se)=nu(i1);
-      
-      for j1=1:ng
-        
-        % conditional distribution
-        myy=M_i(indf)+S2_i(indf,end)*(1./S2_i(end,end))*(fg(j1)-M_i(end));
-        myy0=myy;
-        Sigm=S2_i(indf,indf)-S2_i(indf,end)*(1./S2_i(end,end))*S2_i(end,indf);
-        Sigm0=Sigm;
-        
-        nu_prior=Sigm\myy;
-        
-        nt=size(myy,1);
-        c1=exp(fg(j1));
-        
-        % site parameters
-        tautilde=zeros(nt,1);
-        nutilde=zeros(nt,1);
-        ztilde=zeros(nt,1);
-        
-        max_small_ep_iter=50;
-        tol=1e-9;
-        small_ep_iter=1;
-        
-        tautilde0=Inf; nutilde0=Inf; ztilde0=Inf;
-        
-        logZep_tmp=0; logZep=Inf;
-        %while small_ep_iter <= max_small_ep_iter && (sum(abs(tautilde0-tautilde)>tol) || sum(abs(nutilde0-nutilde)>tol) || sum(abs(ztilde0-ztilde)>tol))
-        while small_ep_iter<=max_small_ep_iter && abs(logZep_tmp-logZep)>tol
-          logZep_tmp=logZep;
-          
-          
-          %tautilde0=tautilde; nutilde0=nutilde; ztilde0=ztilde;
-          
-          for k1=1:nt
-            
-            tau_i=Sigm(k1,k1)^-1-tautilde(k1);
-            nu_i = Sigm(k1,k1)^-1*myy(k1)-nutilde(k1);
-            myy_i=nu_i/tau_i;
-            sigm2_i=tau_i^-1;
-            
-            % marginal moments
-            [logM0(k1), muhati, sigm2hati] = coxph_tiltedMoments(sigm2_i, myy_i, nutmp(k1), sdvec(k1), c1);
-            %[M0, muhati, sigm2hati] = coxph_tiltedMoments(lik, y(i1,:), k1, sigm2_i, myy_i, c1, sd_vec(i1), ztmp);
-            
-            deltatautilde=sigm2hati^-1-tau_i-tautilde(k1);
-            tautilde(k1)=tautilde(k1)+deltatautilde;
-            nutilde(k1)=sigm2hati^-1*muhati-nu_i;
-            
-            apu = deltatautilde/(1+deltatautilde*Sigm(k1,k1));
-            Sigm = Sigm - apu*(Sigm(:,k1)*Sigm(:,k1)');
-            
-            % The below is how Rasmussen and Williams
-            % (2006) do the update. The above version is
-            % more robust.
-            %apu = deltatautilde^-1+Sigm(k1,k1);
-            %apu = (Sigm(:,k1)/apu)*Sigm(:,k1)';
-            %Sigm = Sigm - apu;
-            %Sigm=Sigm-(deltatautilde^-1+Sigm(k1,k1))^-1*(Sigm(:,k1)*Sigm(:,k1)');
-            
-            %myy=Sigm*nutilde;
-            myy=Sigm*(nutilde+nu_prior);
-            
-            muvec_i(k1,1)=myy_i;
-            sigm2vec_i(k1,1)=sigm2_i;
-            
-          end
-          
-          
-          if tautilde > 0
-            Stilde=tautilde;
-            Stildesqroot=diag(sqrt(tautilde));
-            B=eye(nt)+Stildesqroot*Sigm0*Stildesqroot;
-            L=chol(B,'lower');
-            
-            V=(L\Stildesqroot)*Sigm0;
-            Sigm=Sigm0-V'*V;
-            %myy=Sigm*nutilde;
-            myy=Sigm*(nutilde+nu_prior);
-            
-            %Ls = chol(Sigm);
-            
-            % Compute the marginal likelihood
-            % Direct formula (3.65):
-            % Sigmtilde=diag(1./tautilde);
-            % mutilde=inv(Stilde)*nutilde;
-            %
-            % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
-            %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
-            %         0.5*sum(log(sigm2vec_i+1./tautilde))+
-            %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
-            
-            % 4. term & 1. term
-            term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
-            
-            % 5. term (1/2 element) & 2. term
-            T=1./sigm2vec_i;
-            Cnutilde = Sigm0*nutilde;
-            L2 = V*nutilde;
-            term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
-            term52 = term52.*0.5;
-            
-            % 5. term (2/2 element)
-            term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-            
-            % 3. term
-            term3 = sum(logM0);
-            
-            V_tmp=(L\Stildesqroot);
-            Sigm_inv_tmp=V_tmp'*V_tmp;
-            
-            term_add1=-0.5*myy0'*Sigm_inv_tmp*myy0;
-            term_add2=myy0'*(eye(nt)-Sigm_inv_tmp*Sigm0)*nutilde;
-            logZep = -(term41+term52+term5+term3+term_add1+term_add2);
-            
-            %logZep = -(term41+term52+term5+term3);
-            
-            small_ep_iter=small_ep_iter+1;
-            %iter=iter+1;
-          else
-            error('tautilde <= 0')
-          end
-        end
-        
-        ZZ(j1,1)=exp(-logZep);
-        MM(:,j1)=myy;
-        SS2(:,:,j1)=Sigm;
-        
-      end
-      
-      %m_0=zeros(1,1);
-      %m_1=zeros(nt+1,1);
-      %sigm2hati1=zeros(nt+1,nt+1);
-      % indf
-      
-      W=normpdf(fg,M_i(end),sqrt(S2_i(end,end)))*(fg(2)-fg(1));
-      
-      qw=W.*ZZ';
-      m_0=sum(qw);
-      m_1=[sum(bsxfun(@times,qw,MM),2); sum(qw.*fg)]./m_0;
-      
-      m_211=zeros(nt,nt);
-      for k1=1:ng
-        m_211=m_211+qw(k1)*(SS2(:,:,k1)+MM(:,k1)*MM(:,k1)');
-      end
-      m_212=(qw.*fg)*MM';
-      m_222=(qw.*fg)*fg';
-      
-      m_2=[m_211 m_212'; m_212 m_222]./m_0;
-      
-      sigm2hati1=m_2 - m_1*m_1';
-      logM_0 = log(m_0);
-      
-      %figure(1),hold on, plot(fg(j1),logZep,'.')
-      %figure(2),hold on, plot(fg(j1),exp(-logZep),'.')
-      
-  end
+%   function [logM_0, m_1, sigm2hati1] = lik_coxph_tiltedMoments(lik, y, i1, S2_i, M_i, z)
+%     %LIK_COXPH_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+%     %
+%     %  Description
+%     %    [M_0, M_1, M2] = LIK_COXPH_TILTEDMOMENTS(LIK, Y, I, S2,
+%     %    MYY, Z) takes a likelihood structure LIK, incedence counts
+%     %    Y, expected counts Z, index I and cavity variance S2 and
+%     %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
+%     %    variance M_2 of the posterior marginal (see Rasmussen and
+%     %    Williams (2006): Gaussian processes for Machine Learning,
+%     %    page 55). This subfunction is needed when using EP for 
+%     %    inference with non-Gaussian likelihoods.
+%     %
+%     %  See also
+%     %    GPEP_E
+%     
+%       [n,ny]=size(y);
+%     
+%       % M_i(end);
+%       % S2_i(end,end);
+%       fgrid=M_i(end)+sqrt(S2_i(end,end))*[-6 6];
+%       fg=linspace(fgrid(1),fgrid(2),15);
+%       ng=length(fg);
+%       
+%       if isfield(gp.lik, 'stratificationVariables')
+%         ntime=size(lik.xtime,1)*gp.lik.n_u;
+%       else
+%         ntime=size(lik.xtime,1);
+%       end
+%       
+%       %f11=f(1:ntime);
+%       %f2=f((ntime+1):(ntime+n));
+%       %la1=exp(f1);
+%       %eta2=exp(f2);
+%       
+%       nu=1-z;
+%       sd=lik.stime(2)-lik.stime(1);
+%       if ny==1
+%         sb=1;
+%         se=sum(bsxfun(@gt,y(i1,1),lik.stime),2);
+%       end
+%       indf=sb:se;
+%       sdvec=[ones(se-1,1)*sd; y(i1)-lik.stime(se)];
+%       nutmp=zeros(se,1);
+%       nutmp(se)=nu(i1);
+%       
+%       for j1=1:ng
+%         
+%         % conditional distribution
+%         myy=M_i(indf)+S2_i(indf,end)*(1./S2_i(end,end))*(fg(j1)-M_i(end));
+%         myy0=myy;
+%         Sigm=S2_i(indf,indf)-S2_i(indf,end)*(1./S2_i(end,end))*S2_i(end,indf);
+%         Sigm0=Sigm;
+%         
+%         nu_prior=Sigm\myy;
+%         
+%         nt=size(myy,1);
+%         c1=exp(fg(j1));
+%         
+%         % site parameters
+%         tautilde=zeros(nt,1);
+%         nutilde=zeros(nt,1);
+%         ztilde=zeros(nt,1);
+%         
+%         max_small_ep_iter=50;
+%         tol=1e-9;
+%         small_ep_iter=1;
+%         
+%         tautilde0=Inf; nutilde0=Inf; ztilde0=Inf;
+%         
+%         logZep_tmp=0; logZep=Inf;
+%         %while small_ep_iter <= max_small_ep_iter && (sum(abs(tautilde0-tautilde)>tol) || sum(abs(nutilde0-nutilde)>tol) || sum(abs(ztilde0-ztilde)>tol))
+%         while small_ep_iter<=max_small_ep_iter && abs(logZep_tmp-logZep)>tol
+%           logZep_tmp=logZep;
+%           
+%           
+%           %tautilde0=tautilde; nutilde0=nutilde; ztilde0=ztilde;
+%           
+%           for k1=1:nt
+%             
+%             tau_i=Sigm(k1,k1)^-1-tautilde(k1);
+%             nu_i = Sigm(k1,k1)^-1*myy(k1)-nutilde(k1);
+%             myy_i=nu_i/tau_i;
+%             sigm2_i=tau_i^-1;
+%             
+%             % marginal moments
+%             [logM0(k1), muhati, sigm2hati] = coxph_tiltedMoments(sigm2_i, myy_i, nutmp(k1), sdvec(k1), c1);
+%             %[M0, muhati, sigm2hati] = coxph_tiltedMoments(lik, y(i1,:), k1, sigm2_i, myy_i, c1, sd_vec(i1), ztmp);
+%             
+%             deltatautilde=sigm2hati^-1-tau_i-tautilde(k1);
+%             tautilde(k1)=tautilde(k1)+deltatautilde;
+%             nutilde(k1)=sigm2hati^-1*muhati-nu_i;
+%             
+%             apu = deltatautilde/(1+deltatautilde*Sigm(k1,k1));
+%             Sigm = Sigm - apu*(Sigm(:,k1)*Sigm(:,k1)');
+%             
+%             % The below is how Rasmussen and Williams
+%             % (2006) do the update. The above version is
+%             % more robust.
+%             %apu = deltatautilde^-1+Sigm(k1,k1);
+%             %apu = (Sigm(:,k1)/apu)*Sigm(:,k1)';
+%             %Sigm = Sigm - apu;
+%             %Sigm=Sigm-(deltatautilde^-1+Sigm(k1,k1))^-1*(Sigm(:,k1)*Sigm(:,k1)');
+%             
+%             %myy=Sigm*nutilde;
+%             myy=Sigm*(nutilde+nu_prior);
+%             
+%             muvec_i(k1,1)=myy_i;
+%             sigm2vec_i(k1,1)=sigm2_i;
+%             
+%           end
+%           
+%           
+%           if tautilde > 0
+%             Stilde=tautilde;
+%             Stildesqroot=diag(sqrt(tautilde));
+%             B=eye(nt)+Stildesqroot*Sigm0*Stildesqroot;
+%             L=chol(B,'lower');
+%             
+%             V=(L\Stildesqroot)*Sigm0;
+%             Sigm=Sigm0-V'*V;
+%             %myy=Sigm*nutilde;
+%             myy=Sigm*(nutilde+nu_prior);
+%             
+%             %Ls = chol(Sigm);
+%             
+%             % Compute the marginal likelihood
+%             % Direct formula (3.65):
+%             % Sigmtilde=diag(1./tautilde);
+%             % mutilde=inv(Stilde)*nutilde;
+%             %
+%             % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
+%             %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
+%             %         0.5*sum(log(sigm2vec_i+1./tautilde))+
+%             %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
+%             
+%             % 4. term & 1. term
+%             term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
+%             
+%             % 5. term (1/2 element) & 2. term
+%             T=1./sigm2vec_i;
+%             Cnutilde = Sigm0*nutilde;
+%             L2 = V*nutilde;
+%             term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
+%             term52 = term52.*0.5;
+%             
+%             % 5. term (2/2 element)
+%             term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+%             
+%             % 3. term
+%             term3 = sum(logM0);
+%             
+%             V_tmp=(L\Stildesqroot);
+%             Sigm_inv_tmp=V_tmp'*V_tmp;
+%             
+%             term_add1=-0.5*myy0'*Sigm_inv_tmp*myy0;
+%             term_add2=myy0'*(eye(nt)-Sigm_inv_tmp*Sigm0)*nutilde;
+%             logZep = -(term41+term52+term5+term3+term_add1+term_add2);
+%             
+%             %logZep = -(term41+term52+term5+term3);
+%             
+%             small_ep_iter=small_ep_iter+1;
+%             %iter=iter+1;
+%           else
+%             error('tautilde <= 0')
+%           end
+%         end
+%         
+%         ZZ(j1,1)=exp(-logZep);
+%         MM(:,j1)=myy;
+%         SS2(:,:,j1)=Sigm;
+%         
+%       end
+%       
+%       %m_0=zeros(1,1);
+%       %m_1=zeros(nt+1,1);
+%       %sigm2hati1=zeros(nt+1,nt+1);
+%       % indf
+%       
+%       W=normpdf(fg,M_i(end),sqrt(S2_i(end,end)))*(fg(2)-fg(1));
+%       
+%       qw=W.*ZZ';
+%       m_0=sum(qw);
+%       m_1=[sum(bsxfun(@times,qw,MM),2); sum(qw.*fg)]./m_0;
+%       
+%       m_211=zeros(nt,nt);
+%       for k1=1:ng
+%         m_211=m_211+qw(k1)*(SS2(:,:,k1)+MM(:,k1)*MM(:,k1)');
+%       end
+%       m_212=(qw.*fg)*MM';
+%       m_222=(qw.*fg)*fg';
+%       
+%       m_2=[m_211 m_212'; m_212 m_222]./m_0;
+%       
+%       sigm2hati1=m_2 - m_1*m_1';
+%       logM_0 = log(m_0);
+%       
+%       %figure(1),hold on, plot(fg(j1),logZep,'.')
+%       %figure(2),hold on, plot(fg(j1),exp(-logZep),'.')
+%       
+%   end
   
   function [lpyt,Ey, Vary] = lik_coxph_predy(lik, Ef, Covf, yt, zt)
   %LIK_COXPH_PREDY  Returns the predictive mean, variance and density of y
@@ -1085,158 +1085,102 @@ function lik = lik_coxph(varargin)
     Vary = [];
     lpyt=log(Py);
     
-    %     % Evaluate Ey and Vary
-%     for i1=1:length(Ef)
-%       %%% With quadrature
-%       myy_i = Ef(i1);
-%       sigm_i = sqrt(Varf(i1));
-%       minf=myy_i-6*sigm_i;
-%       maxf=myy_i+6*sigm_i;
-% 
-%       F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
-%       Ey(i1) = quadgk(F,minf,maxf);
-%       
-%       F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
-%       EVary(i1) = quadgk(F2,minf,maxf);
-%       
-%       F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
-%       VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
+  end
+
+%   function [logM_0, m_1, sigm2hati1] = coxph_tiltedMoments(sigm2_i, myy_i, nutmp, sd, c1)
+%   
+%   integrand = @(f) exp(-c1.*exp(f).*sd + nutmp*(f+log(c1)) - log(sigm2_i)/2 - log(2*pi)/2 - 0.5*(f-myy_i).^2./sigm2_i);
+%   RTOL = 1.e-6;
+%   ATOL = 1.e-10;
+%   minf=myy_i+sqrt(sigm2_i)*(-6);
+%   maxf=myy_i+sqrt(sigm2_i)*(6);
+%   
+%   [m_0, m_1, m_2] = quad_moments(integrand, minf, maxf, RTOL, ATOL);
+%   sigm2hati1 = m_2 - m_1.^2;
+%   
+%   % If the second central moment is less than cavity variance
+%   % integrate more precisely. Theoretically for log-concave
+%   % likelihood should be sigm2hati1 < sigm2_i.
+%   
+%   if sigm2hati1 >= sigm2_i
+%     ATOL = ATOL.^2;
+%     RTOL = RTOL.^2;
+%     [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+%     sigm2hati1 = m_2 - m_1.^2;
+%     if sigm2hati1 >= sigm2_i
+%       error('lik_poisson_tilted_moments: sigm2hati1 >= sigm2_i');
 %     end
-%     Vary = EVary + VarEy;
+%   end
+%   logM_0 = log(m_0);
+%   end
+
+
+%   function [df,minf,maxf] = init_coxph_norm(yy,myy_i,sigm2_i,avgE,r)
+%   %INIT_COXPH_NORM
+%   %
+%   %  Description
+%   %    Return function handle to a function evaluating
+%   %    Negative-Binomial * Gaussian which is used for evaluating
+%   %    (likelihood * cavity) or (likelihood * posterior) Return
+%   %    also useful limits for integration. This is private function
+%   %    for lik_coxph.
+%   %  
+%   %  See also
+%   %    LIK_COXPH_TILTEDMOMENTS, LIK_COXPH_SITEDERIV,
+%   %    LIK_COXPH_PREDY
+%     
+%   % avoid repetitive evaluation of constant part
+%     ldconst = -gammaln(r)-gammaln(yy+1)+gammaln(r+yy)...
+%               - log(sigm2_i)/2 - log(2*pi)/2;
+%     % Create function handle for the function to be integrated
+%     df = @coxph_norm;
+%     % use log to avoid underflow, and derivates for faster search
+%     ld = @log_coxph_norm;
+%     ldg = @log_coxph_norm_g;
+%     ldg2 = @log_coxph_norm_g2;
 % 
-%     % Evaluate the posterior predictive densities of the given observations
-%     if nargout > 2
-%       for i1=1:length(Ef)
-%         % get a function handle of the likelihood times posterior
-%         % (likelihood * posterior = Negative-binomial * Gaussian)
-%         % and useful integration limits
-%         [pdf,minf,maxf]=init_coxph_norm(...
-%           yt(i1),Ef(i1),Varf(i1),avgE(i1),r);
-%         % integrate over the f to get posterior predictive distribution
-%         Py(i1) = quadgk(pdf, minf, maxf);
+%     % Set the limits for integration
+%     % Negative-binomial likelihood is log-concave so the coxph_norm
+%     % function is unimodal, which makes things easier
+%     if yy==0
+%       % with yy==0, the mode of the likelihood is not defined
+%       % use the mode of the Gaussian (cavity or posterior) as a first guess
+%       modef = myy_i;
+%     else
+%       % use precision weighted mean of the Gaussian approximation
+%       % of the Negative-Binomial likelihood and Gaussian
+%       mu=log(yy/avgE);
+%       s2=(yy+r)./(yy.*r);
+%       modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
+%     end
+%     % find the mode of the integrand using Newton iterations
+%     % few iterations is enough, since the first guess in the right direction
+%     niter=4;       % number of Newton iterations
+%     mindelta=1e-6; % tolerance in stopping Newton iterations
+%     for ni=1:niter
+%       g=ldg(modef);
+%       h=ldg2(modef);
+%       delta=-g/h;
+%       modef=modef+delta;
+%       if abs(delta)<mindelta
+%         break
 %       end
 %     end
-  end
-
-  function [logM_0, m_1, sigm2hati1] = coxph_tiltedMoments(sigm2_i, myy_i, nutmp, sd, c1)
-  
-  integrand = @(f) exp(-c1.*exp(f).*sd + nutmp*(f+log(c1)) - log(sigm2_i)/2 - log(2*pi)/2 - 0.5*(f-myy_i).^2./sigm2_i);
-  RTOL = 1.e-6;
-  ATOL = 1.e-10;
-  minf=myy_i+sqrt(sigm2_i)*(-6);
-  maxf=myy_i+sqrt(sigm2_i)*(6);
-  
-  [m_0, m_1, m_2] = quad_moments(integrand, minf, maxf, RTOL, ATOL);
-  sigm2hati1 = m_2 - m_1.^2;
-  
-  % If the second central moment is less than cavity variance
-  % integrate more precisely. Theoretically for log-concave
-  % likelihood should be sigm2hati1 < sigm2_i.
-  
-  if sigm2hati1 >= sigm2_i
-    ATOL = ATOL.^2;
-    RTOL = RTOL.^2;
-    [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-    sigm2hati1 = m_2 - m_1.^2;
-    if sigm2hati1 >= sigm2_i
-      error('lik_poisson_tilted_moments: sigm2hati1 >= sigm2_i');
-    end
-  end
-  logM_0 = log(m_0);
-  end
-
-
-  function [df,minf,maxf] = init_coxph_norm(yy,myy_i,sigm2_i,avgE,r)
-  %INIT_COXPH_NORM
-  %
-  %  Description
-  %    Return function handle to a function evaluating
-  %    Negative-Binomial * Gaussian which is used for evaluating
-  %    (likelihood * cavity) or (likelihood * posterior) Return
-  %    also useful limits for integration. This is private function
-  %    for lik_coxph.
-  %  
-  %  See also
-  %    LIK_COXPH_TILTEDMOMENTS, LIK_COXPH_SITEDERIV,
-  %    LIK_COXPH_PREDY
-    
-  % avoid repetitive evaluation of constant part
-    ldconst = -gammaln(r)-gammaln(yy+1)+gammaln(r+yy)...
-              - log(sigm2_i)/2 - log(2*pi)/2;
-    % Create function handle for the function to be integrated
-    df = @coxph_norm;
-    % use log to avoid underflow, and derivates for faster search
-    ld = @log_coxph_norm;
-    ldg = @log_coxph_norm_g;
-    ldg2 = @log_coxph_norm_g2;
-
-    % Set the limits for integration
-    % Negative-binomial likelihood is log-concave so the coxph_norm
-    % function is unimodal, which makes things easier
-    if yy==0
-      % with yy==0, the mode of the likelihood is not defined
-      % use the mode of the Gaussian (cavity or posterior) as a first guess
-      modef = myy_i;
-    else
-      % use precision weighted mean of the Gaussian approximation
-      % of the Negative-Binomial likelihood and Gaussian
-      mu=log(yy/avgE);
-      s2=(yy+r)./(yy.*r);
-      modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
-    end
-    % find the mode of the integrand using Newton iterations
-    % few iterations is enough, since the first guess in the right direction
-    niter=4;       % number of Newton iterations
-    mindelta=1e-6; % tolerance in stopping Newton iterations
-    for ni=1:niter
-      g=ldg(modef);
-      h=ldg2(modef);
-      delta=-g/h;
-      modef=modef+delta;
-      if abs(delta)<mindelta
-        break
-      end
-    end
-    % integrand limits based on Gaussian approximation at mode
-    modes=sqrt(-1/h);
-    minf=modef-8*modes;
-    maxf=modef+8*modes;
-    modeld=ld(modef);
-    iter=0;
-    % check that density at end points is low enough
-    lddiff=20; % min difference in log-density between mode and end-points
-    minld=ld(minf);
-    step=1;
-    while minld>(modeld-lddiff)
-      minf=minf-step*modes;
-      minld=ld(minf);
-      iter=iter+1;
-      step=step*2;
-      if iter>100
-        error(['lik_coxph -> init_coxph_norm: ' ...
-               'integration interval minimun not found ' ...
-               'even after looking hard!'])
-      end
-    end
-    maxld=ld(maxf);
-    iter=0;
-    step=1;
-    while maxld>(modeld-lddiff)
-      maxf=maxf+step*modes;
-      maxld=ld(maxf);
-      iter=iter+1;
-      step=step*2;
-      if iter>100
-        error(['lik_coxph -> init_coxph_norm: ' ...
-               'integration interval maximun not found ' ...
-               'even after looking hard!'])
-      end
-    end
-    
+%     % integrand limits based on Gaussian approximation at mode
+%     modes=sqrt(-1/h);
+%     minf=modef-8*modes;
+%     maxf=modef+8*modes;
+%     modeld=ld(modef);
+%     iter=0;
+%     % check that density at end points is low enough
+%     lddiff=20; % min difference in log-density between mode and end-points
+%     minld=ld(minf);
+%     step=1;
 %     while minld>(modeld-lddiff)
-%       minf=minf-modes;
+%       minf=minf-step*modes;
 %       minld=ld(minf);
 %       iter=iter+1;
+%       step=step*2;
 %       if iter>100
 %         error(['lik_coxph -> init_coxph_norm: ' ...
 %                'integration interval minimun not found ' ...
@@ -1244,53 +1188,78 @@ function lik = lik_coxph(varargin)
 %       end
 %     end
 %     maxld=ld(maxf);
+%     iter=0;
+%     step=1;
 %     while maxld>(modeld-lddiff)
-%       maxf=maxf+modes;
+%       maxf=maxf+step*modes;
 %       maxld=ld(maxf);
 %       iter=iter+1;
+%       step=step*2;
 %       if iter>100
 %         error(['lik_coxph -> init_coxph_norm: ' ...
-%                'integration interval maximum not found ' ...
+%                'integration interval maximun not found ' ...
 %                'even after looking hard!'])
 %       end
-%       
 %     end
-    
-    function integrand = coxph_norm(f)
-    % Negative-binomial * Gaussian
-      mu = avgE.*exp(f);
-      integrand = exp(ldconst ...
-                      +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) ...
-                      -0.5*(f-myy_i).^2./sigm2_i);
-    end
-    
-    function log_int = log_coxph_norm(f)
-    % log(Negative-binomial * Gaussian)
-    % log_coxph_norm is used to avoid underflow when searching
-    % integration interval
-      mu = avgE.*exp(f);
-      log_int = ldconst...
-                +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu))...
-                -0.5*(f-myy_i).^2./sigm2_i;
-    end
-    
-    function g = log_coxph_norm_g(f)
-    % d/df log(Negative-binomial * Gaussian)
-    % derivative of log_coxph_norm
-      mu = avgE.*exp(f);
-      g = -(r.*(mu - yy))./(mu.*(mu + r)).*mu ...
-          + (myy_i - f)./sigm2_i;
-    end
-    
-    function g2 = log_coxph_norm_g2(f)
-    % d^2/df^2 log(Negative-binomial * Gaussian)
-    % second derivate of log_coxph_norm
-      mu = avgE.*exp(f);
-      g2 = -(r*(r + yy))/(mu + r)^2.*mu ...
-           -1/sigm2_i;
-    end
-    
-  end
+%     
+% %     while minld>(modeld-lddiff)
+% %       minf=minf-modes;
+% %       minld=ld(minf);
+% %       iter=iter+1;
+% %       if iter>100
+% %         error(['lik_coxph -> init_coxph_norm: ' ...
+% %                'integration interval minimun not found ' ...
+% %                'even after looking hard!'])
+% %       end
+% %     end
+% %     maxld=ld(maxf);
+% %     while maxld>(modeld-lddiff)
+% %       maxf=maxf+modes;
+% %       maxld=ld(maxf);
+% %       iter=iter+1;
+% %       if iter>100
+% %         error(['lik_coxph -> init_coxph_norm: ' ...
+% %                'integration interval maximum not found ' ...
+% %                'even after looking hard!'])
+% %       end
+% %       
+% %     end
+%     
+%     function integrand = coxph_norm(f)
+%     % Negative-binomial * Gaussian
+%       mu = avgE.*exp(f);
+%       integrand = exp(ldconst ...
+%                       +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) ...
+%                       -0.5*(f-myy_i).^2./sigm2_i);
+%     end
+%     
+%     function log_int = log_coxph_norm(f)
+%     % log(Negative-binomial * Gaussian)
+%     % log_coxph_norm is used to avoid underflow when searching
+%     % integration interval
+%       mu = avgE.*exp(f);
+%       log_int = ldconst...
+%                 +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu))...
+%                 -0.5*(f-myy_i).^2./sigm2_i;
+%     end
+%     
+%     function g = log_coxph_norm_g(f)
+%     % d/df log(Negative-binomial * Gaussian)
+%     % derivative of log_coxph_norm
+%       mu = avgE.*exp(f);
+%       g = -(r.*(mu - yy))./(mu.*(mu + r)).*mu ...
+%           + (myy_i - f)./sigm2_i;
+%     end
+%     
+%     function g2 = log_coxph_norm_g2(f)
+%     % d^2/df^2 log(Negative-binomial * Gaussian)
+%     % second derivate of log_coxph_norm
+%       mu = avgE.*exp(f);
+%       g2 = -(r*(r + yy))/(mu + r)^2.*mu ...
+%            -1/sigm2_i;
+%     end
+%     
+%   end
 
   function p = lik_coxph_invlink(lik, f, z)
   %LIK_COXPH_INVLINK  Returns values of inverse link function
