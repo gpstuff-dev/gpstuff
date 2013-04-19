@@ -20,10 +20,9 @@ function [pc, fvecm2, p, c] = gp_predcm(gp,x,y,varargin)
 %               Some likelihoods may use this. For example, in case of
 %               Poisson likelihood we have z_i=E_i, that is, expected value
 %               for ith case.
-%      ind    - Index defining which point in data (X or XT) latent grid fvec
-%               corresponds to. If ind is vector of size m x 1, fvec must
-%               be matrix of size n x m, where n is the number of grid
-%               points for each index. Default = 1.
+%      ind    - Index vector or scalar defining the indices of data
+%               points at which the marginal posterior corrections are
+%               done. Default = 1.
 %      fcorr  - Method used for evaluating correction terms C. Possible
 %               methods are 'fact' (default) for EP and either 'fact'
 %               or 'cm2' (default) for Laplace. If method is 'on',
