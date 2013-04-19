@@ -22,7 +22,7 @@ if ~(exist(path, 'dir') == 7)
     mkdir(path)
 end
 path = strcat(path, '/testSurvival_coxph'); 
-save(path, 'Ef1', 'Ef2', 'Varf1', 'Varf2');
+save(path, 'Ef','Varf');
 
 % Set back initial random stream
 setrandstream(prevstream);
@@ -31,9 +31,7 @@ drawnow;clear;close all
 % Compare test values to real values.
 
 function testPredictionsCoxph
-values.real = load('realValuesSurvival_coxph', 'Ef1', 'Varf1', 'Ef2', 'Varf2');
-values.test = load(strrep(which('test_survival_coxph.m'), 'test_survival_coxph.m', 'testValues/testSurvival_coxph'), 'Ef1', 'Varf1', 'Ef2', 'Varf2');
-assertElementsAlmostEqual(values.real.Ef1, values.test.Ef1, 'absolute', 0.10);
-assertElementsAlmostEqual(values.real.Ef2, values.test.Ef2, 'absolute', 0.10);
-assertElementsAlmostEqual(values.real.Varf1, values.test.Varf1, 'absolute', 0.10);
-assertElementsAlmostEqual(values.real.Varf2, values.test.Varf2, 'absolute', 0.10);
+values.real = load('realValuesSurvival_coxph', 'Ef','Varf');
+values.test = load(strrep(which('test_survival_coxph.m'), 'test_survival_coxph.m', 'testValues/testSurvival_coxph'), 'Ef','Varf');
+assertElementsAlmostEqual(values.real.Ef, values.test.Ef, 'absolute', 0.10);
+assertElementsAlmostEqual(values.real.Varf, values.test.Varf, 'absolute', 0.10);
