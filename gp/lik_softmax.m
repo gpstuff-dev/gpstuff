@@ -49,7 +49,6 @@ function lik = lik_softmax(varargin)
     lik.fh.llg = @lik_softmax_llg;    
     lik.fh.llg2 = @lik_softmax_llg2;
     lik.fh.llg3 = @lik_softmax_llg3;
-    lik.fh.tiltedMoments = @lik_softmax_tiltedMoments;
     lik.fh.predy = @lik_softmax_predy;
     lik.fh.recappend = @lik_softmax_recappend;
   end
@@ -240,9 +239,6 @@ function dw_mat = lik_softmax_llg3(lik, y, f, param, z)
   end
 end
 
-function [logM_0, m_1, sigm2hati1] = lik_softmax_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-end
-
 function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
 %LIK_SOFTMAX_PREDY  Returns the predictive mean, variance and density of
 %y
@@ -333,7 +329,6 @@ function reclik = lik_softmax_recappend(reclik, ri, lik)
     reclik.fh.llg = @lik_softmax_llg;    
     reclik.fh.llg2 = @lik_softmax_llg2;
     reclik.fh.llg3 = @lik_softmax_llg3;
-    reclik.fh.tiltedMoments = @lik_softmax_tiltedMoments;
     reclik.fh.predy = @lik_softmax_predy;
     reclik.fh.recappend = @lik_softmax_recappend;
   end

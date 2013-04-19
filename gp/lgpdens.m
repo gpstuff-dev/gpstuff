@@ -403,7 +403,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   % Weakly informative prior states that probability is smaller for
   % lengthscales which are much smaller than Silverman's rule of thumb
   % or min grid distance
-  h=min(diff(xx(1:2,end)).^2,1/sum(yy).^(1/5)/4);
+  h=max(diff(xx(1:2,end)).^2,1/sum(yy).^(1/5)/4);
   pl = prior_invt('s2', 1./h, 'nu', 1);
   pa = prior_t('s2', 20^2, 'nu', 1);
   %pm = prior_sqrtt('s2', 10^2, 'nu', 4);
@@ -411,10 +411,10 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   %pa = prior_t('s2', 10^2, 'nu', 4);
   % different covariance functions have different parameters
   if isfield(gpcf1,'magnSigma2')
-     gpcf1 = gpcf(gpcf1, 'magnSigma2', 1, 'magnSigma2_prior', pm);
+     gpcf1 = gpcf(gpcf1, 'magnSigma2', 2, 'magnSigma2_prior', pm);
   end
   if isfield(gpcf1,'lengthScale')
-     gpcf1 = gpcf(gpcf1, 'lengthScale', .5, 'lengthScale_prior', pl);
+     gpcf1 = gpcf(gpcf1, 'lengthScale', 1, 'lengthScale_prior', pl);
   end
   if isfield(gpcf1,'alpha')
     gpcf1 = gpcf(gpcf1, 'alpha', 20, 'alpha_prior', pa);
@@ -463,7 +463,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
 
   gp=gp_optim(gp,xx,yy,'opt',opt, 'optimf', @fminlbfgs);
   %gradcheck(gp_pak(gp), @gpla_nd_e, @gpla_nd_g, gp, xx, yy);
-  %gp_pak(gp)
+  %exp(gp_pak(gp))
   
   if strcmpi(latent_method,'MCMC')
     gp = gp_set(gp, 'latent_method', 'MCMC');

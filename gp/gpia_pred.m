@@ -49,6 +49,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
 %               Some likelihoods may use this. For example, in case
 %               of Poisson likelihood we have z_i=E_i, that is, the
 %               expected value for the ith case.
+%      fcorr  - Method used for latent marginal posterior corrections. 
+%               Default is 'off'. Possible methods are 'fact' for EP
+%               and either 'fact' or 'cm2' for Laplace. If method is
+%               'on', 'fact' is used for EP and 'cm2' for Laplace.
 %       
 %    NOTE! In case of FIC and PIC sparse approximation the
 %    prediction for only some PREDCF covariance functions is just
@@ -98,6 +102,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0));
   ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
+  ip=iparser(ip,'addParamValue','fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
     ip=iparser(ip,'parse',gp_array, x, y, varargin{:});
@@ -110,6 +115,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
   zt=ip.Results.zt;
   predcf=ip.Results.predcf;
   tstind=ip.Results.tstind;
+  fcorr=ip.Results.fcorr;
   if isempty(xt)
     xt=x;
     if isempty(tstind)
@@ -146,6 +152,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
   if ~isempty(zt);options.zt=zt;end
   if ~isempty(predcf);options.predcf=predcf;end
   if ~isempty(tstind);options.tstind=tstind;end
+  if ~isempty(fcorr);options.fcorr=fcorr;end
   
   nGP = numel(gp_array);
 

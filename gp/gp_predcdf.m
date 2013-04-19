@@ -111,7 +111,7 @@ function cdf = gp_predcdf(gp, x, y, varargin)
         [Ef,Varf]=gp_pred(Gp,x,y,xt,options);
         cdfs(:,i1)=Gp.lik.fh.predcdf(Gp.lik, Ef, Varf, yt);
       end
-      cdf=sum(cdfs.*P_TH, 2);
+      cdf=sum(bsxfun(@times,cdfs,P_TH),2);
     elseif numel(gp.jitterSigma2)>1
       % MCMC samples
       [Efs,Varfs]=gpmc_preds(gp,x,y,xt,options);
