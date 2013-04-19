@@ -139,386 +139,389 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
   end
 
   [tn, tnin] = size(x);
-  
-  switch gp.type
-    case 'FULL'
-      % ============================================================
-      % FULL
-      % ============================================================
-      %[e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-      [f, L, W, p] = deal(p.f, p.L, p.La2, p.p);
-
-      ntest=size(xt,1);
-      K_nf = gp_cov(gp,xt,x,predcf);
-      if isfield(gp,'meanf')
-        [H,b_m,B_m Hs]=mean_prep(gp,x,xt);
-        K_nf=K_nf + Hs'*B_m*H;
-        K = gp_trcov(gp, x);
-        K = K+H'*B_m*H;
-      end
-      
-      % Evaluate the mean
-      if issparse(K_nf) && issparse(L)        
-        deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z(p));
-        Eft = K_nf(:,p)*deriv;
-      else
-        deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
-        Eft = K_nf*deriv;
+  if isfield(gp.lik, 'nondiagW')
+    [Eft,Covft]=gpla_pred(gp, x, y, 'z', z);
+  else
+    switch gp.type
+      case 'FULL'
+        % ============================================================
+        % FULL
+        % ============================================================
+        %[e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [f, L, W, p] = deal(p.f, p.L, p.La2, p.p);
+        
+        ntest=size(xt,1);
+        K_nf = gp_cov(gp,xt,x,predcf);
         if isfield(gp,'meanf')
-          Eft=Eft + K_nf*(K\Hs'*b_m);
+          [H,b_m,B_m Hs]=mean_prep(gp,x,xt);
+          K_nf=K_nf + Hs'*B_m*H;
+          K = gp_trcov(gp, x);
+          K = K+H'*B_m*H;
         end
-      end
-
-      if nargout > 1
-        % Evaluate the variance
-        %           kstarstar = gp_trvar(gp,xt,predcf);
-        kstarstar = gp_trcov(gp,xt,predcf);               
-        if isfield(gp,'meanf')
-          kstarstar= kstarstar + diag(Hs'*B_m*Hs);
-        end
-        if W >= 0
-          % This is the usual case where likelihood is log concave
-          % for example, Poisson and probit
-          if issparse(K_nf) && issparse(L)
-            % If compact support covariance functions are used 
-            % the covariance matrix will be sparse
-            K = gp_trcov(gp, x);                            
-            sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
-            sqrtWKfn = sqrtW*K_nf';
-            V = ldlsolve(L,sqrtWKfn);
-            Covft = K - sqrtWKfn'*V;
-          else
-            W = diag(W);
-            V = L\(sqrt(W)*K_nf');
-            Covft = kstarstar - (V'*V);
+        
+        % Evaluate the mean
+        if issparse(K_nf) && issparse(L)
+          deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z(p));
+          Eft = K_nf(:,p)*deriv;
+        else
+          deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+          Eft = K_nf*deriv;
+          if isfield(gp,'meanf')
+            Eft=Eft + K_nf*(K\Hs'*b_m);
           end
-        else                  
-          % We may end up here if the likelihood is not log concace
-          % For example Student-t likelihood
-          V = L*diag(W);
-          R = diag(W) - V'*V;
-          Covft = kstarstar - K_nf*(R*K_nf');
         end
-      end
-      
-    case 'FIC'        
-      % ============================================================
-      % FIC
-      % ============================================================    
-      % Predictions with FIC sparse approximation for GP
-      % Here tstind = 1 if the prediction is made for the training set 
-      if nargin > 6
-        if ~isempty(tstind) && length(tstind) ~= size(x,1)
-          error('tstind (if provided) has to be of same lenght as x.')
+        
+        if nargout > 1
+          % Evaluate the variance
+          %           kstarstar = gp_trvar(gp,xt,predcf);
+          kstarstar = gp_trcov(gp,xt,predcf);
+          if isfield(gp,'meanf')
+            kstarstar= kstarstar + diag(Hs'*B_m*Hs);
+          end
+          if W >= 0
+            % This is the usual case where likelihood is log concave
+            % for example, Poisson and probit
+            if issparse(K_nf) && issparse(L)
+              % If compact support covariance functions are used
+              % the covariance matrix will be sparse
+              K = gp_trcov(gp, x);
+              sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
+              sqrtWKfn = sqrtW*K_nf';
+              V = ldlsolve(L,sqrtWKfn);
+              Covft = K - sqrtWKfn'*V;
+            else
+              W = diag(W);
+              V = L\(sqrt(W)*K_nf');
+              Covft = kstarstar - (V'*V);
+            end
+          else
+            % We may end up here if the likelihood is not log concace
+            % For example Student-t likelihood
+            V = L*diag(W);
+            R = diag(W) - V'*V;
+            Covft = kstarstar - K_nf*(R*K_nf');
+          end
         end
-      else
-        tstind = [];
-      end
-
-      u = gp.X_u;
-      K_fu = gp_cov(gp, x, u, predcf);         % f x u
-      K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
-      K_uu = (K_uu+K_uu')./2;                  % ensure the symmetry of K_uu
-      Luu = chol(K_uu)';
-
-      m = size(u,1);
-
-      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-      [f, L, La2] = deal(p.f, p.L, p.La2);
-
-      deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
-      ntest=size(xt,1);
-
-      K_nu=gp_cov(gp,xt,u,predcf);
-      Eft = K_nu*(Luu'\(Luu\(K_fu'*deriv)));
-
-      % if the prediction is made for training set, evaluate Lav also for prediction points
-      if ~isempty(tstind)
-        [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
-        B=Luu\(K_fu');
-        Qv_ff=sum(B.^2)';
-        %Lav = zeros(size(La));
-        %Lav(tstind) = Kv_ff-Qv_ff;
-        Lav = Kv_ff-Qv_ff;            
-        Eft(tstind) = Eft(tstind) + Lav.*deriv;
-      end
-
-      
-      % Evaluate the variance
-      if nargout > 1
-        % re-evaluate matrices with training components
-        Kfu_tr = gp_cov(gp, x, u);
-        Kuu_tr = gp_trcov(gp, u);
-        Kuu_tr = (K_uu+K_uu')./2;
         
-        W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
-        kstarstar = gp_trvar(gp,xt,predcf);
-        La = W.*La2;
-        Lahat = 1 + La;
-        B = (repmat(sqrt(W),1,m).*Kfu_tr);
-
-        % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
-        B2 = repmat(Lahat,1,m).\B;
-        A2 = Kuu_tr + B'*B2; A2=(A2+A2)/2;
-        L2 = B2/chol(A2);
-        
-        
-        % NOTE!                                             % MUUTETTU
-        % This is done with full matrices at the moment. 
-        % Needs to be rewritten.
-        if isempty(tstind)
-          error('tstind not provided.');
+      case 'FIC'
+        % ============================================================
+        % FIC
+        % ============================================================
+        % Predictions with FIC sparse approximation for GP
+        % Here tstind = 1 if the prediction is made for the training set
+        if nargin > 6
+          if ~isempty(tstind) && length(tstind) ~= size(x,1)
+            error('tstind (if provided) has to be of same lenght as x.')
+          end
+        else
+          tstind = [];
         end
-        [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
+        
+        u = gp.X_u;
+        K_fu = gp_cov(gp, x, u, predcf);         % f x u
+        K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
+        K_uu = (K_uu+K_uu')./2;                  % ensure the symmetry of K_uu
+        Luu = chol(K_uu)';
+        
+        m = size(u,1);
+        
+        %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [f, L, La2] = deal(p.f, p.L, p.La2);
+        
+        deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+        ntest=size(xt,1);
+        
+        K_nu=gp_cov(gp,xt,u,predcf);
+        Eft = K_nu*(Luu'\(Luu\(K_fu'*deriv)));
+        
+        % if the prediction is made for training set, evaluate Lav also for prediction points
+        if ~isempty(tstind)
+          [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
+          B=Luu\(K_fu');
+          Qv_ff=sum(B.^2)';
+          %Lav = zeros(size(La));
+          %Lav(tstind) = Kv_ff-Qv_ff;
+          Lav = Kv_ff-Qv_ff;
+          Eft(tstind) = Eft(tstind) + Lav.*deriv;
+        end
+        
+        
+        % Evaluate the variance
+        if nargout > 1
+          % re-evaluate matrices with training components
+          Kfu_tr = gp_cov(gp, x, u);
+          Kuu_tr = gp_trcov(gp, u);
+          Kuu_tr = (K_uu+K_uu')./2;
+          
+          W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+          kstarstar = gp_trvar(gp,xt,predcf);
+          La = W.*La2;
+          Lahat = 1 + La;
+          B = (repmat(sqrt(W),1,m).*Kfu_tr);
+          
+          % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
+          B2 = repmat(Lahat,1,m).\B;
+          A2 = Kuu_tr + B'*B2; A2=(A2+A2)/2;
+          L2 = B2/chol(A2);
+          
+          
+          % NOTE!                                             % MUUTETTU
+          % This is done with full matrices at the moment.
+          % Needs to be rewritten.
+          if isempty(tstind)
+            error('tstind not provided.');
+          end
+          [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
+          Luu = chol(K_uu)';
+          B=Luu\(K_fu');
+          B2 = Luu\(K_nu');
+          Lav_n = Knn_v - sum(B2.^2)';
+          BL = B*L;
+          
+          K_nf = B2'*B + diag(Lav);
+          K = B2'*B2 + diag(Lav_n);
+          C = B'*B + diag(Lav);
+          W = diag(W);
+          B = eye(size(C)) + sqrt(W)*C*sqrt(W);
+          L = chol(B)';
+          
+          V = L\(sqrt(W)*K_nf');
+          Covft = K - V'*V;
+          
+          %             % Set params for K_nf
+          %             BB=Luu\(B');
+          %             BB2=Luu\(K_nu');
+          %             Covft = kstarstar - sum(BB2'.*(BB*(repmat(Lahat,1,m).\BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+          %
+          %             % if the prediction is made for training set, evaluate Lav also for prediction points
+          %             if ~isempty(tstind)
+          %                 LavsW = Lav.*sqrt(W);
+          %                     Covft(tstind) = Covft(tstind) - (LavsW./sqrt(Lahat)).^2 + sum((repmat(LavsW,1,m).*L2).^2, 2) ...
+          %                            - 2.*sum((repmat(LavsW,1,m).*(repmat(Lahat,1,m).\B)).*(K_uu\K_nu(tstind,:)')',2)...
+          %                            + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu(tstind,:)'))' ,2);
+          %             end
+        end
+        
+      case {'PIC' 'PIC_BLOCK'}
+        % ============================================================
+        % PIC
+        % ============================================================
+        % Predictions with PIC sparse approximation for GP
+        u = gp.X_u;
+        K_fu = gp_cov(gp, x, u, predcf);         % f x u
+        K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
+        K_uu = (K_uu+K_uu')./2;                  % ensure the symmetry of K_uu
+        K_nu=gp_cov(gp,xt,u,predcf);
+        
+        ind = gp.tr_index;
+        ntest = size(xt,1);
+        m = size(u,1);
         Luu = chol(K_uu)';
         B=Luu\(K_fu');
         B2 = Luu\(K_nu');
-        Lav_n = Knn_v - sum(B2.^2)';
-        BL = B*L;
         
-        K_nf = B2'*B + diag(Lav);
-        K = B2'*B2 + diag(Lav_n);
-        C = B'*B + diag(Lav);
-        W = diag(W);
-        B = eye(size(C)) + sqrt(W)*C*sqrt(W);
-        L = chol(B)';
+        %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [f, La2] = deal(p.f, p.La2);
         
-        V = L\(sqrt(W)*K_nf');
-        Covft = K - V'*V;
-
-        %             % Set params for K_nf
-        %             BB=Luu\(B');
-        %             BB2=Luu\(K_nu');
-        %             Covft = kstarstar - sum(BB2'.*(BB*(repmat(Lahat,1,m).\BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
-        %             
-        %             % if the prediction is made for training set, evaluate Lav also for prediction points
-        %             if ~isempty(tstind)
-        %                 LavsW = Lav.*sqrt(W);
-        %                     Covft(tstind) = Covft(tstind) - (LavsW./sqrt(Lahat)).^2 + sum((repmat(LavsW,1,m).*L2).^2, 2) ...
-        %                            - 2.*sum((repmat(LavsW,1,m).*(repmat(Lahat,1,m).\B)).*(K_uu\K_nu(tstind,:)')',2)...
-        %                            + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu(tstind,:)'))' ,2);
-        %             end
-      end
-      
-    case {'PIC' 'PIC_BLOCK'}        
-      % ============================================================
-      % PIC
-      % ============================================================
-      % Predictions with PIC sparse approximation for GP
-      u = gp.X_u;
-      K_fu = gp_cov(gp, x, u, predcf);         % f x u
-      K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
-      K_uu = (K_uu+K_uu')./2;                  % ensure the symmetry of K_uu
-      K_nu=gp_cov(gp,xt,u,predcf);
-
-      ind = gp.tr_index;
-      ntest = size(xt,1);
-      m = size(u,1);
-      Luu = chol(K_uu)';
-      B=Luu\(K_fu');
-      B2 = Luu\(K_nu');        
-
-      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-      [f, La2] = deal(p.f, p.La2);
-
-      deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
-
-      iKuuKuf = K_uu\K_fu';
-      w_bu=zeros(length(xt),length(u));
-      w_n=zeros(length(xt),1);
-      for i=1:length(ind)
-        w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*deriv(ind{i},:))', length(tstind{i}),1);
-        K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);              % n x u
-        w_n(tstind{i},:) = K_nf*deriv(ind{i},:);
-      end
-
-      Eft = K_nu*(iKuuKuf*deriv) - sum(K_nu.*w_bu,2) + w_n;
-
-      % Evaluate the variance
-      if nargout > 1
-        W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
-        kstarstar = gp_trvar(gp,xt,predcf);
-        sqrtW = sqrt(W);
-        % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
-        for i=1:length(ind)
-          La{i} = diag(sqrtW(ind{i}))*La2{i}*diag(sqrtW(ind{i}));
-          Lahat{i} = eye(size(La{i})) + La{i};
-        end
-        %             B = (repmat(sqrt(W),1,m).*K_fu);
-        sKfu = (repmat(sqrt(W),1,m).*K_fu);
-        for i=1:length(ind)
-          iLasKfu(ind{i},:) = Lahat{i}\sKfu(ind{i},:);
-        end
-        A2 = K_uu + sKfu'*iLasKfu; A2=(A2+A2)/2;
-        L2 = iLasKfu/chol(A2);
-
-        % NOTE!                                             
-        % This is done with full matrices at the moment. 
-        % Needs to be rewritten.
-        Knn = B2'*B2;
-        Knf = B2'*B;
-        C = -L2*L2';
-        for i=1:length(ind)
-          La = gp_trcov(gp, xt(tstind{i},:), predcf) - B2(:,tstind{i})'*B2(:,tstind{i});
-          Knn(ind{i},ind{i}) =  Knn(ind{i},ind{i}) + La;
-          Laa = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf) - B2(:,tstind{i})'*B(:,ind{i});
-          Knf(tstind{i},ind{i}) =  Knf(tstind{i},ind{i}) + Laa;
-          C(ind{i},ind{i}) =  C(ind{i},ind{i}) + inv(Lahat{i});
-        end
-        C = diag(sqrtW)*C*diag(sqrtW);
+        deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
         
-        Covft = Knn - Knf * C * Knf';
-      end
-      
-    case 'CS+FIC'        
-      % ============================================================
-      % CS+FIC
-      % ============================================================
-      % Predictions with CS+FIC sparse approximation for GP
-      % Here tstind = 1 if the prediction is made for the training set 
-      if nargin > 6
-        if ~isempty(tstind) && length(tstind) ~= size(x,1)
-          error('tstind (if provided) has to be of same lenght as x.')
+        iKuuKuf = K_uu\K_fu';
+        w_bu=zeros(length(xt),length(u));
+        w_n=zeros(length(xt),1);
+        for i=1:length(ind)
+          w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*deriv(ind{i},:))', length(tstind{i}),1);
+          K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);              % n x u
+          w_n(tstind{i},:) = K_nf*deriv(ind{i},:);
         end
-        %         else
-        %              tstind = [];
-      end
-
-      n = size(x,1);
-      n2 = size(xt,1);
-      u = gp.X_u;
-      m = length(u);
-
-      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-      [f, La2] = deal(p.f, p.La2);
-      
-      % Indexes to all non-compact support and compact support covariances.
-      cf1 = [];
-      cf2 = [];
-      % Indexes to non-CS and CS covariances, which are used for predictions
-      predcf1 = [];
-      predcf2 = [];    
-      
-      ncf = length(gp.cf);
-      % Loop through all covariance functions
-      for i = 1:ncf        
-        % Non-CS covariances
-        if ~isfield(gp.cf{i},'cs') 
-          cf1 = [cf1 i];
-          % If used for prediction
-          if ~isempty(find(predcf==i))
-            predcf1 = [predcf1 i]; 
+        
+        Eft = K_nu*(iKuuKuf*deriv) - sum(K_nu.*w_bu,2) + w_n;
+        
+        % Evaluate the variance
+        if nargout > 1
+          W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+          kstarstar = gp_trvar(gp,xt,predcf);
+          sqrtW = sqrt(W);
+          % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
+          for i=1:length(ind)
+            La{i} = diag(sqrtW(ind{i}))*La2{i}*diag(sqrtW(ind{i}));
+            Lahat{i} = eye(size(La{i})) + La{i};
           end
-          % CS-covariances
+          %             B = (repmat(sqrt(W),1,m).*K_fu);
+          sKfu = (repmat(sqrt(W),1,m).*K_fu);
+          for i=1:length(ind)
+            iLasKfu(ind{i},:) = Lahat{i}\sKfu(ind{i},:);
+          end
+          A2 = K_uu + sKfu'*iLasKfu; A2=(A2+A2)/2;
+          L2 = iLasKfu/chol(A2);
+          
+          % NOTE!
+          % This is done with full matrices at the moment.
+          % Needs to be rewritten.
+          Knn = B2'*B2;
+          Knf = B2'*B;
+          C = -L2*L2';
+          for i=1:length(ind)
+            La = gp_trcov(gp, xt(tstind{i},:), predcf) - B2(:,tstind{i})'*B2(:,tstind{i});
+            Knn(ind{i},ind{i}) =  Knn(ind{i},ind{i}) + La;
+            Laa = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf) - B2(:,tstind{i})'*B(:,ind{i});
+            Knf(tstind{i},ind{i}) =  Knf(tstind{i},ind{i}) + Laa;
+            C(ind{i},ind{i}) =  C(ind{i},ind{i}) + inv(Lahat{i});
+          end
+          C = diag(sqrtW)*C*diag(sqrtW);
+          
+          Covft = Knn - Knf * C * Knf';
+        end
+        
+      case 'CS+FIC'
+        % ============================================================
+        % CS+FIC
+        % ============================================================
+        % Predictions with CS+FIC sparse approximation for GP
+        % Here tstind = 1 if the prediction is made for the training set
+        if nargin > 6
+          if ~isempty(tstind) && length(tstind) ~= size(x,1)
+            error('tstind (if provided) has to be of same lenght as x.')
+          end
+          %         else
+          %              tstind = [];
+        end
+        
+        n = size(x,1);
+        n2 = size(xt,1);
+        u = gp.X_u;
+        m = length(u);
+        
+        %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [f, La2] = deal(p.f, p.La2);
+        
+        % Indexes to all non-compact support and compact support covariances.
+        cf1 = [];
+        cf2 = [];
+        % Indexes to non-CS and CS covariances, which are used for predictions
+        predcf1 = [];
+        predcf2 = [];
+        
+        ncf = length(gp.cf);
+        % Loop through all covariance functions
+        for i = 1:ncf
+          % Non-CS covariances
+          if ~isfield(gp.cf{i},'cs')
+            cf1 = [cf1 i];
+            % If used for prediction
+            if ~isempty(find(predcf==i))
+              predcf1 = [predcf1 i];
+            end
+            % CS-covariances
+          else
+            cf2 = [cf2 i];
+            % If used for prediction
+            if ~isempty(find(predcf==i))
+              predcf2 = [predcf2 i];
+            end
+          end
+        end
+        if isempty(predcf1) && isempty(predcf2)
+          predcf1 = cf1;
+          predcf2 = cf2;
+        end
+        
+        % Determine the types of the covariance functions used
+        % in making the prediction.
+        if ~isempty(predcf1) && isempty(predcf2)       % Only non-CS covariances
+          ptype = 1;
+          predcf2 = cf2;
+        elseif isempty(predcf1) && ~isempty(predcf2)   % Only CS covariances
+          ptype = 2;
+          predcf1 = cf1;
+        else                                           % Both non-CS and CS covariances
+          ptype = 3;
+        end
+        
+        K_fu = gp_cov(gp,x,u,predcf1);          % f x u
+        K_uu = gp_trcov(gp,u,predcf1);          % u x u, noiseles covariance K_uu
+        K_uu = (K_uu+K_uu')./2;                 % ensure the symmetry of K_uu
+        K_nu=gp_cov(gp,xt,u,predcf1);
+        
+        Kcs_nf = gp_cov(gp, xt, x, predcf2);
+        Kcs_nn = gp_trcov(gp, xt, predcf2);
+        
+        deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+        ntest=size(xt,1);
+        
+        % Calculate the predictive mean according to the type of
+        % covariance functions used for making the prediction
+        if ptype == 1
+          Eft = K_nu*(K_uu\(K_fu'*deriv));
+        elseif ptype == 2
+          Eft = Kcs_nf*deriv;
         else
-          cf2 = [cf2 i];           
-          % If used for prediction
-          if ~isempty(find(predcf==i))
-            predcf2 = [predcf2 i]; 
-          end
+          Eft = K_nu*(K_uu\(K_fu'*deriv)) + Kcs_nf*deriv;
         end
-      end
-      if isempty(predcf1) && isempty(predcf2)
-        predcf1 = cf1;
-        predcf2 = cf2;
-      end
-      
-      % Determine the types of the covariance functions used
-      % in making the prediction.
-      if ~isempty(predcf1) && isempty(predcf2)       % Only non-CS covariances
-        ptype = 1;
-        predcf2 = cf2;
-      elseif isempty(predcf1) && ~isempty(predcf2)   % Only CS covariances
-        ptype = 2;
-        predcf1 = cf1;
-      else                                           % Both non-CS and CS covariances
-        ptype = 3;
-      end
-      
-      K_fu = gp_cov(gp,x,u,predcf1);          % f x u
-      K_uu = gp_trcov(gp,u,predcf1);          % u x u, noiseles covariance K_uu
-      K_uu = (K_uu+K_uu')./2;                 % ensure the symmetry of K_uu
-      K_nu=gp_cov(gp,xt,u,predcf1);
-
-      Kcs_nf = gp_cov(gp, xt, x, predcf2);
-      Kcs_nn = gp_trcov(gp, xt, predcf2);
-
-      deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
-      ntest=size(xt,1);
-
-      % Calculate the predictive mean according to the type of
-      % covariance functions used for making the prediction
-      if ptype == 1
-        Eft = K_nu*(K_uu\(K_fu'*deriv));
-      elseif ptype == 2
-        Eft = Kcs_nf*deriv;
-      else 
-        Eft = K_nu*(K_uu\(K_fu'*deriv)) + Kcs_nf*deriv;        
-      end
-
-      % evaluate also Lav if the prediction is made for training set
-      if ~isempty(tstind)
-        [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf1);
-        Luu = chol(K_uu)';
-        B=Luu\(K_fu');
-        Qv_ff=sum(B.^2)';
-        %Lav = zeros(size(Eft));
-        %Lav(tstind) = Kv_ff-Qv_ff;
-        Lav = Kv_ff-Qv_ff;
-      end
-
-      % Add also Lav if the prediction is made for training set
-      % and non-CS covariance function is used for prediction
-      if ~isempty(tstind) && (ptype == 1 || ptype == 3)
-        Eft(tstind) = Eft(tstind) + Lav.*deriv;
-      end
-      
-      % Evaluate the variance
-      if nargout > 1
-        W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
-        sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
-        kstarstar = gp_trvar(gp,xt,predcf);
-        Luu = chol(K_uu)';
-        Lahat = sparse(1:tn,1:tn,1,tn,tn) + sqrtW*La2*sqrtW;
-        B = sqrtW*K_fu;
-
-        % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
-        B2 = Lahat\B;
-        A2 = K_uu + B'*B2; A2=(A2+A2)/2;
-        L2 = B2/chol(A2);
-
-        % Set params for K_nf
-        BB=Luu\(B)';    % sqrtW*K_fu
-        BB2=Luu\(K_nu');
-        iLaKfu = La2\K_fu;
         
-        [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf1);
-        % Calculate the predictive variance according to the type
-        % of covariance functions used for making the prediction
+        % evaluate also Lav if the prediction is made for training set
+        if ~isempty(tstind)
+          [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf1);
+          Luu = chol(K_uu)';
+          B=Luu\(K_fu');
+          Qv_ff=sum(B.^2)';
+          %Lav = zeros(size(Eft));
+          %Lav(tstind) = Kv_ff-Qv_ff;
+          Lav = Kv_ff-Qv_ff;
+        end
         
-        % NOTE! We form full matrices below. Needs to be rewritten so that at most nxm matrices are formed
+        % Add also Lav if the prediction is made for training set
+        % and non-CS covariance function is used for prediction
+        if ~isempty(tstind) && (ptype == 1 || ptype == 3)
+          Eft(tstind) = Eft(tstind) + Lav.*deriv;
+        end
         
-        % Check results with full matrices    
-        Lav_pr = Kv_ff-Qv_ff;
-        B=Luu\(K_fu');
-        B2=Luu\(K_nu');
-        
-        K = B2'*B2 + Kcs_nn + diag(Knn_v - sum(B2.^2)');
-        C = B'*B + Kcs_nn + diag(Lav);
-        K_nf = B2'*B + Kcs_nf + diag(Lav_pr); 
-        
-        W = diag(W);
-        B = eye(size(C)) + sqrt(W)*C*sqrt(W);
-        L = chol(B)';
-        
-        V = L\(sqrt(W)*K_nf');
-        Covft = K - V'*V;
-
-      end
+        % Evaluate the variance
+        if nargout > 1
+          W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+          sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
+          kstarstar = gp_trvar(gp,xt,predcf);
+          Luu = chol(K_uu)';
+          Lahat = sparse(1:tn,1:tn,1,tn,tn) + sqrtW*La2*sqrtW;
+          B = sqrtW*K_fu;
+          
+          % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
+          B2 = Lahat\B;
+          A2 = K_uu + B'*B2; A2=(A2+A2)/2;
+          L2 = B2/chol(A2);
+          
+          % Set params for K_nf
+          BB=Luu\(B)';    % sqrtW*K_fu
+          BB2=Luu\(K_nu');
+          iLaKfu = La2\K_fu;
+          
+          [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf1);
+          % Calculate the predictive variance according to the type
+          % of covariance functions used for making the prediction
+          
+          % NOTE! We form full matrices below. Needs to be rewritten so that at most nxm matrices are formed
+          
+          % Check results with full matrices
+          Lav_pr = Kv_ff-Qv_ff;
+          B=Luu\(K_fu');
+          B2=Luu\(K_nu');
+          
+          K = B2'*B2 + Kcs_nn + diag(Knn_v - sum(B2.^2)');
+          C = B'*B + Kcs_nn + diag(Lav);
+          K_nf = B2'*B + Kcs_nf + diag(Lav_pr);
+          
+          W = diag(W);
+          B = eye(size(C)) + sqrt(W)*C*sqrt(W);
+          L = chol(B)';
+          
+          V = L\(sqrt(W)*K_nf');
+          Covft = K - V'*V;
+          
+        end
+    end
   end
   
   if nargout > 2
