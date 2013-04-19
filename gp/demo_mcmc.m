@@ -245,7 +245,7 @@ fprintf('Sampling of hyperparameters with HMC-NUTS and latent values with Ellipt
 
 % Options for NUTS
 hmc_opt.nuts = 1; 
-hmc_opt.nadapt = 20; 
+hmc_opt.Madapt = 20; 
 
 % Use same latent options
 
