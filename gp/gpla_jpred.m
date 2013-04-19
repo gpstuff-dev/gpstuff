@@ -158,8 +158,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
           K_nf=K_nf + Hs'*B_m*H;
           K = gp_trcov(gp, x);
           K = K+H'*B_m*H;
-        end
-        
+        end        
         % Evaluate the mean
         if issparse(K_nf) && issparse(L)
           deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z(p));
@@ -177,7 +176,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
           %           kstarstar = gp_trvar(gp,xt,predcf);
           kstarstar = gp_trcov(gp,xt,predcf);
           if isfield(gp,'meanf')
-            kstarstar= kstarstar + diag(Hs'*B_m*Hs);
+            kstarstar= kstarstar + (Hs'*B_m*Hs);
           end
           if W >= 0
             % This is the usual case where likelihood is log concave
@@ -523,6 +522,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
         end
     end
   end
+  
   
   if nargout > 2
     [sampft] = gp_rnd(gp,x,y, xt, 'z', z, 'zt', zt, 'nsamp', 500);

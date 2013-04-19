@@ -70,10 +70,16 @@ predictive=false;
 gplik=gp.lik;
 n=size(x,1);
 [Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z, 'tstind', tstind);
-if isfield(ip.UsingDefaults, 'fcorr') && isequal(gp.latent_method, 'Laplace')
-  fcorr='cm2';
+if isfield(ip.UsingDefaults, 'fcorr')
+  if isequal(gp.latent_method, 'Laplace')
+    % Default for Laplace
+    fcorr='cm2';
+  else
+    % Default for EP
+    fcorr='fact';
+  end
 else
-  fcorr='fact';
+  fcorr=ip.Results.fcorr;
 end
 ind=ind(:);
 if ~isempty(xt) && ~isequal(xt, x)
