@@ -38,9 +38,6 @@ function lik = lik_multinomprobit(varargin)
     lik.fh.pak = @lik_multinomprobit_pak;
     lik.fh.unpak = @lik_multinomprobit_unpak;
     lik.fh.ll = @lik_multinomprobit_ll;
-    lik.fh.llg = @lik_multinomprobit_llg;    
-    lik.fh.llg2 = @lik_multinomprobit_llg2;
-    lik.fh.llg3 = @lik_multinomprobit_llg3;
     lik.fh.tiltedMoments = @lik_multinomprobit_tiltedMoments;
     lik.fh.predy = @lik_multinomprobit_predy;
     lik.fh.recappend = @lik_multinomprobit_recappend;
@@ -113,61 +110,6 @@ function lik = lik_multinomprobit(varargin)
       else
         error('lik_multinomprobit: Log likelihood not yet implemented')
       end
-    end
-    
-  end
-
-
-  function llg = lik_multinomprobit_llg(lik, y, f2, param, z)
-  %LIK_LOGIT_LLG    Gradient of the log likelihood
-  %
-  %  Description
-  %    LLG = LIK_LOGIT_LLG(LIK, Y, F, PARAM) takes a likelihood
-  %    structure LIK, class labels Y, and latent values F. Returns
-  %    the gradient of the log likelihood with respect to PARAM. At
-  %    the moment PARAM can be 'param' or 'latent'.
-  %
-  %  See also
-  %    LIK_LOGIT_LL, LIK_LOGIT_LLG2, LIK_LOGIT_LLG3, GPLA_E
-  
-    if ~isempty(find(y~=1 & y~=0))
-      error('lik_multinomprobit: The class labels have to be {0,1}')
-    end
-
-  end
-
-
-  function [pi_vec, pi_mat] = lik_multinomprobit_llg2(lik, y, f2, param, z)
-  %LIK_LOGIT_LLG2  Second gradients of the log likelihood
-  %
-  %  Description        
-  %    LLG2 = LIK_LOGIT_LLG2(LIK, Y, F, PARAM) takes a likelihood
-  %    structure LIK, class labels Y, and latent values F. Returns
-  %    the hessian of the log likelihood with respect to PARAM. At
-  %    the moment PARAM can be only 'latent'. LLG2 is a vector with
-  %    diagonal elements of the hessian matrix (off diagonals are
-  %    zero).
-  %
-  %  See also
-  %    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG3, GPLA_E
-
-  end    
-  
-  function dw_mat = lik_multinomprobit_llg3(lik, y, f, param, z)
-  %LIK_LOGIT_LLG3  Third gradients of the log likelihood
-  %
-  %  Description
-  %    LLG3 = LIK_LOGIT_LLG3(LIK, Y, F, PARAM) takes a likelihood
-  %    structure LIK, class labels Y, and latent values F and
-  %    returns the third gradients of the log likelihood with
-  %    respect to PARAM. At the moment PARAM can be only 'latent'. 
-  %    LLG3 is a vector with third gradients.
-  %
-  %  See also
-  %    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG2, GPLA_E, GPLA_G
-    
-    if ~isempty(find(y~=1 & y~=0))
-      error('lik_multinomprobit: The class labels have to be {0,1}')
     end
     
   end
@@ -401,9 +343,6 @@ function lik = lik_multinomprobit(varargin)
       reclik.fh.pak = @lik_multinomprobit_pak;
       reclik.fh.unpak = @lik_multinomprobit_unpak;
       reclik.fh.ll = @lik_multinomprobit_ll;
-      reclik.fh.llg = @lik_multinomprobit_llg;    
-      reclik.fh.llg2 = @lik_multinomprobit_llg2;
-      reclik.fh.llg3 = @lik_multinomprobit_llg3;
       reclik.fh.tiltedMoments = @lik_multinomprobit_tiltedMoments;
       reclik.fh.predy = @lik_multinomprobit_predy;
       reclik.fh.recappend = @lik_multinomprobit_recappend;
