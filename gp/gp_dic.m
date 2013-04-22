@@ -352,8 +352,14 @@ function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
           Gp = gp{i};
           weight(i) = Gp.ia_weight;
           w(i,:) = gp_pak(Gp);
-          [Ef(:,i), Varf(:,i), lpy, Ey, VarY] = fh_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
-          sigma2(:,i) = VarY - Varf(:,i);
+          if isfield(gp{1}.lik.fh,'trcov')
+            % Gaussian
+            [Ef(:,i), Varf(:,i), lpy, tmp, Vary(:,i)] = fh_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+            sigma2(:,i) = VarY(:,i) - Varf(:,i);
+          else
+            % non-Gaussian (no need for sigma2)
+            [Ef(:,i), Varf(:,i), lpy] = fh_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+          end
         end
         mEf = sum(Ef.*repmat(weight, size(Ef,1), 1), 2);
 
