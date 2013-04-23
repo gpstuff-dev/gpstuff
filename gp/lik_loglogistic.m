@@ -31,10 +31,10 @@ function lik = lik_loglogistic(varargin)
 %    z is a vector of censoring indicators with z = 0 for uncensored event
 %    and z = 1 for right censored event. 
 %
-%    When using the loggaussian likelihood you need to give the vector z
-%    as an extra parameter to each function that requires also y. 
-%    For example, you should call gpla_e as follows: gpla_e(w, gp,
-%    x, y, 'z', z)
+%    When using the log-logistic likelihood you need to give the
+%    vector z as an extra parameter to each function that requires
+%    also y.  For example, you should call gp_optim as follows:
+%    gp_optim(gp, x, y, 'z', z)
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
