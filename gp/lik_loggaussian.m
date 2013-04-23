@@ -375,7 +375,7 @@ function llg3 = lik_loggaussian_llg3(lik, y, f, param, z)
     case 'latent2+param'
       if sum(z)>1
         z=logical(z);
-        llg2=zeros(size(f));
+        llg3=zeros(size(f));
         llg3(~z)=1./s2^2;
         r = log(y(z)) - f(z);
         llg3(z) = (1./(1-norm_cdf(r/sqrt(s2))).^3.*r./(sqrt(8*pi^3).*s2.^(5/2)).*exp(-3/(2.*s2).*r.^2) ...
@@ -498,13 +498,10 @@ function [g_i] = lik_loggaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   g_i = g_i.*s2;
 
   function g = deriv(f)
-    if sum(1-yc)>0
-      yc=logical(yc);
-      r=log(yy(yc))-f(yc);
-      g(yc) = -1./(2.*s2) + r.^2./(2.*s2^2);
-      r=log(yy(~yc))-f(~yc);
-      g(~yc) = 1./(1-norm_cdf(r/sqrt(s2))) ... 
-               .* (r./(sqrt(2.*pi).*2.*s2.^(3/2)).*exp(-1/(2.*s2).*r.^2));
+    if yc==0
+      r=log(yy)-f;
+      g = 1./(1-norm_cdf(r/sqrt(s2))) ...
+           .* (r./(sqrt(2.*pi).*2.*s2.^(3/2)).*exp(-1/(2.*s2).*r.^2));
     else
       r=log(yy)-f;
       g = -1./(2.*s2) + r.^2./(2.*s2^2);
