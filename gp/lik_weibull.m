@@ -26,14 +26,14 @@ function lik = lik_weibull(varargin)
 %                           +(1-z_i)*(r-1)*log(y_i)
 %                           -exp(-f_i)*y_i^r) ]
 %
-%    where r is the shape parameter of Weibull distribution.
-%    z is a vector of censoring indicators with z = 0 for uncensored event
-%    and z = 1 for right censored event. 
+%    where r is the shape parameter of Weibull distribution.  z is a
+%    vector of censoring indicators with z = 0 for uncensored event
+%    and z = 1 for right censored event.
 %
 %    When using the Weibull likelihood you need to give the vector z
 %    as an extra parameter to each function that requires also y. 
-%    For example, you should call gpla_e as follows: gpla_e(w, gp,
-%    x, y, 'z', z)
+%    For example, you should call gp_optim as follows:
+%    gp_optim(gp, x, y, 'z', z)
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
