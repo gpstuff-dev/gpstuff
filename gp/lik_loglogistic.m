@@ -535,7 +535,7 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
     % use precision weighted mean of the Gaussian approximation
     % of the loglogistic likelihood and Gaussian
     mu=log(yy);
-    s2=r.^2/2;
+    s2=1./(r.^2/2);
     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
   end
   % find the mode of the integrand using Newton iterations
