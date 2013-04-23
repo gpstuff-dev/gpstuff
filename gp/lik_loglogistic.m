@@ -602,13 +602,8 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
               -yc.*r.*f +(-1-yc).*log(1+(yy./exp(f)).^r) ...
               -0.5*(f-myy_i).^2./sigm2_i;
   end
-<<<<<<< HEAD
 
   function g = log_loglogistic_norm_g(f, ldconst, yc, r, yy, myy_i, sigm2_i)
-=======
-  
-  function g = log_loglogistic_norm_g(f)
->>>>>>> develop
   % d/df log(loglogistic * Gaussian)
   % derivative of log_loglogistic_norm
     g = -r.*yc - (-1-yc).*r.*(yy./exp(f)).^r./(1+(yy./exp(f)).^r) ...
