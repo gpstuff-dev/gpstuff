@@ -28,7 +28,7 @@ function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt,ind,varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_CPRED';
-ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || iscell(x));
 ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addRequired','xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));

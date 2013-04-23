@@ -1,4 +1,4 @@
-%DEMO_PASSGP Demonstration of PASS-GP routine for GP classification
+%DEMO_PASSGP Demonstration of PASS-GP method for GP classification
 %
 %  Description
 %    Here we demonstrate PASS-GP method for Gaussian Processes

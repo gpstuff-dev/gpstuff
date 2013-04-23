@@ -55,7 +55,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LGPDENS';
-  ip=iparser(ip,'addRequired','x', @(x) isnumeric(x) && all(isfinite(x(:))) ...
+  ip=iparser(ip,'addRequired','x', @(x) isnumeric(x) ...
                  && (size(x,2)==1 || size(x,2)==2));
   ip=iparser(ip,'addOptional','xt',NaN, @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
   ip=iparser(ip,'addParamValue','gridn',[], @(x) isnumeric(x));
@@ -83,7 +83,11 @@ function [p,pq,xx] = lgpdens(x,varargin)
   cond_dens=ip.Results.cond_dens;
   basis_function=ip.Results.basis_function;
 
+  x(any(~isfinite(x),2),:)=[];
   [n,m]=size(x);
+  if n<2
+    error('Number of finite values in x is too small');
+  end
   
   switch m
     case 1 % 1D

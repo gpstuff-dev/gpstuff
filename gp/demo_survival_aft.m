@@ -148,7 +148,7 @@ set(h2(2),'LineWidth',2)
 hold off
 set(gca,'ytick',[10 30 100 300 1000 3000],'yticklabel',{'10' '30' '100' '300' '1000' '3000'},'ylim',[20 2000])
 xlim([-7 10])
-xlabel('Townsend deprivation index')
+xlabel('Townsend deprivation index (TDI)')
 %ylabel('Expected lifetime (days)')
 [hl,hlo]=legend([h1(2), h2(2)],'Female','Male');set(hl,'box','off')
 
@@ -168,4 +168,4 @@ set(gca,'ytick',[10 30 100 300 1000 3000],'yticklabel',{'10' '30' '100' '300' '1
 xlim([-1 3])
 xlabel('WBC (log_{10}(50\times10^9/L))')
 %ylabel('Expected lifetime (days)')
-[hl,hlo]=legend([h1(2), h2(2)],'Female, TDI = -1','Female, TDI = 6');set(hl,'box','off')
+[hl,hlo]=legend([h1(2), h2(2)],'Female and TDI = -1','Female and TDI = 6');set(hl,'box','off')
