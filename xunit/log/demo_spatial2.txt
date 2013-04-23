@@ -1,0 +1,28 @@
+Running: demo_spatial2
+GP with negative-binomial observation model, Laplace
+integration over the latent values and MAP estimate
+for the parameters
+  Iteration  Func-count      f(x)      Lambda
+      0          1          5285.4    
+      1          3         5285.36       10
+      2          4         5240.14       40
+      3          6         5220.82       40
+      4          8         5216.28       20
+      5         10         5215.93       10
+      6         12         5215.82        5
+      7         14         5215.81      2.5
+ TolX reached. Func-count 14. Final f(x)=5215.81. Elapsed time 2241.59
+Proportion of non-zeros is 0.0715
+GP with negative-binomial observation model, EP
+integration over the latent values and MAP estimate
+for the parameters
+  Iteration  Func-count      f(x)      Lambda
+      0          1          5215.8    
+      1          3          5215.8       10
+ TolX reached. Func-count 3. Final f(x)=5215.8. Elapsed time 1216.06
+Proportion of non-zeros is 0.0715
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+   -2.1786    2.2593    2.8956
+

@@ -23,7 +23,7 @@ initTestSuite;
       mkdir(path)
     end
     path = strcat(path, '/testModelAssesment1');
-    save(path, 'DIC', 'DIC2', 'DIC_latent', ...
+    save(path, 'DIC', 'DIC2', 'DIC_latent', 'WAICV', 'WAICG', ...
       'p_eff', 'p_eff2', 'p_eff_latent', 'p_eff_latent2', 'mlpd_cv', 'rmse_cv', 'mlpd_loo', 'rmse_loo');
     
     % Set back initial random stream
@@ -37,7 +37,7 @@ initTestSuite;
     values.real.DIC(isnan(values.real.DIC)) = 0;
     values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'DIC');
     values.test.DIC(isnan(values.test.DIC)) = 0;
-    assertVectorsAlmostEqual(values.real.DIC, values.test.DIC, 'relative', 0.20);
+    assertVectorsAlmostEqual(values.real.DIC, values.test.DIC, 'relative', 0.05);
     
         
   function testDICAll
@@ -45,7 +45,7 @@ initTestSuite;
     values.real.DIC2(isnan(values.real.DIC2)) = 0;
     values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'DIC2');
     values.test.DIC2(isnan(values.test.DIC2)) = 0;
-    assertVectorsAlmostEqual(values.real.DIC2, values.test.DIC2, 'relative', 0.20);
+    assertVectorsAlmostEqual(values.real.DIC2, values.test.DIC2, 'relative', 0.05);
     
         
   function testDICLatent
@@ -53,7 +53,7 @@ initTestSuite;
     values.real.DIC_latent(isnan(values.real.DIC_latent)) = 0;
     values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'DIC_latent');
     values.test.DIC_latent(isnan(values.test.DIC_latent)) = 0;
-    assertVectorsAlmostEqual(values.real.DIC_latent, values.test.DIC_latent, 'relative', 0.20);
+    assertVectorsAlmostEqual(values.real.DIC_latent, values.test.DIC_latent, 'relative', 0.05);
     
         
    function testPeffLatentMarginalized
@@ -61,7 +61,7 @@ initTestSuite;
      values.real.p_eff(isnan(values.real.p_eff)) = 0;
      values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'p_eff');
      values.test.p_eff(isnan(values.test.p_eff)) = 0;
-     assertVectorsAlmostEqual(values.real.p_eff, values.test.p_eff, 'relative', 0.20);
+     assertVectorsAlmostEqual(values.real.p_eff, values.test.p_eff, 'relative', 0.05);
      
 
    function testPeffAll
@@ -69,7 +69,7 @@ initTestSuite;
      values.real.p_eff2(isnan(values.real.p_eff2)) = 0;
      values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'p_eff2');
      values.test.p_eff2(isnan(values.test.p_eff2)) = 0;
-     assertVectorsAlmostEqual(values.real.p_eff2, values.test.p_eff2, 'relative', 0.20);
+     assertVectorsAlmostEqual(values.real.p_eff2, values.test.p_eff2, 'relative', 0.05);
      
         
    function testPeffLatent
@@ -77,7 +77,7 @@ initTestSuite;
      values.real.p_eff_latent(isnan(values.real.p_eff_latent)) = 0;
      values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'p_eff_latent');
      values.test.p_eff_latent(isnan(values.test.p_eff_latent)) = 0;
-     assertVectorsAlmostEqual(values.real.p_eff_latent, values.test.p_eff_latent, 'relative', 0.20);
+     assertVectorsAlmostEqual(values.real.p_eff_latent, values.test.p_eff_latent, 'relative', 0.05);
      
         
    function testPeffLatent2
@@ -85,28 +85,33 @@ initTestSuite;
      values.real.p_eff_latent2(isnan(values.real.p_eff_latent2)) = 0;
      values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'p_eff_latent2');
      values.test.p_eff_latent2(isnan(values.test.p_eff_latent2)) = 0;
-     assertVectorsAlmostEqual(values.real.p_eff_latent2, values.test.p_eff_latent2, 'relative', 0.20);
+     assertVectorsAlmostEqual(values.real.p_eff_latent2, values.test.p_eff_latent2, 'relative', 0.05);
      
      
    function testLogPredDensity10foldCV
      values.real = load('realValuesModelAssesment1.mat', 'mlpd_cv');
      values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'), 'mlpd_cv');
-     assertVectorsAlmostEqual(values.real.mlpd_cv, values.test.mlpd_cv, 'relative', 0.20);
+     assertVectorsAlmostEqual(values.real.mlpd_cv, values.test.mlpd_cv, 'relative', 0.05);
      
         
    function testMeanSquaredError10foldCV
      values.real = load('realValuesModelAssesment1.mat', 'rmse_cv');
      values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'), 'rmse_cv');
-     assertVectorsAlmostEqual(values.real.rmse_cv, values.test.rmse_cv, 'relative', 0.20);
+     assertVectorsAlmostEqual(values.real.rmse_cv, values.test.rmse_cv, 'relative', 0.05);
                  
    function testLogPredDensityLOOPRED
      values.real = load('realValuesModelAssesment1.mat', 'mlpd_loo');
      values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'), 'mlpd_loo');
-     assertVectorsAlmostEqual(values.real.mlpd_loo, values.test.mlpd_loo, 'relative', 0.20);
+     assertVectorsAlmostEqual(values.real.mlpd_loo, values.test.mlpd_loo, 'relative', 0.05);
      
         
    function testMeanSquaredErrorLOOPRED
      values.real = load('realValuesModelAssesment1.mat', 'rmse_loo');
      values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'), 'rmse_loo');
-     assertVectorsAlmostEqual(values.real.rmse_loo, values.test.rmse_loo, 'relative', 0.20);
+     assertVectorsAlmostEqual(values.real.rmse_loo, values.test.rmse_loo, 'relative', 0.05);
                  
+   function testWAIC
+    values.real = load('realValuesModelAssesment1.mat', 'WAICV', 'WAICG');
+    values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'), 'WAICV', 'WAICG');
+    assertVectorsAlmostEqual(values.real.WAICV, values.test.WAICV, 'relative', 0.05);     
+    assertVectorsAlmostEqual(values.real.WAICG, values.test.WAICG, 'relative', 0.05);

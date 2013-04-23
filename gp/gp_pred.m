@@ -48,6 +48,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, varargin)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, the expected 
 %               value for the ith case. 
+%      fcorr  - Method used for latent marginal posterior corrections. 
+%               Default is 'off'. Possible methods are 'fact' for EP
+%               and either 'fact' or 'cm2' for Laplace. If method is
+%               'on', 'fact' is used for EP and 'cm2' for Laplace.
 %
 %    NOTE! In case of FIC and PIC sparse approximation the
 %    prediction for only some PREDCF covariance functions is just
@@ -97,6 +101,7 @@ ip.addParamValue('predcf', [], @(x) isempty(x) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)&x>=0))
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
 if numel(varargin)==0 || isnumeric(varargin{1})
   % inputParser should handle this, but it doesn't
   ip.parse(gp, x, y, varargin{:});
@@ -843,25 +848,4 @@ switch gp.type
       end
     end  
     
-  case 'SSGP'
-    if nargin > 4
-      error(['Prediction with a subset of original ' ...
-             'covariance functions not currently implemented with SSGP']);
-    end
-
-    [Phi_f, S] = gp_trcov(gp, x);
-    Phi_a = gp_trcov(gp, xt);
-    m = size(Phi_f,2);
-    ns = eye(m,m)*S(1,1);
-    
-    L = chol(Phi_f'*Phi_f + ns)';
-    Eft = Phi_a*(L'\(L\(Phi_f'*y)));
-
-    
-    if nargout > 1
-      Varft = sum(Phi_a/L',2)*S(1,1);
-    end
-    if nargout > 2
-      error('GP_PRED with three output arguments is not implemented for SSGP!')
-    end
 end

@@ -5,7 +5,14 @@
 %    be used for estimating quantiles of interest of the response variable
 %    with respect to input variables.
 %
+%   Reference
+%     Boukouvalas et al. (2012). Direct Gaussian Process Quantile
+%     Regression Using Expectation Propagation. In Proceedings of the
+%     29th International Conference on Machine Learning, Edinburgh,
+%     Scotland, UK, 2012.
+%
 %  See also  LIK_QGP, DEMO_*
+%
 
 % Copyright (c) 2013 Ville Tolvanen
 

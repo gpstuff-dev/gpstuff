@@ -1,0 +1,26 @@
+Running: demo_survival_weibull
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1            -980.812    
+     1           2           2            -1305.26     0.000680212
+     2           6           6            -1428.27          0.0625
+     3           8           8            -1447.95             0.5
+     4          10          10            -1458.77        0.359102
+     5          12          12            -1460.06        0.365497
+     6          13          13            -1461.48               1
+     7          14          14             -1462.2               1
+     8          16          16            -1462.43        0.428259
+     9          17          17            -1462.51               1
+    10          18          18            -1462.52               1
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 11
+  Function Count : 19
+  Minimum found : -1462.5191
+  Intern Time : 0.016215 seconds
+  Total Time : 22.6051 seconds
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+    0.7765   -0.3490   -1.2271    0.1221   -1.5384   -0.5387
+

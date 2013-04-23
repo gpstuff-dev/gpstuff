@@ -1,5 +1,5 @@
 function r = invgamrand1(a, b, varargin)
-%INVGAMRAND1 Random matrices from inverse gamma distribution
+%INVGAMRAND1 Random matrices from inverse gamma distribution (mex)
 %
 %   R = INVGAMRAND1(A,B) returns a matrix of random numbers chosen   
 %   from the inverse gamma distribution with parameters A and B.

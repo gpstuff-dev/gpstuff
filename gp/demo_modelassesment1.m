@@ -72,7 +72,7 @@ models{1} = 'full_MAP';
 p_eff_latent = gp_peff(gp, x, y);
 % For easier comparison to other methods, compute mean log
 % predictive density (mlpd) instead of deviance (-2n*mlpd)
-[DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'focus', 'latent', 'output', 'mlpd');
+[DIC_latent, p_eff_latent2] = gp_dic(gp, x, y);
 WAICV(1) = gp_waic(gp,x,y);
 WAICG(1) = gp_waic(gp,x,y, 'method', 'G');
 
@@ -101,8 +101,8 @@ rfull = thin(rfull, 21, 2);
 models{2} = 'full_MCMC';
 % For easier comparison to other methods, compute mean log
 % predictive density (mlpd) instead of deviance (-2n*mlpd)
-[DIC(2), p_eff(2)] =  gp_dic(rfull, x, y, 'focus', 'param', 'output', 'mlpd');
-[DIC2(2), p_eff2(2)] =  gp_dic(rfull, x, y, 'focus', 'all', 'output', 'mlpd');
+[DIC(2), p_eff(2)] =  gp_dic(rfull, x, y, 'focus', 'hyper');
+[DIC2(2), p_eff2(2)] =  gp_dic(rfull, x, y);
 WAICV(2) = gp_waic(rfull,x,y);
 WAICG(2) = gp_waic(rfull,x,y, 'method', 'G');
 
@@ -130,8 +130,8 @@ gp_array = gp_ia(gp, x, y, 'int_method', 'grid');
 models{3} = 'full_IA'; 
 % For easier comparison to other methods, compute mean log
 % predictive density (mlpd) instead of deviance (-2n*mlpd)
-[DIC(3), p_eff(3)] =  gp_dic(gp_array, x, y, 'focus', 'param', 'output', 'mlpd');
-[DIC2(3), p_eff2(3)] =  gp_dic(gp_array, x, y, 'focus', 'all', 'output', 'mlpd');
+[DIC(3), p_eff(3)] =  gp_dic(gp_array, x, y, 'focus', 'hyper');
+[DIC2(3), p_eff2(3)] =  gp_dic(gp_array, x, y);
 WAICV(3) = gp_waic(gp_array,x,y);
 WAICG(3) = gp_waic(gp_array,x,y, 'method', 'G');
 
@@ -181,7 +181,7 @@ gp_fic=gp_optim(gp_fic,x,y,'opt',opt,'optimf',@fminlbfgs);
 % latent variables.
 models{4} = 'FIC_MAP';
 p_eff_latent(4) = gp_peff(gp_fic, x, y);
-[DIC_latent(4), p_eff_latent2(4)] = gp_dic(gp_fic, x, y, 'focus', 'latent', 'output', 'mlpd');
+[DIC_latent(4), p_eff_latent2(4)] = gp_dic(gp_fic, x, y);
 WAICV(4) = gp_waic(gp_fic,x,y);
 WAICG(4) = gp_waic(gp_fic,x,y, 'method', 'G');
 
@@ -210,8 +210,8 @@ rfic = thin(rfic, 21, 2);
 % the effective number of parameters as a second output, but here 
 % we use explicitly the gp_peff function
 models{5} = 'FIC_MCMC'; 
-[DIC(5), p_eff(5)] =  gp_dic(rfic, x, y, 'focus', 'param', 'output', 'mlpd');
-[DIC2(5), p_eff2(5)] =  gp_dic(rfic, x, y, 'focus', 'all', 'output', 'mlpd');
+[DIC(5), p_eff(5)] =  gp_dic(rfic, x, y, 'focus', 'hyper');
+[DIC2(5), p_eff2(5)] =  gp_dic(rfic, x, y);
 WAICV(5) = gp_waic(rfic,x,y);
 WAICG(5) = gp_waic(rfic,x,y, 'method', 'G');
 
@@ -235,8 +235,8 @@ disp('Grid integration over the parameters')
 gpfic_array = gp_ia(gp_fic, x, y, 'int_method', 'grid');
 
 models{6} = 'FIC_IA'; 
-[DIC(6), p_eff(6)] =  gp_dic(gpfic_array, x, y, 'focus', 'param', 'output', 'mlpd');
-[DIC2(6), p_eff2(6)] =  gp_dic(gpfic_array, x, y, 'focus', 'all', 'output', 'mlpd');
+[DIC(6), p_eff(6)] =  gp_dic(gpfic_array, x, y, 'focus', 'hyper');
+[DIC2(6), p_eff2(6)] =  gp_dic(gpfic_array, x, y);
 WAICV(6) = gp_waic(gpfic_array,x,y);
 WAICG(6) = gp_waic(gpfic_array,x,y, 'method', 'G');
 
@@ -300,7 +300,7 @@ gp_pic=gp_optim(gp_pic,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 models{7} = 'PIC_MAP';
 p_eff_latent(7) = gp_peff(gp_pic, x, y);
-[DIC_latent(7), p_eff_latent2(7)] = gp_dic(gp_pic, x, y, 'focus', 'latent', 'output', 'mlpd');
+[DIC_latent(7), p_eff_latent2(7)] = gp_dic(gp_pic, x, y);
 WAICV(7) = gp_waic(gp_pic, x, y);
 WAICG(7) = gp_waic(gp_pic, x, y, 'method', 'G');
 
@@ -330,8 +330,8 @@ rpic.tr_index = trindex;
 % the effective number of parameters as a second output, but here 
 % we use explicitly the gp_peff function
 models{8} = 'PIC_MCMC'; 
-[DIC(8), p_eff(8)] =  gp_dic(rpic, x, y, 'focus', 'param', 'output', 'mlpd');
-[DIC2(8), p_eff2(8)] =  gp_dic(rpic, x, y, 'focus', 'all', 'output', 'mlpd');
+[DIC(8), p_eff(8)] =  gp_dic(rpic, x, y, 'focus', 'hyper');
+[DIC2(8), p_eff2(8)] =  gp_dic(rpic, x, y);
 WAICV(8) = gp_waic(rpic, x, y);
 WAICG(8) = gp_waic(rpic, x, y, 'method', 'G');
 
@@ -356,8 +356,8 @@ disp('Grid integration over the parameters')
 gppic_array = gp_ia(gp_pic, x, y, 'int_method', 'grid');
 
 models{9} = 'PIC_IA'; 
-[DIC(9), p_eff(9)] =  gp_dic(gppic_array, x, y, 'focus', 'param', 'output', 'mlpd');
-[DIC2(9), p_eff2(9)] =  gp_dic(gppic_array, x, y, 'focus', 'all', 'output', 'mlpd');
+[DIC(9), p_eff(9)] =  gp_dic(gppic_array, x, y, 'focus', 'hyper');
+[DIC2(9), p_eff2(9)] =  gp_dic(gppic_array, x, y);
 WAICV(9) = gp_waic(gppic_array, x, y);
 WAICG(9) = gp_waic(gppic_array, x, y, 'method', 'G');
 

@@ -41,7 +41,7 @@
 %    Gelman et al (2004). Bayesian data Analysis, second edition,
 %      Chapman & Hall/CRC.
 %
-%  See also DEMO_BINOMIAL1, DEMO_BINOMIAL_APC
+%  See also DEMO_BINOMIAL1, DEMO_BINOMIAL_APC, DEMO_IMPROVEMARGINALS2
 
 % Copyright (c) 2010-2011 Jaakko Riihim�ki, Aki Vehtari
 
@@ -64,10 +64,10 @@ xgrid=linspace(-1.5,1.5,100)';
 Ntgrid=ones(size(xgrid))*5;
 
 % Create parts of the covariance function
-% Half-Student's t-prior is used to give flat prior in the
-% interesting region with respect to the likelihood
-cfc = gpcf_constant('constSigma2_prior',prior_t('s2',20^2));
-cfl = gpcf_linear('coeffSigma2_prior',prior_t('s2',20^2));
+% S-InvChi2 prior produces t_nu-prior for weights
+% Scales are approximately as suggested by Gelman
+cfc = gpcf_constant('constSigma2_prior',prior_sinvchi2('s2',10^2,'nu',4));
+cfl = gpcf_linear('coeffSigma2_prior',prior_sinvchi2('s2',2.5^2,'nu',4));
 % Create the GP structure
 gp = gp_set('lik', lik_binomial(), 'cf', {cfc cfl}, 'jitterSigma2', 1e-8);
 

@@ -74,22 +74,6 @@ if ~(isfield(gp,'derivobs') && gp.derivobs)
         end
       end
 
-    case 'SSGP'
-      [n,m]=size(x1);
-      n1 = n+1;
-      ncf = length(gp.cf);
-
-      % Evaluate the covariance without noise
-      gpcf = gp.cf{1};
-      K = gpcf.fh.trcov(gpcf, x1);
-
-      if nargout > 1 
-        C=sparse(0);
-        if isfield(gp.lik.fh,'trcov')
-          % Add Gaussian noise to the covariance
-          C = C + gp.lik.fh.trcov(gp.lik, x1);
-        end
-      end   
   end
 else
   % Derivative observations

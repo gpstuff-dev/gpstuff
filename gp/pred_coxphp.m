@@ -1,17 +1,19 @@
 function p = pred_coxphp(gp, x, y, xt, yt, varargin)
-%PRED_COXPHP  Integrates the model from zero to point yt (when time is
-%  scaled to interval 0-1)
+%PRED_COXPHP  Integrates the model from zero to point yt
 %
 %  Description
-%    P = PRED_COXPHP(GP,X,Y,XT,YT)
-%    If given 1D vector Y, integrates the model from zero to point yt with
-%    respect to time. Return P, the probability that event has happened
-%    before time yt. YT is vector of size 1xM(or Mx1) indicating times scaled
-%    to same interval as the time in timeprocess. Returns matrix P of size NxM
-%    where columns correspond to points in YT and rows correspond to rows in X
-%    (e.g. people). In case of 2D Y, Integrate model from starting time YT(:,1)
-%    to end time YT(:,2). YT is matrix of size Mx2, indicating starting time
-%    and end time for every test point.
+%    P = PRED_COXPHP(GP,X,Y,XT,YT,'Z',YE)
+%    If given 1D vector Y, integrates the model from zero to point yt
+%    with respect to time. Return P, the probability that event has
+%    happened before time yt. YT is vector of size 1xM(or Mx1)
+%    indicating times scaled to same interval as the time in
+%    timeprocess. YE is is a vector of censoring indicators with z = 0
+%    for uncensored event and z = 1 for right censored event. Returns
+%    matrix P of size NxM where columns correspond to points in YT and
+%    rows correspond to rows in X (e.g. people). In case of 2D Y,
+%    Integrate model from starting time YT(:,1) to end time
+%    YT(:,2). YT is matrix of size Mx2, indicating starting time and
+%    end time for every test point.
 %
 
 % Copyright (c) 2012-2013 Ville Tolvanen
@@ -121,8 +123,8 @@ else
   if size(y,2) ~= size(yt,2)
     error('size(y,2) ~= size(yt,2)');
   end
-  if (any(yt(:,2) > gp.lik.stime))
-    error('YT has to be scaled to same interval as the timeprocess');
+  if (any(yt(:,2) > gp.lik.stime(end)))
+    error('YT has to be scaled to the same interval as the time process');
   end
   % Integrate from yt(:,1) to yt(:,2)
   sb=sum(bsxfun(@gt,yt(:,1),gp.lik.stime),2);

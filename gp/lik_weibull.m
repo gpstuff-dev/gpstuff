@@ -26,14 +26,14 @@ function lik = lik_weibull(varargin)
 %                           +(1-z_i)*(r-1)*log(y_i)
 %                           -exp(-f_i)*y_i^r) ]
 %
-%    where r is the shape parameter of Weibull distribution.
-%    z is a vector of censoring indicators with z = 0 for uncensored event
-%    and z = 1 for right censored event. 
+%    where r is the shape parameter of Weibull distribution.  z is a
+%    vector of censoring indicators with z = 0 for uncensored event
+%    and z = 1 for right censored event.
 %
 %    When using the Weibull likelihood you need to give the vector z
 %    as an extra parameter to each function that requires also y. 
-%    For example, you should call gpla_e as follows: gpla_e(w, gp,
-%    x, y, 'z', z)
+%    For example, you should call gp_optim as follows:
+%    gp_optim(gp, x, y, 'z', z)
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
@@ -212,7 +212,15 @@ function ll = lik_weibull_ll(lik, y, f, z)
   end
 
   a = lik.shape;
-  ll = sum((1-z).*(log(a) + (a-1).*log(y)-f) - exp(-f).*y.^a);
+  if sum(z)>0
+    z=logical(z);
+    ll = zeros(size(f));
+    ll(z) = -exp(-f(z)).*y(z).^a;
+    ll(~z) = log(a) + (a-1).*log(y(~z))-f(~z) - exp(-f(~z)).*y(~z).^a;
+    ll = sum(ll);
+  else
+    ll = sum(log(a) + (a-1).*log(y)- f - exp(-f).*y.^a);
+  end
 
 end
 
@@ -240,11 +248,26 @@ function llg = lik_weibull_llg(lik, y, f, param, z)
   a = lik.shape;
   switch param
     case 'param'      
-      llg = sum((1-z).*(1./a + log(y)) - exp(-f).*y.^a.*log(y));
+      if sum(z)>0
+        z=logical(z);
+        llg = zeros(size(f));
+        llg(z) = -exp(-f(z)).*y(z).^a.*log(y(z));
+        llg(~z) = 1./a + log(y(~z)) - exp(-f(~z)).*y(~z).^a.*log(y(~z));
+        llg = sum(llg);
+      else
+        llg = sum(1./a + log(y) - exp(-f).*y.^a.*log(y));
+      end
       % correction for the log transformation
       llg = llg.*lik.shape;
     case 'latent'
-      llg = -(1-z) + exp(-f).*y.^a;
+      if sum(z)>0        
+        z=logical(z);
+        llg = zeros(size(f));
+        llg(z) = exp(-f(z)).*y(z).^a;
+        llg(~z) = -1 + exp(-f(~z)).*y(~z).^a;
+      else
+        llg = -1 + exp(-f).*y.^a;
+      end
   end
 end
 
@@ -423,7 +446,11 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   g_i = g_i.*r;
 
   function g = deriv(f)
-    g = yc.*(1./r + log(yy)) - exp(-f).*yy.^r.*log(yy);
+    if yc==0     
+      g = -exp(-f).*yy.^r.*log(yy);
+    else
+      g = (1./r + log(yy)) - exp(-f).*yy.^r.*log(yy);
+    end
   end
 end
 
@@ -489,14 +516,24 @@ function [lpy, Ey, Vary] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
 
   % Evaluate the posterior predictive densities of the given observations
   lpy = zeros(length(yt),1);
-  for i1=1:length(yt)
-    % get a function handle of the likelihood times posterior
-    % (likelihood * posterior = Weibull * Gaussian)
-    % and useful integration limits
-    [pdf,minf,maxf]=init_weibull_norm(...
-      yt(i1),Ef(i1),Varf(i1),yc(i1),r);
-    % integrate over the f to get posterior predictive distribution
-    lpy(i1) = log(quadgk(pdf, minf, maxf));
+  if (min(size(Ef))>1) && (min(size(Varf))>1)
+    % Approximate integral with sum of grid points when using corrected
+    % marginal posterior
+    for i1=1:length(yt)
+      py = arrayfun(@(f) exp(lik.fh.ll(lik, yt(i1), f, zt(i1))), Ef(i1,:));
+      pf = Varf(i1,:)./sum(Varf(i1,:));
+      lpy(i1) = log(sum(py.*pf));      
+    end    
+  else
+    for i1=1:length(yt)
+      % get a function handle of the likelihood times posterior
+      % (likelihood * posterior = Weibull * Gaussian)
+      % and useful integration limits
+      [pdf,minf,maxf]=init_weibull_norm(...
+        yt(i1),Ef(i1),Varf(i1),yc(i1),r);
+      % integrate over the f to get posterior predictive distribution
+      lpy(i1) = log(quadgk(pdf, minf, maxf));
+    end
   end
 end
 
@@ -519,8 +556,6 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   ldconst = yc*log(r)+yc*(r-1)*log(yy)...
             - log(sigm2_i)/2 - log(2*pi)/2;
   
-   
-  
   % Create function handle for the function to be integrated
   df = @weibull_norm;
   % use log to avoid underflow, and derivates for faster search
@@ -530,17 +565,23 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
 
   % Set the limits for integration
   if yc==0
-    % with yy==0, the mode of the likelihood is not defined
-    % use the mode of the Gaussian (cavity or posterior) as a first guess
-    modef = myy_i;
+    % with yc==0, the mode of the likelihood is not defined
+    if myy_i>log(yy)
+      % the log likelihood is flat on this side
+      % use the mode of the Gaussian (cavity or posterior)
+      modef = myy_i;
+    else
+      % the log likelihood is approximately f on this side
+      modef = min(myy_i+sigm2_i,log(yy)+1);
+    end
   else
     % use precision weighted mean of the Gaussian approximation
     % of the Weibull likelihood and Gaussian
-    mu=-log(yc./(yy.^r));
-    %s2=1./(yc+1./sigm2_i);
-    s2=1./yc;
+    mu=log(yy);
+    s2=1;
     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
   end
+  modef0=modef;
   % find the mode of the integrand using Newton iterations
   % few iterations is enough, since first guess is in the right direction
   niter=4;       % number of Newton iterations
@@ -554,8 +595,13 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
       break
     end
   end
+  if isnan(modef)
+    modef=modef0;
+    modes=1;
+  else
+    modes=sqrt(-1/h);
+  end
   % integrand limits based on Gaussian approximation at mode
-  modes=sqrt(-1/h);
   minf=modef-8*modes;
   maxf=modef+8*modes;
   modeld=ld(modef);
@@ -576,6 +622,7 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
     end
   end
   maxld=ld(maxf);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
@@ -591,8 +638,15 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   
   function integrand = weibull_norm(f)
   % Weibull * Gaussian
+    if yc
+      % observed
+      lik = -f -exp(-f).*yy.^r;
+    else
+      % censored
+      lik = -exp(-f).*yy.^r;
+    end
     integrand = exp(ldconst ...
-                    -yc.*f -exp(-f).*yy.^r ...
+                    + lik ...
                     -0.5*(f-myy_i).^2./sigm2_i);
   end
 
@@ -600,22 +654,36 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   % log(Weibull * Gaussian)
   % log_weibull_norm is used to avoid underflow when searching
   % integration interval
+    if yc
+      % observed
+      lik = -f-exp(-f).*yy.^r;
+    else
+      % censored
+      lik = -exp(-f).*yy.^r;
+    end
     log_int = ldconst ...
-              -yc.*f -exp(-f).*yy.^r ...
+              + lik ...
               -0.5*(f-myy_i).^2./sigm2_i;
   end
 
   function g = log_weibull_norm_g(f)
   % d/df log(Weibull * Gaussian)
   % derivative of log_weibull_norm
-    g = -yc + exp(-f).*yy.^r ...
+    if yc
+      % observed
+      glik = -1 + exp(-f).*yy.^r;
+    else
+      % censored
+      glik = exp(-f).*yy.^r;
+    end
+    g = glik ...
         + (myy_i - f)./sigm2_i;
   end
 
   function g2 = log_weibull_norm_g2(f)
   % d^2/df^2 log(Weibull * Gaussian)
   % second derivate of log_weibull_norm
-    g2 = - exp(-f).*yy.^r ...
+    g2 = -exp(-f).*yy.^r ...
          -1/sigm2_i;
   end
 
@@ -650,7 +718,7 @@ function cdf = lik_weibull_predcdf(lik, Ef, Varf, yt)
   end
 end
 
-function p = lik_weibull_invlink(lik, f)
+function p = lik_weibull_invlink(lik, f, z)
 %LIK_WEIBULL Returns values of inverse link function
 %             
 %  Description 
@@ -707,7 +775,7 @@ function reclik = lik_weibull_recappend(reclik, ri, lik)
   else
     % Append to the record
     reclik.shape(ri,:)=lik.shape;
-    if ~isempty(lik.p)
+    if ~isempty(lik.p.shape)
       reclik.p.shape = lik.p.shape.fh.recappend(reclik.p.shape, ri, lik.p.shape);
     end
   end

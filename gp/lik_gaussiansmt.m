@@ -18,9 +18,9 @@ function lik = lik_gaussiansmt(varargin)
 %    Parameters for the Gaussian scale mixture approximation of the
 %    Student's t
 %      sigma2    - Variances of the mixture components.
-%                  The default is 1 x ndata vector of 0.1s.
+%                  The default is 1 x ndata vector of 0.1's.
 %      U         - Part of the parameter expansion, see below.
-%                  The default is 1 x ndata vector of 1s.
+%                  The default is 1 x ndata vector of 1's.
 %      tau2      - Part of the parameter expansion, see below.
 %                  The default is 0.1.
 %      alpha     - Part of the parameter expansion, see below.

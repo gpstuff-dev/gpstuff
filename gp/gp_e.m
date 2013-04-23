@@ -479,28 +479,6 @@ switch gp.type
     %0.5*trace(K_ff-K_fu*inv(K_uu)*K_fu')
     %0.5*trace(K_ff-B'*B)
     
-    % ============================================================
-    % SSGP
-    % ============================================================    
-  case 'SSGP'   % Predictions with sparse spectral sampling approximation for GP
-                % The approximation is proposed by M. Lazaro-Gredilla, 
-                % J. Quinonero-Candela and A. Figueiras-Vidal
-                % in Microsoft Research technical report MSR-TR-2007-152 (November 2007)
-                % NOTE! This does not work at the moment.
-    [Phi, S] = gp_trcov(gp, x);
-    m = size(Phi,2);
-    
-    A = eye(m,m) + Phi'*(S\Phi);
-    [A, notpositivedefinite] = chol(A,'lower');
-    if notpositivedefinite
-      [edata, eprior, e] = set_output_for_notpositivedefinite;
-      return
-    end
-    
-    b = (y'/S*Phi)/A';
-    edata = 0.5*n.*log(2*pi) + 0.5*sum(log(diag(S))) + sum(log(diag(A))) + 0.5*y'*(S\y) - 0.5*b*b';
-    
-    
   otherwise
     error('Unknown type of Gaussian process!')
 end

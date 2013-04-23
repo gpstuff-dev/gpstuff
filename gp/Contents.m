@@ -58,6 +58,7 @@
 %   GP_JPRED      Joint predictions with Gaussian process 
 %   GP_PREPRCTMU  Percentiles of the distribution of the location parameter
 %   GP_PREPRCTY   Percentiles of the predictive distribution at test points
+%   GP_PREDCM     Corrections for latent marginal posterior
 %   GP_MC         Markov chain sampling for Gaussian process models
 %   GPMC_PREDS    Conditional predictions with Gaussian Process MCMC
 %                 approximation.
@@ -106,15 +107,35 @@
 %                           observations
 %   DEMO_HURDLE             Demonstration of Logit Negative-binomial hurdle model
 %                           using Gaussian process prior
+%   DEMO_IMPROVEMARGINALS   Demonstration of marginal posterior improvements 
+%                           in Laplace and EP algorithms.
+%   DEMO_IMPROVEMARGINALS2  Demonstration of joint marginal posterior improvements 
+%                           in Laplace and EP algorithms.
+%   DEMO_INPUTDEPENDENTNOISE  Demonstration of input dependent-noise
+%                           model using Gaussian process prior
 %   DEMO_LGCP               Demonstration for a log Gaussian Cox process
 %                           with inference via EP or Laplace approximation
+%   DEMO_LGPDENS            Demonstration of Logistic-Gaussian Process density estimate
+%                           for 1D and 2D data and density regression
+%   DEMO_LOOPRED            Leave-one-out prediction demonstration for 2 classes
+%   DEMO_MEMORYSAVE         Demonstration of memory save option in GPstuff
+%   DEMO_MCMC               Demonstration of Markov Chain Monte Carlo sampling methods
+%                           in GPstuff
 %   DEMO_MODELASSESMENT1    Demonstration for model assesment with DIC, number 
 %                           of effective parameters and ten-fold cross validation
 %   DEMO_MODELASSESMENT2    Demonstration for model assesment when the observation 
 %                           model is non-Gaussian
+%   DEMO_MULTICLASS         Classification problem demonstration for 3 classes
+%                           using Gaussian process prior
+%   DEMO_MULTICLASS_NESTED_EP  Demonstrate the fully-coupled nested EP for
+%                           multi-class classification
+%   DEMO_MULTINOM           Demonstration of Gaussian process model with multinomial
+%                           likelihood with 3 classes
 %   DEMO_NEURALNETWORKCOV   Demonstration of Gaussian process with a neural
 %                           network covariance function
+%   DEMO_PASSGP             Demonstration of PASS-GP method for GP classification
 %   DEMO_PERIODIC           Regression problem demonstration for periodic data
+%   DEMO_QUANTILEGP         Demonstration of Quantile GP regression
 %   DEMO_REGRESSION1        Regression problem demonstration for 2-input 
 %                           function with Gaussian process
 %   DEMO_REGRESSION_ADDITIVE1 Regression demonstration demonstration with additive model
@@ -137,5 +158,8 @@
 %   DEMO_SPATIAL2           Demonstration for a disease mapping problem with 
 %                           Gaussian process prior and negative binomial 
 %                           observation model
-%   DEMO_SURVIVAL_WEIBULL   Survival model using Weibull baseline hazard
+%   DEMO_SURVIVAL_AFT       Survival model using accelerated failure time models
+%   DEMO_SURVIVAL_COXPH     Survival model using Cox proportional hazard model 
+%   DEMO_ZINEGBIN           Demonstration of zero-inflated Negative-binomial model
+%                           using Gaussian process prior
 %

@@ -1,8 +1,8 @@
 function x = take_nth(x,nth)
-%TAKE_NTH    Take n'th parameters from MCMC-chains
+%TAKE_NTH  Take n'th sample from Monte Carlo structure
 %
-%   x = take_nth(x,n) returns chain containing only
-%   n'th simulation sample 
+%   X = TAKE_NTH(X,N) returns N'th sample from Monte Carlo
+%   structure X
 %
 %   See also
 %     THIN, JOIN
