@@ -61,7 +61,7 @@ initTestSuite;
     values.real.p_eff(isnan(values.real.p_eff)) = 0;
     values.test = load(strrep(which('test_modelassesment2.m'), 'test_modelassesment2.m', 'testValues/testModelAssesment2.mat'),'p_eff');
     values.test.p_eff(isnan(values.test.p_eff)) = 0;
-    assertVectorsAlmostEqual(values.real.p_eff, values.test.p_eff, 'relative', 0.05);        
+    assertVectorsAlmostEqual(values.real.p_eff, values.test.p_eff, 'absolute', 0.5);        
         
         
 	function testPeffLatent
