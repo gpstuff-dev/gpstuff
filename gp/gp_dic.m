@@ -354,7 +354,7 @@ function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
           w(i,:) = gp_pak(Gp);
           if isfield(gp{1}.lik.fh,'trcov')
             % Gaussian
-            [Ef(:,i), Varf(:,i), lpy, tmp, Vary(:,i)] = fh_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+            [Ef(:,i), Varf(:,i), lpy, tmp, VarY(:,i)] = fh_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
             sigma2(:,i) = VarY(:,i) - Varf(:,i);
           else
             % non-Gaussian (no need for sigma2)
