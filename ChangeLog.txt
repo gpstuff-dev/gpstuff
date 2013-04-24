@@ -10,7 +10,25 @@ New features:
     Machine Learning Research 12 (2011), 417-454
      - Laplace: cm2 and fact
      - EP: fact
-  
+
+Improvements
+ - lgpdens ignores now NaNs instead of giving error
+ - gp_cpred has a new option 'target' accpeting values 'f' or 'mu'
+ - unified gp_waic and gp_dic
+   - by default return mlpd
+   - option 'form' accetps now values 'mean' 'all' 'sum' and 'dic'
+ - improved survival demo demo_survival_aft (accalerated failure time)
+   - renamed and improved from demo_survival_weibull
+ - rearranged some files to more logical directories
+ - bug fixes 
+
+New files
+ - gp_predcm: marginal posterior corrections for latent values.
+ - demo_improvedmarginals: demonstration of marginal posterior corrections
+ - demo_improvedmarginals2: demonstration of marginal posterior corrections
+ - lik_multinomprobit: multinomial probit likelihood
+ - demo_multiclass_nested_ep: demonstration of nested EP with multinomprobit
+
 
 2013-03-12 Version 4.0
 
