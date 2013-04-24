@@ -28,7 +28,9 @@
 % Copyright (c) 2011-2013 Jaakko Riihimäki, Pasi Jylänki, Aki Vehtari
 
 %- load the data
-x=load('cdata.txt');
+S = which('demo_multiclass_nested_ep');
+L = strrep(S,'demo_multiclass_nested_ep.m','demodata/cdata.txt');
+x=load(L);
 y=zeros(size(x,1),3);
 y(x(:,5)==0,1) = 1;
 y(x(:,5)==1,2) = 1;
