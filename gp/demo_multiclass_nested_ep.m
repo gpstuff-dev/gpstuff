@@ -29,7 +29,7 @@
 
 %- load the data
 S = which('demo_multiclass_nested_ep');
-L = strrep(S,'demo_regression1.m','demodata/cdata.txt');
+L = strrep(S,'demo_multiclass_nested_ep.m','demodata/cdata.txt');
 x=load(L);
 y=zeros(size(x,1),3);
 y(x(:,5)==0,1) = 1;
