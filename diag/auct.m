@@ -1,9 +1,9 @@
 function at = auct(crit,y,z,tt)
-%AUCS Compute area under curve for survival model at given time
+%AUCT Compute area under curve for survival model at given time
 %
 %  Description
-%    A = AUCT(CRIT,Z) Compute are under curve for survival model at
-%    given time using criteria vector CRIT (where larger value
+%    A = AUCT(CRIT,Y,Z,TT) Compute are under curve for survival model
+%    at given time using criteria vector CRIT (where larger value
 %    means larger risk of incidence), observed time vector Y,
 %    censoring indicator matrix Z at times TT (0=event, 1=censored)
 %    and a time vector TT.

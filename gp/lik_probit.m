@@ -291,14 +291,23 @@ function [lpy, Ey, Vary] = lik_probit_predy(lik, Ef, Varf, yt, zt)
     error('lik_probit: The class labels have to be {-1,1}')
   end
   lpy=[];
-  if ~isempty(yt)
-    p = Ef.*yt./sqrt(1+Varf);
-    lpy = log(norm_cdf(p));    % Probability p(y_new)
-    if any(p<-10)
-      % Asymptotic expansion of norm_cdf
-      i = find(p<-10);
-      c = 1 - 1./p(i).^2.*(1-3./p(i).^2.*(1-5./p(i).^2.*(1-7./p(i).^2)));
-      lpy(i) = -0.5*log(2*pi)-p(i).^2./2-log(-p(i))+log(c);
+  if (min(size(Ef)) > 1) && (min(size(Varf)) > 1)
+    lpy = zeros(size(yt));
+    for i1=1:size(yt,1)
+      py=norm_cdf(yt(i1).*Ef(i1,:));
+      pf=Varf(i1,:)./sum(Varf(i1,:));
+      lpy(i1)=log(sum(py.*pf));
+    end
+  else
+    if ~isempty(yt)
+      p = Ef.*yt./sqrt(1+Varf);
+      lpy = log(norm_cdf(p));    % Probability p(y_new)
+      if any(p<-10)
+        % Asymptotic expansion of norm_cdf
+        i = find(p<-10);
+        c = 1 - 1./p(i).^2.*(1-3./p(i).^2.*(1-5./p(i).^2.*(1-7./p(i).^2)));
+        lpy(i) = -0.5*log(2*pi)-p(i).^2./2-log(-p(i))+log(c);
+      end
     end
   end
 end

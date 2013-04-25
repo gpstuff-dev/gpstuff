@@ -1,5 +1,5 @@
 % DEMO_LGPDENS  Demonstration of Logistic-Gaussian Process density estimate
-%               for 1D and 2D data 
+%               for 1D and 2D data and density regression
 %
 %  Description 
 %
@@ -47,31 +47,34 @@ title('t_4')
 p0=t_pdf(xt,4,0,1);
 line(xt,p0,'color','k')
 %sum(p0.*log(p))
+drawnow
 
 subplot(2,2,2)
 % Mixture of two t_4
 setrandstream(0,'mrg32k3a');
 n1=sum(rand(100,1)<3/4);
 n2=100-n1;
-x=[trnd(4,n1,1); 3+trnd(4,n2,1)/4];
-xt=linspace(-6,6,400)';
+x=[trnd(4,n1,1); 3+trnd(4,n2,1)/2];
+xt=linspace(-7,7,400)';
 lgpdens(x,xt);
 axis tight
 title('Mixture of two t_4')
 % true density
-p0=t_pdf(xt,4,0,1)*2/3+t_pdf(xt,4,3,1/4)*1/3;
+p0=t_pdf(xt,4,0,1)*2/3+t_pdf(xt,4,3,1/2)*1/3;
 line(xt,p0,'color','k')
+drawnow
 
 subplot(2,2,3)
 % Galaxy data
 S = which('demo_lgpdens');
 L = strrep(S,'demo_lgpdens.m','demodata/galaxy.txt');
 x=load(L);
-xt=linspace(0,40000,200)';
+xt=linspace(7000,36000,400)';
 lgpdens(x,xt);
 axis tight
 title('Galaxy data')
 % true density is unknown
+drawnow
 
 subplot(2,2,4)
 % Gamma(1,1)
@@ -83,7 +86,7 @@ axis tight
 title('Gamma(1,1)')
 p0=gam_pdf(xt,1,1);
 line(xt,p0,'color','k')
-
+drawnow
 
 % =====================================
 % 1) 2D-examples
@@ -101,6 +104,7 @@ lgpdens(x);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 axis([-4 4 -4 4])
 title('Student t_4')
+drawnow
 
 subplot(2,2,2)
 % Old faithful
@@ -109,6 +113,7 @@ x=load(L);
 lgpdens(x,'range',[1 6 40 100]);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 title('Old faithful')
+drawnow
 
 subplot(2,2,3)
 % Banana-shaped
@@ -119,6 +124,7 @@ lgpdens(x,'range',[-30 30 -5 20],'gridn',26);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 axis([-25 25 -5 10])
 title('Banana')
+drawnow
 
 subplot(2,2,4)
 % Ring
@@ -130,6 +136,7 @@ lgpdens(x,'gridn',30);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 axis([-2.5 2.5 -2.5 2.5])
 title('Ring')
+drawnow
 
 
 % =====================================
@@ -141,6 +148,7 @@ lgpdens(x,'gridn',30, 'cond_dens', 'on');
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 axis([-2.5 2.5 -2.5 2.5])
 title('Ring - conditional density')
+drawnow
 
 
 % =====================================
@@ -151,7 +159,7 @@ figure(4)
 % Galaxy data with finer grid, 1D
 L = strrep(S,'demo_lgpdens.m','demodata/galaxy.txt');
 x=load(L);
-xt=linspace(0,40000,800)';
+xt=linspace(7000,36000,800)';
 subplot(2,2,1)
 tic,lgpdens(x,xt,'speedup', 'off');t0=toc;
 axis tight
@@ -160,6 +168,7 @@ subplot(2,2,2)
 tic,lgpdens(x,xt,'speedup', 'on');t1=toc;
 axis tight
 title(['Galaxy, FFT speed-up, elapsed time: ' num2str(t1)])
+drawnow
 
 % Old faithful, 2D
 L = strrep(S,'demo_lgpdens.m','demodata/faithful.txt');
@@ -172,6 +181,7 @@ subplot(2,2,4)
 tic,lgpdens(x,'range',[1 6 40 100],'gridn', 30, 'speedup', 'on');t1=toc;
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 title(['Old faithful, KRON speed-up, elapsed time: ' num2str(t1)])
+drawnow
 
 % =====================================
 % 1) 1D-example MCMC vs Laplace
@@ -192,6 +202,7 @@ title('t_4 (Laplace)')
 % true density
 p0=t_pdf(xt,4,0,1);
 line(xt,p0,'color','k')
+drawnow
 
 subplot(2,1,2)
 [p,pq]=lgpdens(x,xt,'latent_method','MCMC');
@@ -201,6 +212,7 @@ line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
 xlim([-7 7])
 title('t_4 (MCMC)')
 line(xt,p0,'color','k')
+drawnow
 
 [pks] = ksdensity(x,xt);
 

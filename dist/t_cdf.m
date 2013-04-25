@@ -1,7 +1,7 @@
 function tcdf = t_cdf (x, v, mu, sigma)
-%T_PDF     Student's t cumulative distribution function (cdf).
+%T_CDF     Student's t cumulative distribution function (cdf).
 %
-%   Y = T_PDF(X,V,MU,SIGMA) Returns the Student's t pdf with
+%   Y = T_CDF(X,V,MU,SIGMA) Returns the Student's t pdf with
 %   V degrees of freedom, MU mean and SIGMA standard deviation at X.
 %
 %   The size of Y is the common size of the input arguments. A scalar input  

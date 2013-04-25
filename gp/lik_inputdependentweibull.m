@@ -450,7 +450,7 @@ function [lpy, Ey, Vary] = lik_inputdependentweibull_predy(lik, Ef, Varf, yt, zt
 end
 
 
-function p = lik_inputdependentweibull_invlink(lik, f)
+function p = lik_inputdependentweibull_invlink(lik, f, z)
 %LIK_INPUTDEPENDENTWEIBULL Returns values of inverse link function
 %             
 %  Description 

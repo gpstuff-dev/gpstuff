@@ -31,10 +31,10 @@ function lik = lik_loglogistic(varargin)
 %    z is a vector of censoring indicators with z = 0 for uncensored event
 %    and z = 1 for right censored event. 
 %
-%    When using the loggaussian likelihood you need to give the vector z
-%    as an extra parameter to each function that requires also y. 
-%    For example, you should call gpla_e as follows: gpla_e(w, gp,
-%    x, y, 'z', z)
+%    When using the log-logistic likelihood you need to give the
+%    vector z as an extra parameter to each function that requires
+%    also y.  For example, you should call gp_optim as follows:
+%    gp_optim(gp, x, y, 'z', z)
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
@@ -212,7 +212,15 @@ function ll = lik_loglogistic_ll(lik, y, f, z)
   end
 
   r = lik.shape;
-  ll = sum((1-z).*(log(r)+(r-1).*log(y)-r.*f) +(z-2).*log(1+(y./exp(f)).^r));
+  if sum(z)>0
+    z=logical(z);
+    ll = zeros(size(f));
+    ll(z) = -log(1+(y(z)./exp(f(z))).^r);
+    ll(~z) = log(r)+(r-1).*log(y(~z))-r.*f(~z) - 2.*log(1+(y(~z)./exp(f(~z))).^r);
+    ll=sum(ll);
+  else
+    ll = sum((log(r)+(r-1).*log(y)-r.*f) - 2.*log(1+(y./exp(f)).^r));
+  end
 
 end
 
@@ -239,13 +247,33 @@ function llg = lik_loglogistic_llg(lik, y, f, param, z)
 
   r = lik.shape;
   switch param
-    case 'param'      
-      llg = sum((1-z).*(1/r+log(y)-f) + (z-2)./(1+(y./exp(f)).^r).* ...
-             (y./exp(f)).^r.*(log(y)-f));
+    case 'param'   
+      if sum(z)>1
+        z=logical(z);
+        llg = zeros(size(f));       
+        m = y(z)./exp(f(z));
+        llg(z) = - 1./(1+m.^r).*m.^r.*log(m);
+        m = y(~z)./exp(f(~z));
+        llg(~z) = (1/r+log(m)) - 2./(1+m.^r).*m.^r.*log(m);      
+        llg = sum(llg);
+      else
+        m = y./exp(f);
+        llg = sum((1/r+log(m)) - 2./(1+m.^r).*m.^r.*log(m));
+      end
       % correction for the log transformation
       llg = llg.*lik.shape;
     case 'latent'
-      llg = -r.*(1-z) - (z-2).*r.*(y./exp(f)).^r./(1+(y./exp(f)).^r);
+      if sum(z)>0
+        z=logical(z);
+        llg = zeros(size(f));
+        m = y(z)./exp(f(z));
+        llg(z) = r.*m.^r./(1+m.^r);
+        m = y(~z)./exp(f(~z));
+        llg(~z) = -r + 2.*r.*m.^r./(1+m.^r);
+      else
+        m = y./exp(f);
+        llg = -r + 2.*r.*m.^r./(1+m.^r);
+      end
   end
 end
 
@@ -277,11 +305,31 @@ function llg2 = lik_loglogistic_llg2(lik, y, f, param, z)
     case 'param'
       
     case 'latent'
-      llg2 = r.^2.*(z-2).*(y./exp(f)).^r./(1+(y./exp(f)).^r).^2;
+      if sum(z)>0
+        z=logical(z);
+        llg2 = zeros(size(f));
+        m = y(z)./exp(f(z));
+        llg2(z) = -r.^2.*m.^r./(1+m.^r).^2;
+        m = y(~z)./exp(f(~z));
+        llg2(~z) = -2.*r.^2.*m.^r./(1+m.^r).^2;
+      else
+        llg2 = r.^2.*(z-2).*(y./exp(f)).^r./(1+(y./exp(f)).^r).^2;
+      end
     case 'latent+param'
-      llg2 = (z-1) - (z-2).*(y./exp(f)).^r./(1+(y./exp(f)).^r) ...
-               + (z-2).*r.*(y./exp(f)).^(2*r).*(log(y)-f)./(1+(y./exp(f)).^r).^2 ...
-               - (z-2).*r.*(y./exp(f)).^r.*(log(y)-f)./(1+(y./exp(f)).^r);
+      if sum(z)>0
+        z=logical(z);
+        llg2 = zeros(size(f));
+        m = y(z)./exp(f(z));        
+        llg2(z) =  m.^r./(1+m.^r) - r.*m.^(2*r).*log(m)./(1+m.^r).^2 ...
+                  + r.*m.^r.*log(m)./(1+m.^r);
+        m = y(~z)./exp(f(~z));
+        llg2(~z) = -1 + 2.*m.^r./(1+m.^r) - 2.*r.*m.^(2*r).*log(m)./(1+m.^r).^2 ...
+               + 2.*r.*m.^r.*log(m)./(1+m.^r);
+      else
+        m = y./exp(f);
+        llg2 = -1 + 2.*m.^r./(1+m.^r) - 2.*r.*m.^(2*r).*log(m)./(1+m.^r).^2 ...
+               + 2.*r.*m.^r.*log(m)./(1+m.^r);
+      end
       % correction due to the log transformation
       llg2 = llg2.*r;
   end
@@ -314,10 +362,29 @@ function llg3 = lik_loglogistic_llg3(lik, y, f, param, z)
     case 'param'
       
     case 'latent'
-      llg3 = r.^3.*(z-2).*(y./exp(f)).^r.*(-1+(y./exp(f)).^r)./(1+(y./exp(f)).^r).^3;
+      if sum(z)>0
+        z = logical(z);
+        llg3 = zeros(size(f));
+        m = y(z)./exp(f(z));
+        llg3(z) = -r.^3.*m.^r.*(-1+m.^r)./(1+m.^r).^3;
+        m = y(~z)./exp(f(~z));
+        llg3(~z) = -2.*r.^3.*m.^r.*(-1+m.^r)./(1+m.^r).^3;
+      else
+        m = y./exp(f);
+        llg3 = -2.*r.^3.*m.^r.*(-1+m.^r)./(1+m.^r).^3;
+      end
     case 'latent2+param'
-      llg3 = -(r.*(z-2).*(y./exp(f)).^r.*(-2-2.*(y./exp(f)).^r + ...
-              r.*(-1+(y./exp(f)).^r).*log(y./exp(f))))./(1+(y./exp(f)).^r).^3;
+      if sum(z)>0
+        z = logical(z);
+        llg3 = zeros(size(f));
+        m = y(z)./exp(f(z));
+        llg3(z) = r.*m.^r.*(-2-2.*m.^r + r.*(-1+m.^r).*log(m))./(1+m.^r).^3;
+        m = y(~z)./exp(f(~z));
+        llg3(~z) = 2.*r.*m.^r.*(-2-2.*m.^r + r.*(-1+m.^r).*log(m))./(1+m.^r).^3;
+      else
+        m = y./exp(f);
+        llg3 = 2.*r.*m.^r.*(-2-2.*m.^r + r.*(-1+m.^r).*log(m))./(1+m.^r).^3;
+      end
       % correction due to the log transformation
       llg3 = llg3.*lik.shape;
   end
@@ -426,8 +493,12 @@ function [g_i] = lik_loglogistic_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   g_i = g_i.*r;
 
   function g = deriv(f)
-    g = yc.*(1/r+log(yy)-f) + (-1-yc)./(1+(yy./exp(f)).^r).* ...
-             (yy./exp(f)).^r.*(log(yy)-f);
+    m = yy./exp(f);
+    if yc==0
+      g = -1./(1+m.^r).*m.^r.*log(m);
+    else      
+      g = (1/r+log(m)) - 2./(1+m.^r).*m.^r.*log(m);
+    end
   end
 end
 
@@ -469,17 +540,27 @@ function [lpy, Ey, Vary] = lik_loglogistic_predy(lik, Ef, Varf, yt, zt)
 
   % Evaluate the posterior predictive densities of the given observations
   lpy = zeros(length(yt),1);
-  for i1=1:length(yt)
-    if abs(Ef(i1))>700
-      lpy(i1) = NaN;
-    else
-      % get a function handle of the likelihood times posterior
-      % (likelihood * posterior = Negative-binomial * Gaussian)
-      % and useful integration limits
-      [pdf,minf,maxf]=init_loglogistic_norm(...
-        yt(i1),Ef(i1),Varf(i1),yc(i1),r);
-      % integrate over the f to get posterior predictive distribution
-      lpy(i1) = log(quadgk(pdf, minf, maxf));
+  if (min(size(Ef))>1) && (min(size(Varf))>1)
+    % Approximate integral with sum of grid points when using corrected
+    % marginal posterior pf
+    for i1=1:length(yt)
+      py = arrayfun(@(f) exp(lik.fh.ll(lik, yt(i1), f, zt(i1))), Ef(i1,:));
+      pf = Varf(i1,:)./sum(Varf(i1,:));
+      lpy(i1) = log(sum(py.*pf));
+    end
+  else
+    for i1=1:length(yt)
+      if abs(Ef(i1))>700
+        lpy(i1) = NaN;
+      else
+        % get a function handle of the likelihood times posterior
+        % (likelihood * posterior = Negative-binomial * Gaussian)
+        % and useful integration limits
+        [pdf,minf,maxf]=init_loglogistic_norm(...
+          yt(i1),Ef(i1),Varf(i1),yc(i1),r);
+        % integrate over the f to get posterior predictive distribution
+        lpy(i1) = log(quadgk(pdf, minf, maxf));
+      end
     end
   end
 end
@@ -512,17 +593,23 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
 
   % Set the limits for integration
   if yc==0
-    % with yy==0, the mode of the likelihood is not defined
-    % use the mode of the Gaussian (cavity or posterior) as a first guess
-    modef = myy_i;
+    % with yc==0, the mode of the likelihood is not defined
+    if myy_i>log(yy)
+      % the log likelihood is flat on this side
+      % use the mode of the Gaussian (cavity or posterior)
+      modef = myy_i;
+    else
+      % the log likelihood is approximately f on this side
+      modef = min(myy_i+sigm2_i,log(yy)+r/sqrt(2));
+    end
   else
     % use precision weighted mean of the Gaussian approximation
     % of the loglogistic likelihood and Gaussian
-    mu=-log(yc.^(1/r)./yy);
-    s2=-r^2.*yc.*(-1-yc)./(1+yc).^2;
-%     s2=1;
+    mu=log(yy);
+    s2=1./(r.^2/2);
     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
   end
+  modef0=modef;
   % find the mode of the integrand using Newton iterations
   % few iterations is enough, since the first guess in the right direction
   niter=4;       % number of Newton iterations
@@ -536,8 +623,13 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
       break
     end
   end
+  if isnan(modef)
+    modef=modef0;
+    modes=sqrt(2)./r;
+  else
+    modes=sqrt(-1/h);
+  end
   % integrand limits based on Gaussian approximation at mode
-  modes=sqrt(-1/h);
   minf=modef-8*modes;
   maxf=modef+8*modes;
   modeld=ld(modef);
@@ -558,6 +650,7 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
     end
   end
   maxld=ld(maxf);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
@@ -573,8 +666,15 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
   
   function integrand = loglogistic_norm(f)
   % loglogistic * Gaussian
+    if yc
+      % observed
+      lik = -r.*f - 2.*log(1+(yy./exp(f)).^r);
+    else
+      % censored
+      lik = -log(1+(yy./exp(f)).^r);
+    end
     integrand = exp(ldconst ...
-                     - yc.*r.*f +(-1-yc).*log(1+(yy./exp(f)).^r) ...
+                    + lik ...
                     -0.5*(f-myy_i).^2./sigm2_i);
   end
 
@@ -582,22 +682,43 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
   % log(loglogistic * Gaussian)
   % log_loglogistic_norm is used to avoid underflow when searching
   % integration interval
+     if yc
+      % observed
+      lik =  -r.*f - 2.*log(1+(yy./exp(f)).^r);
+    else
+      % censored
+      lik = -log(1+(yy./exp(f)).^r);
+    end
     log_int = ldconst ...
-               -yc.*r.*f +(-1-yc).*log(1+(yy./exp(f)).^r) ...
+              + lik ...
               -0.5*(f-myy_i).^2./sigm2_i;
   end
-
+  
   function g = log_loglogistic_norm_g(f)
   % d/df log(loglogistic * Gaussian)
   % derivative of log_loglogistic_norm
-    g = -r.*yc - (-1-yc).*r.*(yy./exp(f)).^r./(1+(yy./exp(f)).^r) ...
+    if yc
+      % observed
+      glik = -r + 2.*r.*(yy./exp(f)).^r./(1+(yy./exp(f)).^r);
+    else
+      % censored
+      glik = r.*(yy./exp(f)).^r./(1+(yy./exp(f)).^r);
+    end
+    g = glik ...
         + (myy_i - f)./sigm2_i;
   end
 
   function g2 = log_loglogistic_norm_g2(f)
   % d^2/df^2 log(loglogistic * Gaussian)
   % second derivate of log_loglogistic_norm
-    g2 =  r.^2.*(-1-yc).*(yy./exp(f)).^r./(1+(yy./exp(f)).^r).^2 ...
+    if yc
+      % observed
+      glik2 = -2.*r.^2.*(yy./exp(f)).^r./(1+(yy./exp(f)).^r).^2;
+    else
+      % censored
+      glik2 = -r.^2.*(yy./exp(f)).^r./(1+(yy./exp(f)).^r).^2;
+    end
+    g2 =  glik2 ...
               -1/sigm2_i;
   end
 
@@ -632,7 +753,7 @@ function cdf = lik_loglogistic_predcdf(lik, Ef, Varf, yt)
   end
 end
 
-function p = lik_loglogistic_invlink(lik, f)
+function p = lik_loglogistic_invlink(lik, f, z)
 %LIK_loglogistic Returns values of inverse link function
 %             
 %  Description 
@@ -689,7 +810,7 @@ function reclik = lik_loglogistic_recappend(reclik, ri, lik)
   else
     % Append to the record
     reclik.shape(ri,:)=lik.shape;
-    if ~isempty(lik.p)
+    if ~isempty(lik.p.shape)
       reclik.p.shape = lik.p.shape.fh.recappend(reclik.p.shape, ri, lik.p.shape);
     end
   end

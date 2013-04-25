@@ -1,12 +1,13 @@
-function x = batch(x,nburn,batchsize,nlast,fun)
-%BATCH    Batch MCMC sample chain and evaluate mean/median of batches
+function x = batchmc(x,nburn,batchsize,nlast,fun)
+%BATCHMC    Batch MCMC sample chain and evaluate mean/median of batches
 %
-%   X = BATCH(X, NBURN, BATCHSIZE, NLAST, FUN) Takes in sample chain X and 
-%   omits NBURN samples from the beginning and divides it into batches of size 
-%   BATCHSIZE until the NLAST'th sample. FUN is a function handle to handle the 
-%   batches, for example @mean, which evaluates the mean of each batch after which 
-%   a sample chain X is returned containing the mean values of each batch. User can
-%   give any function for batch as a function handle.
+%   X = BATCHMC(X, NBURN, BATCHSIZE, NLAST, FUN) Takes in sample chain
+%   X and omits NBURN samples from the beginning and divides it into
+%   batches of size BATCHSIZE until the NLAST'th sample. FUN is a
+%   function handle to handle the batches, for example @mean, which
+%   evaluates the mean of each batch after which a sample chain X is
+%   returned containing the mean values of each batch. User can give
+%   any function for batch as a function handle.
 %
 %   The default values are BATCHSIZE = 2, NLAST = SIZE(X,1) and FUN = @mean.
 %

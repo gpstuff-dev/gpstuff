@@ -43,6 +43,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, the expected 
 %               value for the ith case. 
+%      fcorr  - Method used for latent marginal posterior corrections. 
+%               Default is 'off'. For Laplace possible methods are
+%               'fact' and 'cm2'.  If method is 'on', 'cm2' is used
+%               for Laplace.
 %
 %    NOTE! In case of FIC and PIC sparse approximation the
 %    prediction for only some PREDCF covariance functions is just
@@ -90,6 +94,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+  ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', ...
+                   'cm2', 'fact', 'on'}))
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
     ip.parse(gp, x, y, varargin{:});
@@ -102,6 +108,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
   zt=ip.Results.zt;
   predcf=ip.Results.predcf;
   tstind=ip.Results.tstind;
+  fcorr=ip.Results.fcorr;
   if isempty(xt)
     xt=x;
     if isempty(tstind)
@@ -140,7 +147,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       % ============================================================
       if ~isfield(gp.lik, 'nondiagW')
         % Likelihoods with diagonal Hessian
-        [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        %[e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [f, L, W, p] = deal(p.f, p.L, p.La2, p.p);
         
         ntest=size(xt,1);
         % notice the order xt,x to avoid transpose later
@@ -197,7 +206,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
         % Likelihoods with non-diagonal Hessian
         
         [tn,nout]=size(y);
-        [e, edata, eprior, f, L, a, E, M] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        %[e, edata, eprior, f, L, a, E, M] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [f, L, a, E, M] = deal(p.f, p.L, p.a, p.La2, p.p);
         
         switch gp.lik.type
           
@@ -570,7 +581,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 
       m = size(u,1);
 
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, La2] = deal(p.f, p.La2);
 
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       ntest=size(xt,1);
@@ -637,7 +650,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       ntest = size(xt,1);
       m = size(u,1);
 
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, La2] = deal(p.f, p.La2);
 
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
 
@@ -702,7 +717,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       u = gp.X_u;
       m = length(u);
 
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, La2] = deal(p.f, p.La2);
       
       % Indexes to all non-compact support and compact support covariances.
       cf1 = [];
@@ -856,7 +873,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       
       m = size(u,1);
       
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, L] = deal(p.f, p.L);
       
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       ntest=size(xt,1);
@@ -884,26 +903,52 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
         
         switch gp.type
           case 'SOR'
-            Varft = sum((K_nu/Luu).^2,2)' - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+%             Varft = sum((K_nu'/Luu).^2,2)' - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+            Varft = sum(BB2.^2,1)'  - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
           case {'VAR' 'DTC'}
             kstarstar = gp_trvar(gp,xt,predcf);
             Varft = kstarstar - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
         end                 
       end
       
-  end
-  
+  end  
+  if ~isequal(fcorr, 'off')
+    % Do marginal corrections for samples
+    [pc_predm, fvecm] = gp_predcm(gp, x, y, xt, 'z', z, 'ind', 1:size(xt,1), 'fcorr', fcorr);
+    for i=1:size(xt,1)
+      % Remove NaNs and zeros
+      pc_pred=pc_predm(:,i);
+      dii=isnan(pc_pred)|pc_pred==0;
+      pc_pred(dii)=[];
+      fvec=fvecm(:,i);
+      fvec(dii)=[];
+      % Compute mean correction
+      Eft(i) = trapz(fvec.*(pc_pred./sum(pc_pred)));
+    end
+   end
   % ============================================================
   % Evaluate also the predictive mean and variance of new observation(s)
   % ============================================================
-  if nargout == 3
-    if isempty(yt)
-      lpyt=[];
-    else
-      lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+  if ~isequal(fcorr, 'off')
+    if nargout == 3
+      if isempty(yt)
+        lpyt=[];
+      else
+        lpyt = gp.lik.fh.predy(gp.lik, fvecm', pc_predm', yt, zt);
+      end
+    elseif nargout > 3
+      [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, fvecm', pc_predm', yt, zt);
     end
-  elseif nargout > 3
-    [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+  else
+    if nargout == 3
+      if isempty(yt)
+        lpyt=[];
+      else
+        lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+      end
+    elseif nargout > 3
+      [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+    end
   end
   
 end
