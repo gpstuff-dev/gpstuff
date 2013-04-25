@@ -1328,6 +1328,16 @@ Poisson likelihood, discussed in the section \ref{sec_spatial_demo1},
 Laplace and EP approximations work, in our experience, practically as
 well as MCMC.
 
+\subsubsection{Marginal posterior corrections}
+
+\pkg{GPstuff} also provides methods for marginal posterior corrections using either Laplace or EP as a latent method \citep{Cseke+Heskes:2011}. Provided correction methods are either \texttt{cm2} or \texttt{fact} for Laplace and \texttt{fact} for EP. 
+
+Univariate marginal posterior corrections can be computed with function \texttt{gp\_predcm} which returns the corrected marginal posterior distributtion for the given indices of input/outputs:
+\begin{verbatim}
+  [pc, fvec, p] = gp_predcm(gp,x,y,'ind', 1, 'fcorr', 'fact');
+\end{verbatim}
+The returned value \texttt{pc} corresponds to corrected marginal posterior for the latent value $f_1$, \texttt{fvec} corresponds to vector of grid points where \texttt{pc} is evaluated and \texttt{p} is the original Gaussian posterior distribution evaluated at \texttt{fvec}. Marginal posterior corrections can also be used for predictions in \texttt{gp\_pred} and sampling of latent values in \texttt{gp\_rnd} (see \texttt{demo\_improvedmarginals1} and \texttt{demo\_improvedmarginals2}). \texttt{gp\_rnd} uses univariate marginal corrections with Gaussian copula to sample from the joint marginal posterior of several latent values.
+
 \section{Other single latent models}
 
 % In this section, we discuss other example applications where
