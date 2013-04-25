@@ -1,7 +1,7 @@
 Last modified: 2013-03-20 16:01:42 EET
 -----------------------------------------------------------------
 
-GPstuff: Gaussian process models for Bayesian analysis 4.0
+GPstuff: Gaussian process models for Bayesian analysis 4.1
 
 Maintainers: Aki Vehtari <aki.vehtari@aalto.fi>
              Jarno Vanhatalo <jarno.vanhatalo@helsinki.fi>
