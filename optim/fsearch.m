@@ -1,4 +1,4 @@
-function [x,rec] = fsearch(fun,x0,opt,varargin)
+function [x,rec] = fsearch(fun,x0,varargin)
 % FSEARCH Finds the minimum of a combinatorial function using forward search
 %
 %   X = FSEARCH(FUN, X0) attempts to find a combination of elements
@@ -32,12 +32,20 @@ function [x,rec] = fsearch(fun,x0,opt,varargin)
 %             Use same parameter order as in fminunc etc.
 %             Minimize instead of maximize
 %             Total rewrite.
+if nargin>2
+  opt=varargin{1};
+  varargin(1)=[];
+end
 
+x0=x0(:)';
 nx = size(x0,2);  % number of elements
 chosen = [];      % the elements chosen sofar
 nchosen = 0;      % number of chosen elements
 % Options
 opt = fsearch_opt(opt);
+if opt.nsel>nx
+  opt.nsel=nx;
+end
 
 % The loop     
 value=Inf;
