@@ -3,7 +3,7 @@ function  gpmf = gpmf_squared(varargin)
 %
 %  Description
 %    GPMF = GPMF_SQUARED('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
-%    creates linear mean function structure in which the named
+%    creates squared mean function structure in which the named
 %    parameters have the specified values. Any unspecified
 %    parameters are set to default values.
 %
@@ -11,7 +11,8 @@ function  gpmf = gpmf_squared(varargin)
 %    modify a mean function structure with the named parameters
 %    altered with the specified values.
 %  
-%    Parameters for linear mean function [default]
+%    Parameters for squared mean function [default]
+%      interactions      - twoway interactions (default off)
 %      prior_mean        - prior mean (scalar or vector) for base
 %                          functions' weight prior (default 0)
 %      prior_cov         - prior covariances (scalar or vector) 
@@ -41,6 +42,7 @@ function  gpmf = gpmf_squared(varargin)
   ip.FunctionName = 'GPMF_SQUARED';
   ip.addOptional('gpmf', [], @isstruct);
   ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
+  ip.addParamValue('interactions', 'off', @(x) islogical(x) || ismember(x,{'on' 'off'}))
   ip.addParamValue('prior_mean',0, @(x) isvector(x));
   ip.addParamValue('prior_cov',100, @(x) isvector(x));
   ip.addParamValue('mean_prior', [], @isstruct);
@@ -60,6 +62,9 @@ function  gpmf = gpmf_squared(varargin)
     init=false;
   end
   % Initialize parameters
+  if init || ~ismember('interactions',ip.UsingDefaults)
+    gpmf.interactions=ip.Results.interactions;
+  end
   if init || ~ismember('prior_mean',ip.UsingDefaults)
     gpmf.b=ip.Results.prior_mean(:)';
   end
@@ -100,15 +105,17 @@ function h = gpmf_geth(gpmf, x)
 %    one dimension and the first row is for the smallest
 %    dimension.
   
-  if ~isfield(gpmf,'selectedVariables')
-    h = x'.^2;
-  else
-    selectedVariables=gpmf.selectedVariables;
-    h=zeros(length(selectedVariables),length(x(:,1)));
-    
-    for i=1:length(selectedVariables)
-      h(i,:)=x(:,selectedVariables(i))'.^2;
-    end 
+  if isfield(gpmf,'selectedVariables')
+    x=x(:,selectedVariables);
+  end
+  h = x'.^2;
+  if isequal(gpmf.interactions,'on')
+    m=size(x,2);
+    for xi1=1:m
+      for xi2=xi1+1:m
+        h = [h; x(:,xi1)'.*x(:,xi2)'];
+      end
+    end
   end
   
 end
