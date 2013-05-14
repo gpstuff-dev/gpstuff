@@ -98,10 +98,10 @@ function h = gpmf_geth(gpmf, x)
 %    one dimension and the first row is for the smallest
 %    dimension.
   
-  if ~isfield(gpmf,'selectedVariables')
-    h=x';
-  else
+  if isfield(gpmf,'selectedVariables')
     h=x(:,gpmf.selectedVariables)';
+  else
+    h=x';
   end
   
 end
