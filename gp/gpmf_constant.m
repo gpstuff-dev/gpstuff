@@ -40,7 +40,7 @@ function gpmf = gpmf_constant(varargin)
   ip=inputParser;
   ip.FunctionName = 'GPMF_CONSTANT';
   ip.addOptional('gpmf', [], @isstruct);
-  ip.addParamValue('constant',1, @(x) isvector(x) && all(x>0));
+  ip.addParamValue('constant',1, @(x) isvector(x));
   ip.addParamValue('prior_mean',0, @(x) isvector(x));
   ip.addParamValue('prior_cov',100, @(x) isvector(x));
   ip.addParamValue('mean_prior', [], @isstruct);
@@ -98,7 +98,11 @@ function h = gpmf_geth(gpmf, x)
 %    1.
   
   constant=gpmf.constant;
-  h = repmat(constant,1,length(x(:,1)));
+  if isscalar(constant)
+    h = repmat(constant,1,length(x(:,1)));
+  else
+    h = constant(:)';
+  end
   
 end
 
