@@ -87,7 +87,7 @@ if ~isempty(xt) && ~isequal(xt, x)
   predictive = true;
   [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z, 'tstind', tstind);
 end
-nin = 9;
+nin = 11;
 fvecm=zeros(nin,length(ind));
 fvecm2=zeros(ng,length(ind));
 for i1=1:length(ind)
@@ -97,12 +97,12 @@ for i1=1:length(ind)
   minf = 6;
   maxf = 6;
   if ~predictive
-    %fvecm(:,i1)=Ef(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf(i2,i2));
-    fvecm(:,i1)=Ef(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf(i2,i2));
+    fvecm(:,i1)=Ef(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf(i2,i2));
+%     fvecm(:,i1)=Ef(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf(i2,i2));
     fvecm2(:,i1)=linspace(Ef(i2)-minf.*sqrt(Covf(i2,i2)), Ef(i2)+maxf.*sqrt(Covf(i2,i2)),ng)';
   else
-    %fvecm(:,i1)=Ef2(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf2(i2,i2));
-    fvecm(:,i1)=Ef2(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf2(i2,i2));
+    fvecm(:,i1)=Ef2(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf2(i2,i2));
+%     fvecm(:,i1)=Ef2(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf2(i2,i2));
     fvecm2(:,i1)=linspace(Ef2(i2)-minf.*sqrt(Covf2(i2,i2)), Ef2(i2)+maxf.*sqrt(Covf2(i2,i2)),ng)';
   end
 end
@@ -354,14 +354,26 @@ for i1=1:length(ind)
   % Interpolate correction to these grid points 
   % using piecewise cubic Hermite interpolation
   fvec2 = fvecm2(:,i1);
+  lc(:,i1)=lc(:,i1)-lc(5,i1);
+  if (sum(isnan(lc(:,i1)))>0)
+    warning('NaNs in moment computations')
+    lc(isnan(lc(:,i1)),i1)=0;
+  end
   lc2(:,i1) = interp1(fvec, lc(:,i1), fvec2, 'cubic');
 
   % Make correction
   pc(:,i1)=exp(lc2(:,i1) + log(p(:,i1)));
   
-  if any(isnan(pc(:,i1)))
+  if any(isnan(pc(:,i1))) || any(isinf(pc(:,i1))) 
     warning('NaNs in moment computations')
     pc(isnan(pc(:,i1)),i1)=0;
+    pc(isinf(pc(:,i1)),i1)=0;
+  end
+  if any(pc(:,i1)<eps)
+    pc(pc(:,i1)<eps,i1)=0;
+    iz1=find(pc(1:ceil(0.5*ng),i1)==0,1);
+    iz2=ceil(0.5*ng)+find(pc(ceil(0.5*ng):ng,i1)==0,1,'last');
+    pc([1:iz1 iz2:ng],i1)=0;
   end
   
   % Form corrected distribution & normalize
