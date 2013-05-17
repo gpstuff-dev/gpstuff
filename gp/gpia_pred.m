@@ -156,21 +156,28 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
   
   nGP = numel(gp_array);
 
-  nt = size(xt,1);
-  Efts=zeros(nt,nGP); Varfts=zeros(nt,nGP);
+  if isequal(gp_array{1}.lik.type, 'Coxph')
+    nxt=size(xt,1); ntime=size(gp_array{1}.lik.xtime,1);
+    nt=nxt+ntime;
+    Efts=zeros(nt,nGP); Varfts=zeros(nt,nt,nGP);
+    lpyts=zeros(nxt,nGP);
+  else
+    nt=size(xt,1);
+    Efts=zeros(nt,nGP); Varfts=zeros(nt,1,nGP);
+    lpyts=zeros(nt,nGP);
+  end
   Eyts=[]; Varyts=[];
   Eytts=[]; Varytts=[];
-  lpyts=zeros(nt,nGP);
   for i1=1:nGP
     Gp=gp_array{i1};
     P_TH(:,i1) = Gp.ia_weight;
     % make predictions with different models in gp_array
     if nargout > 3
-      [Efts(:,i1), Varfts(:,i1), lpytt, Eytts, Varytts]=gp_pred(Gp,x,y,xt,options);
+      [Efts(:,i1), Varfts(:,:,i1), lpytt, Eytts, Varytts]=gp_pred(Gp,x,y,xt,options);
     elseif nargout > 2
-      [Efts(:,i1), Varfts(:,i1), lpytt]=gp_pred(Gp,x,y,xt,options);
+      [Efts(:,i1), Varfts(:,:,i1), lpytt]=gp_pred(Gp,x,y,xt,options);
     else
-      [Efts(:,i1), Varfts(:,i1)]=gp_pred(Gp,x,y,xt,options);
+      [Efts(:,i1), Varfts(:,:,i1)]=gp_pred(Gp,x,y,xt,options);
     end
     if ~isempty(yt) && nargout > 2
       lpyts(:,i1) = lpytt;
@@ -183,7 +190,12 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
 
   % compute combined predictions
   Eft = sum(bsxfun(@times,Efts,P_TH), 2);
-  Varft = sum(bsxfun(@times, Varfts, P_TH), 2) + sum(bsxfun(@times,bsxfun(@minus,Efts,Eft).^2, P_TH),2);
+  Varft = squeeze(sum(bsxfun(@times, Varfts, permute(P_TH,[1 3 2])), 3));
+  if size(Varft,2)==1
+    Varft=Varft+sum(bsxfun(@times,bsxfun(@minus,Efts,Eft).^2, P_TH),2);
+  else
+    Varft=Varft+diag(sum(bsxfun(@times,bsxfun(@minus,Efts,Eft).^2, P_TH),2));
+  end
   if nargout > 2
     if isempty(yt)
       lpyt = [];
