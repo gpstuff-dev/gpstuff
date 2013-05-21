@@ -7,7 +7,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
 %    For 2D data plot the density contours.
 %  
 %    [P,PQ,XT] = LGPDENS(X,OPTIONS) Compute LGP density estimate
-%    and return mean density P, 2.5% and 97.5% percentiles PQ, and
+%    and return mean density P, 5% and 95% percentiles PQ, and
 %    grid locations.
 %  
 %    [P,PQ,XT] = LGPDENS(X,XT,OPTIONS) Compute LGP density estimate
@@ -42,10 +42,16 @@ function [p,pq,xx] = lgpdens(x,varargin)
 %                  'on' computes for 2D the conditional median density
 %                  estimate p(x2|x1) when the matrix [x1 x2] is given as
 %                  input. 
-%      basis_function - defines if basis functions are used. 
-%                       'on' (default) uses linear and quadratic basis
-%                       functions
+%      basis     - defines if basis functions are used. 
+%                       'gaussian' (default) uses linear and quadratic
+%                         basis functions on latent space implying
+%                         centering on Gaussian distribution
+%                       'exp' uses linear basis function on latent
+%                         space implying centering on exponential distribution
 %                       'off' no basis functions
+%      bounded   - in 1D case tells if the density is bounded from left
+%                  or right (default is [0 0]). In unbounded case,
+%                  decreasing tails are assumed.
 
 % Copyright (c) 2011-2012 Jaakko Riihimäki and Aki Vehtari
 
@@ -68,7 +74,8 @@ function [p,pq,xx] = lgpdens(x,varargin)
                    ismember(x,{'on' 'off' 'iter'}))
   ip.addParamValue('speedup',[], @(x) ismember(x,{'on' 'off'}));
   ip.addParamValue('cond_dens',[], @(x) ismember(x,{'on' 'off'}));
-  ip.addParamValue('basis_function',[], @(x) ismember(x,{'on' 'off'}));
+  ip.addParamValue('basis','gaussian', @(x) ismember(x,{'gaussian' 'exp' 'off'}));
+  ip.addParamValue('bounded',[0 0], @(x) isnumeric(x) && min(size(x))==1 && max(size(x))==2);
   
   ip.parse(x,varargin{:});
   x=ip.Results.x;
@@ -82,7 +89,8 @@ function [p,pq,xx] = lgpdens(x,varargin)
   display=ip.Results.display;
   speedup=ip.Results.speedup;
   cond_dens=ip.Results.cond_dens;
-  basis_function=ip.Results.basis_function;
+  basis=ip.Results.basis;
+  bounded=ip.Results.bounded;
 
   x(any(~isfinite(x),2),:)=[];
   [n,m]=size(x);
@@ -129,13 +137,22 @@ function [p,pq,xx] = lgpdens(x,varargin)
       % normalise, so that same prior is ok for different scales
       xxn=(xx-mean(xx))./std(xx);
       
-      %[Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
-      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function);
+      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis);
       
       if strcmpi(latent_method,'MCMC')
         PJR=zeros(size(Ef,1),size(Covf,3));
         for i1=1:size(Covf,3)
           qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf(:,:,i1),'upper'),Ef(:,i1)');
+          if ~any(bounded)
+            qii=find(qr(:,1)<qr(:,2)&qr(:,end-1)>qr(:,end));
+          elseif bounded(1)&~bounded(2)
+            qii=find(qr(:,end-1)>qr(:,end));
+          elseif bounded(2)&~bounded(1)
+            qii=find(qr(:,1)<qr(:,2));
+          else
+            qii=1:1000;
+          end
+          qr=qr(qii,:);
           qjr=exp(qr)';
           pjr=bsxfun(@rdivide,qjr,sum(qjr));
           pjr=pjr./xd;
@@ -143,13 +160,27 @@ function [p,pq,xx] = lgpdens(x,varargin)
         end
         pjr=PJR;
       else
-        qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf,'upper'),Ef');
+        qr=bsxfun(@plus,randn(2000,size(Ef,1))*chol(Covf,'upper'),Ef');
+        if ~any(bounded)
+          qii=find(qr(:,1)<qr(:,2)&qr(:,end-1)>qr(:,end));
+        elseif bounded(1)&~bounded(2)
+          qii=find(qr(:,end-1)>qr(:,end));
+        elseif bounded(2)&~bounded(1)
+          qii=find(qr(:,1)<qr(:,2));
+        else
+          qii=1:2000;
+        end
+        if numel(qii)>200
+          qr=qr(qii,:);
+        else
+          warning('Rejection sampling to force decreasing tails for (semi)unbounded failed')
+        end
         qjr=exp(qr)';
         pjr=bsxfun(@rdivide,qjr,sum(qjr(1:gridn,:)));
         pjr=pjr./xd;
       end
       pp=mean(pjr')';
-      ppq=prctile(pjr',[2.5 97.5])';
+      ppq=prctile(pjr',[5 95])';
       
       if nargout<1
         % no output, do the plot thing
@@ -256,9 +287,9 @@ function [p,pq,xx] = lgpdens(x,varargin)
       
       % [Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
       if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
-        [Ef,Covf]=gpsmooth(xxn,yy,xxtn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function);
+        [Ef,Covf]=gpsmooth(xxn,yy,xxtn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis);
       else
-        [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function);
+        [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis);
       end
       
       if strcmpi(latent_method,'MCMC')
@@ -327,7 +358,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
       %else
       pp=mean(pjr')';
       %end
-      ppq=prctile(pjr',[2.5 97.5])';
+      ppq=prctile(pjr',[5 95])';
       
       if nargout<1
         % no output, do the plot thing
@@ -383,7 +414,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
   end
 end
 
-function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function)
+function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis)
 % Make inference with log Gaussian process and EP or Laplace approximation
 
   % gp_mc and gp_ia still uses numeric display option
@@ -404,22 +435,26 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   
   % weakly informative priors
   % prior based on guess of maximum differences in log densities
-  pm = prior_sqrtt('s2',10^2,'nu',4);
+  pm = prior_sqrtt('s2',10^2,'nu',1);
   % Weakly informative prior states that probability is smaller for
   % lengthscales which are much smaller than Silverman's rule of thumb
   % or min grid distance
-  h=max(diff(xx(1:2,end)).^2,1/sum(yy).^(1/5)/4);
-  pl = prior_invt('s2', 1./h, 'nu', 1);
+  h=max(diff(xx(1:2,end)).^2,1/sum(yy).^(1/5)/2);
+  if size(xx,2)==2
+    h=sqrt(h);
+  end
+  pl = prior_logt('s2', 2, 'mu', log(h),'nu',1);
   pa = prior_t('s2', 20^2, 'nu', 1);
   %pm = prior_sqrtt('s2', 10^2, 'nu', 4);
   %pl = prior_sinvchi2('s2', 1, 'nu', 1);
+  %pl = prior_logunif();
   %pa = prior_t('s2', 10^2, 'nu', 4);
   % different covariance functions have different parameters
   if isfield(gpcf1,'magnSigma2')
-     gpcf1 = gpcf(gpcf1, 'magnSigma2', 2, 'magnSigma2_prior', pm);
+     gpcf1 = gpcf(gpcf1, 'magnSigma2', 1, 'magnSigma2_prior', pm);
   end
   if isfield(gpcf1,'lengthScale')
-     gpcf1 = gpcf(gpcf1, 'lengthScale', 1, 'lengthScale_prior', pl);
+     gpcf1 = gpcf(gpcf1, 'lengthScale', h*2, 'lengthScale_prior', pl);
   end
   if isfield(gpcf1,'alpha')
     gpcf1 = gpcf(gpcf1, 'alpha', 20, 'alpha_prior', pa);
@@ -436,8 +471,11 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   end
   
   % Create the GP structure
-  if ~isempty(basis_function) && strcmp(basis_function, 'off')
+  if ~isempty(basis) && strcmp(basis, 'off')
     gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
+  elseif strcmp(basis, 'exp')
+    gpmflin = gpmf_linear('prior_mean',0,'prior_cov',100);
+    gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, 'meanf', {gpmflin});
   else
     gpmflin = gpmf_linear('prior_mean',0,'prior_cov',100);
     gpmfsq = gpmf_squared('prior_mean',0,'prior_cov',100,'interactions','on');
@@ -445,7 +483,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   end
   % First optimise hyperparameters using Laplace approximation
   gp = gp_set(gp, 'latent_method', 'Laplace');
-  opt=optimset('TolFun',1e-2,'TolX',1e-3,'Display',display);
+  opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display',display);
   
   if ~isempty(speedup) && strcmp(speedup, 'on')
     gp.latent_opt.gridn=gridn;
