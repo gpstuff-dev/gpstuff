@@ -59,6 +59,10 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                   results. That is, the results will be stored in
 %                   'current working directory'/folder. See previous
 %                   option for default.
+%       fcorr     - Method used for latent marginal posterior corrections. 
+%                   Default is 'off'. Possible methods are 'fact' for EP
+%                   and either 'fact' or 'cm2' for Laplace. If method is
+%                   'on', 'fact' is used for EP and 'cm2' for Laplace.
 %
 %    The output arguments are the following
 %       criteria  - structure including the following fields
@@ -221,6 +225,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
                    ismember(x,{'on' 'off' 'iter' 'fold'}))
   ip.addParamValue('save_results', false, @(x) islogical(x))
   ip.addParamValue('folder', [], @(x) ischar(x) )
+  ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
   ip.parse(gp, x, y, varargin{:});
   z=ip.Results.z;
   yt=ip.Results.yt;
@@ -236,6 +241,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   if isequal(display,'fold');display='iter';end
   save_results=ip.Results.save_results;
   folder = ip.Results.folder;
+  fcorr = ip.Results.fcorr;
 
   [n,nin] = size(x);
   gp_orig = gp;
@@ -294,6 +300,11 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   if ~isempty(strfind(pred, 'y'))
     predyt=1;
   else
+    predyt=0;
+  end
+  
+  if ~isequal(fcorr, 'off') && predyt
+    warning('Cant use marginal posterior corrections with y predictions');
     predyt=0;
   end
   
@@ -446,13 +457,13 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
     if predyt
       [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                                     tstind, 'z', ztr, 'yt', yt, 'zt', zt);
+                                     tstind, 'z', ztr, 'yt', yt, 'zt', zt, 'fcorr', fcorr);
     elseif predlpyt
       [Eft, Varft,lpyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                        tstind, 'z', ztr, 'yt', yt, 'zt', zt);
+                        tstind, 'z', ztr, 'yt', yt, 'zt', zt, 'fcorr', fcorr);
     elseif predft
       [Eft,Varft] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                    tstind, 'z', ztr, 'yt', yt, 'zt', zt);
+                    tstind, 'z', ztr, 'yt', yt, 'zt', zt, 'fcorr', fcorr);
     end
     if ~predft
       Eft=[]; Varft=[];
@@ -644,11 +655,11 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         
     % Make the predictions
     if predyt
-      [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst); 
+      [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst, 'fcorr', fcorr); 
     elseif predlpyt
-      [Eft, Varft,lpyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
+      [Eft, Varft,lpyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst, 'fcorr', fcorr);
     elseif predft
-      [Eft,Varft] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
+      [Eft,Varft] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst, 'fcorr', fcorr);
     end
     if ~predft
       Eft=[]; Varft=[];
