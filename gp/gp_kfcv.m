@@ -309,7 +309,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   end
   
   % Initialize empty structures
-  Eft=[]; Varft=[]; lpyt=[]; Eyt=[]; Varyt=[];
+  zz=zeros(n,1);
+  Eft=zz; Varft=zz; lpyt=zz; Eyt=zz; Varyt=zz;
   cvpreds.Eft=[]; cvpreds.Varft=[]; cvpreds.lpyt=[];
   cvpreds.Eyt=[]; cvpreds.Varyt=[];
   cvtrpreds.Eft=[]; cvtrpreds.Varft=[]; cvtrpreds.lpyt=[];
@@ -393,7 +394,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         else
           gp.tr_index = trind;
         end
-        tstind=gp_orig.tr_index;
+        if nargout>=4
+          tstind=gp_orig.tr_index;
+        end  
     end
 
     % Conduct inference
@@ -451,19 +454,38 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
     if iscell(gp)
       gplik=gp{1}.lik;
+      gptype=gp{1}.type;
     else
       gplik=gp.lik;
+      gptype=gp.type;
     end
-
+    
+    if nargout>=4
+      inds=1:n;      
+      tsind=tstind;
+    else
+      inds=tstindex{i}(:);
+      if isequal(gptype, 'PIC')
+        tsind=tstind;
+      else
+        tsind=[];
+      end
+    end
+    if isempty(ztr)
+      ztt=[];
+    else
+      ztt=zt(inds,:);
+    end
+    
     if predyt
-      [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                                     tstind, 'z', ztr, 'yt', yt, 'zt', zt, 'fcorr', fcorr);
+      [Eft(inds), Varft(inds), lpyt(inds), Eyt(inds), Varyt(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+                                     tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
     elseif predlpyt
-      [Eft, Varft,lpyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                        tstind, 'z', ztr, 'yt', yt, 'zt', zt, 'fcorr', fcorr);
+      [Eft(inds), Varft(inds),lpyt(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+                        tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
     elseif predft
-      [Eft,Varft] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                    tstind, 'z', ztr, 'yt', yt, 'zt', zt, 'fcorr', fcorr);
+      [Eft(inds),Varft(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+                    tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
     end
     if ~predft
       Eft=[]; Varft=[];
