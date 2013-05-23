@@ -68,7 +68,8 @@ ng = ip.Results.ng;
 predictive=false;
 gplik=gp.lik;
 n=size(x,1);
-[Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z, 'tstind', tstind);
+[Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z, 'tstind', 1:n);
+Covf=full(Covf);
 if isfield(ip.UsingDefaults, 'fcorr')
   if isequal(gp.latent_method, 'Laplace')
     % Default for Laplace
@@ -85,7 +86,9 @@ if ~isempty(xt) && ~isequal(xt, x)
   % Predictive equations if given xt, mind that if xt(ind) is in training
   % input x, predictive equations might not work correctly.
   predictive = true;
-  [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z, 'tstind', tstind);
+  [Ef2, Varf2]=gp_pred(gp,x,y,xt,'z',z,'tstind',tstind);
+%   [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z, 'tstind', tstind);
+%   Covf2=full(Covf2);
 end
 nin = 11;
 fvecm=zeros(nin,length(ind));
@@ -101,9 +104,9 @@ for i1=1:length(ind)
 %     fvecm(:,i1)=Ef(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf(i2,i2));
     fvecm2(:,i1)=linspace(Ef(i2)-minf.*sqrt(Covf(i2,i2)), Ef(i2)+maxf.*sqrt(Covf(i2,i2)),ng)';
   else
-    fvecm(:,i1)=Ef2(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf2(i2,i2));
+    fvecm(:,i1)=Ef2(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Varf2(i2));
 %     fvecm(:,i1)=Ef2(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf2(i2,i2));
-    fvecm2(:,i1)=linspace(Ef2(i2)-minf.*sqrt(Covf2(i2,i2)), Ef2(i2)+maxf.*sqrt(Covf2(i2,i2)),ng)';
+    fvecm2(:,i1)=linspace(Ef2(i2)-minf.*sqrt(Varf2(i2)), Ef2(i2)+maxf.*sqrt(Varf2(i2)),ng)';
   end
 end
 lc = zeros(nin, length(ind));
@@ -148,7 +151,7 @@ switch gp.latent_method
             fh_p = @(f) 1/Z_p*exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./norm_pdf(f, nutilde(ind(i1))/tautilde(ind(i1)), 1/sqrt(tautilde(ind(i1)))).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
           else
             inds=1:n;
-            cii = Covf2(ind(i1), ind(i1));
+            cii = Varf2(ind(i1));
             fh_p = @(f) norm_pdf(f,Ef2(ind(i1)),sqrt(cii));
           end
           
@@ -219,7 +222,7 @@ switch gp.latent_method
             t_tilde = @(f)  exp(ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
             fh_p = @(f) exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./t_tilde(f).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
           else
-            cii = Covf2(ind(i1), ind(i1));
+            cii = Varf2(ind(i1));
             fh_p = @(f) norm_pdf(f,Ef2(ind(i1)),sqrt(cii));
           end
           
@@ -285,7 +288,7 @@ switch gp.latent_method
             t_tilde = @(f) exp(ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
             fh_p = @(f) exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./t_tilde(f).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
           else
-            cii = Covf2(ind(i1), ind(i1));
+            cii = Varf2(ind(i1));
             fh_p = @(f) norm_pdf(f,Ef2(ind(i1)),sqrt(cii));
           end
           
