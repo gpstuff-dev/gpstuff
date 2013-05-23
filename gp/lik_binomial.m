@@ -331,7 +331,7 @@ function [lpy, Ey, Vary] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
   
   nt=length(yt);
   lpy=zeros(nt,1);
-  if (min(size(Ef))>1) && (min(size(Varf))>1)
+  if (size(Ef,2) > 1) && (size(Ef,2) > 1) && size(yt,2) == 1
     % Approximate integral with sum of grid points when using corrected
     % marginal posterior pf
     for i1=1:length(yt)

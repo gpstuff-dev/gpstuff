@@ -333,7 +333,7 @@ function [lpy, Ey, Vary] = lik_poisson_predy(lik, Ef, Varf, yt, zt)
 
   % Evaluate the posterior predictive densities of the given observations
   lpy = zeros(length(yt),1);
-  if (min(size(Ef))>1) && (min(size(Varf))>1)
+  if (size(Ef,2) > 1) && (size(Ef,2) > 1) && size(yt,2) == 1
     % Approximate integral with sum of grid points when using corrected
     % marginal posterior
     for i1=1:length(yt)
