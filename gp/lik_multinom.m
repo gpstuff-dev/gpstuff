@@ -331,6 +331,7 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
   end
   lpy=lpy(:);
   Ey=Ey(:);
+  Vary=Vary(:);
 end
 
 function p = lik_multinom_invlink(lik, f, z)
