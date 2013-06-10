@@ -231,4 +231,5 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
     end            
   end    
   Varf=squeeze(Varf);
+  Vary=squeeze(Vary);
 end
