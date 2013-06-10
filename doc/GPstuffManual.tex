@@ -147,6 +147,13 @@ extensively) and \proglang{Octave} \citep{octave:2012} (3.6.4 or
 later, compact support covariance functions are not currently working
 in Octave). It is available from
 \url{http://becs.aalto.fi/en/research/bayes/gpstuff/}.
+If you use GPstuff, please use the reference \citep{Vanhatalo+gpstuff:2013}
+\begin{itemize}
+\item[] Jarno Vanhatalo, Jaakko Riihim{\"a}ki, Jouni Hartikainen, Pasi
+  Jyl{\"a}nki, Ville Tolvanen and Aki Vehtari (2013). GPstuff: Bayesian
+  Modeling with Gaussian Processes. \emph{Journal of Machine Learning
+    Research}, 14:1175-1179.
+\end{itemize}
 
 GP is a stochastic process, which provides a powerful tool for
 probabilistic inference directly on distributions over functions
@@ -1332,11 +1339,12 @@ well as MCMC.
 
 \pkg{GPstuff} also provides methods for marginal posterior corrections using either Laplace or EP as a latent method \citep{Cseke+Heskes:2011}. Provided correction methods are either \texttt{cm2} or \texttt{fact} for Laplace and \texttt{fact} for EP. 
 
-Marginal posterior corrections can be computed with function \texttt{gp\_predcm} which returns the corrected posterior distributed for the given indices of input/outputs:
+Univariate marginal posterior corrections can be computed with function \texttt{gp\_predcm} which returns the corrected marginal posterior distributtion for the given indices of input/outputs:
 \begin{verbatim}
   [pc, fvec, p] = gp_predcm(gp,x,y,'ind', 1, 'fcorr', 'fact');
 \end{verbatim}
-The returned value \texttt{pc} corresponds to corrected marginal posterior of for the first input, \texttt{fvec} corresponds to vector of grid points where \texttt{pc} is evaluated and \texttt{p} is the original Gaussian posterior distribution evaluated at \texttt{fvec}. Marginal posterior corrections can also be used for predictions in \texttt{gp\_pred} and/or sampling of latent values in \texttt{gp\_rnd} (see \texttt{demo\_improvedmarginals1} and \texttt{demo\_improvedmarginals2}).
+The returned value \texttt{pc} corresponds to corrected marginal posterior for the latent value $f_1$, \texttt{fvec} corresponds to vector of grid points where \texttt{pc} is evaluated and \texttt{p} is the original Gaussian posterior distribution evaluated at \texttt{fvec}. Marginal posterior corrections can also be used for predictions in \texttt{gp\_pred} and sampling of latent values in \texttt{gp\_rnd} (see \texttt{demo\_improvedmarginals1} and \texttt{demo\_improvedmarginals2}). \texttt{gp\_rnd} uses univariate marginal corrections with Gaussian copula to sample from the joint marginal posterior of several latent values.
+
 \section{Other single latent models}
 
 % In this section, we discuss other example applications where
@@ -2582,7 +2590,7 @@ additional set of latent variables $\uu = \{u_i \}_{i=1}^{m}$, called
 locations $\mb{X}_{u}$, called \emph{inducing inputs}. The latent
 function prior is approximated as
 %
-\begin{equation}\label{cond_independ_joint_prior}   %j‰t‰
+\begin{equation}\label{cond_independ_joint_prior}   %j√§t√§
   p(\f|\mb{X}, \theta) \approx q(\f | \mb{X}, \mb{X}_{u}, \theta) = \int q(\f |
   \mb{X}, \mb{X}_{u}, \uu, \theta)p(\uu | \mb{X}_{u}, \theta)\mathrm{d}\mathbf{u},
 \end{equation}
@@ -2976,7 +2984,7 @@ k_2(\x,\x')...$ is a valid covariance function as well. Such
 constructions may be useful in situations where the phenomenon is
 assumed to be separable. Combining covariance functions into product
 form is done with a special covariance function \code{gpcf\_prod}. For
-example, multiplying exponential and M·tern covariance functions to
+example, multiplying exponential and M√°tern covariance functions to
 produce separable spatio-temporal model $k(\x,\x') = k_1(x_1,x_1')
 \cdot k_2([x_2,x_3]^{\text{T}},[x'_2,x'_3]^{\text{T}})$ where the
 temporal component has covariance function $k_1$ and the spatial
@@ -3402,7 +3410,7 @@ that the length-scale and magnitude are underidentifiable and the
 proportion $\sigma^2/l$ is more important to the predictive
 performance than their individual values
 \citep{Diggle+Tawn+Moyeed:1998,Zhang:2004,Diggle+Ribeiro:2007}. These
-results are shown for M·tern class of covariance functions but
+results are shown for M√°tern class of covariance functions but
 according to our experiments they seem to apply for Wendland's
 piecewise polynomials as well. With them, the property can be taken
 advantage of since by giving more weight to short length-scales one
@@ -3463,8 +3471,8 @@ prepared.
 The package contains pieces of code written by other people than the
 authors. In the Department of Biomedical Engineering and Computational
 Science at Aalto University these persons are (in alphabetical order):
-Toni Auranen, Pasi Jyl‰nki, Tuomas Nikoskinen, Tomi Peltola, Eero
-Pennala, Heikki Peura, Ville Pietil‰inen, Markus Siivola, Simo S‰rkk‰
+Toni Auranen, Pasi Jyl{\"a}nki, Tuomas Nikoskinen, Tomi Peltola, Eero
+Pennala, Heikki Peura, Ville Pietil{\"a}inen, Markus Siivola, Simo S{\"a}rkk{\"a}
 and Ernesto Ulloa. People outside Aalto University are (in
 alphabetical order): Christopher M.  Bishop, Timothy A. Davis, Matthew
 D. Hoffman, Kurt Hornik, Dirk-Jan Kroon, Iain Murray, Ian T. Nabney,

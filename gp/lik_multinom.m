@@ -50,6 +50,7 @@ function lik = lik_multinom(varargin)
     lik.fh.llg = @lik_multinom_llg;    
     lik.fh.llg2 = @lik_multinom_llg2;
     lik.fh.llg3 = @lik_multinom_llg3;
+    lik.fh.tiltedMoments = @lik_multinom_tiltedMoments;
     lik.fh.predy = @lik_multinom_predy;
     lik.fh.invlink = @lik_multinom_invlink;
     lik.fh.recappend = @lik_multinom_recappend;
@@ -235,6 +236,26 @@ function [dw_mat] = lik_multinom_llg3(lik, y, f, param, z)
   
 end
 
+function [logM_0, m_1, sigm2hati1] = lik_multinom_tiltedMoments(lik, y, i1, S2_i, M_i, z)
+    %LIK_COXPH_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+    %
+    %  Description
+    %    [M_0, M_1, M2] = LIK_COXPH_TILTEDMOMENTS(LIK, Y, I, S2,
+    %    MYY, Z) takes a likelihood structure LIK, class labels
+    %    Y, index I and cavity variance S2 and
+    %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
+    %    variance M_2 of the posterior marginal (see Rasmussen and
+    %    Williams (2006): Gaussian processes for Machine Learning,
+    %    page 55). This subfunction is needed when using EP for 
+    %    inference with non-Gaussian likelihoods.
+    %
+    %  See also
+    %    GPEP_E
+    
+    error('tiltedMoment has not been implemented for multinom likelihood');
+    
+end
+
 function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
 %LIK_MULTINOM_PREDY  Returns the predictive mean, variance and density of y
 %
@@ -310,6 +331,7 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
   end
   lpy=lpy(:);
   Ey=Ey(:);
+  Vary=Vary(:);
 end
 
 function p = lik_multinom_invlink(lik, f, z)
@@ -350,6 +372,7 @@ function reclik = lik_multinom_recappend(reclik, ri, lik)
     reclik.fh.llg = @lik_multinom_llg;    
     reclik.fh.llg2 = @lik_multinom_llg2;
     reclik.fh.llg3 = @lik_multinom_llg3;
+    reclik.fh.tiltedMoments = @lik_multinom_tiltedMoments;
     reclik.fh.predy = @lik_multinom_predy;
     reclik.fh.invlink = @lik_multinom_invlink;
     reclik.fh.recappend = @lik_multinom_recappend;

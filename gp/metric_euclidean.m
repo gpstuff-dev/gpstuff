@@ -49,7 +49,7 @@ function metric = metric_euclidean(varargin)
   ip.FunctionName = 'METRIC_EUCLIDEAN';
   ip=iparser(ip,'addOptional','metric', [], @isstruct);
   ip=iparser(ip,'addParamValue','components',[], @(x) isempty(x) || iscell(x));
-  ip=iparser(ip,'addParamValue','deltadist',[], @(x) isvector(x));
+  ip=iparser(ip,'addParamValue','deltadist',[], @(x) isvector(x) || isempty(x));
   ip=iparser(ip,'addParamValue','lengthScale',[], @(x) isvector(x) && all(x>0));
   ip=iparser(ip,'addParamValue','lengthScale_prior',prior_unif, ...
                    @(x) isstruct(x) || isempty(x));

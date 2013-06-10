@@ -38,6 +38,9 @@ function lik = lik_multinomprobit(varargin)
     lik.fh.pak = @lik_multinomprobit_pak;
     lik.fh.unpak = @lik_multinomprobit_unpak;
     lik.fh.ll = @lik_multinomprobit_ll;
+    lik.fh.llg = @lik_multinomprobit_llg;    
+    lik.fh.llg2 = @lik_multinomprobit_llg2;
+    lik.fh.llg3 = @lik_multinomprobit_llg3;
     lik.fh.tiltedMoments = @lik_multinomprobit_tiltedMoments;
     lik.fh.predy = @lik_multinomprobit_predy;
     lik.fh.recappend = @lik_multinomprobit_recappend;
@@ -45,34 +48,34 @@ function lik = lik_multinomprobit(varargin)
   
 
   function [w,s] = lik_multinomprobit_pak(lik)
-  %LIK_LOGIT_PAK  Combine likelihood parameters into one vector.
+  %LIK_MULTINOMPROBIT_PAK  Combine likelihood parameters into one vector.
   %
   %  Description 
-  %    W = LIK_LOGIT_PAK(LIK) takes a likelihood structure LIK and
-  %    returns an empty verctor W. If Logit likelihood had
+  %    W = LIK_MULTINOMPROBIT_PAK(LIK) takes a likelihood structure LIK and
+  %    returns an empty verctor W. If multinomprobit likelihood had
   %    parameters this would combine them into a single row vector
   %    W (see e.g. lik_negbin).
   %     
   %
   %  See also
-  %    LIK_NEGBIN_UNPAK, GP_PAK
+  %    LIK_MULTINOMPROBIT_UNPAK, GP_PAK
     
     w = []; s = {};
   end
 
 
   function [lik, w] = lik_multinomprobit_unpak(lik, w)
-  %LIK_LOGIT_UNPAK  Extract likelihood parameters from the vector.
+  %LIK_MULTINOMPROBIT_UNPAK  Extract likelihood parameters from the vector.
   %
   %  Description
-  %    W = LIK_LOGIT_UNPAK(W, LIK) Doesn't do anything.
+  %    W = LIK_MULTINOMPROBIT_UNPAK(W, LIK) Doesn't do anything.
   % 
-  %    If Logit likelihood had parameters this would extracts them
+  %    If MULTINOMPROBIT likelihood had parameters this would extracts them
   %    parameters from the vector W to the LIK structure.
   %     
   %
   %  See also
-  %    LIK_LOGIT_PAK, GP_UNPAK
+  %    LIK_MULTINOMPROBIT_PAK, GP_UNPAK
 
     lik=lik;
     w=w;
@@ -80,15 +83,15 @@ function lik = lik_multinomprobit(varargin)
 
 
   function ll = lik_multinomprobit_ll(lik, y, f2, z)
-  %LIK_LOGIT_LL  Log likelihood
+  %LIK_MULTINOMPROBIT_LL  Log likelihood
   %
   %  Description
-  %    LL = LIK_LOGIT_LL(LIK, Y, F) takes a likelihood structure
+  %    LL = LIK_MULTINOMPROBIT_LL(LIK, Y, F) takes a likelihood structure
   %    LIK, class labels Y (NxC matrix), and latent values F (NxC
   %    matrix). Returns the log likelihood, log p(y|f,z).
   %
   %  See also
-  %    LIK_LOGIT_LLG, LIK_LOGIT_LLG3, LIK_LOGIT_LLG2, GPLA_E
+  %    LIK_MULTINOMPROBIT_LLG, LIK_MULTINOMPROBIT_LLG3, LIK_MULTINOMPROBIT_LLG2, GPLA_E
     
     if ~isempty(find(y~=1 & y~=0))
       error('lik_multinomprobit: The class labels have to be {0,1}')
@@ -112,6 +115,61 @@ function lik = lik_multinomprobit(varargin)
       end
     end
     
+  end
+
+  function llg = lik_multinomprobit_llg(lik, y, f2, param, z)
+  %LIK_MULTINOMPROBIT_LLG  Log likelihood
+  %
+  %  Description
+  %    LL = LIK_MULTINOMPROBIT_LL(LIK, Y, F, PARAM) takes a likelihood structure
+  %    LIK, class labels Y (NxC matrix), and latent values F (NxC
+  %    matrix). Returns the gradient of the log likelihood
+  %    with respect to PARAM. At the moment PARAM can be 'param' or
+  %    'latent'. This subfunction is needed when using Laplace
+  %    approximation or MCMC for inference with non-Gaussian
+  %    likelihoods.
+  %
+  %  See also
+  %    LIK_MULTINOMPROBIT_LLG, LIK_MULTINOMPROBIT_LLG3, LIK_MULTINOMPROBIT_LLG2, GPLA_E
+  
+    error('llg not implememented for multinomial probit likelihood');
+  end
+
+  function llg2 = lik_multinomprobit_llg2(lik, y, f2, param, z)
+  %LIK_MULTINOMPROBIT_LLG2  Log likelihood
+  %
+  %  Description
+  %    LL = LIK_MULTINOMPROBIT_LL(LIK, Y, F) takes a likelihood structure
+  %    LIK, class labels Y (NxC matrix), and latent values F (NxC
+  %    matrix). Returns the Hessian of the log
+  %    likelihood with respect to PARAM. At the moment PARAM can be
+  %    only 'latent'. G2 is a vector with diagonal elements of the
+  %    Hessian matrix (off diagonals are zero). This subfunction
+  %    is needed when using Laplace approximation or EP for inference
+  %    with non-Gaussian likelihoods.
+  %
+  %  See also
+  %    LIK_MULTINOMPROBIT_LLG, LIK_MULTINOMPROBIT_LLG3, LIK_MULTINOMPROBIT_LLG2, GPLA_E
+  
+    error('llg2 not implememented for multinomial probit likelihood');
+  end
+
+  function llg3 = lik_multinomprobit_llg3(lik, y, f2, param, z)
+  %LIK_MULTINOMPROBIT_LLG3  Log likelihood
+  %
+  %  Description
+  %    LL = LIK_MULTINOMPROBIT_LL(LIK, Y, F) takes a likelihood structure
+  %    LIK, class labels Y (NxC matrix), and latent values F (NxC
+  %    matrix). Returns the third gradients of the
+  %    log likelihood with respect to PARAM. At the moment PARAM
+  %    can be only 'latent'. G3 is a vector with third gradients.
+  %    This subfunction is needed when using Laplace appoximation
+  %    for inference with non-Gaussian likelihoods.
+  %
+  %  See also
+  %    LIK_MULTINOMPROBIT_LLG, LIK_MULTINOMPROBIT_LLG3, LIK_MULTINOMPROBIT_LLG2, GPLA_E
+  
+    error('llg3 not implememented for multinomial probit likelihood');
   end
 
   function [alphatilde, betatilde, m_1, sigm2hati1, lm_0] = lik_multinomprobit_tiltedMoments(lik, y, i1, sigm2_i, mu_i, z, alphatildeold, betatildeold)
@@ -283,17 +341,17 @@ function lik = lik_multinomprobit(varargin)
   %y
   %
   %  Description         
-  %    [EY, VARY] = LIK_MULTINOMPROBIT_PREDY(LIK, EF, VARF) takes a
+  %    LPY = LIK_MULTINOMPROBIT_PREDY(LIK, EF, VARF YT, ZT)
+  %    Returns the predictive density of YT, that is
+  %        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
+  %    This requires also the succes counts YT, numbers of trials ZT.
+  %
+  %    [LPY, EY, VARY] = LIK_MULTINOMPROBIT_PREDY(LIK, EF, VARF) takes a
   %    likelihood structure LIK, posterior mean EF and posterior
   %    Variance VARF of the latent variable and returns the
   %    posterior predictive mean EY and variance VARY of the
   %    observations related to the latent variables
   %        
-  %    [Ey, Vary, PY] = LIK_MULTINOMPROBIT_PREDY(LIK, EF, VARF YT, ZT)
-  %    Returns also the predictive density of YT, that is 
-  %        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
-  %    This requires also the succes counts YT, numbers of trials ZT.
-  %
   %  See also 
   %    GPEP_PRED, GPLA_PRED, GPMC_PRED
   
@@ -326,7 +384,7 @@ function lik = lik_multinomprobit(varargin)
   %RECAPPEND  Append the parameters to the record
   %
   %  Description 
-  %    RECLIK = GPCF_LOGIT_RECAPPEND(RECLIK, RI, LIK) takes a
+  %    RECLIK = LIK_MULTINOMPROBIT_RECAPPEND(RECLIK, RI, LIK) takes a
   %    likelihood record structure RECLIK, record index RI and
   %    likelihood structure LIK with the current MCMC samples of
   %    the parameters. Returns RECLIK which contains all the old
@@ -343,6 +401,9 @@ function lik = lik_multinomprobit(varargin)
       reclik.fh.pak = @lik_multinomprobit_pak;
       reclik.fh.unpak = @lik_multinomprobit_unpak;
       reclik.fh.ll = @lik_multinomprobit_ll;
+      reclik.fh.llg = @lik_multinomprobit_llg;
+      reclik.fh.llg2 = @lik_multinomprobit_llg2;
+      reclik.fh.llg3 = @lik_multinomprobit_llg3;
       reclik.fh.tiltedMoments = @lik_multinomprobit_tiltedMoments;
       reclik.fh.predy = @lik_multinomprobit_predy;
       reclik.fh.recappend = @lik_multinomprobit_recappend;

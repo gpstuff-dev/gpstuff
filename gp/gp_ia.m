@@ -107,7 +107,12 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip=iparser(ip,'addParamValue','persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
   ip=iparser(ip,'addParamValue','display', 'on', @(x) islogical(x) || isreal(x) || ...
                    ismember(x,{'on' 'off' 'iter'}));
-  ip=iparser(ip,'parse',gp, x, y, varargin{:});
+  if numel(varargin)==0 || isnumeric(varargin{1})
+    % inputParser should handle this, but it doesn't
+    ip=iparser(ip,'parse',gp, x, y, varargin{:});
+  else
+    ip=iparser(ip,'parse',gp, x, y, [], varargin{:});
+  end
   xt=ip.Results.xt;
   % integration parameters
   int_method=ip.Results.int_method;

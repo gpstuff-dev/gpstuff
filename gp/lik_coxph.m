@@ -781,21 +781,23 @@ function lik = lik_coxph(varargin)
   end
 
   
-%   function [logM_0, m_1, sigm2hati1] = lik_coxph_tiltedMoments(lik, y, i1, S2_i, M_i, z)
-%     %LIK_COXPH_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
-%     %
-%     %  Description
-%     %    [M_0, M_1, M2] = LIK_COXPH_TILTEDMOMENTS(LIK, Y, I, S2,
-%     %    MYY, Z) takes a likelihood structure LIK, incedence counts
-%     %    Y, expected counts Z, index I and cavity variance S2 and
-%     %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
-%     %    variance M_2 of the posterior marginal (see Rasmussen and
-%     %    Williams (2006): Gaussian processes for Machine Learning,
-%     %    page 55). This subfunction is needed when using EP for 
-%     %    inference with non-Gaussian likelihoods.
-%     %
-%     %  See also
-%     %    GPEP_E
+function [logM_0, m_1, sigm2hati1] = lik_coxph_tiltedMoments(lik, y, i1, S2_i, M_i, z)
+    %LIK_COXPH_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+    %
+    %  Description
+    %    [M_0, M_1, M2] = LIK_COXPH_TILTEDMOMENTS(LIK, Y, I, S2,
+    %    MYY, Z) takes a likelihood structure LIK, incedence counts
+    %    Y, expected counts Z, index I and cavity variance S2 and
+    %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
+    %    variance M_2 of the posterior marginal (see Rasmussen and
+    %    Williams (2006): Gaussian processes for Machine Learning,
+    %    page 55). This subfunction is needed when using EP for 
+    %    inference with non-Gaussian likelihoods.
+    %
+    %  See also
+    %    GPEP_E
+    
+    error('tiltedMoment has not been implemented for Cox-Ph likelihood');
 %     
 %       [n,ny]=size(y);
 %     
@@ -981,7 +983,7 @@ function lik = lik_coxph(varargin)
 %       %figure(1),hold on, plot(fg(j1),logZep,'.')
 %       %figure(2),hold on, plot(fg(j1),exp(-logZep),'.')
 %       
-%   end
+  end
   
   function [lpyt,Ey, Vary] = lik_coxph_predy(lik, Ef, Covf, yt, zt)
   %LIK_COXPH_PREDY  Returns the predictive mean, variance and density of y
@@ -1340,7 +1342,7 @@ function lik = lik_coxph(varargin)
   %RECAPPEND  Append the parameters to the record
   %
   %  Description 
-  %    RECLIK = GPCF_COXPH_RECAPPEND(RECLIK, RI, LIK) takes a
+  %    RECLIK = LIK_COXPH_RECAPPEND(RECLIK, RI, LIK) takes a
   %    likelihood record structure RECLIK, record index RI and
   %    likelihood structure LIK with the current MCMC samples of
   %    the parameters. Returns RECLIK which contains all the old

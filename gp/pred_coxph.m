@@ -14,7 +14,7 @@ function [Eft1, Eft2, Covf, lpyt] = pred_coxph(gp, x, y, xt, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'PRED_COXPH';
-ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || iscell(x));
 ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addRequired','xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
@@ -27,25 +27,30 @@ ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
 ip=iparser(ip,'parse',gp, x, y, xt, varargin{:});
 
-if ~strcmp(gp.lik.type, 'Coxph')
+if iscell(gp)
+  gp0=gp{1};
+else
+  gp0=gp;
+end
+if ~strcmp(gp0.lik.type, 'Coxph')
   error('Likelihood not Coxph')
 end
 if nargout > 3
-  if numel(gp.jitterSigma2)==1
+  if iscell(gp) || numel(gp.jitterSigma2)==1
     [Ef, Covf, lpyt] = gp_pred(gp, x, y, xt, varargin{:});
   else
     [Ef, Covf, lpyt] = gpmc_preds(gp, x, y, xt, varargin{:});
   end
 else
-  if numel(gp.jitterSigma2)==1
+  if iscell(gp) || numel(gp.jitterSigma2)==1
     [Ef, Covf] = gp_pred(gp, x, y, xt, varargin{:});
   else
     [Ef, Covf] = gpmc_preds(gp, x, y, xt, varargin{:});    
   end
 end
-ntime=size(gp.lik.xtime,1);
-if isfield(gp.lik, 'stratificationVariables')
-  ind_str=gp.lik.stratificationVariables;
+ntime=size(gp0.lik.xtime,1);
+if isfield(gp0.lik, 'stratificationVariables')
+  ind_str=gp0.lik.stratificationVariables;
   nf1=ntime.*unique([x(:,ind_str); xt(:,ind_str)], 'rows');
 else
   nf1=ntime;

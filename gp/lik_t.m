@@ -388,65 +388,70 @@ function [logM_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, my
 
   
   tol = 1e-8;
-  yy = y(i1);
   nu = lik.nu;
   sigma2 = lik.sigma2;
 
-  zm = @(f) zeroth_moment(f, yy, nu, sigma2, myy_i, sigm2_i);
-  
-  % Set the limits for integration and integrate with quad
-  % -----------------------------------------------------
-  mean_app = myy_i;
-  sigm_app = sqrt(sigm2_i);
 
+  for i=i1
 
-  lambdaconf(1) = mean_app - 8.*sigm_app; lambdaconf(2) = mean_app + 8.*sigm_app;
-  test1 = zm((lambdaconf(2)+lambdaconf(1))/2) > zm(lambdaconf(1));
-  test2 = zm((lambdaconf(2)+lambdaconf(1))/2) > zm(lambdaconf(2));
-  testiter = 1;
-  if test1 == 0 
-    lambdaconf(1) = lambdaconf(1) - 3*sigm_app;
-    test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+    yy = y(i);
+    zm = @(f) zeroth_moment(f, yy, nu, sigma2, myy_i(i), sigm2_i(i));
+    
+    % Set the limits for integration and integrate with quad
+    % -----------------------------------------------------
+    mean_app = myy_i(i);
+    sigm_app = sqrt(sigm2_i(i));
+    
+    
+    lambdaconf(1) = mean_app - 8.*sigm_app; lambdaconf(2) = mean_app + 8.*sigm_app;
+    test1 = zm((lambdaconf(2)+lambdaconf(1))/2) > zm(lambdaconf(1));
+    test2 = zm((lambdaconf(2)+lambdaconf(1))/2) > zm(lambdaconf(2));
+    testiter = 1;
     if test1 == 0
-      go=true;
-      while testiter<10 & go
-        lambdaconf(1) = lambdaconf(1) - 2*sigm_app;
-        lambdaconf(2) = lambdaconf(2) - 2*sigm_app;
-        test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-        test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-        if test1==1&test2==1
-          go=false;
+      lambdaconf(1) = lambdaconf(1) - 3*sigm_app;
+      test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+      if test1 == 0
+        go=true;
+        while testiter<10 & go
+          lambdaconf(1) = lambdaconf(1) - 2*sigm_app;
+          lambdaconf(2) = lambdaconf(2) - 2*sigm_app;
+          test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+          test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+          if test1==1&test2==1
+            go=false;
+          end
+          testiter=testiter+1;
         end
-        testiter=testiter+1;
       end
-    end
-    mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-  elseif test2 == 0
-    lambdaconf(2) = lambdaconf(2) + 3*sigm_app;
-    test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-    if test2 == 0
-      go=true;
-      while testiter<10 & go
-        lambdaconf(1) = lambdaconf(1) + 2*sigm_app;
-        lambdaconf(2) = lambdaconf(2) + 2*sigm_app;
-        test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-        test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-        if test1==1&test2==1
-          go=false;
+      mean_app = (lambdaconf(2)+lambdaconf(1))/2;
+    elseif test2 == 0
+      lambdaconf(2) = lambdaconf(2) + 3*sigm_app;
+      test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+      if test2 == 0
+        go=true;
+        while testiter<10 & go
+          lambdaconf(1) = lambdaconf(1) + 2*sigm_app;
+          lambdaconf(2) = lambdaconf(2) + 2*sigm_app;
+          test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+          test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+          if test1==1&test2==1
+            go=false;
+          end
+          testiter=testiter+1;
         end
-        testiter=testiter+1;
       end
+      mean_app = (lambdaconf(2)+lambdaconf(1))/2;
     end
-    mean_app = (lambdaconf(2)+lambdaconf(1))/2;
+    RTOL = 1.e-6;
+    ATOL = 1.e-10;
+    
+    % Integrate with quadrature
+    [m_0, m_1(i), m_2] = quad_moments(zm,lambdaconf(1), lambdaconf(2), RTOL, ATOL);
+    
+    sigm2hati1(i) = m_2 - m_1(i).^2;
+    logM_0(i) = log(m_0);
   end
-  RTOL = 1.e-6;
-  ATOL = 1.e-10;
-  
-  % Integrate with quadrature
-  [m_0, m_1, m_2] = quad_moments(zm,lambdaconf(1), lambdaconf(2), RTOL, ATOL);        
-  
-  sigm2hati1 = m_2 - m_1.^2;
-  logM_0 = log(m_0);
+
   function integrand = zeroth_moment(f, yy, nu, sigma2, myy_i, sigm2_i)
     r = yy-f;
     term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
@@ -1054,7 +1059,7 @@ function [lpy, Ey, Vary] = lik_t_predy(lik, Ef, Varf, y, z)
   
   
   lpy = zeros(length(y),1);
-  if (min(size(Ef))>1) && (min(size(Varf))>1)
+  if (size(Ef,2) > 1) && (size(Ef,2) > 1) && size(yt,2) == 1
     % Approximate integral with sum of grid points when using corrected
     % marginal posterior
     for i2=1:length(y)
