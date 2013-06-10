@@ -190,8 +190,6 @@ switch gp.latent_method
             %p(i,i1) = fh_p(fvec(i,i1));
             
           end
-%           lp(:,i1) = log(fh_p(fvecm2(:,i1)));
-%           lp2(:,i1) = log(fh_p(fvecm(:,i1)));
           lp(:,i1) = fh_p(fvecm2(:,i1));
           lp2(:,i1) = fh_p(fvecm(:,i1));
           lp(:,i1) = lp(:,i1)-max(lp(:,i1));
