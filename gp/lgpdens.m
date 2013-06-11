@@ -140,9 +140,9 @@ function [p,pq,xx] = lgpdens(x,varargin)
       [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis);
       
       if strcmpi(latent_method,'MCMC')
-        PJR=zeros(size(Ef,1),size(Covf,3));
+        i2=0;
         for i1=1:size(Covf,3)
-          qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf(:,:,i1),'upper'),Ef(:,i1)');
+          qr=bsxfun(@plus,randn(100,size(Ef,1))*chol(Covf(:,:,i1),'upper'),Ef(:,i1)');
           if ~any(bounded)
             qii=find(qr(:,1)<qr(:,2)&qr(:,end-1)>qr(:,end));
           elseif bounded(1)&~bounded(2)
@@ -150,15 +150,22 @@ function [p,pq,xx] = lgpdens(x,varargin)
           elseif bounded(2)&~bounded(1)
             qii=find(qr(:,1)<qr(:,2));
           else
-            qii=1:1000;
+            qii=1:100;
+          end
+          if isempty(qii)
+            continue
           end
           qr=qr(qii,:);
           qjr=exp(qr)';
           pjr=bsxfun(@rdivide,qjr,sum(qjr));
           pjr=pjr./xd;
-          PJR(:,i1)=mean(pjr,2);
+          i2=i2+1;
+          PJR(:,i2)=mean(pjr,2);
         end
         pjr=PJR;
+        if size(pjr,2)<20
+          warning('Rejection sampling to force decreasing tails for (semi)unbounded unreliable')
+        end
       else
         qr=bsxfun(@plus,randn(2000,size(Ef,1))*chol(Covf,'upper'),Ef');
         if ~any(bounded)
@@ -173,7 +180,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
         if numel(qii)>200
           qr=qr(qii,:);
         else
-          warning('Rejection sampling to force decreasing tails for (semi)unbounded failed')
+          warning('Rejection sampling to force decreasing tails for (semi)unbounded unreliable')
         end
         qjr=exp(qr)';
         pjr=bsxfun(@rdivide,qjr,sum(qjr(1:gridn,:)));
@@ -435,20 +442,17 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   
   % weakly informative priors
   % prior based on guess of maximum differences in log densities
-  pm = prior_sqrtt('s2',10^2,'nu',1);
-  % Weakly informative prior states that probability is smaller for
-  % lengthscales which are much smaller than Silverman's rule of thumb
-  % or min grid distance
+  pm = prior_sqrtt('s2',10,'nu',1);
+  % prior based on knowing that data has been scaled
+  pl = prior_t('s2', 1, 'nu', 1);
+  % 
+  pa = prior_t('s2', 20^2, 'nu', 1);
+  % use modified Silverman's rule of thumb or min grid distance
+  % as initial guess for the length scale
   h=max(diff(xx(1:2,end)).^2,1/sum(yy).^(1/5)/2);
   if size(xx,2)==2
     h=sqrt(h);
   end
-  pl = prior_logt('s2', 2, 'mu', log(h),'nu',1);
-  pa = prior_t('s2', 20^2, 'nu', 1);
-  %pm = prior_sqrtt('s2', 10^2, 'nu', 4);
-  %pl = prior_sinvchi2('s2', 1, 'nu', 1);
-  %pl = prior_logunif();
-  %pa = prior_t('s2', 10^2, 'nu', 4);
   % different covariance functions have different parameters
   if isfield(gpcf1,'magnSigma2')
      gpcf1 = gpcf(gpcf1, 'magnSigma2', 1, 'magnSigma2_prior', pm);
@@ -542,7 +546,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
     % Notice that previous record r is given as an argument
     [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'nsamples', 500,'latent_opt', latent_opt, 'record', r,  'display', displ);
     % Remove burn-in
-    rgp=thin(rgp,102,4);
+    rgp=thin(rgp,102,1);
     
     [Ef, Covf] = gpmc_jpreds(rgp, xx, yy, xxt);
      
