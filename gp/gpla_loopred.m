@@ -41,9 +41,11 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('method', 'lrs', @(x) ismember(x, {'lrs' 'cavity' 'inla'}))
+  ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
   ip.parse(gp, x, y, varargin{:});
   z=ip.Results.z;
   method = ip.Results.method;
+  fcorr=ip.Results.fcorr;
   [tn,nin] = size(x);
   
   switch method
@@ -56,7 +58,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       % Ole Winther et al (2012). Work in progress.
 
       % latent posterior
-      [f, sigm2ii] = gpla_pred(gp, x, y, 'z', z, 'tstind', []);
+      [f, sigm2ii] = gpla_pred(gp, x, y, 'z', z, 'tstind', [], 'fcorr', fcorr);
   
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       La = 1./-gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
@@ -226,7 +228,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       % using EP equations
 
       % latent posterior
-      [f, sigm2ii] = gpla_pred(gp, x, y, 'z', z, 'tstind', []);
+      [f, sigm2ii] = gpla_pred(gp, x, y, 'z', z, 'tstind', [], 'fcorr', fcorr);
       
       % "site parameters"
       W        = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
@@ -263,7 +265,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       % Structures, pp. 91-110. Springer.
       
       % latent posterior
-      [f, sigm2ii, lp] = gpla_pred(gp, x, y, 'z', z, 'tstind', []);
+      [f, sigm2ii, lp] = gpla_pred(gp, x, y, 'z', z, 'tstind', [], 'fcorr', fcorr);
       
       Eft = zeros(tn,1);
       Varft = zeros(tn,1);

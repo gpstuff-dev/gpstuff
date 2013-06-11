@@ -68,7 +68,8 @@ ng = ip.Results.ng;
 predictive=false;
 gplik=gp.lik;
 n=size(x,1);
-[Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z, 'tstind', tstind);
+[Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z, 'tstind', 1:n);
+Covf=full(Covf);
 if isfield(ip.UsingDefaults, 'fcorr')
   if isequal(gp.latent_method, 'Laplace')
     % Default for Laplace
@@ -85,7 +86,9 @@ if ~isempty(xt) && ~isequal(xt, x)
   % Predictive equations if given xt, mind that if xt(ind) is in training
   % input x, predictive equations might not work correctly.
   predictive = true;
-  [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z, 'tstind', tstind);
+  [Ef2, Varf2]=gp_pred(gp,x,y,xt,'z',z,'tstind',tstind);
+%   [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z, 'tstind', tstind);
+%   Covf2=full(Covf2);
 end
 nin = 11;
 fvecm=zeros(nin,length(ind));
@@ -101,14 +104,14 @@ for i1=1:length(ind)
 %     fvecm(:,i1)=Ef(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf(i2,i2));
     fvecm2(:,i1)=linspace(Ef(i2)-minf.*sqrt(Covf(i2,i2)), Ef(i2)+maxf.*sqrt(Covf(i2,i2)),ng)';
   else
-    fvecm(:,i1)=Ef2(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf2(i2,i2));
+    fvecm(:,i1)=Ef2(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Varf2(i2));
 %     fvecm(:,i1)=Ef2(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf2(i2,i2));
-    fvecm2(:,i1)=linspace(Ef2(i2)-minf.*sqrt(Covf2(i2,i2)), Ef2(i2)+maxf.*sqrt(Covf2(i2,i2)),ng)';
+    fvecm2(:,i1)=linspace(Ef2(i2)-minf.*sqrt(Varf2(i2)), Ef2(i2)+maxf.*sqrt(Varf2(i2)),ng)';
   end
 end
 lc = zeros(nin, length(ind));
-pc = zeros(ng, size(ind,1)); p = zeros(ng,size(ind,1)); c = zeros(ng,size(ind,1));
-p2 = zeros(nin,size(ind,1));
+pc = zeros(ng, size(ind,1)); lp = zeros(ng,size(ind,1)); c = zeros(ng,size(ind,1));
+lp2 = zeros(nin,size(ind,1)); p = zeros(ng,size(ind,1));
 
 switch gp.latent_method
   case 'EP'
@@ -141,15 +144,15 @@ switch gp.latent_method
             % Here we keep track of normalizing constants so we dont have to
             % normalize distributions at any point.
             %     Z_q = sqrt(2*pi*cii);
-            logM0 = gp.lik.fh.tiltedMoments(gp.lik, y, ind(i1), sigm2vec_i(ind(i1)), muvec_i(ind(i1)), z);
-            Z_p = exp(logM0)*sqrt(2*pi)*sqrt(sigm2vec_i(ind(i1))+1./tautilde(ind(i1)))*exp(0.5*(muvec_i(ind(i1))-nutilde(ind(i1))./tautilde(ind(i1))).^2/(sigm2vec_i(ind(i1))+1./tautilde(ind(i1))));
+%             logM0 = gp.lik.fh.tiltedMoments(gp.lik, y, ind(i1), sigm2vec_i(ind(i1)), muvec_i(ind(i1)), z);
+%             Z_p = exp(logM0)*sqrt(2*pi)*sqrt(sigm2vec_i(ind(i1))+1./tautilde(ind(i1)))*exp(0.5*(muvec_i(ind(i1))-nutilde(ind(i1))./tautilde(ind(i1))).^2/(sigm2vec_i(ind(i1))+1./tautilde(ind(i1))));
             
             % Function handle to marginal distribution without any fcorr parameters
-            fh_p = @(f) 1/Z_p*exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./norm_pdf(f, nutilde(ind(i1))/tautilde(ind(i1)), 1/sqrt(tautilde(ind(i1)))).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
+            fh_p = @(f) (arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f)) - norm_lpdf(f, nutilde(ind(i1))/tautilde(ind(i1)), 1/sqrt(tautilde(ind(i1)))) + norm_lpdf(f,Ef(ind(i1)),sqrt(cii));
           else
             inds=1:n;
-            cii = Covf2(ind(i1), ind(i1));
-            fh_p = @(f) norm_pdf(f,Ef2(ind(i1)),sqrt(cii));
+            cii = Varf2(ind(i1));
+            fh_p = @(f) norm_lpdf(f,Ef2(ind(i1)),sqrt(cii));
           end
           
           % Loop through grid points
@@ -187,8 +190,10 @@ switch gp.latent_method
             %p(i,i1) = fh_p(fvec(i,i1));
             
           end
-          p(:,i1) = fh_p(fvecm2(:,i1));
-          p2(:,i1) = fh_p(fvecm(:,i1));
+          lp(:,i1) = fh_p(fvecm2(:,i1));
+          lp2(:,i1) = fh_p(fvecm(:,i1));
+          lp(:,i1) = lp(:,i1)-max(lp(:,i1));
+          lp2(:,i1) = lp2(:,i1)-max(lp2(:,i1));
         end
       case 'cm2'
         error('Cant use cm2 fcorr with EP, use fact');
@@ -216,11 +221,11 @@ switch gp.latent_method
             end
             
             % Function handle to marginal distribution without any fcorr parameters
-            t_tilde = @(f)  exp(ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
-            fh_p = @(f) exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./t_tilde(f).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
+            t_tilde = @(f)  (ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
+            fh_p = @(f) (arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f)) - t_tilde(f) + norm_lpdf(f,Ef(ind(i1)),sqrt(cii));
           else
-            cii = Covf2(ind(i1), ind(i1));
-            fh_p = @(f) norm_pdf(f,Ef2(ind(i1)),sqrt(cii));
+            cii = Varf2(ind(i1));
+            fh_p = @(f) norm_lpdf(f,Ef2(ind(i1)),sqrt(cii));
           end
           
           if ~predictive
@@ -265,8 +270,10 @@ switch gp.latent_method
             %p(i,i1) = fh_p(fvec(i,i1));
             
           end
-          p(:,i1) = fh_p(fvecm2(:,i1));
-          p2(:,i1) = fh_p(fvecm(:,i1));
+          lp(:,i1) = fh_p(fvecm2(:,i1));
+          lp2(:,i1) = fh_p(fvecm(:,i1));
+          lp(:,i1) = lp(:,i1)-max(lp(:,i1));
+          lp2(:,i1) = lp2(:,i1)-max(lp2(:,i1));
         end
         
       case 'cm2'
@@ -282,11 +289,11 @@ switch gp.latent_method
             end
             
             % Function handle to marginal distribution without any fcorr parameters
-            t_tilde = @(f) exp(ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
-            fh_p = @(f) exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./t_tilde(f).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
+            t_tilde = @(f) (ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
+            fh_p = @(f) (arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f)) - t_tilde(f) + norm_lpdf(f,Ef(ind(i1)),sqrt(cii));
           else
-            cii = Covf2(ind(i1), ind(i1));
-            fh_p = @(f) norm_pdf(f,Ef2(ind(i1)),sqrt(cii));
+            cii = Varf2(ind(i1));
+            fh_p = @(f) norm_lpdf(f,Ef2(ind(i1)),sqrt(cii));
           end
           
           if ~predictive
@@ -340,8 +347,10 @@ switch gp.latent_method
             %p(i,i1) = fh_p(fvec(i,i1));
             
           end
-          p(:,i1) = fh_p(fvecm2(:,i1));
-          p2(:,i1) = fh_p(fvecm(:,i1));         
+          lp(:,i1) = fh_p(fvecm2(:,i1));
+          lp2(:,i1) = fh_p(fvecm(:,i1));
+          lp(:,i1) = lp(:,i1)-max(lp(:,i1));
+          lp2(:,i1) = lp2(:,i1)-max(lp2(:,i1));       
           
         end
     end
@@ -362,7 +371,7 @@ for i1=1:length(ind)
   lc2(:,i1) = interp1(fvec, lc(:,i1), fvec2, 'cubic');
 
   % Make correction
-  pc(:,i1)=exp(lc2(:,i1) + log(p(:,i1)));
+  pc(:,i1)=exp(lc2(:,i1) + lp(:,i1));
   
   if any(isnan(pc(:,i1))) || any(isinf(pc(:,i1))) 
     warning('NaNs in moment computations')
@@ -377,7 +386,7 @@ for i1=1:length(ind)
   end
   
   % Form corrected distribution & normalize
-  p(:,i1) = p(:,i1)./trapz(fvec2,p(:,i1));
+  p(:,i1) = exp(lp(:,i1))./trapz(fvec2,exp(lp(:,i1)));
   pc(:,i1) = pc(:,i1)./trapz(fvec2, pc(:,i1));
   c(:,i1) = pc(:,i1)./p(:,i1);
   

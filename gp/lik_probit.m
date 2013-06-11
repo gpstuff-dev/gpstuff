@@ -291,7 +291,7 @@ function [lpy, Ey, Vary] = lik_probit_predy(lik, Ef, Varf, yt, zt)
     error('lik_probit: The class labels have to be {-1,1}')
   end
   lpy=[];
-  if (min(size(Ef)) > 1) && (min(size(Varf)) > 1)
+  if (size(Ef,2) > 1) && (size(Ef,2) > 1) && size(yt,2) == 1
     lpy = zeros(size(yt));
     for i1=1:size(yt,1)
       py=norm_cdf(yt(i1).*Ef(i1,:));

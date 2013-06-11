@@ -214,7 +214,7 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
         [lpy(:,i1), Eyt, Varyt] = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
         if ~isempty(Eyt)
           Ey(:,i1)=Eyt;
-          Vary(:,i1)=Varyt;
+          Vary(:,i1)=Varyt(:);
         end
       elseif nargout == 3
         lpy(:,i1) = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
@@ -226,9 +226,10 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
       elseif nargout <=3
         [Ef(:,i1), Varf(:,:,i1), lpy(:,i1)] = gp_pred(Gp, x, y, xt, options);
       else
-        [Ef(:,i1), Varf(:,:,i1), lpy(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, x, y, xt, options); 
+        [Ef(:,i1), Varf(:,:,i1), lpy(:,i1), Ey(:,i1), Vary(:,:,i1)] = gp_pred(Gp, x, y, xt, options); 
       end
     end            
   end    
   Varf=squeeze(Varf);
+  Vary=squeeze(Vary);
 end
