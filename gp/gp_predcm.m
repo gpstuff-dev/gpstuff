@@ -70,7 +70,7 @@ gplik=gp.lik;
 n=size(x,1);
 [Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z, 'tstind', 1:n);
 Covf=full(Covf);
-if isfield(ip.UsingDefaults, 'fcorr')
+if ismember('fcorr', ip.UsingDefaults)
   if isequal(gp.latent_method, 'Laplace')
     % Default for Laplace
     fcorr='cm2';
