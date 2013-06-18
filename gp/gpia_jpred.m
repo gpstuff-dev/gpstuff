@@ -16,16 +16,9 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
 %    cross-validation. Here Y has to be vector. Returns also
 %    posterior predictive mean EYT and covariance COVYT.
 %
-%    [EFT, COVFT, LJPYT, EYT, COVYT, FT, PFT] = ...
-%      GPIA_JPRED(GP_ARRAY, X, Y, XT, OPTIONS) 
-%    returns also the numerical representation of the marginal
-%    posterior of latent variables at each XT. FT is a vector of
-%    latent values and PFT_i = p(FT_i) is the posterior density for
-%    FT_i.
-%
-%    [EF, COVF, LJPY, EY, COVY, F, PF] = GPIA_JPRED(GP, X, Y, OPTIONS)
+%    [EF, COVF, LJPY, EY, COVY] = GPIA_JPRED(GP, X, Y, OPTIONS)
 %    evaluates the predictive distribution at training inputs X
-%    and logarithm of the predictive density PY of the training
+%    and logarithm of the joint predictive density JPY of the training
 %    observations Y.
 %  
 %    OPTIONS is optional parameter-value pair
@@ -154,66 +147,41 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   
   nGP = numel(gp_array);
   
-  for i=1:nGP
-    P_TH(i,:) = gp_array{i}.ia_weight;
+  for i1=1:nGP
   end
 
   % Make predictions with different models in gp_array
-  for j = 1:nGP
+  for i1=1:nGP
+    P_TH(:,i1) = gp_array{i1}.ia_weight;
     if isempty(yt)
-      [Eft_grid(j,:), Covft_grid(:,:,j)]=gp_jpred(gp_array{j},x,y,xt,options);            
+      [Efts(:,i1), Covfts(:,:,i1)]=gp_jpred(gp_array{i1},x,y,xt,options);            
     else
-      [Eft_grid(j,:), Covft_grid(:,:,j), ljpyt_grid(j), Eyt_grid(j,:), Covyt_grid(:,:,j)]=gp_jpred(gp_array{j},x,y,xt, options);
+      [Efts(:,i1), Covfts(:,:,i1), ljpyts(i1), Eyts(:,i1), Covyts(:,:,i1)]=gp_jpred(gp_array{i1},x,y,xt, options);
     end
   end
-  
-  % Sample from the combined predictive distribution
-  N = 100; % Sample size per gp in gp_array
-  pft = zeros(N*size(Eft_grid,1), 1);
-  ft = [];
-  for j = 1 : size(Eft_grid,1)
-    [predcov,notpositivedefinite] = chol(Covft_grid(:,:,j),'lower');
-    if notpositivedefinite
-      % use eigendecomposition
-      [V,D] = eig(Covft_grid(:,:,j));
-      D=diag(D)';
-      D(D<0)=0;
-      predcov=bsxfun(@times,V,sqrt(D));
-    end
-    ftt = repmat(Eft_grid(j,:),N,1)+(predcov*randn(size(Covft_grid(:,:,j),1),N))';
-    ft = [ft; ftt];
-  end
-  
+
   % Calculate mean and variance of the distributions
-  Eft = mean(ft)';
-  Covft = cov(ft);
+  Eft = sum(bsxfun(@times,Efts,P_TH), 2);
+  % Calculate covariances of means
+  Efts = bsxfun(@minus,Efts,Eft);
+  for i1=1:nGP
+    CovEfts(:,:,i1)=Efts(:,i1)'*Efts(:,2);
+  end
+  % Covariance is E(Cov)+Cov(E)
+  Covft = squeeze(sum(bsxfun(@times, Covfts, permute(P_TH,[1 3 2])), 3)) ...
+          + sum(bsxfun(@times, CovEfts, permute(P_TH,[1 3 2])), 3);
   
   % Calculate jpyt with weight given in P_TH.
   if nargout > 2
-    if ~isempty(yt)
-      ljpyt = log(sum(exp(ljpyt_grid)'.*P_TH));
+    if isempty(yt)
+      ljpyt = [];
     else
-      error('yt must be provided to get ljpyt');
+      ljpyt = log(sum(exp(ljpyts)'.*P_TH));
     end
   end
   
   if nargout > 3
-    Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
-    Covyt = zeros(size(Covyt_grid));
-    for i = 1:size(Covyt_grid,3)
-      Covyt(:,:,i) = Covyt_grid(:,:,i).*P_TH(i) + diag((Eyt_grid(i,:) - Eyt)).^2;
-    end
-    Covyt = sum(Covyt,3);
+    Eyt = sum(bsxfun(@times,Eyts,P_TH),2);
+    Covyt = squeeze(sum(bsxfun(@times, Covyts, permute(P_TH,[1 3 2])), 3)) ...
+            + diag(sum(bsxfun(@times,bsxfun(@minus,Eyts,Eyt).^2, P_TH),2));
   end
-  
-  if nargout > 6
-    for j=1:size(Eft_grid,1)
-      for i=1:N
-        index = N*(j-1)+i;
-        pft(index,:) = mnorm_pdf(ft(index,:), Eft_grid(j,:), Covft_grid(:,:,j));
-      end
-    end
-    % Normalize distributions
-    pft = bsxfun(@rdivide,pft,sum(pft,1));
-  end
-  
