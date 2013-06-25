@@ -288,7 +288,7 @@ switch gp.type
               DKff=DKffc{i2};
             end
             i1 = i1+1;
-            if ~isfield(gp.lik, 'nondiagW')
+            if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'})
               Bdl = b'*(DKff*b);
               Cdl = sum(sum(invC.*DKff)); % help arguments
             else
