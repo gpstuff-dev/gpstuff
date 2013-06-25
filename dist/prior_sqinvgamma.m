@@ -1,9 +1,9 @@
 function p = prior_sqinvgamma(varargin)
-%PRIOR_SQINVGAMMA  Gamma prior structure for square inverse of the parameter
+%PRIOR_SQINVGAMMA  Inverse-Gamma prior structure for square inverse of the parameter
 %
 %  Description
 %    P = PRIOR_SQINVGAMMA('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
-%    creates Gamma prior structure for square inverse of the
+%    creates inverse-Gamma prior structure for square inverse of the
 %    parameter in which the named parameters have the specified
 %    values. Any unspecified parameters are set to default values.
 %
@@ -14,11 +14,11 @@ function p = prior_sqinvgamma(varargin)
 %    Parametrisation is done by Bayesian Data Analysis,  
 %    second edition, Gelman et.al. 2004.
 %
-%    Parameters for Gamma prior [default]
+%    Parameters for inverse-Gamma prior [default]
 %      sh       - shape [4]
-%      is       - inverse scale [1]
+%      s        - scale [1]
 %      sh_prior - prior for sh [prior_fixed]
-%      is_prior - prior for is [prior_fixed]
+%      s_prior  - prior for s [prior_fixed]
 %
 %  See also
 %    PRIOR_*
