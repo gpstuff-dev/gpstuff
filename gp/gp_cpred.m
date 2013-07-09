@@ -21,7 +21,9 @@ function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt,ind,varargin)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
 %               for ith case. 
-%      plot   - Option for plotting, 'off' (default) or 'on'
+%      plot   - option for plotting, 'off' (default) or 'on'
+%      target - option for choosing what is computed 'f' (default),
+%               'mu' or 'cdf'
 %      tr     - Euclidean distance treshold for not using grid points when
 %               doing predictions with 2 covariates, default 0.25
 
@@ -32,6 +34,7 @@ ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addRequired('ind', @(x) ~isempty(x) && isvector(x))
 ip.addParamValue('var',  [], @(x) isreal(x))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
@@ -42,7 +45,7 @@ ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
 ip.addParamValue('method', 'mean', @(x)  ismember(x, {'median', 'mean'}))
 ip.addParamValue('plot', 'off', @(x)  ismember(x, {'on', 'off'}))
 ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('target', 'f', @(x) ismember(x,{'f','mu'}))
+ip.addParamValue('target', 'f', @(x) ismember(x,{'f','mu','cdf'}))
 ip.parse(gp, x, y, xt, ind, varargin{:});
 options=struct();
 options.predcf=ip.Results.predcf;
@@ -52,6 +55,10 @@ vars = ip.Results.var;
 plot_results = ip.Results.plot;
 tr = ip.Results.tr;
 target = ip.Results.target;
+yt=ip.Results.yt;
+if ~isempty(yt)
+  options.yt=yt;
+end
 z=ip.Results.z;
 if ~isempty(z)
   options.zt=z;
@@ -87,6 +94,9 @@ if length(ind)==1
   if ~isempty(z)
     options.zt = options.zt(iu);
   end
+  if ~isempty(yt)
+    options.yt = options.yt(iu);
+  end
   meanxt=mean(xt);
   if isequal(method, 'mean')
     xt = repmat(meanxt, size(xtnn,1), 1);
@@ -107,13 +117,21 @@ if length(ind)==1
       case 'mu'
         prctmu = gp_predprctmu(gp, x, y, xt, options);
         Ef = prctmu; Varf = [];
+      case 'cdf'
+        cdf = gp_predcdf(gp, x, y, xt, options);
+        Ef = cdf; Varf = [];
     end
   else
     [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt, options);
+    nt=size(Ef1,1);
     if ind>0
-      Ef = Ef2; Varf = diag(Covf(size(Ef1,1)+1:end,size(Ef1,1)+1:end));
+      % conditional posterior given Ef1=E[Ef1]
+      Ef = Ef2; 
+      Varf = diag(Covf(nt+1:end,nt+1:end)-Covf(nt+1:end,1:nt)*(Covf(1:nt,1:nt)\Covf(1:nt,nt+1:end)));
     else
-      Ef = Ef1; Varf = diag(Covf(1:size(Ef1,1), 1:size(Ef1,1)));
+      % conditional posterior given Ef2=E[Ef2]
+      Ef = Ef1; 
+      Varf = diag(Covf(1:nt, 1:nt)-Covf(1:nt,nt+1:end)*(Covf(nt+1:end,nt+1:end)\Covf(nt+1:end,1:nt)));
       xtnn = gp.lik.xtime;
     end
   end
@@ -124,6 +142,8 @@ if length(ind)==1
           plot(xtnn, Ef, 'ob', xtnn, Ef, '-k', xtnn, Ef-1.64*sqrt(Varf), '--b', xtnn, Ef+1.64*sqrt(Varf), '--b')
         case 'mu'
           plot(xtnn, prctmu(:,2), 'ob', xtnn, prctmu(:,2), '-k', xtnn, prctmu(:,1), '--b', xtnn, prctmu(:,3), '--b')
+        case 'cdf'
+          plot(xtnn, Ef, 'o-b')
       end
     else
       % use stairs for piecewise constant baseline hazard
