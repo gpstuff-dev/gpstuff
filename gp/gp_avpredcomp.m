@@ -180,6 +180,10 @@ for k1=1:nin
     setrandstream(seed);
     fr = gp_rnd(gp, x, y, xrep, 'nsamp', nsamp, options);
     
+    if isequal(gp.lik.type, 'Cox-ph')
+      fr=fr(length(gp.lik.stime):end,:);
+    end
+    
     % average change in input
     deni=sum(W(:,i1).*Udiff.*Usign);
     denai=sum(W(:,i1).*Udiffa);
