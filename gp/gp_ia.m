@@ -63,7 +63,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   Default is 10.
 %       
 
-% Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
+% Copyright (c) 2009-2010 Ville Pietilï¿½inen, Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -655,7 +655,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             th  = repmat(w,N,1)+(L*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
             p_th_appr = mnorm_pdf(th, w, Sigma);
           else
-            th = repmat(w,N,length(w)) + randn(N, length(w))*L';
+            th = repmat(w,N,1) + randn(N, length(w))*L';
             p_th_appr = mnorm_pdf(th, w, Sigma);
           end
           
