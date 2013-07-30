@@ -1312,8 +1312,12 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
                 B=WK;
                 B(1:sum(nl)+1:end) = B(1:sum(nl)+1:end) + 1;
                 
-                [Ll,Lu]=lu(B);
-                edata = logZ + 0.5*det(Ll)*prod(sign(diag(Lu))).*sum(log(abs(diag(Lu))));
+                [Ll,Lu,p]=lu(B);
+                if sum(diag(p))==size(p,1)
+                  edata = logZ + 0.5*prod(sign(diag(Lu))).*sum(log(abs(diag(Lu))));
+                else
+                  edata = logZ + 0.5*det(p)*prod(sign(diag(Lu))).*sum(log(abs(diag(Lu))));
+                end
                 
                 % Return help parameters for gradient and prediction
                 % calculations
