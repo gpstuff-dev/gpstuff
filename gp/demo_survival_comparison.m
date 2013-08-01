@@ -30,8 +30,8 @@
 % License.txt, included with the software, for details.
 
 %% First load data
-S = which('demo_survival_weibull');
-L = strrep(S,'demo_survival_weibull.m','demodata/leukemia.txt');
+S = which('demo_survival_aft');
+L = strrep(S,'demo_survival_aft.m','demodata/leukemia.txt');
 leukemiadata=load(L);
 
 % leukemiadata consists of:
@@ -176,11 +176,11 @@ hold off;
 [c1,bb1]=hcs(crit1(:,end),y,ye,1,'rsubstream',1);
 [c2,bb2]=hcs(crit2(:,end),y,ye,1,'rsubstream',1);
 title('Estimated density of C2-C1')
-lgpdens(bb2-bb1)
+lgpdens(bb2(:)-bb1(:))
 xlabel('Difference in Harrell''s C statistics (C2-C1)');
 
 % We integrate the (C1-C2) estimated density in the (0,inf) interval
-zc=lgpdens_cum(bb2-bb1,0,inf);
+zc=lgpdens_cum(bb2(:)-bb1(:),0,inf);
 fprintf('Estimated c statistics for model 1 and 2 respectively:  %.3f, %.3f \n', c1, c2);
 fprintf('cumulative probability in the (0,inf) interval:  %.2f \n', zc);
 
@@ -189,9 +189,9 @@ fprintf('cumulative probability in the (0,inf) interval:  %.2f \n', zc);
 %probability in the (0,inf) interval, al at time 1
 
 [idi,r1,r2,bbid] = idis(crit1(:,end),crit2(:,end),'rsubstream',1);
-zidi=lgpdens_cum(bbid,0,inf);
+zidi=lgpdens_cum(bbid(:),0,inf);
 title('IDI estimated density')
-lgpdens(bbid)
+lgpdens(bbid(:))
 
 fprintf('R^2 statistic for model 1: %.3f \n', r1);
 fprintf('R^2 statistic for model 2: %.3f \n', r2);
