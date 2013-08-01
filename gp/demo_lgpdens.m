@@ -195,8 +195,10 @@ x=[trnd(4,1,100)]';
 xt=linspace(-6,6,200)';
 [p,pq]=lgpdens(x,xt);
 pla=p;
-line(xt,p,'color','r','marker','none','linewidth',2)
-line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
+if ~exist('OCTAVE_VERSION', 'builtin')
+  line(xt,p,'color','r','marker','none','linewidth',2)
+  line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
+end
 xlim([-7 7])
 title('t_4 (Laplace)')
 % true density
@@ -214,11 +216,13 @@ title('t_4 (MCMC)')
 line(xt,p0,'color','k')
 drawnow
 
-[pks] = ksdensity(x,xt);
-
 disp(['Laplace: ' num2str(sum(p0.*log(pla)))])
 disp(['MCMC: ' num2str(sum(p0.*log(pmc)))])
-disp(['ksdensity: ' num2str(sum(p0.*log(pks)))])
+
+if ~exist('OCTAVE_VERSION','builtin')
+  [pks] = ksdensity(x,xt);  
+  disp(['ksdensity: ' num2str(sum(p0.*log(pks)))])
+end
 
 % Set back initial random stream
 setrandstream(prevstream);

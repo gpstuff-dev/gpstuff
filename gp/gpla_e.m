@@ -698,13 +698,13 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
                     if size(x,2)==1
                       gge=zeros(2*n,1);
                       gge(1:n)=b;
-                      q=ifft(fftKcirc.*fft(gge'));
+                      q=real(ifft(fftKcirc.*fft(gge')));
                       Kg=q(1:n)';
                     elseif size(x,2)==2
                       gge=zeros(2*n2,2*n1);
                       gge(1:n2,1:n1)=reshape(b,n2,n1);
                       
-                      q=ifft2(fftKcirc.*fft2(gge));
+                      q=real(ifft2(fftKcirc.*fft2(gge)));
                       q=q(1:n2,1:n1);
                       Kg=q(:);
                     else
@@ -722,8 +722,8 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
                     else
                       [iSg,~]=pcg(@(z) mvm_fft(g2,ny,fftKcirc,[],[],z), v, gp.latent_opt.pcg_tol);
                     end
+                    iSg=real(iSg);
                     a=b-sqrt(ny)*(g2sq.*iSg  - g2*(g2'*(iSg./g2sq)));
-                    
                   else
                     if strcmpi(gp.lik.type,'LGPC')
                       R=zeros(n);
@@ -789,7 +789,7 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
                     if size(x,2)==1
                       a2=zeros(2*n,1);
                       a2(1:n)=a;
-                      f2=ifft(fftKcirc.*fft(a2'));
+                      f2=real(ifft(fftKcirc.*fft(a2')));
                       f=f2(1:n)';
                       if isfield(gp,'meanf')
                         f=f+H'*(B_m*(H*a));
@@ -798,7 +798,7 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
                       a2=zeros(2*n2,2*n1);
                       a2(1:n2,1:n1)=reshape(a,n2,n1);
                       
-                      f2=ifft2(fftKcirc.*fft2(a2));
+                      f2=real(ifft2(fftKcirc.*fft2(a2)));
                       f2=f2(1:n2,1:n1);
                       f=f2(:);
                       if isfield(gp,'meanf')
@@ -842,7 +842,7 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
                       if size(x,2)==1
                         a2=zeros(2*n,1);
                         a2(1:n)=a;
-                        f2=ifft(fftKcirc.*fft(a2'));
+                        f2=real(ifft(fftKcirc.*fft(a2')));
                         f=f2(1:n)';
                         
                         if isfield(gp,'meanf')
@@ -851,7 +851,7 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
                       elseif size(x,2)==2
                         a2=zeros(2*n2,2*n1);
                         a2(1:n2,1:n1)=reshape(a,n2,n1);
-                        f2=ifft2(fftKcirc.*fft2(a2));
+                        f2=real(ifft2(fftKcirc.*fft2(a2)));
                         f2=f2(1:n2,1:n1);
                         f=f2(:);
                         
