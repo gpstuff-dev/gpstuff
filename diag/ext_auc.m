@@ -21,14 +21,14 @@ function ea = ext_auc(P,tt,t)
 % License.txt, included with the software, for details.
   
   ip=inputParser;
-  ip=iparser(ip,'addRequired','P',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip=iparser(ip,'addRequired','tt', @(x) isreal(x) && all(isfinite(x(:))))
-  ip=iparser(ip,'addRequired','t', @(x) isreal(x) && all(isfinite(x(:))))
+  ip=iparser(ip,'addRequired','P',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','tt', @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','t', @(x) isreal(x) && all(isfinite(x(:))));
   ip=iparser(ip,'parse',P,tt,t);
   
   [n,nin]=size(P);
   S=1-P;
-  D=-diff([; ones(n,1) S],1,2);
+  D=-diff([ones(n,1) S],1,2);
   sd=tt(2)-tt(1);
   
   if isempty(find(tt==t,1))
