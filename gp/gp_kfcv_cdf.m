@@ -77,7 +77,7 @@ ip=iparser(ip,'addParamValue','rstream', 1, @(x) isreal(x) && isscalar(x) && isf
 ip=iparser(ip,'addParamValue','trindex', [], @(x) isempty(x) || iscell(x));
 ip=iparser(ip,'addParamValue','tstindex', [], @(x) isempty(x) || iscell(x));
 ip=iparser(ip,'addParamValue','display', 'on', @(x) islogical(x) || ...
-  ismember(x,{'iter' 'fold'}));
+  ismember(x,{'on' 'iter' 'fold'}));
 ip=iparser(ip,'parse',gp, x, y, varargin{:});
 z=ip.Results.z;
 yt=ip.Results.yt;
