@@ -220,7 +220,7 @@ gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf, ...
 gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3);
+opt=optimset('TolFun',1e-3,'TolX',1e-4);
 % Optimize with the quasi-Newton method
 gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
 
@@ -253,7 +253,7 @@ title(['The predicted underlying function,   ';
 xlim([-2 2]), ylim([-2 2])
 
 %========================================================
-% PART 4 data analysis with PIC approximation
+% PART 3 data analysis with PIC approximation
 %========================================================
 
 % Now we will use the PIC sparse approximation. The model is constructed 
@@ -315,7 +315,7 @@ gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', gpcf, ...
 gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3);
+opt=optimset('TolFun',1e-3,'TolX',1e-4);
 % Optimize with the quasi-Newton method
 gp_pic=gp_optim(gp_pic,x,y,'opt',opt);
 
@@ -345,7 +345,7 @@ xlim([-2 2]), ylim([-2 2])
 
 
 %========================================================
-% PART 5 data analysis with VAR sparse approximation
+% PART 4 data analysis with VAR sparse approximation
 %========================================================
 
 % Now we will use the variational sparse approximation.
@@ -388,7 +388,7 @@ gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood+inducing')
 %gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3);
+opt=optimset('TolFun',1e-3,'TolX',1e-4);
 % Optimize with the quasi-Newton method
 gp_var=gp_optim(gp_var,x,y,'opt',opt);
 
@@ -428,7 +428,7 @@ xlim([-2 2]), ylim([-2 2])
 
 
 %========================================================
-% PART 6 data analysis with DTC sparse approximation
+% PART 5 data analysis with DTC sparse approximation
 %========================================================
 
 % Now we will use the DTC sparse approximation.
@@ -472,7 +472,7 @@ gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', gpcf, ...
 gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the optimization
-opt=optimset('TolFun',1e-4,'TolX',1e-4);
+opt=optimset('TolFun',1e-3,'TolX',1e-4);
 % Optimize with the quasi-Newton method
 gp_dtc=gp_optim(gp_dtc,x,y,'opt',opt);
 
