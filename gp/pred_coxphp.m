@@ -25,31 +25,31 @@ function p = pred_coxphp(gp, x, y, xt, yt, varargin)
 if iscell(gp)
   % prediction for GP_IA cell array
   nGP = numel(gp);
-  pp=zeros(size(xt,1),nGP);
-  P_TH=zeros(1,nGP);
+  pp=zeros(size(xt,1),size(yt,2),nGP);
+  P_TH=zeros(1,1,nGP);
   for i1=1:nGP
     % make prediction for each gp in cell array
     Gp=gp{i1};
-    P_TH(:,i1) = Gp.ia_weight;
-    pp(:,i1)=pred_coxphp(Gp, x, y, xt, yt, varargin{:});
+    P_TH(:,:,i1) = Gp.ia_weight;
+    pp(:,:,i1)=pred_coxphp(Gp, x, y, xt, yt, varargin{:});
   end
   % combine predictions
-  p=sum(bsxfun(@times,pp,P_TH),2);
+  p=sum(bsxfun(@times,pp,P_TH),3);
   return
 elseif numel(gp.jitterSigma2)>1
   nmc=size(gp.jitterSigma2,1);
-  pp=zeros(size(xt,1),nmc);
+  pp=zeros(size(xt,1),size(yt,2),nmc);
   for i1=1:nmc
     Gp = take_nth(gp,i1);
-    pp(:,i1)=pred_coxphp(Gp, x, y, xt, yt, varargin{:});
+    pp(:,:,i1)=pred_coxphp(Gp, x, y, xt, yt, varargin{:});
   end
   % combine predictions
-  p=mean(pp,2);
+  p=mean(pp,3);
   return
 end
 
 [Ef1, Ef2, Covf] = pred_coxph(gp,x,y,xt, varargin{:});
-nsamps = 10000;
+nsamps = 100000;
 ntime=size(gp.lik.stime,2)-1;
 if isfield(gp.lik, 'stratificationVariables')
   ind_str=gp.lik.stratificationVariables;

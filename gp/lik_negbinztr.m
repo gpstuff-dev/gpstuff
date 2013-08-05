@@ -90,7 +90,9 @@ function lik = lik_negbinztr(varargin)
     lik.fh.llg2 = @lik_negbinztr_llg2;
     lik.fh.llg3 = @lik_negbinztr_llg3;
     lik.fh.tiltedMoments = @lik_negbinztr_tiltedMoments;
+    lik.fh.tiltedMoments2 = @lik_negbinztr_tiltedMoments2;
     lik.fh.siteDeriv = @lik_negbinztr_siteDeriv;
+    lik.fh.siteDeriv2 = @lik_negbinztr_siteDeriv2;
     lik.fh.upfact = @lik_negbinztr_upfact;
     lik.fh.predy = @lik_negbinztr_predy;
     lik.fh.predprcty = @lik_negbinztr_predprcty;
@@ -400,7 +402,66 @@ function [logM_0, m_1, sigm2hati1] = lik_negbinztr_tiltedMoments(lik, y, i1, sig
     % get a function handle of an unnormalized tilted distribution
     % (likelihood * cavity = Negative-binomial * Gaussian)
     % and useful integration limits
-    [tf,minf,maxf]=init_negbinztr_norm(yy(i),myy_i(i),sigm2_i(i),avgE(i),r);
+    [tf,minf,maxf]=init_negbinztr_norm(yy(i),myy_i(i),sigm2_i(i),avgE(i),r,1);
+    
+    % Integrate with quadrature
+    RTOL = 1.e-6;
+    ATOL = 1.e-10;
+    [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+    sigm2hati1(i) = m_2 - m_1(i).^2;
+    
+    % If the second central moment is less than cavity variance
+    % integrate more precisely. Theoretically for log-concave
+    % likelihood should be sigm2hati1 < sigm2_i.
+    if sigm2hati1(i) >= sigm2_i(i)
+      ATOL = ATOL.^2;
+      RTOL = RTOL.^2;
+      [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+      sigm2hati1(i) = m_2 - m_1(i).^2;
+      if sigm2hati1(i) >= sigm2_i(i)
+        warning('lik_negbinztr_tilted_moments: sigm2hati1 >= sigm2_i');
+        %sigm2hati1=sigm2_i-1e-9;
+      end
+    end
+    logM_0(i) = log(m_0);
+  end
+end
+
+function [logM_0, m_1, sigm2hati1] = lik_negbinztr_tiltedMoments2(lik, y, i1, sigm2_i, myy_i, z, eta)
+%LIK_NEGBINZTR_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+%
+%  Description
+%    [M_0, M_1, M2] = LIK_NEGBINZTR_TILTEDMOMENTS(LIK, Y, I, S2,
+%    MYY, Z) takes a likelihood structure LIK, incedence counts
+%    Y, expected counts Z, index I and cavity variance S2 and
+%    mean MYY. Returns the zeroth moment M_0, mean M_1 and
+%    variance M_2 of the posterior marginal (see Rasmussen and
+%    Williams (2006): Gaussian processes for Machine Learning,
+%    page 55). This subfunction is needed when using EP for 
+%    inference with non-Gaussian likelihoods.
+%
+%  See also
+%    GPEP_E
+  
+%  if isempty(z)
+%    error(['lik_negbinztr -> lik_negbinztr_tiltedMoments: missing z!'... 
+%           'Negbinztr likelihood needs the expected number of            '...
+%           'occurrences as an extra input z. See, for                 '...
+%           'example, lik_negbinztr and gpep_e.                       ']);
+%  end
+  
+  yy = y(i1);
+  avgE = z(i1);
+  r = lik.disper;
+  logM_0=zeros(size(yy));
+  m_1=zeros(size(yy));
+  sigm2hati1=zeros(size(yy));
+  
+  for i=1:length(i1)
+    % get a function handle of an unnormalized tilted distribution
+    % (likelihood * cavity = Negative-binomial * Gaussian)
+    % and useful integration limits
+    [tf,minf,maxf]=init_negbinztr_norm(yy(i),myy_i(i),sigm2_i(i),avgE(i),r,eta);
     
     % Integrate with quadrature
     RTOL = 1.e-6;
@@ -460,7 +521,7 @@ function [g_i] = lik_negbinztr_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   % get a function handle of an unnormalized tilted distribution 
   % (likelihood * cavity = Negative-binomial * Gaussian)
   % and useful integration limits
-  [tf,minf,maxf]=init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r);
+  [tf,minf,maxf]=init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r, 1);
   % additionally get function handle for the derivative
   td = @deriv;
   
@@ -475,6 +536,60 @@ function [g_i] = lik_negbinztr_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
     g = 1 + log(r./(r+mu)) - (r+yy)./(r+mu) + psi(r + yy) - psi(r);
     lp0=r.*(log(r) - log(r+mu));
     g = g -(1./(1 - exp(-lp0)).*(log(r./(mu + r)) - r./(mu + r) + 1));
+  end
+end
+
+function [g_i] = lik_negbinztr_siteDeriv2(lik, y, i1, sigm2_i, myy_i, z, eta, lnZhat)
+%LIK_NEGBINZTR_SITEDERIV  Evaluate the expectation of the gradient
+%                      of the log likelihood term with respect
+%                      to the likelihood parameters for EP 
+%
+%  Description [M_0, M_1, M2] =
+%    LIK_NEGBINZTR_SITEDERIV(LIK, Y, I, S2, MYY, Z) takes a
+%    likelihood structure LIK, incedence counts Y, expected
+%    counts Z, index I and cavity variance S2 and mean MYY. 
+%    Returns E_f [d log p(y_i|f_i) /d a], where a is the
+%    likelihood parameter and the expectation is over the
+%    marginal posterior. This term is needed when evaluating the
+%    gradients of the marginal likelihood estimate Z_EP with
+%    respect to the likelihood parameters (see Seeger (2008):
+%    Expectation propagation for exponential families). This 
+%    subfunction is needed when using EP for inference with 
+%    non-Gaussian likelihoods and there are likelihood parameters.
+%
+%  See also
+%    GPEP_G
+
+  if isempty(z)
+    error(['lik_negbinztr -> lik_negbinztr_siteDeriv: missing z!'... 
+           'Negbinztr likelihood needs the expected number of        '...
+           'occurrences as an extra input z. See, for             '...
+           'example, lik_negbinztr and gpla_e.                   ']);
+  end
+
+  yy = y(i1);
+  avgE = z(i1);
+  r = lik.disper;
+  
+  % get a function handle of an unnormalized tilted distribution 
+  % (likelihood * cavity = Negative-binomial * Gaussian)
+  % and useful integration limits
+  [tf,minf,maxf]=init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r, eta);
+  % additionally get function handle for the derivative
+  td = @deriv;
+  
+  % Integrate with quadgk
+  [m_0, fhncnt] = quadgk(tf, minf, maxf);
+  [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
+  g_i = g_i.*r;
+
+  function g = deriv(f)
+    mu = avgE.*exp(f);
+    % Derivative using the psi function
+    g = 1 + log(r./(r+mu)) - (r+yy)./(r+mu) + psi(r + yy) - psi(r);
+    lp0=r.*(log(r) - log(r+mu));
+    g = g -(1./(1 - exp(-lp0)).*(log(r./(mu + r)) - r./(mu + r) + 1));
+%     g = eta.*g;
   end
 end
 
@@ -578,7 +693,7 @@ function [lpy, Ey, Vary] = lik_negbinztr_predy(lik, Ef, Varf, yt, zt)
   end
 end
 
-function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r)
+function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r, eta)
 %INIT_NEGBINZTR_NORM
 %
 %  Description
@@ -594,7 +709,7 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r)
 %    LIK_NEGBINZTR_PREDY
   
 % avoid repetitive evaluation of constant part
-  ldconst = -gammaln(r)-gammaln(yy+1)+gammaln(r+yy)...
+  ldconst = eta*(-gammaln(r)-gammaln(yy+1)+gammaln(r+yy))...
             - log(sigm2_i)/2 - log(2*pi)/2;
   % Create function handle for the function to be integrated
   df = @negbinztr_norm;
@@ -679,16 +794,16 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r)
       % exp(lp0)->1, that is, almost all the mass is in the zero part
       % approximate if yy=1, and give up if yy>1
       if yy==1
-        integrand = exp(log(avgE)+f...
+        integrand = exp(eta*(log(avgE)+f)...
                         -0.5*(f-myy_i).^2./sigm2_i -log(sigm2_i)/2 -log(2*pi)/2);
       else
         integrand = 0;
       end
     else
       integrand = exp(ldconst ...
-                      +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) ...
+                      +eta*(yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu))) ...
                       -0.5*(f-myy_i).^2./sigm2_i ...
-                      -log(1-exp(lp0)));
+                      -eta*log(1-exp(lp0)));
     end
   end
   
@@ -702,16 +817,16 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r)
       % exp(lp0)->1, that is, almost all the mass is in the zero part
       % approximate if yy=1, and give up if yy>1
       if yy==1
-        log_int = log(avgE)+f ...
+        log_int = eta*(log(avgE)+f) ...
                   -0.5*(f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2;
       else
         log_int=-Inf;
       end
     else
       log_int = ldconst...
-                +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) -gammaln(r)-gammaln(yy+1)+gammaln(r+yy) ...
+                +eta*(yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) -gammaln(r)-gammaln(yy+1)+gammaln(r+yy)) ...
                 -0.5*(f-myy_i).^2./sigm2_i ...
-                -log(1-exp(lp0));
+                -eta*log(1-exp(lp0));
     end
   end
   
@@ -723,11 +838,11 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r)
     if lp0==0
       % exp(lp0)->1, that is, almost all the mass is in the zero part
       % approximate if yy=1, and give up if yy>1
-      g = 1+(myy_i - f)./sigm2_i;
+      g = eta+(myy_i - f)./sigm2_i;
     else
-      g = -(r.*(mu - yy))./(mu.*(mu + r)).*mu ...
+      g = -eta*(r.*(mu - yy))./(mu.*(mu + r)).*mu ...
           + (myy_i - f)./sigm2_i ...
-          -1/(1 - exp(-lp0))*-r/(mu + r)*mu;
+          -eta*(1/(1 - exp(-lp0))*-r/(mu + r)*mu);
     end
   end
   
@@ -741,9 +856,9 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r)
       % approximate if yy=1, and give up if yy>1
       g2 = -1/sigm2_i;
     else
-      g2 = -(r*(r + yy))/(mu + r)^2.*mu ...
+      g2 = -eta*(r*(r + yy))/(mu + r)^2.*mu ...
            -1/sigm2_i ...
-           + (r^2 + r^2*exp(-lp0)*(mu - 1))/((mu + r)^2*(exp(-lp0) - 1)^2)*mu;
+           + eta*(r^2 + r^2*exp(-lp0)*(mu - 1))/((mu + r)^2*(exp(-lp0) - 1)^2)*mu;
     end
   end
   
@@ -869,6 +984,9 @@ function reclik = lik_negbinztr_recappend(reclik, ri, lik)
     reclik.fh.llg2 = @lik_negbinztr_llg2;
     reclik.fh.llg3 = @lik_negbinztr_llg3;
     reclik.fh.tiltedMoments = @lik_negbinztr_tiltedMoments;
+    reclik.fh.tiltedMoments2 = @lik_negbinztr_tiltedMoments2;
+    reclik.fh.siteDeriv = @lik_negbinztr_siteDeriv;
+    reclik.fh.siteDeriv2 = @lik_negbinztr_siteDeriv2;
     reclik.fh.predy = @lik_negbinztr_predy;
     reclik.fh.predprcty = @lik_negbinztr_predprcty;
     reclik.fh.invlink = @lik_negbinztr_invlink;

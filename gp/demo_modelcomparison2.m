@@ -33,8 +33,8 @@
 % License.txt, included with the software, for details.
 
 % First load data
-S = which('demo_survival_weibull');
-L = strrep(S,'demo_survival_weibull.m','demodata/leukemia.txt');
+S = which('demo_survival_aft');
+L = strrep(S,'demo_survival_aft.m','demodata/leukemia.txt');
 leukemiadata=load(L);
 
 % leukemiadata consists of:
