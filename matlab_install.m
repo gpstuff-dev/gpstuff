@@ -30,8 +30,7 @@ function matlab_install(SuiteSparse_path)
     elseif strcmp(SuiteSparse_path, 'SuiteSparseOn')
         cdir = pwd;        
         cd SuiteSparse
-        SuiteSparse_path = path_spaces([pwd '/']);
-        
+        SuiteSparse_path = [pwd '/'];
         
         % Compile SuiteSparse
         fprintf('Compiling SuiteSparse. This may take a while \n \n')
@@ -90,20 +89,4 @@ function matlab_install(SuiteSparse_path)
             fprintf ('addpath %s\n', paths {k}) ;
         end
     end
-end
-
-function path = path_spaces(path)
-% Build correct path if path includes spaces
-
-space_ind=strfind(path, ' ');
-path=strrep(path, ' ', ''' ');
-space_ind=space_ind+length(space_ind);
-for i=1:length(space_ind)
-  
-  indd=strfind(path(space_ind(i):end), '/');
-  path=[path(1:space_ind(i)+indd(1)-2) '''/' path(space_ind(i)+indd(1):end)];
-  space_ind=space_ind+1;
-  
-end
-
 end
