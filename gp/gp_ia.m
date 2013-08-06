@@ -560,7 +560,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             th(dii,:)=[];
           end
   
-          p_th=p_th-min(p_th);
+          p_th=p_th-max(p_th);
           p_th=exp(p_th);
           
           if nParam>1
@@ -798,7 +798,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         end
       end
       % Convert densities from the log-space and normalize them
-      p_th = exp(p_th-min(p_th));
+      p_th = exp(p_th-max(p_th));
       p_th = p_th/sum(p_th);
       
       % (Scaled) Densities of the samples in the approximation of the
