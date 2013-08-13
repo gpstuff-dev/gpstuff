@@ -70,6 +70,7 @@ fcorr=ip.Results.fcorr;
 
 tn = size(x,1);
 
+sampyt=[];
 if isstruct(gp) && numel(gp.jitterSigma2)==1
   % Single GP
   if isfield(gp.lik.fh,'trcov') || isfield(gp, 'latentValues')
