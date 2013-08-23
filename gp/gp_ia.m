@@ -495,6 +495,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               if ismember(opt.display,{'iter'})
                 fprintf('origo lp=%.2f\n',l0);
               end
+              ts(1)=1;
               for i1 = 2:size(points,1)
                 if ismember(opt.display,{'iter'}),fprintf('%d ',i1);end
                 % Find the scaling parameter so that when we move sqrt(2) std
