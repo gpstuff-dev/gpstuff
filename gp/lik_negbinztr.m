@@ -408,6 +408,10 @@ function [logM_0, m_1, sigm2hati1] = lik_negbinztr_tiltedMoments(lik, y, i1, sig
     RTOL = 1.e-6;
     ATOL = 1.e-10;
     [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+    if isnan(m_0)
+      logM_0=NaN;
+      return
+    end
     sigm2hati1(i) = m_2 - m_1(i).^2;
     
     % If the second central moment is less than cavity variance
