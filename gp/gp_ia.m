@@ -1110,7 +1110,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     if size(w0) ~= size(v)
       v = v';
     end
-    rr = 1e-4;
+    rr = 1e-3;
     g2 = fh_g(w0-rr*v, gp, x, y, options);
     g1 = fh_g(w0+rr*v, gp, x, y, options);
     vv = (g1 - g2) / (2*rr);
