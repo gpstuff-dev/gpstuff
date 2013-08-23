@@ -844,7 +844,7 @@ switch gp.type
           Varyt = Varft + Cnn_v - sum(B2.^2,1)';
       end
       if ~isempty(yt)
-        lpyt = norm_lpdf(y, Eyt, sqrt(Varyt));
+        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
       end
     end  
     
