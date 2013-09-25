@@ -231,9 +231,18 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           nlp=length(nl); % number of latent processes
           
           if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
+            % Use Kronecker product kron(Ka,Kb) instead of K
             gptmp=gp; gptmp.jitterSigma2=0;
+            ls=gptmp.cf{1}.lengthScale;
+            if numel(ls)>1
+              gptmp.cf{1}.lengthScale=ls(1);
+            end
             Ka = gp_trcov(gptmp, unique(x(:,1)));
+            % fix the magnitude sigma to 1 for Kb matrix
             wtmp=gp_pak(gptmp); wtmp(1)=0; gptmp=gp_unpak(gptmp,wtmp);
+            if numel(ls)>1
+              gptmp.cf{1}.lengthScale=ls(2);
+            end
             Kb = gp_trcov(gptmp, unique(x(:,2)));
             clear gptmp
             n1=size(Ka,1);
@@ -376,8 +385,15 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
               if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
                 
                 gptmp=gp; gptmp.jitterSigma2=0;
+                ls=gptmp.cf{1}.lengthScale;
+                if numel(ls)>1
+                  gptmp.cf{1}.lengthScale=ls(1);
+                end
                 DKa = gpcf.fh.cfg(gptmp.cf{1}, unique(x(:,1)));
                 wtmp=gp_pak(gptmp); wtmp(1)=0; gptmp=gp_unpak(gptmp,wtmp);
+                if numel(ls)>1
+                  gptmp.cf{1}.lengthScale=ls(2);
+                end
                 DKb = gpcf.fh.cfg(gptmp.cf{1}, unique(x(:,2)));
                 clear gptmp
                 
@@ -568,7 +584,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
               if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
                 % Set the gradients of hyperparameter
                 if length(gprior_cf) > length(DKa)
-                  for i2=length(DKff)+1:length(gprior_cf)
+                  for i2=length(DKa)+1:length(gprior_cf)
                     i1 = i1+1;
                     gdata(i1) = 0;
                     gprior(i1) = gprior_cf(i2);
