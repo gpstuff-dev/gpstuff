@@ -141,7 +141,7 @@ gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-8)
 
 % We have now constructed a GP model with gpcf_ppcs2 covariance
 % function. This is a compact support function which produces
-% sparse covariance matrices if its lenght-scale is short enough. 
+% sparse covariance matrices if its length-scale is short enough. 
 % The inference with CS functions is conducted exactly the same way
 % as with full support functions.
 

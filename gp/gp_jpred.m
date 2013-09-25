@@ -342,7 +342,7 @@ switch gp.type
     % Check the tstind vector
     if nargin > 5
         if ~isempty(tstind) && length(tstind) ~= size(x,1)
-            error('tstind (if provided) has to be of same lenght as x.')
+            error('tstind (if provided) has to be of same length as x.')
         end
     else
         tstind = [];
@@ -574,7 +574,7 @@ switch gp.type
     % Here tstind = 1 if the prediction is made for the training set 
     if nargin > 5
         if ~isempty(tstind) && length(tstind) ~= size(x,1)
-            error('tstind (if provided) has to be of same lenght as x.')
+            error('tstind (if provided) has to be of same length as x.')
         end
     else
         tstind = [];
@@ -766,7 +766,7 @@ switch gp.type
     % Check the tstind vector
     if nargin > 5
         if ~isempty(tstind) && length(tstind) ~= size(tx,1)
-            error('tstind (if provided) has to be of same lenght as tx.')
+            error('tstind (if provided) has to be of same length as tx.')
         end
     else
         tstind = [];

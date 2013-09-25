@@ -167,7 +167,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 5
           if length(tstind) ~= size(x,1) && ~isempty(tstind)
-            error('tstind (if provided) has to be of same lenght as x.')
+            error('tstind (if provided) has to be of same length as x.')
           end
         else
           tstind = [];
@@ -368,7 +368,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 5
           if ~isempty(tstind) && length(tstind) ~= size(x,1)
-            error('tstind (if provided) has to be of same lenght as x.')
+            error('tstind (if provided) has to be of same length as x.')
           end
         else
           tstind = [];
@@ -659,7 +659,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             % Here tstind = 1 if the prediction is made for the training set 
             if nargin > 6
               if ~isempty(tstind) && length(tstind) ~= size(x,1)
-                error('tstind (if provided) has to be of same lenght as x.')
+                error('tstind (if provided) has to be of same length as x.')
               end
             else
               tstind = [];
@@ -744,7 +744,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             % Here tstind = 1 if the prediction is made for the training set 
             if nargin > 6
               if ~isempty(tstind) && length(tstind) ~= size(x,1)
-                error('tstind (if provided) has to be of same lenght as x.')
+                error('tstind (if provided) has to be of same length as x.')
               end
             else
               tstind = [];

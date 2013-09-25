@@ -211,7 +211,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
         % Here tstind = 1 if the prediction is made for the training set
         if nargin > 6
           if ~isempty(tstind) && length(tstind) ~= size(x,1)
-            error('tstind (if provided) has to be of same lenght as x.')
+            error('tstind (if provided) has to be of same length as x.')
           end
         else
           tstind = [];
@@ -382,7 +382,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
         % Here tstind = 1 if the prediction is made for the training set
         if nargin > 6
           if ~isempty(tstind) && length(tstind) ~= size(x,1)
-            error('tstind (if provided) has to be of same lenght as x.')
+            error('tstind (if provided) has to be of same length as x.')
           end
           %         else
           %              tstind = [];
