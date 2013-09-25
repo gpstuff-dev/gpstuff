@@ -1,4 +1,4 @@
-function y = sumlogs(x)
+function y = sumlogs(x,dim)
 %SUMLOGS Sum of elements where numbers are represented by their logarithms.
 %
 %  Description
