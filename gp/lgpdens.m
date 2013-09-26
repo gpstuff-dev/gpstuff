@@ -153,7 +153,7 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
       % normalise, so that same prior is ok for different scales
       xxn=(xx-mean(xx))./std(xx);
       
-      gp=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis,imp_sampling);
+      gp=gpsmooth(xxn,yy,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis,imp_sampling);
       
       if strcmpi(latent_method,'MCMC')
         [Ef, Covf] = gpmc_jpreds(gp, xxn, yy, xxn);
@@ -223,7 +223,8 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
         end
         
         if strcmpi(imp_sampling,'on')
-          % importance sampling using a split normal as a proposal density
+          % importance sampling using a normal as a proposal density
+          % TODO: split-normal
           % Geweke, J. (1989).  Bayesian inference in econometric models using
           % Monte Carlo integration. Econometrica 57:1317-1339.
           lps=zeros(size(qr,1),nGP);
@@ -279,7 +280,9 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
         
         % with a MAP estimate
         [Ef,Covf] = gp_pred(gp, xxn, yy, xxn);
-        qr=bsxfun(@plus,randn(n_is,size(Ef,1))*chol(1.0*Covf,'upper'),Ef');
+        if strcmpi(imp_sampling,'off')
+          qr=bsxfun(@plus,randn(n_is,size(Ef,1))*chol(1.0*Covf,'upper'),Ef');
+        end
         
         if strcmpi(rej_sampling,'on') && strcmpi(imp_sampling,'off')
           if ~any(bounded)
@@ -534,13 +537,16 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
           zt=[zt1(:),zt2(:)];
           %nzt=length(zt);
           xt=zt;
-          % Enrique added this to make IS easier
-          % TODO: allow different xx and xt
-          xx = xt;
-          nz = length(zt);
-          gridn(2) = gridn(2)*ntx2;
-          z1 = zt1;
-          z2 = zt2;
+          
+          if strcmpi(latent_method,'Laplace') && strcmpi(imp_sampling,'on')
+            % Enrique added this to make IS easier
+            % TODO: allow different xx and xt
+            xx = xt;
+            nz = length(zt);
+            gridn(2) = gridn(2)*ntx2;
+            z1 = zt1;
+            z2 = zt2;
+          end
         end
       else
         xx=xt;
@@ -568,15 +574,15 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
         xxtn=bsxfun(@rdivide,bsxfun(@minus,xt,mean(xx,1)),std(xx,1));
       end
       
-      if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
-        gp=gpsmooth(xxn,yy,xxtn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis);
-      else
-        gp=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis);
-      end
+      gp=gpsmooth(xxn,yy,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis);
       
       if strcmpi(latent_method,'MCMC')
         imp_sampling='off';
-        [Ef, Covf] = gpmc_jpreds(gp, xxn, yy, xxn);
+        if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+          [Ef, Covf] = gpmc_jpreds(gp, xxn, yy, xxtn);
+        else
+          [Ef, Covf] = gpmc_jpreds(gp, xxn, yy, xxn);
+        end
         
         if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
           unx2=(unique(xt(:,2)));
@@ -776,10 +782,13 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
           unx2=unique(xt(:,2));
           xd2=(unx2(2)-unx2(1));
           for k1=1:size(qjr,2)
-            % qjrtmp=reshape(qjr(:,k1),[gridn(2)*ntx2 gridn(1)]);
-            % Enrique disabled ntx2
-            % TODO: enable ntx2
-            qjrtmp=reshape(qjr(:,k1),[gridn(2) gridn(1)]);
+            if strcmpi(latent_method,'Laplace') && strcmpi(imp_sampling,'on')
+              qjrtmp=reshape(qjr(:,k1),[gridn(2) gridn(1)]);
+              % Enrique disabled ntx2
+              % TODO: enable ntx2
+            else
+              qjrtmp=reshape(qjr(:,k1),[gridn(2)*ntx2 gridn(1)]);
+            end
             qjrtmp=bsxfun(@rdivide,qjrtmp,sum(qjrtmp));
             qjrtmp=qjrtmp./xd2;
             pjr(:,k1)=qjrtmp(:);
@@ -801,10 +810,13 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
       if nargout<1
         % no output, do the plot thing
         if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
-          % pjr2=reshape(pjr,[gridn(2)*ntx2 gridn(1) size(pjr,2)]);
-          % Enrique disabled ntx2
-          % TODO: enable ntx2
-          pjr2=reshape(pjr,[gridn(2) gridn(1) size(pjr,2)]);
+          if strcmpi(latent_method,'Laplace') && strcmpi(imp_sampling,'on')
+            pjr2=reshape(pjr,[gridn(2) gridn(1) size(pjr,2)]);
+            % Enrique disabled ntx2
+            % TODO: enable ntx2
+          else
+            pjr2=reshape(pjr,[gridn(2)*ntx2 gridn(1) size(pjr,2)]);
+          end
           qp=mean(pjr2,3);
           qp=bsxfun(@rdivide,qp,sum(qp,1));
           qpc=cumsum(qp,1);
@@ -858,7 +870,7 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
   end
 end
 
-function gp = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis,imp_sampling)
+function gp = gpsmooth(xx,yy,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis,imp_sampling)
 % Make inference with log Gaussian process and EP or Laplace approximation
 
  % gp_mc and gp_ia still uses numeric display option
@@ -940,10 +952,6 @@ function gp = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,speedup,g
       gp.latent_opt.eig_prct=0.5;
       gp.latent_opt.kron=1;
       opt.LargeScale='off';
-      if norm(xx-xxt)~=0
-        warning('In the low-rank approximation the grid locations xx are used instead of xxt in predictions.')
-        xxt=xx;
-      end
     elseif strcmp(gp.cf{1}.type,'gpcf_sexp') || strcmp(gp.cf{1}.type,'gpcf_exp') || strcmp(gp.cf{1}.type,'gpcf_matern32') || strcmp(gp.cf{1}.type,'gpcf_matern52')
       gp.latent_opt.fft=1;
     end
@@ -989,12 +997,11 @@ function gp = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,speedup,g
       gp = gp_set(gp, 'jitterSigma2', 1e-2);
     end
     
-    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 10, 'repeat', 10, 'display', 10);
+    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 510, 'repeat', 1, 'display', displ);
     % estimate the effective number of samples
     %neff=510./[geyer_imse(log(rgp.cf{1}.magnSigma2)) geyer_imse(log(rgp.cf{1}.lengthScale))];
     % Remove burn-in
-    %gp=thin(rgp,11,5);
-    gp=rgp;
+    gp=thin(rgp,11,5);
     
   end
 end
