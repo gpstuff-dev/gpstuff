@@ -2,7 +2,7 @@ function [Ef, Covf, ljpy, Ey, Covy] = gpmc_jpreds(gp, x, y, varargin)
 %GPMC_JPREDS  Predictions with Gaussian Process MCMC approximation.
 %
 %  Description
-%    [EFS, COVFS] = GPMC_JPREDS(RECGP, X, Y, XT, OPTIONS) takes a
+%    [EFS, COVFS] = GPMC_JPREDS(GP, X, Y, XT, OPTIONS) takes a
 %    Gaussian processes record structure RECGP (returned by gp_mc)
 %    together with a matrix XT of input vectors, matrix X of
 %    training inputs and vector Y of training targets. Returns

@@ -134,7 +134,7 @@ S1 = sprintf('length-scale: %.3f, magnSigma2: %.3f  \n', ...
 % ========================================
 % MCMC approach with scale mixture noise model (~=Student-t)
 % Here we sample all the variables 
-%     (lenghtScale, magnSigma, sigma(noise-t) and nu)
+%     (lengthScale, magnSigma, sigma(noise-t) and nu)
 % ========================================
 disp(['Scale mixture Gaussian (~=Student-t) noise model                ';...
       'using MCMC integration over the latent values and parameters    '])

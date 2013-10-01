@@ -565,7 +565,7 @@ p(\f|\mathcal{D},\theta,\phi) \approx q(\f|\mathcal{D},\theta,\phi) =
 %
 where $\hat{\f}=\argmax_{\mb{f}} p(\f|\mathcal{D},\theta,\phi)$ and
 $\mb{\Sigma}^{-1}$ is the Hessian of the negative log conditional posterior
-at the mode \citep{Gelman+Carlin+Stern+Rubin:2004,Rasmussen+Williams:2006}: 
+at the mode \citep{Gelman+etal+BDA3:2013,Rasmussen+Williams:2006}: 
 %
 \begin{equation}
 \mb{\Sigma}^{-1} = -\nabla\nabla \log
@@ -1148,7 +1148,7 @@ sample chain (here 21) and thins the chain more (here by 2). This way
 we can decrease the autocorrelation between the remaining samples.
 \pkg{GPstuff} provides also diagnostic tools for Markov chains. See,
 for example,
-\citep{Gelman+Carlin+Stern+Rubin:2004,Robert+Casella:2004} for
+\citep{Gelman+etal+BDA3:2013,Robert+Casella:2004} for
 discussion on convergence and other Markov chain diagnostics. The
 function \code{gpmc\_preds} returns the conditional predictive mean
 and variance for each sampled parameter value. These are
@@ -1379,7 +1379,7 @@ U_i & \sim \text{Inv-}\chi^2(\nu, \tau^2), \label{eq_scale_mixture_2}
 %
 where each observation has its own noise variance $\alpha U_i$ that is
 $\text{Inv-}\chi^2$ distributed
-\citep{Neal:1997,Gelman+Carlin+Stern+Rubin:2004}. The degrees of freedom $\nu$
+\citep{Neal:1997,Gelman+etal+BDA3:2013}. The degrees of freedom $\nu$
 corresponds to the degrees of freedom in the Student-$t$ distribution
 and $\alpha\tau$ corresponds to $\sigma_t$.
 
@@ -1504,7 +1504,7 @@ Figure~\ref{demo_spatial1_fig1}.
 The negative binomial distribution is a robust version of the Poisson
 distribution similarly as Student-$t$ distribution can be considered
 as a robustified Gaussian distribution
-\citep{Gelman+Carlin+Stern+Rubin:2004}. In \pkg{GPstuff} it is
+\citep{Gelman+etal+BDA3:2013}. In \pkg{GPstuff} it is
 parametrized as
 %
 \begin{equation}
@@ -3006,8 +3006,10 @@ illustrated in \code{demo\_regression\_hier}.
 \section{Model assessment and comparison}\label{sec:model_assessment}
 
 There are various means to assess the goodness of the model and its
-predictive performance \citep[for extensive review,
-see][]{Vehtari+Ojanen:2012}. \pkg{GPstuff} provides four basic
+predictive performance. For an extensive review of the predictive
+performance assessment methods see \citet{Vehtari+Ojanen:2012} and for
+a shorter review comparing cross-validation, DIC and WAIC see
+\citet{Gelman+Hwang+Vehtari:2013}. \pkg{GPstuff} provides four basic
 approaches: marginal likelihood, cross-validation, deviance
 information criterion (DIC) and widely applicable information
 criterion (WAIC).
@@ -3739,7 +3741,7 @@ k_{\nu=5/2}(\x_i,\x_j) & =\sigma_{\textrm{m}}^2\left(1+\sqrt{5}r
 A neural network with suitable transfer function and prior
 distribution converges to a GP as the number of hidden units in the
 network approaches to infinity
-\citep{Neal:1996a,Williams:1996,Rasmussen+Williams:2006}. A
+\citep{Neal:1996a,Williams:1996,Williams:1998,Rasmussen+Williams:2006}. A
 nonstationary neural network covariance function is 
 
 \begin{equation}\label{cf_neuralnetwork}
@@ -3894,7 +3896,7 @@ y_i | f_i,\alpha, U_i & \sim N(f_i, \alpha U_i)\\
 U_i & \sim \text{Inv-}\chi^2(\nu, \tau^2), 
 \end{align}
 where each observation has its own noise variance $\alpha U_i$
-\citep{Neal:1997,Gelman+Carlin+Stern+Rubin:2004}. 
+\citep{Neal:1997,Gelman+etal+BDA3:2013}. 
 \subsection*{Logit (\code{lik\_logit})}
 
 The logit transformation gives the probability for $y_i$ of being
@@ -4159,7 +4161,7 @@ p_w(w) = |J|p_{\theta}(f^{-1}(w)),
 \end{equation}
 where $J$ is the Jacobian of the transformation $\theta =
 f^{-1}(w)$. The parameter transformations are discussed shortly,
-for example, in \citet{Gelman+Carlin+Stern+Rubin:2004}[p. 24].
+for example, in \citet{Gelman+etal+BDA3:2013}[p. 21].
 
 Due to the log transformation $w=\log(\theta)$ transformation the
 probability densities $p_{\theta}(\theta)$ are changed to the

@@ -52,7 +52,7 @@ else
         prevstream(1) = randn('seed');        
         prevstream(2) = rand('seed');
       elseif str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-        prevstream = RandStream.getDefaultStream(stream0);
+        prevstream = RandStream.getDefaultStream();
       else
         prevstream = rng;
       end
@@ -76,9 +76,9 @@ else
     rand('seed', seed(2));
   elseif str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
     if ischar(stream)
-      stream0 = RandStream(stream,'Seed',seed);
+      stream = RandStream(stream,'Seed',seed);
     end
-    prevstream = RandStream.setDefaultStream(stream0);
+    prevstream = RandStream.setDefaultStream(stream);
   else
     if ischar(stream)
       prevstream = rng(seed,stream);

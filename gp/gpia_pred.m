@@ -17,13 +17,6 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
 %    [EFT, VARFT, LPYT, EYT, VARYT] = GPIA_PRED(GP, X, Y, XT, OPTIONS)
 %    returns also the posterior predictive mean EYT and variance VARYT.
 %
-%    [EFT, VARFT, LPYT, EYT, VARYT, FT, PFT] = ...
-%      GPIA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
-%    returns also the numerical representation of the marginal
-%    posterior of latent variables at each XT. FT is a vector of
-%    latent values and PFT_i = p(FT_i) is the posterior density for
-%    FT_i.
-%
 %    [EF, VARF, LPY, EY, VARY] = GPIA_PRED(GP, X, Y, OPTIONS)
 %    evaluates the predictive distribution at training inputs X
 %    and logarithm of the predictive density LPY of the training
@@ -156,11 +149,16 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
   
   nGP = numel(gp_array);
 
-  if isequal(gp_array{1}.lik.type, 'Coxph')
-    nxt=size(xt,1); ntime=size(gp_array{1}.lik.xtime,1);
-    nt=nxt+ntime;
+  if isfield(gp_array{1}.lik, 'nondiagW')
+    if isequal(gp_array{1}.lik.type, 'Coxph')
+      nxt=size(xt,1); ntime=size(gp_array{1}.lik.xtime,1);
+      nt=nxt+ntime;
+      lpyts=zeros(nxt,nGP);
+    else
+      nt=size(xt,1);
+      lpyts=zeros(nt,nGP);
+    end
     Efts=zeros(nt,nGP); Varfts=zeros(nt,nt,nGP);
-    lpyts=zeros(nxt,nGP);
   else
     nt=size(xt,1);
     Efts=zeros(nt,nGP); Varfts=zeros(nt,1,nGP);
@@ -194,7 +192,11 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
   if size(Varft,2)==1
     Varft=Varft+sum(bsxfun(@times,bsxfun(@minus,Efts,Eft).^2, P_TH),2);
   else
-    Varft=Varft+diag(sum(bsxfun(@times,bsxfun(@minus,Efts,Eft).^2, P_TH),2));
+    Efts = bsxfun(@minus,Efts,Eft);
+    for i1=1:nGP
+      CovEfts(:,:,i1)=Efts(:,i1)'*Efts(:,2);
+    end
+    Varft=Varft+sum(bsxfun(@times, CovEfts, permute(P_TH,[1 3 2])), 3);
   end
   if nargout > 2
     if isempty(yt)

@@ -133,11 +133,13 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       opt.latent_opt=gp.fh.mc();
       if ~isempty(gp_pak(gp))
         opt.ssls_opt.latent_opt.repeat = 20;
-        if opt.display>0
-          fprintf(' Using SSLS sampler for hyperparameters and ESLS for latent values\n')
-        end
+        % if opt.display>0
+        %   fprintf(' Using SSLS sampler for hyperparameters and ESLS for latent values\n')
+        % end
       else
-        fprintf(' Using ESLS for latent values\n')
+        if opt.display>0
+          fprintf(' Using ESLS for latent values\n')
+        end
       end
     end
     % Set latent values
@@ -250,6 +252,9 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   end    
   if ~isempty(opt.ssls_opt)
     f=gp.latentValues;
+    if opt.display>0
+      fprintf(' Using SSLS sampler for hyperparameters and ESLS for latent values\n')
+    end
   end
   if ~isempty(opt.lik_hmc_opt)
     if isfield(opt.lik_hmc_opt, 'rstate')
@@ -384,6 +389,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
           gp.infer_params = opt.sls_opt.infer_params;
         end
         w = gp_pak(gp);
+        opt.sls_opt.display=0;
         [w, energies, diagns] = sls(@gpmc_e, w, opt.sls_opt, @gpmc_g, gp, x, y, f, z);
         if isfield(diagns, 'opt')
           opt.sls_opt = diagns.opt;
@@ -402,6 +408,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
           gp.infer_params = opt.sls_opt.infer_params;
         end
         w = gp_pak(gp);
+        opt.ssls_opt.display=0;
         [w, f, diagns] = surrogate_sls(f, w, opt.ssls_opt, gp, x, y, z);
         gp.latentValues = f;
         if isfield(diagns, 'opt')

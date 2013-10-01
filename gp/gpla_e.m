@@ -508,11 +508,18 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
                 end
                 
                 if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
-                  gptmp=gp; gptmp.jitterSigma2=0;
                   % Use Kronecker product kron(Ka,Kb) instead of K
+                  gptmp=gp; gptmp.jitterSigma2=0;
+                  ls=gptmp.cf{1}.lengthScale;
+                  if numel(ls)>1
+                    gptmp.cf{1}.lengthScale=ls(1);
+                  end
                   Ka = gp_trcov(gptmp, unique(x(:,1)));
                   % fix the magnitude sigma to 1 for Kb matrix
                   wtmp=gp_pak(gptmp); wtmp(1)=0; gptmp=gp_unpak(gptmp,wtmp);
+                  if numel(ls)>1
+                    gptmp.cf{1}.lengthScale=ls(2);
+                  end
                   Kb = gp_trcov(gptmp, unique(x(:,2)));
                   clear gptmp
                   n1=size(Ka,1);

@@ -222,10 +222,18 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
             nlp=length(nl); % number of latent processes
             
             if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
-              
+              % Use Kronecker product kron(Ka,Kb) instead of K
               gptmp=gp; gptmp.jitterSigma2=0;
+              ls=gptmp.cf{1}.lengthScale;
+              if numel(ls)>1
+                gptmp.cf{1}.lengthScale=ls(1);
+              end
               Ka = gp_trcov(gptmp, unique(x(:,1)));
+              % fix the magnitude sigma to 1 for Kb matrix
               wtmp=gp_pak(gptmp); wtmp(1)=0; gptmp=gp_unpak(gptmp,wtmp);
+              if numel(ls)>1
+                gptmp.cf{1}.lengthScale=ls(2);
+              end
               Kb = gp_trcov(gptmp, unique(x(:,2)));
               clear gptmp
               n1=size(Ka,1);
@@ -567,7 +575,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       % Here tstind = 1 if the prediction is made for the training set 
       if nargin > 6
         if ~isempty(tstind) && length(tstind) ~= size(x,1)
-          error('tstind (if provided) has to be of same lenght as x.')
+          error('tstind (if provided) has to be of same length as x.')
         end
       else
         tstind = [];
@@ -706,7 +714,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       % Here tstind = 1 if the prediction is made for the training set 
       if nargin > 6
         if ~isempty(tstind) && length(tstind) ~= size(x,1)
-          error('tstind (if provided) has to be of same lenght as x.')
+          error('tstind (if provided) has to be of same length as x.')
         end
       else
         tstind = [];
@@ -859,7 +867,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       % Here tstind = 1 if the prediction is made for the training set
       if nargin > 6
         if ~isempty(tstind) && length(tstind) ~= size(x,1)
-          error('tstind (if provided) has to be of same lenght as x.')
+          error('tstind (if provided) has to be of same length as x.')
         end
       else
         tstind = [];

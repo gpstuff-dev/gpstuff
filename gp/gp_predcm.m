@@ -69,7 +69,7 @@ gplik=gp.lik;
 n=size(x,1);
 [Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z, 'tstind', 1:n);
 Covf=full(Covf);
-if isfield(ip.UsingDefaults, 'fcorr')
+if ismember('fcorr', ip.UsingDefaults)
   if isequal(gp.latent_method, 'Laplace')
     % Default for Laplace
     fcorr='cm2';
@@ -363,11 +363,25 @@ for i1=1:length(ind)
   % using piecewise cubic Hermite interpolation
   fvec2 = fvecm2(:,i1);
   lc(:,i1)=lc(:,i1)-lc(5,i1);
-  if (sum(isnan(lc(:,i1)))>0)
-    warning('NaNs in moment computations')
-    lc(isnan(lc(:,i1)),i1)=0;
+  
+  % Check that the correction terms are decreasing in the tails
+  lctmp=lc(:,i1);
+  fvectmp=fvec;
+  while lctmp(end)-lctmp(end-1) > 0
+    lctmp=lctmp(1:end-1);
+    fvectmp=fvectmp(1:end-1);
   end
-  lc2(:,i1) = interp1(fvec, lc(:,i1), fvec2, 'cubic');
+  while lctmp(1)-lctmp(2) > 0
+    lctmp=lctmp(2:end);
+    fvectmp=fvectmp(2:end);
+  end
+    
+  
+  if (sum(isnan(lctmp))>0)
+    warning('NaNs in moment computations')
+    lctmp(isnan(lctmp))=0;
+  end
+  lc2(:,i1) = interp1(fvectmp, lctmp, fvec2, 'cubic');
 
   % Make correction
   pc(:,i1)=exp(lc2(:,i1) + lp(:,i1));

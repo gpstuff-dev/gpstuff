@@ -1,11 +1,11 @@
 function p = prior_invgamma(varargin)
-%PRIOR_INVGAMMA  Inverse-gamma prior structure     
+%PRIOR_INVGAMMA  Inverse-Gamma prior structure     
 %       
 %  Description
 %    P = PRIOR_INVGAMMA('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
-%    creates Gamma prior structure in which the named parameters
-%    have the specified values. Any unspecified parameters are set
-%    to default values.
+%    creates inverse-Gamma prior structure in which the named
+%    parameters have the specified values. Any unspecified parameters
+%    are set to default values.
 %
 %    P = PRIOR_INVGAMMA(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
 %    modify a prior structure with the named parameters altered
@@ -14,7 +14,7 @@ function p = prior_invgamma(varargin)
 %    Parameterisation is done by Bayesian Data Analysis,  
 %    second edition, Gelman et.al 2004.
 %
-%    Parameters for Gamma prior [default]
+%    Parameters for inverse-Gamma prior [default]
 %      sh       - shape [4]
 %      s        - scale [1]
 %      sh_prior - prior for sh [prior_fixed]

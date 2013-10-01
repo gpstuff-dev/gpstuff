@@ -56,6 +56,11 @@ function [apcs,apcss]=gp_avpredcomp(gp, x, y, varargin)
 %                  and 1 otherwise). Default is found by examining
 %                  the covariance and metric functions used.
 %
+%  Reference
+%    Gelman, A., and Pardoe, I. (2007). Average predictive comparisons
+%    for models with nonlinearity, interactions, and variance
+%    components. Sociological methodology, 37(1):23-51.
+% 
 %  See also
 %    GP_PRED
 
@@ -175,6 +180,10 @@ for k1=1:nin
     % draw random samples from the posterior
     setrandstream(seed);
     fr = gp_rnd(gp, x, y, xrep, 'nsamp', nsamp, options);
+    
+    if isequal(gp.lik.type, 'Cox-ph')
+      fr=fr(length(gp.lik.stime):end,:);
+    end
     
     % average change in input
     deni=sum(W(:,i1).*Udiff.*Usign);

@@ -229,6 +229,10 @@ function [logM_0, m_1, sigm2hati1, m_3, m_4] = lik_logit_tiltedMoments(lik, y, i
     else
       [m_0, m_1(i), m_2, m_3, m_4] = quad_moments(tf, minf, maxf, RTOL, ATOL);
     end
+    if isnan(m_0)
+      logM_0=NaN;
+      return
+    end
     sigm2hati1(i) = m_2 - m_1(i).^2;
     
     % If the second central moment is less than cavity variance

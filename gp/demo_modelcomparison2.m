@@ -239,23 +239,23 @@ fprintf(['\n Harrells C at end of study for Weibull:   ', num2str(cw)]);
 fprintf(['\n Harrells C at end of study for log-Gaussian:   ', num2str(cll)]);
 fprintf(['\n Harrells C at end of study for log-logistic:   ', num2str(clg)]);
 
-% Obtain for Log Gaussian and Log Logistic models Binary AUC(t) = P(Pi>Pj | Di(t)=1,Dj(t)=0) and
-[autlgll,clgll]=assess(critlg,critll,yy,D,tt);
-
-% Again, but for Cox-ph and Weibull models
-[autcphw,ccphw]=assess(critcph,critw,yy,D,tt);
-
-% Plot Harrells C in function of time for all four models, time interval:(0,1) 
-plot(tt,clgll(:,1),'r');
-hold on;
-plot(tt,clgll(:,2),'g');
-plot(tt,ccphw(:,1),'b');
-plot(tt,ccphw(:,2),'y');
-legend('Log Gaussian','Log Logistic','Cox Proportional Hazards Model','Weibull')
-title('Harrells C in function of time ');
-xlabel('Time');
-ylabel('Harrolds C');
-hold off;
+% % Obtain for Log Gaussian and Log Logistic models Binary AUC(t) = P(Pi>Pj | Di(t)=1,Dj(t)=0) and
+% [autlgll,clgll]=assess(critlg,critll,yy,D,tt);
+% 
+% % Again, but for Cox-ph and Weibull models
+% [autcphw,ccphw]=assess(critcph,critw,yy,D,tt);
+% 
+% % Plot Harrells C in function of time for all four models, time interval:(0,1) 
+% plot(tt,clgll(:,1),'r');
+% hold on;
+% plot(tt,clgll(:,2),'g');
+% plot(tt,ccphw(:,1),'b');
+% plot(tt,ccphw(:,2),'y');
+% legend('Log Gaussian','Log Logistic','Cox Proportional Hazards Model','Weibull')
+% title('Harrells C in function of time ');
+% xlabel('Time');
+% ylabel('Harrolds C');
+% hold off;
 
 % Use Bayesian bootsrap to obtain Harrells (CLG-CLL) statistic
 % density at tt=1

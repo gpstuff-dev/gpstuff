@@ -120,7 +120,10 @@ function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol, minsubs)
         nsubs = 2*size(subs,2);
         if nsubs > maxsubs
             warning('quad_moments: Reached the limit on the maximum number of intervals in use.');
-            break
+            m_0=NaN;
+            m_1=NaN;
+            m_2=NaN;
+            return
         end
         midpoints(ndx) = []; 
         subs = reshape([subs(1,:); midpoints; midpoints; subs(2,:)],2,[]); % Divide the remaining subintervals in half

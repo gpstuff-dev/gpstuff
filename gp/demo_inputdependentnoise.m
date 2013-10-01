@@ -172,18 +172,30 @@ s2=gp.lik.sigma2;
 figure
 subplot(3,1,1),mesh(x1,x2,reshape(f1t,size(x1))),hold on, plot3(xt(:,1),xt(:,2), Ef(1:size(xt,1)), '*')
 title('Input dependent noise model');
-colormap hsv, alpha(.4)
+colormap hsv, 
+if ~exist('OCTAVE_VERSION','builtin')
+  alpha(.4)
+end
 subplot(3,1,2),mesh(x1,x2,reshape(f1t,size(x1))),hold on, plot3(xt(:,1),xt(:,2), Ef2(1:size(xt,1)), '*');
-colormap hsv, alpha(.4)
+colormap hsv, 
+if ~exist('OCTAVE_VERSION','builtin')
+  alpha(.4)
+end
 title('Gaussian noise model');
 subplot(3,1,3),mesh(x1,x2,reshape(f1t,size(x1))),hold on, plot3(xt(:,1),xt(:,2), Ef3(1:size(xt,1)), '*');
-colormap hsv, alpha(.4)
+colormap hsv, 
+if ~exist('OCTAVE_VERSION','builtin')
+  alpha(.4)
+end
 title('Student-t noise model');
 
 figure
 mesh(x1,x2,sigma2.*exp(reshape(f2t,size(x1)))),hold on, plot3(xt(:,1),xt(:,2), s2.*exp(Ef(size(xt,1)+1:end)), '*'); 
 title('Real noise versus predicted noise');
-colormap hsv, alpha(.4)
+colormap hsv, 
+if ~exist('OCTAVE_VERSION','builtin')
+  alpha(.4)
+end
 
 %============================================
 % Demonstration with homoscedastic noise
