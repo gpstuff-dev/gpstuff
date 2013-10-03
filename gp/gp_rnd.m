@@ -639,7 +639,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               end
             else
               zz=tautilde.*(L'*(L*nutilde));
-              Ef=K_nf*(nutilde-z);
+              Ef=K_nf*(nutilde-zz);
               
               S = diag(tautilde);
               V = K_nf*S*L';
