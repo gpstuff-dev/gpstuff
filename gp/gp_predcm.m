@@ -365,15 +365,18 @@ for i1=1:length(ind)
   fvec2 = fvecm2(:,i1);
   lc(:,i1)=lc(:,i1)-lc(5,i1);
   
-  % Check that the correction terms are decreasing in the tails
+  % Check that the corrected distribution has decreasing tails
   lctmp=lc(:,i1);
+  lptmp=(lp2(:,i1)+lc(:,i1));
   fvectmp=fvec;
-  while lctmp(end)-lctmp(end-1) > 0
+  while lptmp(end)-lptmp(end-1) > 0
     lctmp=lctmp(1:end-1);
+    lptmp=lptmp(1:end-1);
     fvectmp=fvectmp(1:end-1);
   end
-  while lctmp(1)-lctmp(2) > 0
+  while lptmp(1)-lptmp(2) > 0
     lctmp=lctmp(2:end);
+    lptmp=lptmp(2:end);
     fvectmp=fvectmp(2:end);
   end
     
