@@ -716,7 +716,7 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r, eta)
   ldconst = eta*(-gammaln(r)-gammaln(yy+1)+gammaln(r+yy))...
             - log(sigm2_i)/2 - log(2*pi)/2;
   % Create function handle for the function to be integrated
-  df = @(f) negbinztr_norm(f, ldconst,avgE,r,yy,myy_i,sigm2_i);
+  df = @(f) negbinztr_norm(f, ldconst,avgE,r,yy,myy_i,sigm2_i, eta);
   % use log to avoid underflow, and derivates for faster search
   ld = @log_negbinztr_norm;
   ldg = @log_negbinztr_norm_g;
@@ -741,8 +741,8 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r, eta)
   niter=4;       % number of Newton iterations
   mindelta=1e-6; % tolerance in stopping Newton iterations
   for ni=1:niter
-    g=ldg(modef,ldconst,avgE,r,yy,myy_i,sigm2_i);
-    h=ldg2(modef,ldconst,avgE,r,yy,myy_i,sigm2_i);
+    g=ldg(modef,ldconst,avgE,r,yy,myy_i,sigm2_i,eta);
+    h=ldg2(modef,ldconst,avgE,r,yy,myy_i,sigm2_i,eta);
     delta=-g/h;
     modef=modef+delta;
     if abs(delta)<mindelta
@@ -753,20 +753,20 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r, eta)
   modes=sqrt(-1/h);
   minf=modef-8*modes;
   maxf=modef+8*modes;
-  modeld=ld(modef,ldconst,avgE,r,yy,myy_i,sigm2_i);
+  modeld=ld(modef,ldconst,avgE,r,yy,myy_i,sigm2_i,eta);
   iter=0;
   % check that density at end points is low enough
   lddiff=20; % min difference in log-density between mode and end-points
-  minld=ld(minf,ldconst,avgE,r,yy,myy_i,sigm2_i);
+  minld=ld(minf,ldconst,avgE,r,yy,myy_i,sigm2_i,eta);
   step=1;
   while minld<(modeld-lddiff) && minf<modef;
     % sometimes minf is too small
     minf=minf+step*modes;
-    minld=ld(minf,ldconst,avgE,r,yy,myy_i,sigm2_i);
+    minld=ld(minf,ldconst,avgE,r,yy,myy_i,sigm2_i,eta);
   end
   while minld>(modeld-lddiff)
     minf=minf-step*modes;
-    minld=ld(minf,ldconst,avgE,r,yy,myy_i,sigm2_i);
+    minld=ld(minf,ldconst,avgE,r,yy,myy_i,sigm2_i,eta);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -775,12 +775,12 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r, eta)
              'even after looking hard!'])
     end
   end
-  maxld=ld(maxf,ldconst,avgE,r,yy,myy_i,sigm2_i);
+  maxld=ld(maxf,ldconst,avgE,r,yy,myy_i,sigm2_i,eta);
   iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
-    maxld=ld(maxf,ldconst,avgE,r,yy,myy_i,sigm2_i);
+    maxld=ld(maxf,ldconst,avgE,r,yy,myy_i,sigm2_i,eta);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -791,7 +791,7 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r, eta)
   end
 end
   
-  function integrand = negbinztr_norm(f,ldconst,avgE,r,yy,myy_i,sigm2_i)
+  function integrand = negbinztr_norm(f,ldconst,avgE,r,yy,myy_i,sigm2_i,eta)
   % Negative-binomial * Gaussian
     mu = avgE.*exp(f);
     lp0=r.*(log(r) - log(r+mu));
@@ -812,7 +812,7 @@ end
     end
   end
   
-  function log_int = log_negbinztr_norm(f,ldconst,avgE,r,yy,myy_i,sigm2_i)
+  function log_int = log_negbinztr_norm(f,ldconst,avgE,r,yy,myy_i,sigm2_i,eta)
   % log(Negative-binomial * Gaussian)
   % log_negbinztr_norm is used to avoid underflow when searching
   % integration interval
@@ -835,7 +835,7 @@ end
     end
   end
   
-  function g = log_negbinztr_norm_g(f,ldconst,avgE,r,yy,myy_i,sigm2_i)
+  function g = log_negbinztr_norm_g(f,ldconst,avgE,r,yy,myy_i,sigm2_i,eta)
   % d/df log(Negative-binomial * Gaussian)
   % derivative of log_negbinztr_norm
     mu = avgE.*exp(f);
@@ -851,7 +851,7 @@ end
     end
   end
   
-  function g2 = log_negbinztr_norm_g2(f,ldconst,avgE,r,yy,myy_i,sigm2_i)
+  function g2 = log_negbinztr_norm_g2(f,ldconst,avgE,r,yy,myy_i,sigm2_i,eta)
   % d^2/df^2 log(Negative-binomial * Gaussian)
   % second derivate of log_negbinztr_norm
     mu = avgE.*exp(f);

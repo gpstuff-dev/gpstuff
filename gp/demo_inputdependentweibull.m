@@ -45,6 +45,7 @@ gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
 
 xt1=zeros(200,nin); xt1(:,2)=1;
 xt2=zeros(200,nin); xt2(:,2)=-1;
+nt=200;
 
 xt1(:,1)=linspace(min(x(:,1)), max(x(:,1)), 200);
 xt2(:,1)=linspace(min(x(:,1)), max(x(:,1)), 200);

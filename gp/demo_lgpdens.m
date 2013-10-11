@@ -211,8 +211,10 @@ drawnow
 subplot(2,1,2)
 [p,pq]=lgpdens(x,xt,'latent_method','MCMC');
 pmc=p;
-line(xt,p,'color','r','marker','none','linewidth',2)
-line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
+if ~exist('OCTAVE_VERSION','builtin')
+  line(xt,p,'color','r','marker','none','linewidth',2)
+  line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
+end
 xlim([-7 7])
 ylim([0 .5])
 title('t_4 (MCMC)')

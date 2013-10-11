@@ -35,6 +35,7 @@ ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x
 ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addRequired','xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addRequired','ind', @(x) ~isempty(x) && isvector(x));
+ip=iparser(ip,'addParamValue','yt', [], @(x) isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addParamValue','var',  [], @(x) isreal(x));
 ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addParamValue','predcf', [], @(x) isempty(x) || ...

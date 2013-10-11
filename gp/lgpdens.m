@@ -79,11 +79,12 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
   ip=iparser(ip,'addParamValue','cond_dens',[], @(x) ismember(x,{'on' 'off'}));
   ip=iparser(ip,'addParamValue','basis','gaussian', @(x) ismember(x,{'gaussian' 'exp' 'off'}));
   ip=iparser(ip,'addParamValue','bounded',[0 0], @(x) isnumeric(x) && min(size(x))==1 && max(size(x))==2);
-  ip=iparser(ip,'parse',x,varargin{:});
   % additional undocumented parameters for importance sampling
   ip=iparser(ip,'addParamValue','n_is',8000, @(x) isnumeric(x) && x>=0);
   ip=iparser(ip,'addParamValue','n_scale',50, @(x) isnumeric(x) && x>=0);
   ip=iparser(ip,'addParamValue','contSplit','on', @(x) ismember(x,{'on' 'off'}));
+  ip=iparser(ip,'parse',x,varargin{:});
+
 
   x=ip.Results.x;
   xt=ip.Results.xt;
@@ -306,7 +307,11 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
           % Monte Carlo integration. Econometrica 57:1317-1339.
 
           nParam = size(Ef,1);
-          [V, D] = svd(Covf);
+          if exist('OCTAVE_VERSION','builtin')
+            [V,D,tmp]=svd(Covf);
+          else
+            [V, D] = svd(Covf);
+          end
           eig = diag(real(D));
           T = real(V) * sqrt(real(D));
           gpis=gp_set(gp,'latent_method','MCMC');
@@ -647,7 +652,11 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
             clear Covft
           end
           nParam = size(Ef,1);
-          [V, D] = svd(Covf);
+          if exist('OCTAVE_VERSION','builtin')
+            [V,D,tmp]=svd(Covf);
+          else
+            [V, D] = svd(Covf);
+          end
           T = real(V) * sqrt(real(D));
           eig = diag(real(D));
           gpis=gp_set(gp,'latent_method','MCMC');
