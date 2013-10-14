@@ -1,3 +1,47 @@
+2013-10-14 Version 4.3
+
+Improvements:
+ - lgpdens.m: better default estimation using importance and rejection sampling, better default priors
+ - Robust-EP for zero truncated negative-binomial likelihood
+ - If moment computations in EP return NaN, return NaN energy (handled
+   gracefully by fminlbfgs and fminscg)
+ - gp_cpred.m: new option 'target'
+ - gp_ia.m: Changed Hessian computation stepsize to 1e-3
+ - gpstuff_version.m: function for returning current GPstuff version
+ - gpia_jpreds.m: a new function
+ - demo_survival_weibull.m -> demo_survival_aft.m
+
+Bug fixes:
+ - build suitesparse path correctly if it includes spaces
+ - gp_avpredcomp.m: fixed for Cox-PH
+ - gp_cpred.m: fixed for Cox-PH
+ - esls.m: don't accept a step to a point with infinite log likelihood
+ - gp_ia.m: removed some redundant computation
+ - gp_rnd.m: works now for multilatent models also
+ - bugfixes for setrandstream
+ - other bugfixes 
+
+
+2013-06-13 Version 4.2
+
+Improvements
+ - Cross-validation much faster if no bias-corrections are needed (computes
+   only the necessary predictions)
+ - Marginal posterior corrections with loopred (Laplace) and cross-validation
+ - More robust computation of marginal posterior corrections (utilize 
+   log distributions)
+ - More robust density estimation in lgpdens (default parameters changed)
+
+Bug fixes
+ - Mex files now in correct folders if compiled with SuiteSparse (covariance matrix
+   computation now much faster)
+ - Fixed bug with default marginal posterior correction when using gp_predcm
+ - Fixed conditions in likelihood functions for grid approximation of 
+   predictions with marginal posterior corrections
+ - Fixed outputs of gpmc_preds with multilatent models (thanks to Mahdi
+   Biparva for pointing this out)
+ - and some minor bug fixes
+
 2013-04-24 Version 4.1
 
 New features:
