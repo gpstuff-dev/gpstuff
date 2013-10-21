@@ -1,80 +1,62 @@
-function [R,neff,V,W,B] = psrf(varargin)
+function [R,neff,Vh,W,B,tau] = psrf(varargin)
 %PSRF Potential Scale Reduction Factor
 %
 %   [R,NEFF,V,W,B] = PSRF(X) or
 %   [R,NEFF,V,W,B] = PSRF(x1,x2,...,xs)
-%   returns "Potential Scale Reduction Factor" (PSRF) for
-%   collection of MCMC-simulations. X is a NxDxM matrix
-%   which contains M MCMC simulations of length N, each with
-%   dimension D. MCMC-simulations can be given as separate
-%   arguments x1,x2,... which should have the same length.
+%   returns "Potential Scale Reduction Factor" (PSRF) for collection
+%   of MCMC-simulations. X is a NxDxM matrix which contains M MCMC
+%   simulations of length N, each with dimension D. MCMC-simulations
+%   can be given as separate arguments x1,x2,... which should have the
+%   same length.
 %
 %   Returns 
 %     R     PSRF (R=sqrt(V/W)) in row vector of length D
-%     neff  estimated effective number of samples M*N*V/B
+%     neff  estimated effective number of samples M*N/(1+2*sum(rhohat))
 %     V     estimated mixture-of-sequences variances
 %     W     estimated within sequence variances
 %     B     estimated between sequence variances
 %
-%   The idea of the PSRF is that if R is not near 1 (below 1.1 for
+%   The idea of the PSRF is that if R is not close to 1 (below 1.1 for
 %   example) one may conclude that the tested samples were not from
-%   the same distribution (chain might not have been converged
-%   yet).
+%   the same distribution (chain might not have been converged yet).
 %
-%   If only one simulation is given, the factor is calculated
-%   between first and last third of the chain. Note that use of
-%   only one chain will produce over-optimistic result.
-%
-%   Method is from:
+%   Original method:
 %      Brooks, S.P. and Gelman, A. (1998) General methods for
 %      monitoring convergence of iterative simulations. Journal of
-%      Computational and Graphical Statistics. 7, 434-455. Note that
-%      this function returns square-root definiton of R (see Gelman
-%      et al (2003), Bayesian Data Analsyis p. 297).
+%      Computational and Graphical Statistics. 7, 434-455. 
+%   Current version:
+%      Split chains, return square-root definiton of R, and compute
+%      n_eff using variogram estimate and Geyer's initial positive
+%      sequence as described in Gelman et al (2013), Bayesian Data
+%      Analsyis, 3rd ed, sections 11.4-11.5.
 %
 %   See also
 %     CPSRF, MPSRF, IPSRF
 
 % Copyright (C) 1999 Simo Särkkä
-% Copyright (C) 2003 Aki Vehtari
+% Copyright (C) 2003-2004,2013 Aki Vehtari
 %
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.
 
 % 2004-01-22 Aki.Vehtari@hut.fi Added neff, R^2->R, and cleaning
+% 2013-10-20 Aki.Vehtari@aalto.fi Updated according to BDA3
 
-% In case of one argument split to two halves (first and last thirds)
-onechain=0;
-if nargin==1
-  X = varargin{1};
-  if size(X,3)==1
-    n = floor(size(X,1)/3);
-    x = zeros([n size(X,2) 2]);
-    x(:,:,1) = X(1:n,:);
-    x(:,:,2) = X((end-n+1):end,:);
-    X = x;
-    onechain=1;
-  end
-elseif nargin==0
-  error('Cannot calculate PSRF of scalar');
-else
-  X = zeros([size(varargin{1}) nargin]);
-  for i=1:nargin
-    X(:,:,i) = varargin{i};
-  end
-end
+X=cat(3,varargin{:});
+mid=floor(size(X,1)/2);
+X=cat(3,X(1:mid,:,:),X((end-mid+1):end,:,:));
 
 [N,D,M]=size(X);
 
-if N<1
+if N<=2
   error('Too few samples');
 end
 
 % Calculate means W of the variances
 W = zeros(1,D);
-for n=1:M
-  x = X(:,:,n) - repmat(mean(X(:,:,n)),N,1);
+for mi=1:M
+  x = bsxfun(@minus,X(:,:,mi),mean(X(:,:,mi)));
   W = W + sum(x.*x);
 end
 W = W / ((N-1) * M);
@@ -82,20 +64,41 @@ W = W / ((N-1) * M);
 % Calculate variances B (in fact B/n) of the means.
 Bpn = zeros(1,D);
 m = mean(reshape(mean(X),D,M)');
-for n=1:M
-  x = mean(X(:,:,n)) - m;
+for mi=1:M
+  x = mean(X(:,:,mi)) - m;
   Bpn = Bpn + x.*x;
 end
 Bpn = Bpn / (M-1);
 
 % Calculate reduction factors
-S = (N-1)/N * W + Bpn;
-R = (M+1)/M * S ./ W - (N-1)/M/N;
-V = R .* W;
-R = sqrt(R);  
 B = Bpn*N;
-neff = min(M*N*V./B,M*N);
-if onechain & (nargout>1)
-  neff=neff*3/2;
-  %warning('With only one chain PSRF based estimate of neff is not reliable')
+Vh = (N-1)/N*W + Bpn;
+R = sqrt(Vh./W);  
+
+if nargout>1
+  % compute autocorrelation
+  for t=1:N-1
+    % variogram
+    Vt(t,:)=sum(sum((X(1:end-t,:,:)-X(1+t:end,:,:)).^2,1),3)/M/(N-t);
+  end
+  % autocorrelation
+  rho=1-bsxfun(@rdivide,Vt./2,Vh);
+  % add zero lag autocorrelation
+  rho=[ones(1,D);rho];
+
+  mid=floor(N/2);
+  neff=zeros(1,D);
+  for di=1:D
+    cp=sum(reshape(rho(1:2*mid,di),2,mid),1);
+    ci=find(cp<0,1);
+    if isempty(ci)
+      warning(sprintf('Inital positive could not be found for variable %d, using maxlag value',di));
+      ci=mid;
+    else
+      ci=ci-1; % last positive
+    end
+    cp=[cp(1:ci) 0];   % initial positive sequence
+    tau(di)=-1+2*sum(cp); % initial positive sequence estimator
+    neff(di)=M*N/tau(di); % initial positive sequence estimator for neff
+  end
 end
