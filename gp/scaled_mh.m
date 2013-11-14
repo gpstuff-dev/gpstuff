@@ -11,7 +11,7 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
 %
 %    The latent values are whitened with the prior covariance
 %    before the sampling. This reduces the autocorrelation and
-%    speeds up the mixing of the sampler. See (Neal, 1993) for
+%    speeds up the mixing of the sampler. See (Neal, 1998) for
 %    details on implementation.
 %
 %    The options structure should include the following fields:
@@ -24,6 +24,13 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
 %    OPT = SCALED_MH(OPT) Returns default options for fields not
 %    yet set in OPT
 %
+%   Reference:
+%  
+%    Neal, R. M. (1998) Regression and classification using
+%    Gaussian process priors (with discussion), in J. M. Bernardo,
+%    et al (editors) Bayesian Statistics 6, Oxford University
+%    Press, pp. 475-501:
+%  
 %  See also
 %    GP_MC
   
