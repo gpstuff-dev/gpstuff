@@ -179,7 +179,7 @@ function llg3 = lik_logit_llg3(lik, y, f, param, z)
 end
 
 
-function [logM_0, m_1, sigm2hati1] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+function [logM_0, m_1, sigm2hati1, m_3, m_4] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_LOGIT_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
 %
 %  Description
@@ -224,7 +224,15 @@ function [logM_0, m_1, sigm2hati1] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i
     % need to change...)
     RTOL = 1.e-6;
     ATOL = 1.e-10;
-    [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+    if nargout < 4
+      [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+    else
+      [m_0, m_1(i), m_2, m_3, m_4] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+    end
+    if isnan(m_0)
+      logM_0=NaN;
+      return
+    end
     sigm2hati1(i) = m_2 - m_1(i).^2;
     
     % If the second central moment is less than cavity variance
@@ -286,7 +294,7 @@ function [lpy, Ey, Vary] = lik_logit_predy(lik, Ef, Varf, yt, zt)
     end
     % Quadrature integration                                    
     lpy = zeros(length(yt),1);
-    if (min(size(Ef))>1) && (min(size(Varf))>1)
+    if (size(Ef,2) > 1) && (size(Ef,2) > 1) && size(yt,2) == 1
       % Approximate integral with sum of grid points when using corrected
       % marginal posterior pf
       for i1=1:length(yt)

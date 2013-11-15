@@ -17,13 +17,6 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
 %    [EFT, VARFT, LPYT, EYT, VARYT] = GPIA_PRED(GP, X, Y, XT, OPTIONS)
 %    returns also the posterior predictive mean EYT and variance VARYT.
 %
-%    [EFT, VARFT, LPYT, EYT, VARYT, FT, PFT] = ...
-%      GPIA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
-%    returns also the numerical representation of the marginal
-%    posterior of latent variables at each XT. FT is a vector of
-%    latent values and PFT_i = p(FT_i) is the posterior density for
-%    FT_i.
-%
 %    [EF, VARF, LPY, EY, VARY] = GPIA_PRED(GP, X, Y, OPTIONS)
 %    evaluates the predictive distribution at training inputs X
 %    and logarithm of the predictive density LPY of the training
@@ -156,21 +149,33 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
   
   nGP = numel(gp_array);
 
-  nt = size(xt,1);
-  Efts=zeros(nt,nGP); Varfts=zeros(nt,nGP);
+  if isfield(gp_array{1}.lik, 'nondiagW')
+    if isequal(gp_array{1}.lik.type, 'Coxph')
+      nxt=size(xt,1); ntime=size(gp_array{1}.lik.xtime,1);
+      nt=nxt+ntime;
+      lpyts=zeros(nxt,nGP);
+    else
+      nt=size(xt,1);
+      lpyts=zeros(nt,nGP);
+    end
+    Efts=zeros(nt,nGP); Varfts=zeros(nt,nt,nGP);
+  else
+    nt=size(xt,1);
+    Efts=zeros(nt,nGP); Varfts=zeros(nt,1,nGP);
+    lpyts=zeros(nt,nGP);
+  end
   Eyts=[]; Varyts=[];
   Eytts=[]; Varytts=[];
-  lpyts=zeros(nt,nGP);
   for i1=1:nGP
     Gp=gp_array{i1};
     P_TH(:,i1) = Gp.ia_weight;
     % make predictions with different models in gp_array
     if nargout > 3
-      [Efts(:,i1), Varfts(:,i1), lpytt, Eytts, Varytts]=gp_pred(Gp,x,y,xt,options);
+      [Efts(:,i1), Varfts(:,:,i1), lpytt, Eytts, Varytts]=gp_pred(Gp,x,y,xt,options);
     elseif nargout > 2
-      [Efts(:,i1), Varfts(:,i1), lpytt]=gp_pred(Gp,x,y,xt,options);
+      [Efts(:,i1), Varfts(:,:,i1), lpytt]=gp_pred(Gp,x,y,xt,options);
     else
-      [Efts(:,i1), Varfts(:,i1)]=gp_pred(Gp,x,y,xt,options);
+      [Efts(:,i1), Varfts(:,:,i1)]=gp_pred(Gp,x,y,xt,options);
     end
     if ~isempty(yt) && nargout > 2
       lpyts(:,i1) = lpytt;
@@ -183,7 +188,16 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
 
   % compute combined predictions
   Eft = sum(bsxfun(@times,Efts,P_TH), 2);
-  Varft = sum(bsxfun(@times, Varfts, P_TH), 2) + sum(bsxfun(@times,bsxfun(@minus,Efts,Eft).^2, P_TH),2);
+  Varft = squeeze(sum(bsxfun(@times, Varfts, permute(P_TH,[1 3 2])), 3));
+  if size(Varft,2)==1
+    Varft=Varft+sum(bsxfun(@times,bsxfun(@minus,Efts,Eft).^2, P_TH),2);
+  else
+    Efts = bsxfun(@minus,Efts,Eft);
+    for i1=1:nGP
+      CovEfts(:,:,i1)=Efts(:,i1)'*Efts(:,2);
+    end
+    Varft=Varft+sum(bsxfun(@times, CovEfts, permute(P_TH,[1 3 2])), 3);
+  end
   if nargout > 2
     if isempty(yt)
       lpyt = [];

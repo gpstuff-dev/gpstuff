@@ -103,7 +103,7 @@ for i1=1:opt.repeat
     % Compute f for proposed angle difference and check if it's on the slice
     f_prop = f*cos(phi) + nu*sin(phi);
     cur_log_like = gp.lik.fh.ll(gp.lik, y, f_prop, z);
-    if (cur_log_like > hh)
+    if (cur_log_like > hh) && ~isinf(cur_log_like)
       % New point is on slice, ** EXIT LOOP **
       break;
     end

@@ -777,6 +777,7 @@ while(true)
     % a smaller function value was found on previous step
     data.a = 0; data.f_a = data.fInitial;  data.fPrime_a = data.fPrimeInitial;
     data.b = alpha; data.f_b = f_alpha;  data.fPrime_b = fPrime_alpha;
+    data.f_alpha= f_alpha; data.grad=grad;
     % Finished bracketing phase
     data.bracket_exitflag  = 2; return
   end

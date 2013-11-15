@@ -1,4 +1,4 @@
-function [p,pq,xx] = lgpdens(x,varargin)
+function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
 %LGPDENS Logistic-Gaussian Process density estimate for 1D and 2D data
 % 
 %  Description  
@@ -7,7 +7,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
 %    For 2D data plot the density contours.
 %  
 %    [P,PQ,XT] = LGPDENS(X,OPTIONS) Compute LGP density estimate
-%    and return mean density P, 2.5% and 97.5% percentiles PQ, and
+%    and return mean density P, 5% and 95% percentiles PQ, and
 %    grid locations.
 %  
 %    [P,PQ,XT] = LGPDENS(X,XT,OPTIONS) Compute LGP density estimate
@@ -42,12 +42,19 @@ function [p,pq,xx] = lgpdens(x,varargin)
 %                  'on' computes for 2D the conditional median density
 %                  estimate p(x2|x1) when the matrix [x1 x2] is given as
 %                  input. 
-%      basis_function - defines if basis functions are used. 
-%                       'on' (default) uses linear and quadratic basis
-%                       functions
+%      basis     - defines if basis functions are used. 
+%                       'gaussian' (default) uses linear and quadratic
+%                         basis functions on latent space implying
+%                         centering on Gaussian distribution
+%                       'exp' uses linear basis function on latent
+%                         space implying centering on exponential distribution
 %                       'off' no basis functions
+%      bounded   - in 1D case tells if the density is bounded from left
+%                  or right (default is [0 0]). In unbounded case,
+%                  decreasing tails are assumed.
 
-% Copyright (c) 2011-2012 Jaakko Riihimäki and Aki Vehtari
+% Copyright (c) 2011-2013 Jaakko Riihimäki and Aki Vehtari
+% Copyright (c) 2013 Enrique Lelo de Larrea Andrade
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -67,9 +74,17 @@ function [p,pq,xx] = lgpdens(x,varargin)
   ip.addParamValue('display', 'off', @(x) islogical(x) || ...
                    ismember(x,{'on' 'off' 'iter'}))
   ip.addParamValue('speedup',[], @(x) ismember(x,{'on' 'off'}));
+  ip.addParamValue('rej_sampling','on', @(x) ismember(x,{'on' 'off'}));
+  ip.addParamValue('imp_sampling','on', @(x) ismember(x,{'on' 'off'}));
   ip.addParamValue('cond_dens',[], @(x) ismember(x,{'on' 'off'}));
-  ip.addParamValue('basis_function',[], @(x) ismember(x,{'on' 'off'}));
+  ip.addParamValue('basis','gaussian', @(x) ismember(x,{'gaussian' 'exp' 'off'}));
+  ip.addParamValue('bounded',[0 0], @(x) isnumeric(x) && min(size(x))==1 && max(size(x))==2);
   
+  % additional undocumented parameters for importance sampling
+  ip.addParamValue('n_is',8000, @(x) isnumeric(x) && x>=0);
+  ip.addParamValue('n_scale',50, @(x) isnumeric(x) && x>=0);
+  ip.addParamValue('contSplit','on', @(x) ismember(x,{'on' 'off'}));
+
   ip.parse(x,varargin{:});
   x=ip.Results.x;
   xt=ip.Results.xt;
@@ -81,8 +96,17 @@ function [p,pq,xx] = lgpdens(x,varargin)
   normalize=ip.Results.normalize;
   display=ip.Results.display;
   speedup=ip.Results.speedup;
+  rej_sampling=ip.Results.rej_sampling;
+  imp_sampling=ip.Results.imp_sampling;
   cond_dens=ip.Results.cond_dens;
-  basis_function=ip.Results.basis_function;
+  basis=ip.Results.basis;
+  bounded=ip.Results.bounded;
+  
+  
+  % additional undocumented parameters for importance sampling
+  n_is = floor(ip.Results.n_is);
+  n_scale = floor(ip.Results.n_scale);
+  contSplit = ip.Results.contSplit;
 
   x(any(~isfinite(x),2),:)=[];
   [n,m]=size(x);
@@ -129,27 +153,307 @@ function [p,pq,xx] = lgpdens(x,varargin)
       % normalise, so that same prior is ok for different scales
       xxn=(xx-mean(xx))./std(xx);
       
-      %[Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
-      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function);
+      gp=gpsmooth(xxn,yy,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis,imp_sampling);
       
       if strcmpi(latent_method,'MCMC')
-        PJR=zeros(size(Ef,1),size(Covf,3));
+        [Ef, Covf] = gpmc_jpreds(gp, xxn, yy, xxn);
+        imp_sampling='off';
+        PJR=zeros([size(Ef,1) 0]);
         for i1=1:size(Covf,3)
-          qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf(:,:,i1),'upper'),Ef(:,i1)');
+          qr=bsxfun(@plus,randn(10,size(Ef,1))*chol(Covf(:,:,i1),'upper'),Ef(:,i1)');
+          if strcmpi(rej_sampling,'on')
+            if ~any(bounded)
+              qii=find(qr(:,1)<qr(:,2)&qr(:,end-1)>qr(:,end));
+            elseif bounded(1)&&~bounded(2)
+              qii=find(qr(:,end-1)>qr(:,end));
+            elseif bounded(2)&&~bounded(1)
+              qii=find(qr(:,1)<qr(:,2));
+            else
+              qii=1:10;
+            end
+            if isempty(qii)
+              continue
+            end
+            qr=qr(qii,:);
+          end
           qjr=exp(qr)';
           pjr=bsxfun(@rdivide,qjr,sum(qjr));
           pjr=pjr./xd;
-          PJR(:,i1)=mean(pjr,2);
+          PJR(:,end+1:end+size(pjr,2))=pjr;
         end
         pjr=PJR;
+        if size(pjr,2)<20
+          warning('Rejection sampling to force decreasing tails for (semi)unbounded unreliable')
+        end
+        
+      elseif strcmpi(int_method,'CCD') || strcmpi(int_method,'grid')
+        
+        % with CCD or GRID integration
+        gpia=gp_ia(gp, xxn, yy, 'int_method', int_method, 'display', 'off');
+        [Ef, Covf]=gpia_jpreds(gpia, xxn, yy, xxn);
+        nGP = numel(gpia);
+        
+        P_TH=zeros(1,nGP);
+        for i1=1:nGP
+          P_TH(i1) = gpia{i1}.ia_weight;
+        end
+        
+        nw=resampstr(P_TH,n_is,1);
+        
+        qr=zeros(n_is,gridn);
+        for i1=1:nGP
+          qr(nw==i1,:)=bsxfun(@plus,randn(sum(nw==i1),length(Ef(i1,:)))*chol(1.0*Covf(:,:,i1),'upper'),Ef(i1,:));
+        end
+        if strcmpi(rej_sampling,'on')
+          if ~any(bounded)
+            qii=find(qr(:,1)<qr(:,2)&qr(:,end-1)>qr(:,end));
+          elseif bounded(1)&&~bounded(2)
+            qii=find(qr(:,end-1)>qr(:,end));
+          elseif bounded(2)&&~bounded(1)
+            qii=find(qr(:,1)<qr(:,2));
+          else
+            qii=1:n_is;
+          end
+          if numel(qii)>200
+            qr=qr(qii,:);
+            nw=nw(qii);
+          else
+            warning('Rejection sampling to force decreasing tails for (semi)unbounded unreliable')
+          end
+        end
+        
+        if strcmpi(imp_sampling,'on')
+          % importance sampling using a normal as a proposal density
+          % TODO: split normal
+          % Geweke, J. (1989).  Bayesian inference in econometric models using
+          % Monte Carlo integration. Econometrica 57:1317-1339.
+          lps=zeros(size(qr,1),nGP);
+          lpq=zeros(size(qr,1),nGP);
+          for i1=1:nGP
+            gpis=gp_set(gpia{i1},'latent_method','MCMC');
+            ll=sum(bsxfun(@times,qr,yy'),2)-sum(yy)*log(sum(exp(qr),2));
+            
+            [~, C] = gp_trcov(gpis, xxn);
+            [H,b,B]=mean_prep(gpis,xxn,[]);
+            LN = chol(C + H'*B*H,'lower');
+            MNM = LN\(H'*b-qr(1,:)');
+            MNM = MNM'*MNM;
+            Econst = gp_e(gp_pak(gpis), gpis, xxn, qr(1,:)') - 0.5*MNM;
+            
+            MNM = LN\qr';
+            MNM = sum(MNM.^2)';
+            e = 0.5*MNM + Econst;
+            
+            lps(:,i1)=-e+ll;
+            lpq(:,i1) = mnorm_lpdf2(qr,Ef(i1,:),1.0*Covf(:,:,i1));
+          end
+          lps2=lps-max(lps(:));
+          lqs=sumlogs(bsxfun(@plus,lps2,log(P_TH)),2);
+
+          lpq2=lpq-max(lpq(:));
+          lqq=sumlogs(bsxfun(@plus,lpq2,log(P_TH)),2);
+          
+          lws=lqs-lqq;
+          lws(isnan(lws)|isinf(lws))=-Inf;
+          
+          ws=exp(lws);
+          % Skare, O., Bolviken, E., and Holden, L. (2003). Improved
+          % sampling-importance resampling and reduced bias importance
+          % sampling. {\em Scandivanian Journal of Statistics} {\bf
+          % 30}, 719--737.
+          ws=ws./(sum(ws)-ws);
+          ws=ws./sum(ws);
+          
+          if (1/sum(ws.^2))<200
+            warning('The effective sample size of importance sampling is small (less than 200). Soft tresholding large weights')
+            % has similar effect as resampling without replacement, but allows use of all samples
+            ws=logitinv(ws*size(qr,1)*.02)*2-1;
+            ws=ws./sum(ws);
+          end
+          
+        end
+        qjr=exp(qr)';
+        pjr=bsxfun(@rdivide,qjr,sum(qjr(1:gridn,:)));
+        pjr=pjr./xd;
+        
       else
-        qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf,'upper'),Ef');
+        
+        % with a MAP estimate
+        [Ef,Covf] = gp_pred(gp, xxn, yy, xxn);
+        if strcmpi(imp_sampling,'off')
+          qr=bsxfun(@plus,randn(n_is,size(Ef,1))*chol(1.0*Covf,'upper'),Ef');
+        end
+        
+        if strcmpi(rej_sampling,'on') && strcmpi(imp_sampling,'off')
+          if ~any(bounded)
+            qii=find(qr(:,1)<qr(:,2)&qr(:,end-1)>qr(:,end));
+          elseif bounded(1)&&~bounded(2)
+            qii=find(qr(:,end-1)>qr(:,end));
+          elseif bounded(2)&&~bounded(1)
+            qii=find(qr(:,1)<qr(:,2));
+          else
+            qii=1:n_is;
+          end
+          if numel(qii)>200
+            qr=qr(qii,:);
+          else
+            warning('Rejection sampling to force decreasing tails for (semi)unbounded unreliable')
+          end
+        end
+        
+        if strcmpi(imp_sampling,'on')
+          % importance sampling using a split normal as a proposal density
+          % Geweke, J. (1989).  Bayesian inference in econometric models using
+          % Monte Carlo integration. Econometrica 57:1317-1339.
+
+          nParam = size(Ef,1);
+          [V, D] = svd(Covf);
+          eig = diag(real(D));
+          T = real(V) * sqrt(real(D));
+          gpis=gp_set(gp,'latent_method','MCMC');
+          [~, C] = gp_trcov(gpis, xxn);
+          [H,b,B]=mean_prep(gpis,xxn,[]);
+          LN = chol(C + H'*B*H,'lower');
+          
+          if isempty(n_scale)
+            n_scale = nParam;
+          end
+
+          ll0 = (Ef' * yy) - sum(yy)*log(sum(exp(Ef)));
+          e0 = gp_e(gp_pak(gpis), gpis, xxn, Ef);
+          P0 = -e0 + ll0;
+          
+          e = randn(n_is,nParam);
+          
+          delta = -6:0.5:6;
+          
+          q = ones(1,nParam);
+          r = ones(1,nParam);
+            
+          if n_scale > 0
+            % Scaling in some eigendirections
+            D = reshape(T(:,1:n_scale),numel(T(:,1:n_scale)),1);
+            D = D * delta;
+            D = reshape(D,nParam,n_scale*length(delta));
+            D = bsxfun(@plus,D,Ef);
+            D = D';
+            ll = sum(bsxfun(@times,D,yy'),2)-sum(yy)*log(sum(exp(D),2));
+            MNM = LN\(H'*b-D(1,:)');
+            MNM = MNM'*MNM;
+            Econst = gp_e(gp_pak(gpis), gpis, xxn, D(1,:)') - 0.5*MNM;
+            MNM = LN\D';
+            MNM = sum(MNM.^2)';
+            en = 0.5*MNM + Econst;
+            phat = -en' + ll';    
+            
+            f = phat;
+            f(f >= P0) = NaN;
+            f = reshape(f, n_scale, length(delta));
+            f = bsxfun(@times, abs(delta),(2*(P0-f)).^(-0.5));
+            f = f';
+            qTemp = max(f(delta>0,:));
+            rTemp = max(f(delta<0,:));
+            qTemp(isnan(qTemp)) = 1;
+            rTemp(isnan(rTemp)) = 1;
+            q(1:n_scale) = qTemp;
+            r(1:n_scale) = rTemp;
+          end
+          
+          % Safety limits
+          q=min(max(q,1/10),10);
+          r=min(max(r,1/10),10);
+
+          % Sample from split normal
+          if strcmpi(contSplit,'on')
+            % continuous split normal (Geweke (1989) used the discontinuous split normal)
+            u = rand(n_is,nParam);
+            c = r ./ (r+q);
+            eta = (bsxfun(@times,q,double(bsxfun(@ge,u,c)))+bsxfun(@times,-r,double(bsxfun(@lt,u,c)))).*abs(e);
+          else
+            % discontinuous split normal (Geweke (1989) used this)
+            eta = (bsxfun(@times,q,double(e>=0))+bsxfun(@times,r,double(e<0))).*e;
+          end
+          th = bsxfun(@plus,Ef',eta*T');
+          
+          % Rejection sampling
+          % reject samples with non-decreasing tails, before continuing with IS
+          % to avoid unnecessary computations
+          if strcmpi(rej_sampling,'on')
+            if ~any(bounded)
+              qii=find(th(:,1)<th(:,2)&th(:,end-1)>th(:,end));
+            elseif bounded(1)&&~bounded(2)
+              qii=find(th(:,end-1)>th(:,end));
+            elseif bounded(2)&&~bounded(1)
+              qii=find(th(:,1)<th(:,2));
+            else
+              qii=1:n_is;
+            end
+            if numel(qii)>200
+              th=th(qii,:);
+              e = e(qii,:);
+            else
+              warning('Rejection sampling to force decreasing tails for (semi)unbounded unreliable')
+            end
+          end
+          
+          if strcmpi(contSplit,'on')
+            % continuous split normal (Geweke (1989) used the discontinuous split normal)
+            lp_th_appr = - 0.5*sum(e.^2,2)';
+          else
+            % discontinuous split normal (Geweke (1989) used this)
+            C = sum(bsxfun(@times,log(q),double(e>=0))+bsxfun(@times,log(r),double(e<0)),2);
+            lp_th_appr = (-C - 0.5*sum(e.^2,2))';
+          end
+          
+          % Evaluate density
+          ll = sum(bsxfun(@times,th,yy'),2)-sum(yy)*log(sum(exp(th),2));
+          MNM = LN\(H'*b-th(1,:)');
+          MNM = MNM'*MNM;
+          Econst = gp_e(gp_pak(gpis), gpis, xxn, th(1,:)') - 0.5*MNM;
+          MNM = LN\th';
+          MNM = sum(MNM.^2)';
+          en = 0.5*MNM + Econst;
+          lp_th = -en' + ll';
+          
+          % Importance weights for the samples
+          lws = lp_th(:) - lp_th_appr(:);
+          % subtract maximum before exp to avoid overflow
+          ws = exp(lws - max(lws));
+          % Skare, O., Bolviken, E., and Holden, L. (2003). Improved
+          % sampling-importance resampling and reduced bias importance
+          % sampling. {\em Scandivanian Journal of Statistics} {\bf
+          % 30}, 719--737.
+          ws=ws./(sum(ws)-ws);
+          ws=ws./sum(ws);
+          
+          % Kong, A., Liu, J. S., and Wong, W. H. (1996). Sequential imputations
+          % and Bayesian missing data problems. {\em Journal of the
+          % American Statistical Association} {\bf 89}, 278--288.
+          ess = 1/sum(ws.^2);
+          
+          if ess < 200;            
+            warning('The effective sample size of importance sampling is small (less than 200). Soft tresholding large weights')
+            % has similar effect as resampling without replacement, but allows use of all samples
+            ws=logitinv(ws*size(th,1)*.02)*2-1;
+            ws=ws./sum(ws);
+          end
+          
+          qr = th;
+          
+        end
+        
         qjr=exp(qr)';
         pjr=bsxfun(@rdivide,qjr,sum(qjr(1:gridn,:)));
         pjr=pjr./xd;
       end
-      pp=mean(pjr')';
-      ppq=prctile(pjr',[2.5 97.5])';
+      
+      if strcmpi(imp_sampling,'on')
+        pp=wmean(pjr',ws)';
+        ppq=wprctile(pjr', [5 95], ws)';
+      else
+        pp=mean(pjr')';
+        ppq=prctile(pjr',[5 95])';
+      end  
       
       if nargout<1
         % no output, do the plot thing
@@ -157,18 +461,24 @@ function [p,pq,xx] = lgpdens(x,varargin)
         hp=patch([xx; xx(end:-1:1)],[ppq(:,1); ppq(end:-1:1,2)],[.8 .8 .8]);
         set(hp,'edgecolor',[.8 .8 .8])
         xlim([xmin xmax])
-        line(xx,pp,'linewidth',2);
+        line(xx,pp,'linewidth',2,'color',[.4 .4 .4]);
       else
         p=pp;
         pq=ppq;
       end
       
     case 2 % 2D
-      
+      rej_sampling='off'; % not implemented for 2D
       if ~isempty(cond_dens) && strcmpi(cond_dens,'on') && ~isempty(speedup) && strcmp(speedup, 'on')
         warning('No speed-up option available with the cond_dens option. Using full covariance instead.')
         speedup='off';
       end
+      
+      % if ~isempty(rej_sampling) && strcmpi(rej_sampling,'on')
+      %   warning('No rejection sampling option available with 2D data.')
+      %   rej_sampling='off';
+      % end
+      
       % Find unique points
       [xu,I,J]=unique(x,'rows');
       % and count number of repeated x's
@@ -227,6 +537,16 @@ function [p,pq,xx] = lgpdens(x,varargin)
           zt=[zt1(:),zt2(:)];
           %nzt=length(zt);
           xt=zt;
+          
+          if strcmpi(latent_method,'Laplace') && strcmpi(imp_sampling,'on')
+            % Enrique added this to make IS easier
+            % TODO: allow different xx and xt
+            xx = xt;
+            nz = length(zt);
+            gridn(2) = gridn(2)*ntx2;
+            z1 = zt1;
+            z2 = zt2;
+          end
         end
       else
         xx=xt;
@@ -254,14 +574,15 @@ function [p,pq,xx] = lgpdens(x,varargin)
         xxtn=bsxfun(@rdivide,bsxfun(@minus,xt,mean(xx,1)),std(xx,1));
       end
       
-      % [Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
-      if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
-        [Ef,Covf]=gpsmooth(xxn,yy,xxtn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function);
-      else
-        [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function);
-      end
+      gp=gpsmooth(xxn,yy,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis);
       
       if strcmpi(latent_method,'MCMC')
+        imp_sampling='off';
+        if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+          [Ef, Covf] = gpmc_jpreds(gp, xxn, yy, xxtn);
+        else
+          [Ef, Covf] = gpmc_jpreds(gp, xxn, yy, xxn);
+        end
         
         if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
           unx2=(unique(xt(:,2)));
@@ -297,7 +618,16 @@ function [p,pq,xx] = lgpdens(x,varargin)
           %pjr=mean(PJR,2);
         end
         
+      elseif strcmpi(int_method,'CCD') || strcmpi(int_method,'grid')
+        error('CCD and grid integration for hyperparameters is not yet implemented for 2D')
       else
+        % MAP for covariance function parameters
+        if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+          [Ef,Covf] = gp_pred(gp, xxn, yy, xxtn);
+        else
+          [Ef,Covf] = gp_pred(gp, xxn, yy, xxn);
+        end
+        
         if strcmpi(speedup,'on') && length(Covf)==2
           qr1=bsxfun(@plus,bsxfun(@times,randn(1000,size(Ef,1)),sqrt(Covf{1})'),Ef');
           qr2=randn(1000,size(Covf{2},1))*Covf{2};
@@ -305,13 +635,160 @@ function [p,pq,xx] = lgpdens(x,varargin)
         else
           qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf,'upper'),Ef');
         end
+        if strcmpi(imp_sampling,'on')
+          % importance sampling using a split normal as a proposal density
+          % Geweke, J. (1989).  Bayesian inference in econometric models using
+          % Monte Carlo integration. Econometrica 57:1317-1339.
+          
+          if strcmpi(speedup,'on') && length(Covf)==2
+            % create full covariance to compute eigenvalues and vectors
+            Covft=Covf{2}'*Covf{2};
+            Covft(1:(size(Ef,1)+1):end)=Covft(1:(size(Ef,1)+1):end)+Covf{1}';
+            Covf=Covft;
+            clear Covft
+          end
+          nParam = size(Ef,1);
+          [V, D] = svd(Covf);
+          T = real(V) * sqrt(real(D));
+          eig = diag(real(D));
+          gpis=gp_set(gp,'latent_method','MCMC');
+          [~, C] = gp_trcov(gpis, xxn);
+          [H,b,B]=mean_prep(gpis,xxn,[]);
+          LN = chol(C + H'*B*H,'lower');
+
+          if isempty(n_scale)
+            n_scale = nParam;
+          end
+          
+          if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+            ll0 = (Ef' * yy) - sum(sum(reshape(yy,gridn(2),gridn(1))).*log(sum(reshape(exp(Ef),gridn(2),gridn(1)))));
+          else
+            ll0 = (Ef' * yy) - sum(yy)*log(sum(exp(Ef)));
+          end
+          e0 = gp_e(gp_pak(gpis), gpis, xxn, Ef);
+          P0 = -e0 + ll0;
+          
+          e = randn(n_is,nParam);
+          
+          delta = -6:0.5:6;
+          
+          q = ones(1,nParam);
+          r = ones(1,nParam);
+          
+          if n_scale > 0
+            
+            % Scaling in some eigendirections
+            D = reshape(T(:,1:n_scale),numel(T(:,1:n_scale)),1);
+            D = D * delta;
+            D = reshape(D,nParam,n_scale*length(delta));
+            D = bsxfun(@plus,D,Ef);
+            D = D';
+            if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+              n=sum(reshape(yy,gridn(2),gridn(1)));
+              ll = sum(bsxfun(@times,D,yy'),2)-sum(bsxfun(@times,n',reshape(log(sum(reshape(exp(D)',gridn(2),gridn(1)*n_scale*length(delta)))),gridn(1),n_scale*length(delta))))';
+            else
+              ll = sum(bsxfun(@times,D,yy'),2)-sum(yy)*log(sum(exp(D),2));
+            end
+            MNM = LN\(H'*b-D(1,:)');
+            MNM = MNM'*MNM;
+            Econst = gp_e(gp_pak(gpis), gpis, xxn, D(1,:)') - 0.5*MNM;
+            MNM = LN\D';
+            MNM = sum(MNM.^2)';
+            en = 0.5*MNM + Econst;
+            phat = -en' + ll';
+            
+            f = phat;
+            f(f >= P0) = NaN;
+            f = reshape(f, n_scale, length(delta));
+            f = bsxfun(@times, abs(delta),(2*(P0-f)).^(-0.5));
+            f = f';
+            qTemp = max(f(delta>0,:));
+            rTemp = max(f(delta<0,:));
+            qTemp(isnan(qTemp)) = 1;
+            rTemp(isnan(rTemp)) = 1;
+            q(1:n_scale) = qTemp;
+            r(1:n_scale) = rTemp;
+            
+          end                           
+          
+          % Safety limits
+          q=min(max(q,1/10),10);
+          r=min(max(r,1/10),10);
+          
+          % Sample from split normal
+          if strcmpi(contSplit,'on')
+            % continuous split normal (Geweke (1989) used the discontinuous split normal)
+            u = rand(n_is,nParam);
+            c = r ./ (r+q);
+            eta = (bsxfun(@times,q,double(bsxfun(@ge,u,c)))+bsxfun(@times,-r,double(bsxfun(@lt,u,c)))).*abs(e);
+          else
+            % discontinuous split normal (Geweke (1989) used this)
+            eta=(bsxfun(@times,q,double(e>=0))+bsxfun(@times,r,double(e<0))).*e;
+          end
+          th=bsxfun(@plus,Ef',eta*T');
+          
+          if strcmpi(contSplit,'on')
+            % continuous split normal (Geweke (1989) used the discontinuous split normal)
+            lp_th_appr = - 0.5*sum(e.^2,2)';
+          else
+            % discontinuous split normal (Geweke (1989) used this)
+            C = sum(bsxfun(@times,log(q),double(e>=0))+bsxfun(@times,log(r),double(e<0)),2);
+            lp_th_appr = (-C - 0.5*sum(e.^2,2))';
+          end
+          
+          % Evaluate density 
+          if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+            n=sum(reshape(yy,gridn(2),gridn(1)));
+            ll = sum(bsxfun(@times,th,yy'),2)-sum(bsxfun(@times,n',reshape(log(sum(reshape(exp(th)',gridn(2),gridn(1)*n_is))),gridn(1),n_is)))';
+          else
+            ll = sum(bsxfun(@times,th,yy'),2)-sum(yy)*log(sum(exp(th),2));
+          end
+          MNM = LN\(H'*b-th(1,:)');
+          MNM = MNM'*MNM;
+          Econst = gp_e(gp_pak(gpis), gpis, xxn, th(1,:)') - 0.5*MNM;
+          MNM = LN\th';
+          MNM = sum(MNM.^2)';
+          en = 0.5*MNM + Econst;
+          lp_th = -en' + ll';
+          
+          % Importance weights for the samples
+          lws = lp_th(:) - lp_th_appr(:);
+          % subtract maximum before exp to avoid overflow
+          ws = exp(lws - max(lws));
+          % Skare, O., Bolviken, E., and Holden, L. (2003). Improved
+          % sampling-importance resampling and reduced bias importance
+          % sampling. {\em Scandivanian Journal of Statistics} {\bf
+          % 30}, 719--737.
+          ws=ws./(sum(ws)-ws);
+          ws=ws./sum(ws);
+          
+          % Kong, A., Liu, J. S., and Wong, W. H. (1996). Sequential imputations
+          % and Bayesian missing data problems. {\em Journal of the
+          % American Statistical Association} {\bf 89}, 278--288.
+          ess = 1/sum(ws.^2);
+          
+          if ess < 200;
+            warning('The effective sample size of importance sampling is small (less than 200). Soft tresholding large weights')
+            % has similar effect as resampling without replacement, but allows use of all samples
+            ws=logitinv(ws*size(th,1)*.02)*2-1;
+            ws=ws./sum(ws);
+          end
+          qr = th;
+          
+        end
         qjr=exp(qr)';
         if ~isempty(cond_dens) && strcmpi(cond_dens,'on') 
           pjr=zeros(size(qjr));
           unx2=unique(xt(:,2));
           xd2=(unx2(2)-unx2(1));
           for k1=1:size(qjr,2)
-            qjrtmp=reshape(qjr(:,k1),[gridn(2)*ntx2 gridn(1)]);
+            if strcmpi(latent_method,'Laplace') && strcmpi(imp_sampling,'on')
+              qjrtmp=reshape(qjr(:,k1),[gridn(2) gridn(1)]);
+              % Enrique disabled ntx2
+              % TODO: enable ntx2
+            else
+              qjrtmp=reshape(qjr(:,k1),[gridn(2)*ntx2 gridn(1)]);
+            end
             qjrtmp=bsxfun(@rdivide,qjrtmp,sum(qjrtmp));
             qjrtmp=qjrtmp./xd2;
             pjr(:,k1)=qjrtmp(:);
@@ -322,18 +799,24 @@ function [p,pq,xx] = lgpdens(x,varargin)
         end
       end
       
-      %if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
-      %  pp=median(pjr')';
-      %else
-      pp=mean(pjr')';
-      %end
-      ppq=prctile(pjr',[2.5 97.5])';
+      if strcmpi(imp_sampling,'on')
+        pp=wmean(pjr',ws)';
+        ppq=wprctile(pjr', [5 95], ws)';
+      else
+        pp=mean(pjr')';
+        ppq=prctile(pjr',[5 95])';
+      end  
       
       if nargout<1
         % no output, do the plot thing
         if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
-          pjr2=reshape(pjr,[gridn(2)*ntx2 gridn(1) size(pjr,2)]);
-          %qp=median(pjr2,3);
+          if strcmpi(latent_method,'Laplace') && strcmpi(imp_sampling,'on')
+            pjr2=reshape(pjr,[gridn(2) gridn(1) size(pjr,2)]);
+            % Enrique disabled ntx2
+            % TODO: enable ntx2
+          else
+            pjr2=reshape(pjr,[gridn(2)*ntx2 gridn(1) size(pjr,2)]);
+          end
           qp=mean(pjr2,3);
           qp=bsxfun(@rdivide,qp,sum(qp,1));
           qpc=cumsum(qp,1);
@@ -346,10 +829,14 @@ function [p,pq,xx] = lgpdens(x,varargin)
             ql(:,i1)=unx2(qi);
           end
           hold on
-          h1=plot(zz1,ql(4,:)','-', 'color', [0 0 255]./255,'linewidth',2);
-          h2=plot(zz1,ql([3 5],:)','--', 'color', [0 127 0]./255,'linewidth',1);
-          h3=plot(zz1,ql([2 6],:)','-.', 'color', [255 0 0]./255,'linewidth',1);
-          h4=plot(zz1,ql([1 7],:)',':', 'color', [0 0 0]./255,'linewidth',1);
+          h1=plot(zz1,ql(4,:)','-', 'color', [.6 .6 .6],'linewidth',2);
+          h2=plot(zz1,ql([3 5],:)','--', 'color', [.4 .4 .4],'linewidth',1);
+          h3=plot(zz1,ql([2 6],:)','-.', 'color', [.2 .2 .2],'linewidth',1);
+          h4=plot(zz1,ql([1 7],:)',':', 'color', [0 0 0],'linewidth',1);
+          % h1=plot(zz1,ql(4,:)','-', 'color', [0 0 255]./255,'linewidth',2);
+          % h2=plot(zz1,ql([3 5],:)','--', 'color', [0 127 0]./255,'linewidth',1);
+          % h3=plot(zz1,ql([2 6],:)','-.', 'color', [255 0 0]./255,'linewidth',1);
+          % h4=plot(zz1,ql([1 7],:)',':', 'color', [0 0 0]./255,'linewidth',1);
           hold off
           legend([h1 h2(1) h3(1) h4(1)],'.5','.2/.8','.1/.9','.05/.95')
           %plot(zz1,ql','linewidth',1)
@@ -383,10 +870,10 @@ function [p,pq,xx] = lgpdens(x,varargin)
   end
 end
 
-function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function)
+function gp = gpsmooth(xx,yy,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis,imp_sampling)
 % Make inference with log Gaussian process and EP or Laplace approximation
 
-  % gp_mc and gp_ia still uses numeric display option
+ % gp_mc and gp_ia still uses numeric display option
   if strcmp(display,'off')
     displ=0;
   else
@@ -403,23 +890,28 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   end
   
   % weakly informative priors
-  % prior based on guess of maximum differences in log densities
-  pm = prior_sqrtt('s2',10^2,'nu',4);
-  % Weakly informative prior states that probability is smaller for
-  % lengthscales which are much smaller than Silverman's rule of thumb
-  % or min grid distance
-  h=max(diff(xx(1:2,end)).^2,1/sum(yy).^(1/5)/4);
-  pl = prior_invt('s2', 1./h, 'nu', 1);
+  if size(xx,2)==2 %~isempty(cond_dens) && strcmp(cond_dens, 'on')
+                   % prior based on guess of maximum differences in log densities
+    pm = prior_sqrtt('s2',1000,'nu',4);
+    % prior based on knowing that data has been scaled
+    pl = prior_t('s2', 10, 'nu', 4);
+  else
+    % prior based on guess of maximum differences in log densities
+    pm = prior_sqrtt('s2',10,'nu',4);
+    % prior based on knowing that data has been scaled
+    pl = prior_t('s2', 1, 'nu', 4);
+  end
+  % 
   pa = prior_t('s2', 20^2, 'nu', 1);
-  %pm = prior_sqrtt('s2', 10^2, 'nu', 4);
-  %pl = prior_sinvchi2('s2', 1, 'nu', 1);
-  %pa = prior_t('s2', 10^2, 'nu', 4);
+  % use modified Silverman's rule of thumb or min grid distance
+  % as initial guess for the length scale
+  h=max(diff(xx(1:2,end)).^2,1/sum(yy).^(1/5)/2);
   % different covariance functions have different parameters
   if isfield(gpcf1,'magnSigma2')
-     gpcf1 = gpcf(gpcf1, 'magnSigma2', 2, 'magnSigma2_prior', pm);
+    gpcf1 = gpcf(gpcf1, 'magnSigma2', 1, 'magnSigma2_prior', pm);
   end
   if isfield(gpcf1,'lengthScale')
-     gpcf1 = gpcf(gpcf1, 'lengthScale', 1, 'lengthScale_prior', pl);
+    gpcf1 = gpcf(gpcf1, 'lengthScale', h*repmat(2,[1 size(xx,2)]), 'lengthScale_prior', pl);
   end
   if isfield(gpcf1,'alpha')
     gpcf1 = gpcf(gpcf1, 'alpha', 20, 'alpha_prior', pa);
@@ -436,16 +928,19 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   end
   
   % Create the GP structure
-  if ~isempty(basis_function) && strcmp(basis_function, 'off')
-    gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
+  if ~isempty(basis) && strcmp(basis, 'off')
+    gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-6);
+  elseif strcmp(basis, 'exp')
+    gpmflin = gpmf_linear('prior_mean',0,'prior_cov',100);
+    gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-6, 'meanf', {gpmflin});
   else
     gpmflin = gpmf_linear('prior_mean',0,'prior_cov',100);
-    gpmfsq = gpmf_squared('prior_mean',0,'prior_cov',100);
-    gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, 'meanf', {gpmflin,gpmfsq});
+    gpmfsq = gpmf_squared('prior_mean',0,'prior_cov',100,'interactions','on');
+    gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-6, 'meanf', {gpmflin,gpmfsq});
   end
   % First optimise hyperparameters using Laplace approximation
   gp = gp_set(gp, 'latent_method', 'Laplace');
-  opt=optimset('TolFun',1e-2,'TolX',1e-3,'Display',display);
+  opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display',display);
   
   if ~isempty(speedup) && strcmp(speedup, 'on')
     gp.latent_opt.gridn=gridn;
@@ -457,10 +952,6 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
       gp.latent_opt.eig_prct=0.5;
       gp.latent_opt.kron=1;
       opt.LargeScale='off';
-      if norm(xx-xxt)~=0
-        warning('In the low-rank approximation the grid locations xx are used instead of xxt in predictions.')
-        xxt=xx;
-      end
     elseif strcmp(gp.cf{1}.type,'gpcf_sexp') || strcmp(gp.cf{1}.type,'gpcf_exp') || strcmp(gp.cf{1}.type,'gpcf_matern32') || strcmp(gp.cf{1}.type,'gpcf_matern52')
       gp.latent_opt.fft=1;
     end
@@ -468,55 +959,49 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
 
   gp=gp_optim(gp,xx,yy,'opt',opt, 'optimf', @fminlbfgs);
   %gradcheck(gp_pak(gp), @gpla_nd_e, @gpla_nd_g, gp, xx, yy);
-  %exp(gp_pak(gp))
+  %[w,s]=gp_pak(gp);
+  %exp(gp_pak(gp));
   
   if strcmpi(latent_method,'MCMC')
-    gp = gp_set(gp, 'latent_method', 'MCMC');
-    
-    %if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+    % gpia coule be used to get integartion limits for slice sampling
+    % gpia=gp_ia(gp, xx, yy, 'int_method', 'CCD', 'display', displ);
+    % for i1=1:numel(gpia)
+    %   ws(i1,:)=gp_pak(gpia{i1});
+    % end
+    % w0=ws(1,:);
+    % minw=min(ws);
+    % maxw=max(ws);
+    % minw=w0-(w0-minw)*3;
+    % maxw=w0+(maxw-w0)*3;
+    % sample latents from the approximate posterior
+    fs=gp_rnd(gp,xx,yy,xx);
+    % elliptical slice sampling for latents
+    %gp = gp_set(gp, 'latent_method', 'MCMC', 'latent_opt', struct('method', @esls));
+    % scaled Metropolis-Hastings for latents
+    gp = gp_set(gp, 'latent_method', 'MCMC', 'latent_opt', struct('method', @scaled_mh));
+    % intialise the latent values
+    gp.latentValues=fs;
+    % options for HMC-NUTS
+    hmc_opt.nuts = 1; % True or false
+    hmc_opt.Madapt = 20; % Number of step-size adaptation steps (Burn-in)
+    latent_opt.display=0;
+    latent_opt.repeat = 100;
+    latent_opt.sample_latent_scale = 0.1;
+    % options for slice sampling
+    % slsopt=sls_opt;
+    % slsopt.mmlimits=[minw;maxw];
+    % slsopt.method='multi';
+    % slsopt.latent_opt.repeat=100;
     if size(xx,2)==2
       % add more jitter for 2D cases with MCMC
       gp = gp_set(gp, 'jitterSigma2', 1e-2);
-      %error('LGPDENS: MCMC is not implemented if cond_dens option is ''on''.')
     end
     
-    % Here we use two stage sampling to get faster convergence
-    hmc_opt=hmc2_opt;
-    hmc_opt.steps=10;
-    hmc_opt.stepadj=0.05;
-    hmc_opt.nsamples=1;
-    latent_opt.display=0;
-    latent_opt.repeat = 20;
-    latent_opt.sample_latent_scale = 0.5;
-    hmc2('state', sum(100*clock))
-    
-    % The first stage sampling
-    [r,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15, 'display', displ);
-    %[r,g,opt]=gp_mc(gp, xx, yy, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
-    
-    % re-set some of the sampling options
-    hmc_opt.steps=4;
-    hmc_opt.stepadj=0.05;
-    %latent_opt.repeat = 5;
-    hmc2('state', sum(100*clock));
-    
-    % The second stage sampling
-    % Notice that previous record r is given as an argument
-    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'nsamples', 500,'latent_opt', latent_opt, 'record', r,  'display', displ);
+    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 510, 'repeat', 10, 'display', displ);
+    % estimate the effective number of samples
+    %neff=510./[geyer_imse(log(rgp.cf{1}.magnSigma2)) geyer_imse(log(rgp.cf{1}.lengthScale))];
     % Remove burn-in
-    rgp=thin(rgp,102,4);
+    gp=thin(rgp,11,5);
     
-    [Ef, Covf] = gpmc_jpreds(rgp, xx, yy, xxt);
-     
-  else
-    if strcmpi(int_method,'mode')
-      % Just make prediction for the test points
-      [Ef,Covf] = gp_pred(gp, xx, yy, xxt);
-    else
-      % integrate over the hyperparameters
-      %[~, ~, ~, Ef, Covf] = gp_ia(opt, gp, xx, yy, xt, param);
-      gpia=gp_ia(gp, xx, yy, 'int_method', int_method, 'display', displ);
-      [Ef, Covf]=gpia_jpred(gpia, xx, yy, xxt);
-    end
   end
 end

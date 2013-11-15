@@ -10,3 +10,4 @@
 auto
 _region_.*
 \#*\#
+SuiteSparse/

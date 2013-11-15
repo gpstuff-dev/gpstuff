@@ -288,7 +288,7 @@ switch gp.type
               DKff=DKffc{i2};
             end
             i1 = i1+1;
-            if ~isfield(gp.lik, 'nondiagW')
+            if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'})
               Bdl = b'*(DKff*b);
               Cdl = sum(sum(invC.*DKff)); % help arguments
             else
@@ -1229,7 +1229,7 @@ switch gp.type
         gdata(i1)= -0.5*DCff{i2}.*b*b';
         gdata(i1)= gdata(i1) + 0.5*sum(DCff{i2}./La-sum(L.*L,2).*DCff{i2});
         if strcmp(gp.type, 'VAR')
-          gdata(i1)= gdata(i1) + 0.5*(sum((Kv_ff-Qv_ff)./La));
+          gdata(i1)= gdata(i1) - 0.5*(sum((Kv_ff-Qv_ff)./La));
         end
         
         gprior(i1) = gprior_lik(i2);                        

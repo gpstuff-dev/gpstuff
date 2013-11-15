@@ -343,6 +343,10 @@ function [logM_0, m_1, sigm2hati1] = lik_qgp_tiltedMoments(lik, y, i1, sigm2_i, 
     RTOL = 1.e-6;
     ATOL = 1.e-10;
     [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+    if isnan(m_0)
+      logM_0=NaN;
+      return
+    end
     sigm2hati1(i) = m_2 - m_1(i).^2;
     
     % If the second central moment is less than cavity variance
@@ -438,7 +442,7 @@ function [lpy, Ey, Vary] = lik_qgp_predy(lik, Ef, Varf, yt, zt)
   
   % Evaluate the posterior predictive densities of the given observations
   lpy = zeros(length(yt),1);
-  if (min(size(Ef))>1) && (min(size(Varf))>1)
+  if (size(Ef,2) > 1) && (size(Ef,2) > 1) && size(yt,2) == 1
     % Approximate integral with sum of grid points when using corrected
     % marginal posterior
     for i1=1:length(yt)

@@ -1,26 +1,15 @@
-function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
-%GPIA_JPRED  Prediction with Gaussian Process GP_IA solution.
+function [Eft, Covft] = gpia_jpreds(gp_array, x, y, varargin)
+%GPIA_JPREDS  Predictions with Gaussian Process GP_IA solution.
 %
 %  Description
-%    [EFT, COVFT] = GPIA_JPRED(GP_ARRAY, X, Y, XT, OPTIONS) 
+%    [EFS, COVFS] = GPIA_JPREDS(GP_ARRAY, X, Y, XT, OPTIONS) 
 %    takes a cell array of GP structures together with matrix X of
 %    training inputs and vector Y of training targets, and
 %    evaluates the predictive distribution at test inputs XT with
-%    parameters marginalized out with IA. Returns a posterior mean
-%    EFT and covariance COVFT of latent variables.
+%    parameters marginalized out with IA. Returns
+%    matrices EFS and COVFS that contain means and covariances of the
+%    conditional posterior predictive distributions.
 %
-%    [EFT, COVFT, JPYT, EYT, COVYT] = GPIA_JPRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also logarithm of the predictive joint density PYT of
-%    the observations YT at test input locations XT with parameters
-%    marginalized out with IA. This can be used for example in the
-%    cross-validation. Here Y has to be vector. Returns also
-%    posterior predictive mean EYT and covariance COVYT.
-%
-%    [EF, COVF, LJPY, EY, COVY] = GPIA_JPRED(GP, X, Y, OPTIONS)
-%    evaluates the predictive distribution at training inputs X
-%    and logarithm of the joint predictive density JPY of the training
-%    observations Y.
-%  
 %    OPTIONS is optional parameter-value pair
 %      predcf - index vector telling which covariance functions are 
 %               used for prediction. Default is all (1:gpcfn). See
@@ -72,7 +61,7 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
 % Copyright (c) 2009 Ville Pietil�inen
 % Copyright (c) 2009-2010 Jarno Vanhatalo    
 % Copyright (c) 2011-2012 Ville Tolvanen
-% Copyright (c) 2012 Aki Vehtari
+% Copyright (c) 2012-2013 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
@@ -80,7 +69,7 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
 
   
   ip=inputParser;
-  ip.FunctionName = 'GPIA_JPRED';
+  ip.FunctionName = 'GPIA_JPREDS';
   ip.addRequired('gp_array', @iscell);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
@@ -147,41 +136,18 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   
   nGP = numel(gp_array);
   
-  for i1=1:nGP
+  for i=1:nGP
+    P_TH(i,:) = gp_array{i}.ia_weight;
   end
 
   % Make predictions with different models in gp_array
-  for i1=1:nGP
-    P_TH(:,i1) = gp_array{i1}.ia_weight;
+  for j = 1:nGP
     if isempty(yt)
-      [Efts(:,i1), Covfts(:,:,i1)]=gp_jpred(gp_array{i1},x,y,xt,options);            
+      [Eft_grid(j,:), Covft_grid(:,:,j)]=gp_jpred(gp_array{j},x,y,xt,options);            
     else
-      [Efts(:,i1), Covfts(:,:,i1), ljpyts(i1), Eyts(:,i1), Covyts(:,:,i1)]=gp_jpred(gp_array{i1},x,y,xt, options);
-    end
-  end
-
-  % Calculate mean and variance of the distributions
-  Eft = sum(bsxfun(@times,Efts,P_TH), 2);
-  % Calculate covariances of means
-  Efts = bsxfun(@minus,Efts,Eft);
-  for i1=1:nGP
-    CovEfts(:,:,i1)=Efts(:,i1)'*Efts(:,2);
-  end
-  % Covariance is E(Cov)+Cov(E)
-  Covft = squeeze(sum(bsxfun(@times, Covfts, permute(P_TH,[1 3 2])), 3)) ...
-          + sum(bsxfun(@times, CovEfts, permute(P_TH,[1 3 2])), 3);
-  
-  % Calculate jpyt with weight given in P_TH.
-  if nargout > 2
-    if isempty(yt)
-      ljpyt = [];
-    else
-      ljpyt = log(sum(exp(ljpyts)'.*P_TH));
+      [Eft_grid(j,:), Covft_grid(:,:,j), ljpyt_grid(j), Eyt_grid(j,:), Covyt_grid(:,:,j)]=gp_jpred(gp_array{j},x,y,xt, options);
     end
   end
   
-  if nargout > 3
-    Eyt = sum(bsxfun(@times,Eyts,P_TH),2);
-    Covyt = squeeze(sum(bsxfun(@times, Covyts, permute(P_TH,[1 3 2])), 3)) ...
-            + diag(sum(bsxfun(@times,bsxfun(@minus,Eyts,Eyt).^2, P_TH),2));
-  end
+  Eft=Eft_grid;
+  Covft=Covft_grid;

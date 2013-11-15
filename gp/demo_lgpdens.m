@@ -81,7 +81,7 @@ subplot(2,2,4)
 setrandstream(0,'mrg32k3a');
 x=gamrnd(1,1,100,1);
 xt=linspace(0,5,400)';
-lgpdens(x,xt);
+lgpdens(x,xt,'bounded',[1 0]);
 axis tight
 title('Gamma(1,1)')
 p0=gam_pdf(xt,1,1);
@@ -143,13 +143,14 @@ drawnow
 % 1) 2D-example of conditional density estimate
 % =====================================
 figure(3)
-% Ring
-lgpdens(x,'gridn',30, 'cond_dens', 'on');
+% Old faithful
+L = strrep(S,'demo_lgpdens.m','demodata/faithful.txt');
+x=load(L);
+lgpdens(x,'range',[1 6 40 100],'gridn',30, 'cond_dens', 'on');
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
-axis([-2.5 2.5 -2.5 2.5])
-title('Ring - conditional density')
+%axis([-2.5 2.5 -2.5 2.5])
+title('Old faithful - conditional density')
 drawnow
-
 
 % =====================================
 % 1D-example with FFT speed-up and 2D-example
@@ -198,6 +199,7 @@ pla=p;
 line(xt,p,'color','r','marker','none','linewidth',2)
 line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
 xlim([-7 7])
+ylim([0 .5])
 title('t_4 (Laplace)')
 % true density
 p0=t_pdf(xt,4,0,1);
@@ -210,6 +212,7 @@ pmc=p;
 line(xt,p,'color','r','marker','none','linewidth',2)
 line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
 xlim([-7 7])
+ylim([0 .5])
 title('t_4 (MCMC)')
 line(xt,p0,'color','k')
 drawnow

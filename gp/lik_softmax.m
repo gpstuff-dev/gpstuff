@@ -49,6 +49,7 @@ function lik = lik_softmax(varargin)
     lik.fh.llg = @lik_softmax_llg;    
     lik.fh.llg2 = @lik_softmax_llg2;
     lik.fh.llg3 = @lik_softmax_llg3;
+    lik.fh.tiltedMoments = @lik_softmax_tiltedMoments;
     lik.fh.predy = @lik_softmax_predy;
     lik.fh.recappend = @lik_softmax_recappend;
   end
@@ -239,6 +240,26 @@ function dw_mat = lik_softmax_llg3(lik, y, f, param, z)
   end
 end
 
+function [logM_0, m_1, sigm2hati1] = lik_softmax_tiltedMoments(lik, y, i1, S2_i, M_i, z)
+    %LIK_SOFTMAX_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+    %
+    %  Description
+    %    [M_0, M_1, M2] = LIK_COXPH_TILTEDMOMENTS(LIK, Y, I, S2,
+    %    MYY, Z) takes a likelihood structure LIK, class labels
+    %    Y, index I and cavity variance S2 and
+    %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
+    %    variance M_2 of the posterior marginal (see Rasmussen and
+    %    Williams (2006): Gaussian processes for Machine Learning,
+    %    page 55). This subfunction is needed when using EP for 
+    %    inference with non-Gaussian likelihoods.
+    %
+    %  See also
+    %    GPEP_E
+    
+    error('tiltedMoment has not been implemented for softmax likelihood');
+    
+end
+
 function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
 %LIK_SOFTMAX_PREDY  Returns the predictive mean, variance and density of
 %y
@@ -246,12 +267,12 @@ function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
 %  Description         
 %    LPY = LIK_SOFTMAX_PREDY(LIK, EF, VARF YT, ZT)
 %    Returns logarithm of the predictive density PY of YT, that is 
-%        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
-%    This requires also the succes counts YT, numbers of trials ZT.
+%        p(yt | y) = \int p(yt | f) p(f|y) df.
+%    This requires also the class labels YT.
 %    This subfunction is needed when computing posterior predictive 
 %    distributions for future observations.
 %
-%    [EY, VARY] = LIK_SOFTMAX_PREDY(LIK, EF, VARF) takes a
+%    [LPY, EY, VARY] = LIK_SOFTMAX_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
@@ -300,6 +321,7 @@ function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
     Ey = 2*pi-1;
     Vary = 1-(2*pi-1).^2;
     Ey=Ey(:);
+    Vary=Vary(:);
   end
   lpy=lpy(:);
 end
@@ -329,6 +351,7 @@ function reclik = lik_softmax_recappend(reclik, ri, lik)
     reclik.fh.llg = @lik_softmax_llg;    
     reclik.fh.llg2 = @lik_softmax_llg2;
     reclik.fh.llg3 = @lik_softmax_llg3;
+    reclik.fh.tiltedMoments = @lik_softmax_tiltedMoments;
     reclik.fh.predy = @lik_softmax_predy;
     reclik.fh.recappend = @lik_softmax_recappend;
   end

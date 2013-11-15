@@ -63,7 +63,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   Default is 10.
 %       
 
-% Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
+% Copyright (c) 2009-2010 Ville Pietilï¿½inen, Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -107,7 +107,12 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip.addParamValue('persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
   ip.addParamValue('display', 'on', @(x) islogical(x) || isreal(x) || ...
                    ismember(x,{'on' 'off' 'iter'}))
-  ip.parse(gp, x, y, varargin{:});
+  if numel(varargin)==0 || isnumeric(varargin{1})
+    % inputParser should handle this, but it doesn't
+    ip.parse(gp, x, y, varargin{:});
+  else
+    ip.parse(gp, x, y, [], varargin{:});
+  end
   
   xt=ip.Results.xt;
   % integration parameters
@@ -490,6 +495,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               if ismember(opt.display,{'iter'})
                 fprintf('origo lp=%.2f\n',l0);
               end
+              ts(1)=1;
               for i1 = 2:size(points,1)
                 if ismember(opt.display,{'iter'}),fprintf('%d ',i1);end
                 % Find the scaling parameter so that when we move sqrt(2) std
@@ -555,7 +561,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             th(dii,:)=[];
           end
   
-          p_th=p_th-min(p_th);
+          p_th=p_th-max(p_th);
           p_th=exp(p_th);
           
           if nParam>1
@@ -645,12 +651,12 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       switch int_method
         case 'is_normal'
           % Normal samples
-          
+          L=chol(Sigma,'lower');
           if opt.qmc
-            th  = repmat(w,N,1)+(chol(Sigma,'lower')*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
+            th  = repmat(w,N,1)+(L*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
             p_th_appr = mnorm_pdf(th, w, Sigma);
           else
-            th = repmat(w,N,length(w)) + randn(N, length(w))*chol(Sigma);
+            th = repmat(w,N,1) + randn(N, length(w))*L';
             p_th_appr = mnorm_pdf(th, w, Sigma);
           end
           
@@ -667,16 +673,13 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             if ismember(opt.display,{'on','iter'})
               fprintf(' IA-is_normal: scaling of the covariance\n');
             end
-            delta = -6:.5:6;
+            delta = [-6:.5:-.5 .5:.5:6];
             for i0 = 1 : nParam
               for i1 = 1 : length(delta)
                 ttt = zeros(1,nParam);
                 ttt(i0)=1;
-                phat = (-fh_e(w+(delta(i1)*chol(Sigma)'*ttt')',gp,x,y,options));
+                phat = (-fh_e(w+(delta(i1)*L*ttt')',gp,x,y,options));
                 fi(i1) = abs(delta(i1)).*(2.*(P0-phat)).^(-.5);
-                
-                pp(i1) = exp(phat);
-                pt(i1) = mvnpdf(delta(i1)*chol(Sigma)'*ttt', 0, Sigma);
               end
               
               q(i0) = max(fi(delta>0));
@@ -685,6 +688,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             end
             
             %% Samples one by one
+            LS=chol(Scale)';
             for i3 = 1 : N
               C = 0;
               for i2 = 1 : nParam
@@ -698,7 +702,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 
               end
               p_th_appr(i3) = exp(-C-.5*e(i3,:)*e(i3,:)');
-              th(i3,:)=w+(chol(Scale)'*eta(i3,:)')';
+              th(i3,:)=w+(LS*eta(i3,:)')';
             end
           end
           
@@ -706,6 +710,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           % Student-t Samples
           nu = opt.t_nu;
           Scale = (nu-2)./nu.*Sigma;
+          LS=chol(Scale,'lower');
           
           if opt.autoscale
             if ismember(opt.display,{'on','iter'})
@@ -718,13 +723,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               ttt = zeros(1,nParam);
               ttt(i0)=1;
               for i1 = 1 : length(delta)
-                phat = exp(-fh_e(w+(delta(i1)*chol(Scale)'*ttt')',gp,x,y,options));
+                phat = exp(-fh_e(w+(delta(i1)*LS*ttt')',gp,x,y,options));
                 
                 fi(i1) = nu^(-.5).*abs(delta(i1)).*(((exp(P0)/phat)^(2/(nu+nParam))-1).^(-.5));
-                rel(i1) = (exp(-fh_e(w+(delta(i1)*chol(Scale)'*ttt')',gp,x,y,options)))/ ...
-                          mt_pdf((delta(i1)*chol(Scale)'*ttt')', Scale, nu);
-                pp(i1) = phat;
-                pt(i1) = mt_pdf((delta(i1)*chol(Scale)'*ttt')', Scale, nu);
+                rel(i1) = (exp(-fh_e(w+(delta(i1)*LS*ttt')',gp,x,y,options)))/ ...
+                          mt_pdf((delta(i1)*LS*ttt')', Scale, nu);%TODO: inline!
               end
               
               q(i0) = max(fi(delta>0));
@@ -755,18 +758,18 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 end
               end
               p_th_appr(i3) = exp(C - ((nu+nParam)/2)*log(1+sum((e(i3,:)./sqrt(chi)).^2)));
-              th(i3,:)=w+(chol(Scale)'*eta(i3,:)')';
+              th(i3,:)=w+(LS*eta(i3,:)')';
             end
           else
             chi2 = repmat(chi2rnd(nu, [1 N]), nParam, 1);
             if opt.qmc
               e = (sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1))';
-              th = repmat(w,N,1) + ( chol(Scale)' * e' .* sqrt(nu./chi2) )';
+              th = repmat(w,N,1) + ( LS * e' .* sqrt(nu./chi2) )';
             else
-              th = repmat(w,N,1) + ( chol(Scale)' * randn(nParam, N).*sqrt(nu./chi2) )';
+              th = repmat(w,N,1) + ( LS * randn(nParam, N).*sqrt(nu./chi2) )';
             end
             
-            p_th_appr = mt_pdf(th - repmat(w,N,1), Sigma, nu);
+            p_th_appr = mt_pdf(th - repmat(w,N,1), Sigma, nu);%TODO: inline!
           
           end
       end
@@ -796,7 +799,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         end
       end
       % Convert densities from the log-space and normalize them
-      p_th = exp(p_th-min(p_th));
+      p_th = exp(p_th-max(p_th));
       p_th = p_th/sum(p_th);
       
       % (Scaled) Densities of the samples in the approximation of the
@@ -1107,7 +1110,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     if size(w0) ~= size(v)
       v = v';
     end
-    rr = 1e-4;
+    rr = 1e-3;
     g2 = fh_g(w0-rr*v, gp, x, y, options);
     g1 = fh_g(w0+rr*v, gp, x, y, options);
     vv = (g1 - g2) / (2*rr);

@@ -70,6 +70,7 @@ fcorr=ip.Results.fcorr;
 
 tn = size(x,1);
 
+sampyt=[];
 if isstruct(gp) && numel(gp.jitterSigma2)==1
   % Single GP
   if isfield(gp.lik.fh,'trcov') || isfield(gp, 'latentValues')
@@ -166,7 +167,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 5
           if length(tstind) ~= size(x,1) && ~isempty(tstind)
-            error('tstind (if provided) has to be of same lenght as x.')
+            error('tstind (if provided) has to be of same length as x.')
           end
         else
           tstind = [];
@@ -367,7 +368,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 5
           if ~isempty(tstind) && length(tstind) ~= size(x,1)
-            error('tstind (if provided) has to be of same lenght as x.')
+            error('tstind (if provided) has to be of same length as x.')
           end
         else
           tstind = [];
@@ -569,37 +570,42 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
 
         switch gp.latent_method
           case 'Laplace'
-            %[e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-            [e, edata, eprior, param] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-            [f, L] = deal(param.f, param.L);
-            
-            W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
-            deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
-            ntest=size(xt,1);
-            
-            % Evaluate the expectation
-            K_nf = gp_cov(gp,xt,x,predcf);
-            Ef = K_nf*deriv;
-            
-            % Evaluate the variance
-            K = gp_trcov(gp,xt,predcf);
-            if W >= 0
-              if issparse(K_nf) && issparse(L)
-                K = gp_trcov(gp, x);
-                sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
-                sqrtWKfn = sqrtW*K_nf';
-                V = ldlsolve(L,sqrtWKfn);
-                Covf = K - sqrtWKfn'*V;
+            if ~isfield(gp.lik, 'nondiagW')
+              %[e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+              [e, edata, eprior, param] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+              [f, L] = deal(param.f, param.L);
+              
+              W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+              deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+              ntest=size(xt,1);
+              
+              % Evaluate the expectation
+              K_nf = gp_cov(gp,xt,x,predcf);
+              Ef = K_nf*deriv;
+              
+              % Evaluate the variance
+              K = gp_trcov(gp,xt,predcf);
+              if W >= 0
+                if issparse(K_nf) && issparse(L)
+                  K = gp_trcov(gp, x);
+                  sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
+                  sqrtWKfn = sqrtW*K_nf';
+                  V = ldlsolve(L,sqrtWKfn);
+                  Covf = K - sqrtWKfn'*V;
+                else
+                  sW = diag(sqrt(W));
+                  V = L\(sW*K_nf');
+                  Covf = K - V'*V;
+                end
               else
-                sW = diag(sqrt(W));
-                V = L\(sW*K_nf');
-                Covf = K - V'*V;
+                V = L*diag(W);
+                R = diag(W) - V'*V;
+                Covf = K - K_nf*(R*K_nf');
               end
             else
-              V = L*diag(W);
-              R = diag(W) - V'*V;
-              Covf = K - K_nf*(R*K_nf');
+              [Ef, Covf]=gpla_jpred(gp,x,y,xt,'z',z,'predcf', predcf,'tstind', tstind);
             end
+              
           case 'EP'
             
             %[e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
@@ -633,7 +639,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               end
             else
               zz=tautilde.*(L'*(L*nutilde));
-              Ef=K_nf*(nutilde-z);
+              Ef=K_nf*(nutilde-zz);
               
               S = diag(tautilde);
               V = K_nf*S*L';
@@ -653,7 +659,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             % Here tstind = 1 if the prediction is made for the training set 
             if nargin > 6
               if ~isempty(tstind) && length(tstind) ~= size(x,1)
-                error('tstind (if provided) has to be of same lenght as x.')
+                error('tstind (if provided) has to be of same length as x.')
               end
             else
               tstind = [];
@@ -738,7 +744,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             % Here tstind = 1 if the prediction is made for the training set 
             if nargin > 6
               if ~isempty(tstind) && length(tstind) ~= size(x,1)
-                error('tstind (if provided) has to be of same lenght as x.')
+                error('tstind (if provided) has to be of same length as x.')
               end
             else
               tstind = [];

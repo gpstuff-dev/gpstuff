@@ -49,7 +49,7 @@ function metric = metric_euclidean(varargin)
   ip.FunctionName = 'METRIC_EUCLIDEAN';
   ip.addOptional('metric', [], @isstruct);
   ip.addParamValue('components',[], @(x) isempty(x) || iscell(x));
-  ip.addParamValue('deltadist',[], @(x) isvector(x));
+  ip.addParamValue('deltadist',[], @(x) isvector(x) || isempty(x));
   ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
   ip.addParamValue('lengthScale_prior',prior_unif, ...
                    @(x) isstruct(x) || isempty(x));

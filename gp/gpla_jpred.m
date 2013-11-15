@@ -184,8 +184,8 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
             if issparse(K_nf) && issparse(L)
               % If compact support covariance functions are used
               % the covariance matrix will be sparse
-              K = gp_trcov(gp, x);
-              sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
+              K = gp_trcov(gp, xt);
+              sqrtW = sqrt(W);
               sqrtWKfn = sqrtW*K_nf';
               V = ldlsolve(L,sqrtWKfn);
               Covft = K - sqrtWKfn'*V;
@@ -211,7 +211,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
         % Here tstind = 1 if the prediction is made for the training set
         if nargin > 6
           if ~isempty(tstind) && length(tstind) ~= size(x,1)
-            error('tstind (if provided) has to be of same lenght as x.')
+            error('tstind (if provided) has to be of same length as x.')
           end
         else
           tstind = [];
@@ -382,7 +382,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
         % Here tstind = 1 if the prediction is made for the training set
         if nargin > 6
           if ~isempty(tstind) && length(tstind) ~= size(x,1)
-            error('tstind (if provided) has to be of same lenght as x.')
+            error('tstind (if provided) has to be of same length as x.')
           end
           %         else
           %              tstind = [];
