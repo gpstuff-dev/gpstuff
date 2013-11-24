@@ -119,7 +119,7 @@ else
   warning('GPstuff:SuiteSparseMissing',...
   ['SuiteSparse is not properly installed. (in BECS try ''use suitesparse'')\n' ...
    'Using gpcf_sexp (non-compact support) instead of gpcf_ppcs2 (compact support)']);
-  gpcf2 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 1, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm);
+  gpcf2 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 1, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm2);
 end
 lik = lik_gaussian('sigma2', 0.1, 'sigma2_prior', pn);
 
