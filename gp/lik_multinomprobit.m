@@ -7,6 +7,10 @@ function lik = lik_multinomprobit(varargin)
 %    class label with C classes is given as 1xC vector where C-1
 %    entries are 0 and the observed class label is 1.
 %
+%    Note that when using LIK_MULTINOMPROBIT, gp_predy returns Ey=[]
+%    and Vary=[], as we think that they are not worth computing,
+%    because they do not describe the predictive distribution well.
+%
 %  See also
 %    GP_SET, LIK_*
 
@@ -375,6 +379,7 @@ function lik = lik_multinomprobit(varargin)
   end
   M0=exp(M0);
   lpy=log(bsxfun(@rdivide,M0,sum(M0,2)));  
+  % Don't compute Ey and Vary as they don't describe the predictive distribution well
   Ey=[];
   Vary=[];
   

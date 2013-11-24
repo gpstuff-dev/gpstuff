@@ -273,10 +273,14 @@ elseif length(ind)==2
     XT1(indd==0) = NaN; XT2(indd==0) = NaN; Ef(indd==0) = NaN; Varf(indd==0) = NaN;
     
     if isequal(plot_results, 'on')
-      contourf(reshape(XT1,20,20), reshape(XT2,20,20), reshape(Ef,20,20))
+      pcolor(reshape(XT1,20,20), reshape(XT2,20,20), reshape(Ef,20,20))
+      shading flat
+      colormap(mapcolor(Ef,repmat(nanmedian(Ef(:)),[1 2])))
+      colorbar
     end
     
-    xtnn = [XT1(indd==1), XT2(indd==1)]; Ef = Ef(indd==1); Varf = Varf(indd==1);
+    %xtnn = [XT1(indd==1), XT2(indd==1)]; Ef = Ef(indd==1); Varf = Varf(indd==1);
+    xtnn = [XT1, XT2];
   end
   
 else

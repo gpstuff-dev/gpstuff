@@ -14,31 +14,21 @@ function [R,neff,V,W,B] = cpsrf(varargin)
 %     PSRF, MPSRF, CMPSRF
 
 % Copyright (C) 1999 Simo Särkkä
+% Copyright (C) 2013 Aki Vehtari
 %
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.
 
 % 2004-01-22 Aki.Vehtari@hut.fi Added neff, R^2->R, and cleaning
+% 2013-10-20 Aki.Vehtari@aalto.fi Updated according to BDA3
 
 % Handle the input arguments
-if prod(size(varargin{nargin}))==1
-  count = nargin-1;
-  n0 = varargin{nargin};
+if nargin>1 && isscalar(varargin{end})
+  X=cat(3,varargin{1:end-1});
+  n0 = varargin{end};
 else
-  count = nargin;
-  n0 = [];
-end
-
-if count<=1
-  X = varargin{1};
-else
-  X = zeros([size(varargin{1}) count]);
-  for i=1:count
-    X(:,:,i) = varargin{i};
-  end
-end
-if isempty(n0)
+  X=cat(3,varargin{:});
   n0 = floor(size(X,1)/2) + 1;
 end
 if n0 < 2
