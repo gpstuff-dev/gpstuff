@@ -110,9 +110,18 @@ function [w, s] = gpmf_pak(gpmf, w)
 %GPMF_PAK  Combine GP mean function parameters into one vector
 %
 %  Description
+%    W = GPMF_PAK(GPMF) takes a mean function
+%    structure GPMF and combines the mean function
+%    parameters and their hyperparameters into a single row
+%    vector W.
+%
+%       w = [ log(gpmf.b)
+%             (hyperparameters of gpmf.b)
+%             log(gpmf.B)
+%             (hyperparameters of gpmf.B)]'
 %
 %  See also
-
+%    GPMF_UNPAK
   
   w = []; s = {};
   if ~isempty(gpmf.p.b)
@@ -122,7 +131,7 @@ function [w, s] = gpmf_pak(gpmf, w)
     else
       s = [s; 'gpmf_linear.b'];
     end
-    % Hyperparameters of coeffSigma2
+    % Hyperparameters of b
     [wh sh] = gpmf.p.b.fh.pak(gpmf.p.b);
     w = [w wh];
     s = [s; sh];
@@ -135,7 +144,7 @@ function [w, s] = gpmf_pak(gpmf, w)
     else
       s = [s; 'log(gpmf_linear.B)'];
     end
-    % Hyperparameters of coeffSigma2
+    % Hyperparameters of B
     [wh sh] = gpmf.p.B.fh.pak(gpmf.p.B);
     w = [w wh];
     s = [s; sh];
@@ -144,12 +153,24 @@ function [w, s] = gpmf_pak(gpmf, w)
 end
 
 function [gpmf, w] = gpmf_unpak(gpmf, w)
-%GPCF_LINEAR_UNPAK  Sets the mean function parameters 
-%                   into the structure
+%GPMF_UNPAK  Sets the mean function parameters into the structure
 %
 %  Description
+%    [GPMF, W] = GPMF_UNPAK(GPMF, W) takes a covariance
+%    function structure GPMF and a hyper-parameter vector W, and
+%    returns a mean function structure identical to the
+%    input, except that the covariance hyper-parameters have been
+%    set to the values in W. Deletes the values set to GPMF from
+%    W and returns the modified W.
+%
+%    Assignment is inverse of  
+%       w = [ log(gpmf.b)
+%             (hyperparameters of gpmf.b)
+%             log(gpmf.B)
+%             (hyperparameters of gpmf.B)]'
 %
 %  See also
+%   GPMF_PAK
   
   gpp=gpmf.p;
 
@@ -170,7 +191,7 @@ function [gpmf, w] = gpmf_unpak(gpmf, w)
     gpmf.B = exp(w(i1:i2));
     w = w(i2+1:end);
     
-    % Hyperparameters of b
+    % Hyperparameters of B
     [p, w] = gpmf.p.B.fh.unpak(gpmf.p.B, w);
     gpmf.p.B = p;
   end
@@ -178,7 +199,7 @@ function [gpmf, w] = gpmf_unpak(gpmf, w)
 end
 
 function lp = gpmf_lp(gpmf)
-%GPCF_SEXP_LP  Evaluate the log prior of covariance function parameters
+%GPMF_SEXP_LP  Evaluate the log prior of mean function parameters
 %
 %  Description
 %
@@ -205,16 +226,16 @@ function lp = gpmf_lp(gpmf)
 end
 
 function [lpg_b, lpg_B] = gpmf_lpg(gpmf)
-%GPCF_SEXP_LPG  Evaluate gradient of the log prior with respect
+%GPMF_SEXP_LPG  Evaluate gradient of the log prior with respect
 %               to the parameters.
 %
 %  Description
-%    LPG = GPCF_SEXP_LPG(GPCF) takes a covariance function
-%    structure GPCF and returns LPG = d log (p(th))/dth, where th
+%    LPG = GPMF_SEXP_LPG(GPMF) takes a mean function
+%    structure GPMF and returns LPG = d log (p(th))/dth, where th
 %    is the vector of parameters.
 %
 %  See also
-%    GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LP, GP_G
+%    GPMF_SEXP_PAK, GPMF_SEXP_UNPAK, GPMF_SEXP_LP, GP_G
 
   lpg_b=[];, lpg_B=[];
   gpp=gpmf.p;

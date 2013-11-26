@@ -15,7 +15,7 @@ function gpcf = gpcf_cat(varargin)
 %    values X_i and X_j are equal and 0 otherwise.
 %
 %    Parameters for categorical covariance function
-%      selectedVariables - vector defining which inputs are used
+%      selectedVariables - a vector defining which inputs are used
 %
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*, MEAN_*
@@ -360,9 +360,6 @@ function reccf = gpcf_cat_recappend(reccf, ri, gpcf)
   if nargin == 2
     % Initialize the record
     reccf.type = 'gpcf_cat';
-
-    % Initialize parameters
-    reccf.coeffSigma2= [];
 
     % Set the function handles
     reccf.fh.pak = @gpcf_cat_pak;

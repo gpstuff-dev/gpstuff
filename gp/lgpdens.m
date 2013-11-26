@@ -224,7 +224,7 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
         
         if strcmpi(imp_sampling,'on')
           % importance sampling using a normal as a proposal density
-          % TODO: split-normal
+          % TODO: split normal
           % Geweke, J. (1989).  Bayesian inference in econometric models using
           % Monte Carlo integration. Econometrica 57:1317-1339.
           lps=zeros(size(qr,1),nGP);
@@ -1005,7 +1005,7 @@ function gp = gpsmooth(xx,yy,gpcf,latent_method,int_method,display,speedup,gridn
       gp = gp_set(gp, 'jitterSigma2', 1e-2);
     end
     
-    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 510, 'repeat', 1, 'display', displ);
+    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 510, 'repeat', 10, 'display', displ);
     % estimate the effective number of samples
     %neff=510./[geyer_imse(log(rgp.cf{1}.magnSigma2)) geyer_imse(log(rgp.cf{1}.lengthScale))];
     % Remove burn-in
