@@ -7,7 +7,7 @@
  *         between inputs i and j in TX.
  *
  *
- * Last modified: 2013-12-09 23:11:32 EET
+ * Last modified: 2013-12-10 15:26:31 EET
  *
  */
 
@@ -729,21 +729,27 @@ void mexFunction(const int nlhs, mxArray *plhs[],
           for (k=0;k<j;k++) {
             if(cc!=NULL) {
 	      ci=(mwIndex)cc[i]-1;
+	      d=sin(PI*(x[j+m*ci]-x[k+m*ci])/pp);
+	      d=2*d*d/rr;
+	      if(decay==1 && max(dims[0], dims[1])>1) {
+		d+=s_sexp2[j]/2*((x[j+m*ci]-x[k+m*ci])*(x[j+m*ci]-x[k+m*ci]));
+	      } else if(decay==1 && max(dims[0], dims[1]) == 1) {
+		d+=s_sexp2[0]*pow((x[j+m*ci]-x[k+m*ci]),2)/2;
+	      }
 	    } else {
-	      ci=(mwIndex)0;
+	      d=sin(PI*(x[j]-x[k])/pp);
+	      d=2*d*d/rr;
+	      if(decay==1 && max(dims[0], dims[1])>1) {
+		d+=s_sexp2[j]/2*((x[j]-x[k])*(x[j]-x[k]));
+	      } else if(decay==1 && max(dims[0], dims[1]) == 1) {
+		d+=s_sexp2[0]*pow((x[j]-x[k]),2)/2;
+	      }
 	    }
-	    d=sin(PI*(x[j+m*ci]-x[k+m*ci])/pp);
-	    d=2*d*d/rr;
-	    if(decay==1 && max(dims[0], dims[1])>1) {
-	      d+=s_sexp2[j]/2*((x[j+m*ci]-x[k+m*ci])*(x[j+m*ci]-x[k+m*ci]));
-	    } else if(decay==1 && max(dims[0], dims[1]) == 1) {
-	      d+=s_sexp2[0]*pow((x[j+m*ci]-x[k+m*ci]),2)/2;
-	    }
-            C[j*m+k]+=d;
-	    if(cc==NULL)
-	      x+=m;
+	    C[j*m+k]+=d;
           }
         } 
+	if(cc==NULL)
+	  x+=m;
       }
       if(decay==1)
         mxFree(s_sexp2);
