@@ -1453,6 +1453,10 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
           end
           
           W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+          if any(isnan(W))
+            [edata,e,eprior,param,ch] = set_output_for_notpositivedefinite();
+            return
+          end
           logZ = 0.5*f'*a - gp.lik.fh.ll(gp.lik, y, f, z);
           
           if W >= 0
