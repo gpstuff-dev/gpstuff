@@ -30,10 +30,12 @@ function lik = lik_weibull(varargin)
 %    vector of censoring indicators with z = 0 for uncensored event
 %    and z = 1 for right censored event.
 %
-%    When using the Weibull likelihood you need to give the vector z
-%    as an extra parameter to each function that requires also y. 
-%    For example, you should call gp_optim as follows:
-%    gp_optim(gp, x, y, 'z', z)
+%    When using the log-Gaussian likelihood you can give the
+%    vector z as an extra parameter to each function that requires
+%    also y. For example, you can call gp_optim as follows:
+%      gp_optim(gp, x, y, 'z', z)
+%    If z is not given or it is empty, then usual likelihood for
+%    uncensored data is used
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
@@ -205,10 +207,8 @@ function ll = lik_weibull_ll(lik, y, f, z)
 %    LIK_WEIBULL_LLG, LIK_WEIBULL_LLG3, LIK_WEIBULL_LLG2, GPLA_E
   
   if isempty(z)
-    error(['lik_weibull -> lik_weibull_ll: missing z!    '... 
-           'Weibull likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_weibull and gpla_e.               ']);
+    % no censoring
+    z=0;
   end
 
   a = lik.shape;
@@ -239,10 +239,8 @@ function llg = lik_weibull_llg(lik, y, f, param, z)
 %    LIK_WEIBULL_LL, LIK_WEIBULL_LLG2, LIK_WEIBULL_LLG3, GPLA_E
 
   if isempty(z)
-    error(['lik_weibull -> lik_weibull_llg: missing z!    '... 
-           'Weibull likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_weibull and gpla_e.               ']);
+    % no censoring
+    z=0;
   end
 
   a = lik.shape;
@@ -288,10 +286,8 @@ function llg2 = lik_weibull_llg2(lik, y, f, param, z)
 %    LIK_WEIBULL_LL, LIK_WEIBULL_LLG, LIK_WEIBULL_LLG3, GPLA_E
 
   if isempty(z)
-    error(['lik_weibull -> lik_weibull_llg2: missing z!   '... 
-           'Weibull likelihood needs the censoring   '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_weibull and gpla_e.               ']);
+    % no censoring
+    z=0;
   end
 
   a = lik.shape;
@@ -323,10 +319,8 @@ function llg3 = lik_weibull_llg3(lik, y, f, param, z)
 %    LIK_WEIBULL_LL, LIK_WEIBULL_LLG, LIK_WEIBULL_LLG2, GPLA_E, GPLA_G
 
   if isempty(z)
-    error(['lik_weibull -> lik_weibull_llg3: missing z!   '... 
-           'Weibull likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_weibull and gpla_e.               ']);
+    % no censoring
+    z=0;
   end
 
   a = lik.shape;
@@ -427,10 +421,8 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %    GPEP_G
 
   if isempty(z)
-    error(['lik_weibull -> lik_weibull_siteDeriv: missing z!'... 
-           'Weibull likelihood needs the censoring        '...
-           'indicators as an extra input z. See, for             '...
-           'example, lik_weibull and gpla_e.                   ']);
+    % no censoring
+    z=zeros(size(y));
   end
 
   yy = y(i1);
@@ -482,10 +474,8 @@ function [lpy, Ey, Vary] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
   if isempty(zt)
-    error(['lik_weibull -> lik_weibull_predy: missing zt!'... 
-           'Weibull likelihood needs the censoring    '...
-           'indicators as an extra input zt. See, for         '...
-           'example, lik_weibull and gpla_e.               ']);
+    % no censoring
+    z=zeros(size(yt));
   end
 
   yc = 1-zt;

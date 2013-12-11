@@ -31,10 +31,12 @@ function lik = lik_loggaussian(varargin)
 %    z is a vector of censoring indicators with z = 0 for uncensored event
 %    and z = 1 for right censored event. 
 %
-%    When using the log-Gaussian likelihood you need to give the
+%    When using the log-Gaussian likelihood you can give the
 %    vector z as an extra parameter to each function that requires
-%    also y. For example, you should call gp_optim as follows:
-%    gp_optim(gp, x, y, 'z', z)
+%    also y. For example, you can call gp_optim as follows:
+%      gp_optim(gp, x, y, 'z', z)
+%    If z is not given or it is empty, then usual likelihood for
+%    uncensored data is used
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
@@ -205,10 +207,7 @@ function ll = lik_loggaussian_ll(lik, y, f, z)
 %    LIK_LOGGAUSSIAN_LLG, LIK_LOGGAUSSIAN_LLG3, LIK_LOGGAUSSIAN_LLG2, GPLA_E
   
   if isempty(z)
-    error(['lik_loggaussian -> lik_loggaussian_ll: missing z!    '... 
-           'loggaussian likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loggaussian and gpla_e.               ']);
+    z=0;
   end
 
   s2 = lik.sigma2;
@@ -239,10 +238,7 @@ function llg = lik_loggaussian_llg(lik, y, f, param, z)
 %    LIK_LOGGAUSSIAN_LL, LIK_LOGGAUSSIAN_LLG2, LIK_LOGGAUSSIAN_LLG3, GPLA_E
 
   if isempty(z)
-    error(['lik_loggaussian -> lik_loggaussian_llg: missing z!    '... 
-           'loggaussian likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loggaussian and gpla_e.               ']);
+    z=0;
   end
 
   s2 = lik.sigma2;
@@ -294,10 +290,7 @@ function llg2 = lik_loggaussian_llg2(lik, y, f, param, z)
 %    LIK_LOGGAUSSIAN_LL, LIK_LOGGAUSSIAN_LLG, LIK_LOGGAUSSIAN_LLG3, GPLA_E
 
   if isempty(z)
-    error(['lik_loggaussian -> lik_loggaussian_llg2: missing z!   '... 
-           'loggaussian likelihood needs the censoring   '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loggaussian and gpla_e.               ']);
+    z=0;
   end
 
   s2 = lik.sigma2;
@@ -310,8 +303,9 @@ function llg2 = lik_loggaussian_llg2(lik, y, f, param, z)
         llg2=zeros(size(f));
         llg2(~z) = -1./s2;
         r = log(y(z))-f(z);
-        llg2(z) = (-exp(-r.^2/s2)./(2*pi*s2.*(1-norm_cdf(r/sqrt(s2))).^2) ...
-                + r./(sqrt(2*pi).*s2^(3/2).*(1-norm_cdf(r/sqrt(s2)))).*exp(-r.^2./(2*s2)));
+        a=(1-norm_cdf(r/sqrt(s2)));
+        llg2(z) = (-exp(-r.^2/s2)./(2*pi*s2.*a.^2) ...
+                + r./(sqrt(2*pi).*s2^(3/2).*a).*exp(-r.^2./(2*s2)));
       else
         llg2 = repmat(-1./s2,size(f));
       end
@@ -322,8 +316,9 @@ function llg2 = lik_loggaussian_llg2(lik, y, f, param, z)
         r = log(y(~z))-f(~z);
         llg2(~z) = -1./s2^2.*r;
         r = log(y(z))-f(z);
-        llg2(z) = (-r./(4*pi*s2^2.*(1-norm_cdf(r/sqrt(s2))).^2) ...
-                .* exp(-r.^2./s2) + (-1 + r.^2/s2)./(1-norm_cdf(r/sqrt(s2))).*1./(sqrt(2*pi)*2*s2^(3/2)).*exp(-r.^2./(2*s2)));
+        a=(1-norm_cdf(r/sqrt(s2)));
+        llg2(z) = (-r./(4*pi*s2^2.*a.^2) ...
+                .* exp(-r.^2./s2) + (-1 + r.^2/s2)./a.*1./(sqrt(2*pi)*2*s2^(3/2)).*exp(-r.^2./(2*s2)));
       else
         r = log(y)-f;
         llg2 = -1./s2^2.*r;
@@ -349,10 +344,7 @@ function llg3 = lik_loggaussian_llg3(lik, y, f, param, z)
 %    LIK_LOGGAUSSIAN_LL, LIK_LOGGAUSSIAN_LLG, LIK_LOGGAUSSIAN_LLG2, GPLA_E, GPLA_G
 
   if isempty(z)
-    error(['lik_loggaussian -> lik_loggaussian_llg3: missing z!   '... 
-           'loggaussian likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loggaussian and gpla_e.               ']);
+    z=0;
   end
 
   s2 = lik.sigma2;
@@ -364,11 +356,12 @@ function llg3 = lik_loggaussian_llg3(lik, y, f, param, z)
         z=logical(z);
         llg3=zeros(size(f));
         r = log(y(z)) - f(z);
-        llg3(z) = 2./(1-norm_cdf(r/sqrt(s2))).^3.*1./(2*pi*s2)^(3/2).*exp(-3/(2*s2)*r.^2) ...
-               - 1./(1-norm_cdf(r/sqrt(s2))).^2.*r./(pi*s2^2).*exp(-r.^2./s2) ...
-               - 1./(1-norm_cdf(r/sqrt(s2))).^2.*r./(2*pi*s2^2).*exp(-r.^2/s2) ...
-               - 1./(1-norm_cdf(r/sqrt(s2))).^1.*1./(s2^(3/2)*sqrt(2*pi)).*exp(-r.^2/(2*s2)) ...
-               + 1./(1-norm_cdf(r/sqrt(s2))).^1.*r.^2./(sqrt(2*pi*s2)*s2^2).*exp(-r.^2/(2*s2));
+        a=(1-norm_cdf(r/sqrt(s2)));
+        llg3(z) = 2./a.^3.*1./(2*pi*s2)^(3/2).*exp(-3/(2*s2)*r.^2) ...
+               - 1./a.^2.*r./(pi*s2^2).*exp(-r.^2./s2) ...
+               - 1./a.^2.*r./(2*pi*s2^2).*exp(-r.^2/s2) ...
+               - 1./a.^1.*1./(s2^(3/2)*sqrt(2*pi)).*exp(-r.^2/(2*s2)) ...
+               + 1./a.^1.*r.^2./(sqrt(2*pi*s2)*s2^2).*exp(-r.^2/(2*s2));
       else
         llg3=zeros(size(f));
       end
@@ -378,14 +371,15 @@ function llg3 = lik_loggaussian_llg3(lik, y, f, param, z)
         llg3=zeros(size(f));
         llg3(~z)=1./s2^2;
         r = log(y(z)) - f(z);
-        llg3(z) = (1./(1-norm_cdf(r/sqrt(s2))).^3.*r./(sqrt(8*pi^3).*s2.^(5/2)).*exp(-3/(2.*s2).*r.^2) ...
-                   + 1./(1-norm_cdf(r./sqrt(s2))).^2.*1./(4.*pi.*s2^2).*exp(-r.^2./s2) ...
-                   - 1./(1-norm_cdf(r./sqrt(s2))).^2.*r.^2./(2*pi*s2^3).*exp(-r.^2./s2) ...
-                   + 1./(1-norm_cdf(r./sqrt(s2))).^2.*1./(4*pi*s2^2).*exp(-r.^2/s2) ...
-                   - 1./(1-norm_cdf(r./sqrt(s2))).^1.*r./(sqrt(2*pi)*2*s2^(5/2)).*exp(-r.^2/(2*s2)) ...
-                   - 1./(1-norm_cdf(r./sqrt(s2))).^2.*r.^2./(4*pi*s2^3).*exp(-r.^2/s2) ...
-                   - 1./(1-norm_cdf(r./sqrt(s2))).^1.*r./(sqrt(2*pi)*s2^(5/2)).*exp(-r.^2/(2*s2)) ...
-                   + 1./(1-norm_cdf(r./sqrt(s2))).^1.*r.^3./(sqrt(2*pi)*2*s2^(7/2)).*exp(-r.^2/(2*s2)));
+        a=(1-norm_cdf(r./sqrt(s2)));
+        llg3(z) = (1./a.^3.*r./(sqrt(8*pi^3).*s2.^(5/2)).*exp(-3/(2.*s2).*r.^2) ...
+                   + 1./a.^2.*1./(4.*pi.*s2^2).*exp(-r.^2./s2) ...
+                   - 1./a.^2.*r.^2./(2*pi*s2^3).*exp(-r.^2./s2) ...
+                   + 1./a.^2.*1./(4*pi*s2^2).*exp(-r.^2/s2) ...
+                   - 1./a.^1.*r./(sqrt(2*pi)*2*s2^(5/2)).*exp(-r.^2/(2*s2)) ...
+                   - 1./a.^2.*r.^2./(4*pi*s2^3).*exp(-r.^2/s2) ...
+                   - 1./a.^1.*r./(sqrt(2*pi)*s2^(5/2)).*exp(-r.^2/(2*s2)) ...
+                   + 1./a.^1.*r.^3./(sqrt(2*pi)*2*s2^(7/2)).*exp(-r.^2/(2*s2)));
       else
         llg3 = repmat(1./s2^2,size(f));
       end
@@ -411,10 +405,7 @@ function [logM_0, m_1, sigm2hati1] = lik_loggaussian_tiltedMoments(lik, y, i1, s
 %    GPEP_E
   
  if isempty(z)
-   error(['lik_loggaussian -> lik_loggaussian_tiltedMoments: missing z!'... 
-          'loggaussian likelihood needs the censoring            '...
-          'indicators as an extra input z. See, for                 '...
-          'example, lik_loggaussian and gpep_e.                       ']);
+   z=zeros(size(y));
  end
   
   yy = y(i1);
@@ -479,10 +470,7 @@ function [g_i] = lik_loggaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %    GPEP_G
 
   if isempty(z)
-    error(['lik_loggaussian -> lik_loggaussian_siteDeriv: missing z!'... 
-           'loggaussian likelihood needs the censoring        '...
-           'indicators as an extra input z. See, for             '...
-           'example, lik_loggaussian and gpla_e.                   ']);
+    z=zeros(size(y));
   end
 
   yy = y(i1);
@@ -537,10 +525,7 @@ function [lpy, Ey, Vary] = lik_loggaussian_predy(lik, Ef, Varf, yt, zt)
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
   if isempty(zt)
-    error(['lik_loggaussian -> lik_loggaussian_predy: missing zt!'... 
-           'loggaussian likelihood needs the censoring    '...
-           'indicators as an extra input zt. See, for         '...
-           'example, lik_loggaussian and gpla_e.               ']);
+    zt=zeros(size(yt));
   end
 
   yc = 1-zt;

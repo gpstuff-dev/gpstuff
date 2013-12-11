@@ -31,10 +31,12 @@ function lik = lik_loglogistic(varargin)
 %    z is a vector of censoring indicators with z = 0 for uncensored event
 %    and z = 1 for right censored event. 
 %
-%    When using the log-logistic likelihood you need to give the
+%    When using the log-Gaussian likelihood you can give the
 %    vector z as an extra parameter to each function that requires
-%    also y.  For example, you should call gp_optim as follows:
-%    gp_optim(gp, x, y, 'z', z)
+%    also y. For example, you can call gp_optim as follows:
+%      gp_optim(gp, x, y, 'z', z)
+%    If z is not given or it is empty, then usual likelihood for
+%    uncensored data is used
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
@@ -205,10 +207,8 @@ function ll = lik_loglogistic_ll(lik, y, f, z)
 %    LIK_LOGLOGISTIC_LLG, LIK_LOGLOGISTIC_LLG3, LIK_LOGLOGISTIC_LLG2, GPLA_E
   
   if isempty(z)
-    error(['lik_loglogistic -> lik_loglogistic_ll: missing z!    '... 
-           'loglogistic likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loglogistic and gpla_e.               ']);
+    % no censoring
+    z=0;
   end
 
   r = lik.shape;
@@ -239,10 +239,8 @@ function llg = lik_loglogistic_llg(lik, y, f, param, z)
 %    LIK_LOGLOGISTIC_LL, LIK_LOGLOGISTIC_LLG2, LIK_LOGLOGISTIC_LLG3, GPLA_E
 
   if isempty(z)
-    error(['lik_loglogistic -> lik_loglogistic_llg: missing z!    '... 
-           'loglogistic likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loglogistic and gpla_e.               ']);
+    % no censoring
+    z=0;
   end
 
   r = lik.shape;
@@ -294,10 +292,8 @@ function llg2 = lik_loglogistic_llg2(lik, y, f, param, z)
 %    LIK_LOGLOGISTIC_LL, LIK_LOGLOGISTIC_LLG, LIK_LOGLOGISTIC_LLG3, GPLA_E
 
   if isempty(z)
-    error(['lik_loglogistic -> lik_loglogistic_llg2: missing z!   '... 
-           'loglogistic likelihood needs the censoring   '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loglogistic and gpla_e.               ']);
+    % no censoring
+    z=0;
   end
 
   r = lik.shape;
@@ -351,10 +347,8 @@ function llg3 = lik_loglogistic_llg3(lik, y, f, param, z)
 %    LIK_LOGLOGISTIC_LL, LIK_LOGLOGISTIC_LLG, LIK_LOGLOGISTIC_LLG2, GPLA_E, GPLA_G
 
   if isempty(z)
-    error(['lik_loglogistic -> lik_loglogistic_llg3: missing z!   '... 
-           'loglogistic likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loglogistic and gpla_e.               ']);
+    % no censoring
+    z=0;
   end
 
   r = lik.shape;
@@ -407,10 +401,8 @@ function [logM_0, m_1, sigm2hati1] = lik_loglogistic_tiltedMoments(lik, y, i1, s
 %    GPEP_E
   
  if isempty(z)
-   error(['lik_loglogistic -> lik_loglogistic_tiltedMoments: missing z!'... 
-          'loglogistic likelihood needs the censoring            '...
-          'indicators as an extra input z. See, for                 '...
-          'example, lik_loglogistic and gpep_e.                       ']);
+   % no censoring
+   z=zeros(size(y));
  end
   
   yy = y(i1);
@@ -474,10 +466,8 @@ function [g_i] = lik_loglogistic_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %    GPEP_G
 
   if isempty(z)
-    error(['lik_loglogistic -> lik_loglogistic_siteDeriv: missing z!'... 
-           'loglogistic likelihood needs the censoring        '...
-           'indicators as an extra input z. See, for             '...
-           'example, lik_loglogistic and gpla_e.                   ']);
+    % no censoring
+    z=zeros(size(y));
   end
 
   yy = y(i1);
@@ -530,10 +520,8 @@ function [lpy, Ey, Vary] = lik_loglogistic_predy(lik, Ef, Varf, yt, zt)
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
   if isempty(zt)
-    error(['lik_loglogistic -> lik_loglogistic_predy: missing zt!'... 
-           'loglogistic likelihood needs the censoring    '...
-           'indicators as an extra input zt. See, for         '...
-           'example, lik_loglogistic and gpla_e.               ']);
+    % no censoring
+    zt=zeros(size(yt));
   end
 
   yc = 1-zt;
