@@ -13,7 +13,7 @@ function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt,ind,varargin)
 %               used for prediction. Default is all (1:gpcfn). 
 %               See additional information below.
 %      method - which value to fix the not used covariates, 'mean'
-%               (default) or 'median'
+%               (default), 'median' or 'mode'
 %      var    - vector specifying optional values for not used covariates,
 %               elements corresponding to mean/median values should 
 %               be set to NaN. 
@@ -42,7 +42,7 @@ ip.addParamValue('predcf', [], @(x) isempty(x) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)&x>0))
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-ip.addParamValue('method', 'mean', @(x)  ismember(x, {'median', 'mean'}))
+ip.addParamValue('method', 'mean', @(x)  ismember(x, {'median', 'mean' 'mode'}))
 ip.addParamValue('plot', 'off', @(x)  ismember(x, {'on', 'off'}))
 ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('target', 'f', @(x) ismember(x,{'f','mu','cdf'}))
@@ -97,12 +97,7 @@ if length(ind)==1
   if ~isempty(yt)
     options.yt = options.yt(iu);
   end
-  meanxt=mean(xt);
-  if isequal(method, 'mean')
-    xt = repmat(meanxt, size(xtnn,1), 1);
-  else
-    xt = repmat(median(xt), size(xtnn,1), 1);
-  end
+  xt = repmat(feval(method,xt), size(xtnn,1), 1);
   if ~isempty(vars)
     xt(:,~isnan(vars)) = repmat(vars(~isnan(vars)), length(xtnn), 1);
   end
@@ -137,13 +132,29 @@ if length(ind)==1
   end
   if isequal(plot_results, 'on')
     if ind>0
-      switch target
-        case 'f'
-          plot(xtnn, Ef, 'ob', xtnn, Ef, '-k', xtnn, Ef-1.64*sqrt(Varf), '--b', xtnn, Ef+1.64*sqrt(Varf), '--b')
-        case 'mu'
-          plot(xtnn, prctmu(:,2), 'ob', xtnn, prctmu(:,2), '-k', xtnn, prctmu(:,1), '--b', xtnn, prctmu(:,3), '--b')
-        case 'cdf'
-          plot(xtnn, Ef, 'o-b')
+      deltadist=gp_finddeltadist(gp);
+      if ~ismember(ind,deltadist)
+        switch target
+          case 'f'
+            plot(xtnn, Ef, 'ob', xtnn, Ef, '-k', xtnn, Ef-1.64*sqrt(Varf), '--b', xtnn, Ef+1.64*sqrt(Varf), '--b')
+          case 'mu'
+            plot(xtnn, prctmu(:,2), 'ob', xtnn, prctmu(:,2), '-k', xtnn, prctmu(:,1), '--b', xtnn, prctmu(:,3), '--b')
+          case 'cdf'
+            plot(xtnn, Ef, 'o-b')
+        end
+      else
+        switch target
+          case 'f'
+            plot(xtnn, Ef, 'ob', [xtnn xtnn]',[Ef-1.64*sqrt(Varf) Ef+1.64*sqrt(Varf)]', '-b')
+            xlim([1.5*xtnn(1)-0.5*xtnn(2) 1.5*xtnn(end)-.5*xtnn(end-1)])
+            set(gca,'xtick',xtnn)
+          case 'mu'
+            plot(xtnn, prctmu(:,2), 'ob', [xtnn xtnn]',[prctmu(:,1) prctmu(:,3)]', '-b')
+            xlim([1.5*xtnn(1)-0.5*xtnn(2) 1.5*xtnn(end)-.5*xtnn(end-1)])
+            set(gca,'xtick',xtnn)
+          case 'cdf'
+            plot(xtnn, Ef, 'ob')
+        end
       end
     else
       % use stairs for piecewise constant baseline hazard
@@ -182,13 +193,8 @@ elseif length(ind)==2
       options2.zt = options.zt(iu2);
     end
 
-    if isequal(method, 'mean')
-      xt1 = repmat(mean(xt1), length(xtnn1), 1);
-      xt2 = repmat(mean(xt2), length(xtnn2), 1);
-    else
-      xt1 = repmat(median(xt1), length(xtnn1), 1);
-      xt2 = repmat(median(xt2), length(xtnn2), 1);
-    end
+    xt1 = repmat(feval(method,xt1), length(xtnn1), 1);
+    xt2 = repmat(feval(method,xt2), length(xtnn2), 1);
     if ~isempty(vars)
       xt1(:,~isnan(vars)) = repmat(vars(~isnan(vars)), length(xtnn1), 1);
       xt2(:,~isnan(vars)) = repmat(vars(~isnan(vars)), length(xtnn2), 1);
@@ -220,13 +226,28 @@ elseif length(ind)==2
         lstyle10='ob';lstyle11='-b';lstyle12='--b';
         lstyle20='or';lstyle21='-r';lstyle22='--r';
       end
-      switch target
-        case 'f'
-          plot(xtnn1, Ef1, lstyle10, xtnn1, Ef1, lstyle11, xtnn1, Ef1-1.64*sqrt(Varf1), lstyle12, xtnn1, Ef1+1.64*sqrt(Varf1), lstyle12); hold on;
-          plot(xtnn2, Ef2, lstyle20, xtnn2, Ef2, lstyle21, xtnn2, Ef2-1.64*sqrt(Varf2), lstyle22, xtnn2, Ef2+1.64*sqrt(Varf2), lstyle22);
-        case 'mu'
-          plot(xtnn1, prctmu1(:,2), lstyle20, xtnn1, prctmu1(:,2), lstyle11, xtnn1, prctmu1(:,1), lstyle12, xtnn1, prctmu1(:,3), lstyle12); hold on;
-          plot(xtnn2, prctmu2(:,2), lstyle20, xtnn2, prctmu2(:,2), lstyle21, xtnn2, prctmu2(:,1), lstyle22, xtnn2, prctmu2(:,3), lstyle22);
+      deltadist=gp_finddeltadist(gp);
+      if ~ismember(ind(2),deltadist)
+        switch target
+          case 'f'
+            plot(xtnn1, Ef1, lstyle10, xtnn1, Ef1, lstyle11, xtnn1, Ef1-1.64*sqrt(Varf1), lstyle12, xtnn1, Ef1+1.64*sqrt(Varf1), lstyle12); hold on;
+            plot(xtnn2, Ef2, lstyle20, xtnn2, Ef2, lstyle21, xtnn2, Ef2-1.64*sqrt(Varf2), lstyle22, xtnn2, Ef2+1.64*sqrt(Varf2), lstyle22);
+          case 'mu'
+            plot(xtnn1, prctmu1(:,2), lstyle10, xtnn1, prctmu1(:,2), lstyle11, xtnn1, prctmu1(:,1), lstyle12, xtnn1, prctmu1(:,3), lstyle12); hold on;
+            plot(xtnn2, prctmu2(:,2), lstyle20, xtnn2, prctmu2(:,2), lstyle21, xtnn2, prctmu2(:,1), lstyle22, xtnn2, prctmu2(:,3), lstyle22);
+        end
+      else
+        delta=(diff(xtnn1(1:2))/10);
+        switch target
+          case 'f'
+            plot(xtnn1-delta, Ef1, lstyle10, [xtnn1 xtnn1]'-delta, [Ef1-1.64*sqrt(Varf1) Ef1+1.64*sqrt(Varf1)]', lstyle11); hold on;
+            plot(xtnn2+delta, Ef2, lstyle20, [xtnn2 xtnn2]'+delta, [Ef2-1.64*sqrt(Varf2) Ef2+1.64*sqrt(Varf2)]', lstyle21); hold off;
+            xlim([1.5*xtnn1(1)-0.5*xtnn1(2) 1.5*xtnn1(end)-.5*xtnn1(end-1)])
+          case 'mu'
+            plot(xtnn1-delta, prctmu1(:,2), lstyle10, [xtnn1 xtnn1]'-delta, [prctmu1(:,1) prctmu1(:,3)]', lstyle11); hold on;
+            plot(xtnn2+delta, prctmu2(:,2), lstyle20, [xtnn2 xtnn2]'+delta, [prctmu2(:,1) prctmu2(:,3)]', lstyle21); hold off;
+            xlim([1.5*xtnn1(1)-0.5*xtnn1(2) 1.5*xtnn1(end)-.5*xtnn1(end-1)])
+        end
       end
     end
     switch target
@@ -237,24 +258,38 @@ elseif length(ind)==2
     end
     
   else
-    % first or second covariate is not binary
-    xtnn1 = linspace(min(xt(:,ind(1))), max(xt(:,ind(1))), 20);
-    xtnn2 = linspace(min(xt(:,ind(2))), max(xt(:,ind(2))), 20);
+    % both the first and the second covariate are non-binary
+    deltadist=gp_finddeltadist(gp);
+    if ~ismember(ind(1),deltadist)
+      xtnn1 = linspace(min(xt(:,ind(1))), max(xt(:,ind(1))), 20);
+    else
+      xtnn1 = unique(xt(:,ind(1)));
+    end
+    if ~ismember(ind(1),deltadist)
+      xtnn2 = linspace(min(xt(:,ind(2))), max(xt(:,ind(2))), 20);
+    else
+      xtnn2 = unique(xt(:,ind(2)));
+    end
     [XT1, XT2] = meshgrid(xtnn1, xtnn2); XT1=XT1(:); XT2=XT2(:);
     if ~isempty(z)
-      options.zt = repmat(options.zt(1), 400, 1 );
+      options.zt = repmat(options.zt(1), size(XT1));
     end
-    if isequal(method, 'mean')
-      xt = repmat(mean(xt), length(XT1), 1);
-    else
-      xt = repmat(median(xt), length(XT1), 1);
-    end
+    xt = repmat(feval(method,xt), length(XT1), 1);
     if ~isempty(vars)
       xt(:,~isnan(vars)) = repmat(vars(~isnan(vars)), length(XT1), 1);
     end
     xt(:,ind) = [XT1 XT2];
     if ~strcmp(liktype, 'Coxph')
-      [Ef, Varf] = gp_pred(gp, x, y, xt, options);
+      switch target
+        case 'f'
+          [Ef, Varf] = gp_pred(gp, x, y, xt, options);
+        case 'mu'
+          prctmu = gp_predprctmu(gp, x, y, xt, options, 'prct', 50);
+          Ef = prctmu; Varf = [];
+        case 'cdf'
+          cdf = gp_predcdf(gp, x, y, xt, options);
+          Ef = cdf; Varf = [];
+      end
     else
       [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt, options);
       Ef = Ef2; Varf = diag(Covf(size(Ef1,1)+1:end,size(Ef1,1)+1:end));
@@ -263,7 +298,7 @@ elseif length(ind)==2
     indd = zeros(size(Ef));
     
     for i2=1:n
-      for i3=1:400
+      for i3=1:numel(XT1)
         if sqrt(sum((xto(i2,ind)-xt(i3,ind)).^2)) < tr
           indd(i3) = 1;
         end
@@ -273,7 +308,7 @@ elseif length(ind)==2
     XT1(indd==0) = NaN; XT2(indd==0) = NaN; Ef(indd==0) = NaN; Varf(indd==0) = NaN;
     
     if isequal(plot_results, 'on')
-      pcolor(reshape(XT1,20,20), reshape(XT2,20,20), reshape(Ef,20,20))
+      pcolor(reshape(XT1,numel(xtnn2),numel(xtnn1)), reshape(XT2,numel(xtnn2),numel(xtnn1)), reshape(Ef,numel(xtnn2),numel(xtnn1)))
       shading flat
       colormap(mapcolor(Ef,repmat(nanmedian(Ef(:)),[1 2])))
       colorbar
