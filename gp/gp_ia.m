@@ -879,7 +879,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         ri=ri+1;
         
         % Display some statistics  THIS COULD BE DONE IN NICER WAY ALSO (V.P.)
-        if ismember(display,{'on','iter'})
+        if ismember(opt.display,{'on','iter'})
           fprintf(' %4d  %.3f  ',ri, etr);
           fprintf(' %.1e  ',hmcrej);
           fprintf('\n');
