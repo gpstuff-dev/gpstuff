@@ -717,7 +717,7 @@ function mu = lik_negbin_invlink(lik, f, z)
 %     See also
 %     LIK_NEGBIN_LL, LIK_NEGBIN_PREDY
   
-  mu = z.*exp(f);
+  mu = bsxfun(@times,z,exp(f));
 end
 
 function reclik = lik_negbin_recappend(reclik, ri, lik)

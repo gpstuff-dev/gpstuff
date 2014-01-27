@@ -526,7 +526,7 @@ function mu = lik_poisson_invlink(lik, f, z)
 %     See also
 %     LIK_POISSON_LL, LIK_POISSON_PREDY
   
-  mu = z.*exp(f);
+  mu = bsxfun(@times,z,exp(f));
 end
 
 function reclik = lik_poisson_recappend(reclik, ri, lik)
