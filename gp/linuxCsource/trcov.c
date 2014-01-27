@@ -7,7 +7,7 @@
  *         between inputs i and j in TX.
  *
  *
- * Last modified: 2013-12-10 15:26:31 EET
+ * Last modified: 2014-01-17 13:22:43 EET
  *
  */
 
@@ -78,7 +78,7 @@ void mexFunction(const int nlhs, mxArray *plhs[],
       mexErrMsgTxt( "gpcf.lengthScale must be a scalar or a vector." );
     lr=max(dims[0], dims[1]);
     if (lr!=1 && lr!=n            )
-      mexErrMsgTxt( "gpcf.lengthScale must be a scalar or its lenght must be the same as the number of columns in X." );
+      mexErrMsgTxt( "gpcf.lengthScale must be a scalar or its length must be the same as the number of columns in X." );
     l = mxGetPr(field);
     
     if((field=mxGetField(*prhs, 0, "type"))==NULL)
