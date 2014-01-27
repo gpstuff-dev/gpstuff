@@ -108,7 +108,7 @@ end
       datahash=hash_sha512([x y z]);
     end
     
-    if isfield(gp.lik,'nondiagW')
+    if isfield(gp.lik,'nondiagW') % non-diagonal W
       
       if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
         % The covariance function parameters or data haven't changed
@@ -441,6 +441,8 @@ end
               disp(['Number of EP iterations: ' num2str(iter-1) ', Maximum of EP iterations:' num2str(maxiter)])
             end
             edata = logZep;
+
+            % *** Sparse methods not implemented for non-diagonal W ***
             
             % ============================================================
             % FIC
@@ -511,7 +513,7 @@ end
         ch.datahash=datahash;
       end
       
-    else
+    else % diagonal W
       
       if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
         % The covariance function parameters or data haven't changed
@@ -1878,7 +1880,7 @@ end
                 K = gp_trcov(gp, x);
                 
               case 'FIC'
-                % Sparse
+                % Sparse (only FIC implemented)
                 u = gp.X_u;
                 m = size(u,1);
                 K_uu = gp_trcov(gp,u);
