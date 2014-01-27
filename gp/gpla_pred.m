@@ -591,6 +591,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 
       %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
       [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      if isnan(e)
+        Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+        return
+      end
       [f, La2] = deal(p.f, p.La2);
 
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
