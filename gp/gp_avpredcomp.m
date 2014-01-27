@@ -73,7 +73,7 @@ function [apcs,apcss]=gp_avpredcomp(gp, x, y, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_AVPREDCOMP';
-ip.addRequired('gp',@isstruct);
+ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
@@ -94,6 +94,23 @@ if ~isempty(z)
 end
 nsamp=ip.Results.nsamp;
 deltadist = logical(ip.Results.deltadist);
+if iscell(gp)
+  gptype=gp{1}.type;
+  if isfield(gp{1}.lik.fh, 'invlink')
+    gpinvlink=gp{1}.lik.fh.invlink;
+    gplik=gp{1}.lik;
+  else
+    gpinvlink=[];
+  end
+else
+  gptype=gp.type;
+  if isfield(gp.lik.fh, 'invlink')
+    gpinvlink=gp.lik.fh.invlink;
+    gplik=gp.lik;
+  else
+    gpinvlink=[];
+  end
+end
 
 [n, nin]=size(x);
 if isempty(deltadist)
@@ -180,7 +197,7 @@ for k1=1:nin
     setrandstream(seed);
     fr = gp_rnd(gp, x, y, xrep, 'nsamp', nsamp, options);
     
-    if isequal(gp.lik.type, 'Cox-ph')
+    if isequal(gptype, 'Coxph')
       fr=fr(length(gp.lik.stime):end,:);
     end
     
@@ -209,8 +226,8 @@ for k1=1:nin
     end
     
     % compute latent values through the inverse link function
-    if isfield(gp.lik.fh, 'invlink')
-      ilfr = gp.lik.fh.invlink(gp.lik, fr, repmat(z,1,nsamp));
+    if ~isempty(gpinvlink)
+      ilfr = gpinvlink(gplik, fr, repmat(z,1,nsamp));
       % average change in outcome
       b=bsxfun(@minus,ilfr,ilfr(i1,:));
       numyi=sum(bsxfun(@times,W(:,i1).*Usign,b));
@@ -234,7 +251,7 @@ for k1=1:nin
   fsa(:,k1)=numfa./dena;
   fsrms(:,k1)=sqrt(numfrms./dena);
   
-  if isfield(gp.lik.fh, 'invlink')
+  if ~isempty(gpinvlink)
     % outcome is computed through the inverse link function
     ys(:,k1)=numy./den;
     ysa(:,k1)=numya./dena;
@@ -254,7 +271,7 @@ apcs.ps=ps;
 apcs.fs=fs;
 apcs.fsa=fsa;
 apcs.fsrms=fsrms;
-if isfield(gp.lik.fh, 'invlink')
+if ~isempty(gpinvlink)
   apcs.ys=ys;
   apcs.ysa=ysa;
   apcs.ysrms=ysrms;
@@ -267,7 +284,7 @@ if nargout>1
   apcss.dens=dens;
   apcss.densa=densa;
   apcss.densrms=densrms;
-  if isfield(gp.lik.fh, 'invlink')
+  if ~isempty(gpinvlink)
     apcss.numys=numys;
     apcss.numysa=numysa;
     apcss.numysrms=numysrms;
