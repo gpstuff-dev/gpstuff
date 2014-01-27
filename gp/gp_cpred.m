@@ -6,7 +6,7 @@ function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt,ind,varargin)
 %    covariates specified in vector IND. Other covariates are fixed to
 %    either mean, median or values chosen by user. Returns predictions for
 %    latent values, variance and corresponding inputs. If IND=0, only time
-%    is used as a covariate for coxph model.
+%    is used as a covariate for Cox-PH model.
 %
 %   OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
