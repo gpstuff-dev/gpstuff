@@ -115,11 +115,13 @@ ip.addParamValue('predcf', [], @(x) isempty(x) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)&x>0))
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}))
 ip.parse(gp, x, y, varargin{:});
 xt=ip.Results.xt;
 yt=ip.Results.yt;
 predcf=ip.Results.predcf;
 tstind=ip.Results.tstind;
+fcorr=ip.Results.fcorr;
 if isempty(xt)
   xt=x;
   if isempty(tstind)
@@ -146,6 +148,10 @@ if isempty(xt)
   end
 end
 
+if ~isequal(fcorr, 'off')
+  warning('Marginal corrections not available for joint predictions');
+  fcorr='off';
+end
 tn = size(x,1);
 if isfield(gp.lik, 'nondiagW') && ~ismember(gp.lik.type, {'LGP' 'LGPC'})
   switch gp.lik.type
