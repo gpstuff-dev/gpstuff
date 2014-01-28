@@ -479,6 +479,29 @@ switch gp.type
     %0.5*trace(K_ff-K_fu*inv(K_uu)*K_fu')
     %0.5*trace(K_ff-B'*B)
     
+  case {'KALMAN'}  
+    % ============================================================
+    % Kalman filtering and smoothing
+    % ============================================================
+    
+    error('Likelihood evaluation not implemented for KALMAN.')
+        
+    % Extract parameters from gp model
+    % TODO
+    
+    
+    % Make model from the gp.gpcf{j}
+    % TODO
+    
+    
+    % Run filter for evaluating the marginal likelihood
+    % TODO
+    
+    
+    % Return likelihood
+    edata = nan;
+    
+    
   otherwise
     error('Unknown type of Gaussian process!')
 end

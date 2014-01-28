@@ -1303,5 +1303,33 @@ switch gp.type
     end
     
     g = gdata + gprior;
+    
+  case {'KALMAN'}  
+    % ============================================================
+    % Kalman filtering and smoothing
+    % ============================================================
+    
+    error('Likelihood evaluation not implemented for KALMAN.')
 
+    
+    % Extract parameters from gp model
+    % TODO
+    
+    
+    % Make model from the gp.gpcf{j}
+    % TODO
+    
+    
+    % Run filter for evaluating the marginal likelihood
+    % TODO
+    
+    
+    % Return likelihood gradients
+    gdata = nan;
+    gprior = nan;
+    g = gdata + gprior;
+    
+  otherwise
+    error('Unknown type of Gaussian process!')
+    
 end
