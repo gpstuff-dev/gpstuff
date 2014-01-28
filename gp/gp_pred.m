@@ -847,5 +847,27 @@ switch gp.type
         lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
       end
     end  
+
+  case {'KALMAN'}
+      
+    % Check inputs
+    if (size(x,2)>1) || (size(xt,2)>1),
+      error('The ''KALMAN'' option only supports scalar inputs.')  
+    end
+            
+    % Make model  
+    
+      
+    % Run the Kalman filter and RTS smoother
+    
+    
+    % Return mean
+    Eft = nan;
+      
+    % Return variances
+    if nargout > 1
+      Varft = nan;
+    end
+      
     
 end
