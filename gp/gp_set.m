@@ -193,7 +193,7 @@ function gp = gp_set(varargin)
   ip.addParamValue('meanf',[], @(x) isempty(x) || isstruct(x) || iscell(x));
   ip.addParamValue('type','FULL', ...
                    @(x) ismember(x,{'FULL' 'FIC' 'PIC' 'PIC_BLOCK' 'VAR' ...
-                      'DTC' 'SOR' 'CS+FIC'}));
+                      'DTC' 'SOR' 'CS+FIC','KALMAN'}));
   ip.addParamValue('lik',lik_gaussian(), @(x) isstruct(x));
   ip.addParamValue('jitterSigma2',0, @(x) isscalar(x) && x>=0);
   ip.addParamValue('infer_params','covariance+likelihood', @(x) ischar(x));
@@ -341,6 +341,22 @@ function gp = gp_set(varargin)
     if ~(iscs && isnoncs)
       error('With CS+FIC need to define at least one cs and one non-cs covariance function')
     end
+  end
+  if ismember(gp.type,{'KALMAN'})
+      
+    % Check likelihood function
+    if ~strcmpi(gp.lik.type,'Gaussian')
+      error('The ''KALMAN'' option only supports Gaussian likelihoods.')
+    end
+    
+    % Check covariance functions
+    for j=1:length(gp.cf)
+      if ~isfield(gp.cf{j}.fh,'cf2ss'),
+         error('State space conversion not implemented for ''%s''.', ...
+             gp.cf{j}.type) 
+      end
+    end
+    
   end
   % Latent method
   if isfield(gp.lik.fh,'trcov')
