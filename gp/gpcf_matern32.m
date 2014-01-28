@@ -77,9 +77,10 @@ function gpcf = gpcf_matern32(varargin)
     gpcf.fh.cfg = @gpcf_matern32_cfg;
     gpcf.fh.ginput = @gpcf_matern32_ginput;
     gpcf.fh.cov = @gpcf_matern32_cov;
-    gpcf.fh.trcov  = @gpcf_matern32_trcov;
-    gpcf.fh.trvar  = @gpcf_matern32_trvar;
+    gpcf.fh.trcov = @gpcf_matern32_trcov;
+    gpcf.fh.trvar = @gpcf_matern32_trvar;
     gpcf.fh.recappend = @gpcf_matern32_recappend;
+    gpcf.fh.cf2ss = @gpcf_matern32_cf2ss;
   end
   
   % Initialize parameters
@@ -865,4 +866,17 @@ function reccf = gpcf_matern32_recappend(reccf, ri, gpcf)
   end
 end
 
+function [foo] = gpcf_matern32_cf2ss(foo)
+%GPCF_MATERN_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the covariance function to state space form such that
+%    the process can be described by the stochastic differential equation
+%    of the form: 
+%      df(t)/dt = F f(t) + L w(t),
+%    where w(t) is a white noise process. The observation model now 
+%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
 
+  warning('Not implemented for this covariance function.')
+
+end
