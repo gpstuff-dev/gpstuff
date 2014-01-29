@@ -1309,27 +1309,292 @@ switch gp.type
     % Kalman filtering and smoothing
     % ============================================================
     
-    error('Likelihood evaluation not implemented for KALMAN.')
+%     error('Likelihood evaluation not implemented for KALMAN.')
 
     
     % Extract parameters from gp model
-    % TODO
+    R = gp.lik.sigma2;
     
+    % Initialize model matrices
+    F   = [];
+    L   = [];
+    Qc  = [];
+    H   = [];
+    P0  = [];
+    dF  = [];
+    dQc = [];
+    dPinf = [];
     
-    % Make model from the gp.gpcf{j}
-    % TODO
+    for j=1:length(gp.cf)
+        
+        % Form state-space model from the gp.gpcf{j}
+        [jF,jL,jQc,jH,jP0,jdF,jdQc,jdPinf,params] = gp.cf{j}.fh.cf2ss(gp.cf{j});
+        
+        % Stack model
+        F  = blkdiag(F,jF);
+        L  = blkdiag(L,jL);
+        Qc = blkdiag(Qc,jQc);
+        H  = [H jH];
+        P0 = blkdiag(P0,jP0);
+        
+        % Stack derivative matrices
+        
+        % Id for used derivatives (which parameters are used)
+        %     idd = arrayfun(@(k) any(strcmpi(params.in{k}.name,pnames([pnames{:,1}]==j,2))),1:length(params.in));
+        idd = arrayfun(@(k) isfield(gp.cf{j},params.in{k}.name) && ...
+            ~isempty(gp.cf{j}.(params.in{k}.name)),1:length(params.in));
+        
+        % Add chosen derivatives
+        dF  = mblk(dF,jdF(:,:,idd));
+        dQc = mblk(dQc,jdQc(:,:,idd));
+        dPinf = mblk(dPinf, jdPinf(:,:,idd));
+        
+    end
     
+    % Add derivatives w.r.t sigma2 (R)
+    % Expects that sigma2 is the first optimized parameter if it is optimized
+    
+    % Number of patrial derivatives (except R)
+    nder = min(size(dF,3),numel(dF));
+    
+    % Derivatives of measurement noise variance
+    dR = zeros(1,1,nder);
+    
+    % Check if sigma2 is optimized
+    if isfield(gp.lik.p,'sigma2') && ~isempty(gp.lik.p.('sigma2'))
+        % TODO: check that number of derivatives matches
+        dR = zeros(1,1,nder+1);
+        dR(1)=1;
+        
+        % Allocate space for new derivatives fd*
+        fdF = zeros([size(F,1),size(F,2), nder+1]);
+        fdQc = zeros([size(Qc,1),size(Qc,2), nder+1]);
+        fdPinf = zeros([size(P0,1),size(P0,2), nder+1]);
+        
+        % Assign old d* to new fd* if old one exists
+        if ~isempty(dF); fdF(:,:,2:end) = dF; fdQc(:,:,2:end) = dQc; fdPinf(:,:,2:end) = dPinf; end;
+        
+        % Replace the old d* with the new one
+        dF = fdF; dQc =fdQc; dPinf = fdPinf;
+    end
+    
+    % Take unique values and sort
+    [x,ind] = unique(x(:),'first');
+    y = y(ind);  
     
     % Run filter for evaluating the marginal likelihood
-    % TODO
     
+    % Loop lengths
+    steps  = numel(y);
+    nparam = size(dF,3);
     
+    % Time steps
+    %dt = t(end) - t(end-1);
+    %t  = [t(:)' t(end)+dt];
+    dt = x(2) - x(1);
+    x  = [x(1)-dt; x(:)];
+    
+    % Allocate space
+    edata  = 0;
+    gdata = zeros(1,nparam);
+    
+    % Set up
+    Z  = zeros(size(F));
+    QC = L*Qc*L';
+    m  = zeros(size(F,1),1);
+    P  = P0;
+    dm = zeros(size(m,1),nparam);
+    dP = dPinf;
+    mm = m;
+    PP = P;
+    
+    % Initial dt
+    dt = -inf;
+    
+    % Allocate space for expm results
+    AA  = zeros(2*size(F,1),2*size(F,1),nparam);
+    AAA = zeros(4*size(F,1),4*size(F,1),nparam);
+    
+    % Loop over all observations
+    for k=1:steps
+        
+        % The previous time step
+        dt_old = dt;
+        
+        % The time discretization step length
+        dt = x(k+1)-x(k);
+        
+        % Loop through all parameters (Kalman filter prediction step)
+        for j=1:nparam
+            
+            % Should we recalculate the matrix exponential?
+            if abs(dt-dt_old) > 1e-6
+                
+                % The first matrix for the matrix factor decomposition
+                FF = [ F        Z;
+                    dF(:,:,j) F];
+                
+                % Solve the matrix exponential
+                AA(:,:,j) = expm(FF*dt);
+                
+            end
+            
+            % Solve using matrix fraction decomposition
+            foo = AA(:,:,j)*[m; dm(:,j)];
+            
+            % Pick the parts
+            n       = size(F,1);
+            mm      = foo(1:n,:);
+            dm(:,j) = foo(n+(1:n),:);
+            
+            % Should we recalculate the matrix exponential?
+            if abs(dt-dt_old) > eps
+                
+                % Define W and G
+                W = L*dQc(:,:,j)*L'; % move out
+                G = dF(:,:,j);       % move out
+                
+                % The second matrix for the matrix factor decomposition
+                FFF = [F  QC   Z   Z;
+                    Z  -F'  Z   Z;
+                    G  W    F   QC;
+                    Z  -G'  Z   -F'];
+                
+                % Solve the matrix exponential
+                AAA(:,:,j) = expm(FFF*dt);
+                
+            end
+            
+            % Solve using matrix fraction decomposition
+            foo = AAA(:,:,j)*[P; eye(size(P)); dP(:,:,j); Z];
+            
+            % Pick the parts
+            n  = size(F,1);
+            C  = foo(    (1:n),:);
+            D  = foo(  n+(1:n),:);
+            dC = foo(2*n+(1:n),:);
+            dD = foo(3*n+(1:n),:);
+            
+            % The prediction step covariance
+            if j==1, PP = C/D; end
+            
+            % Sove dP for j (C/D == P_{k|k-1})
+            dP(:,:,j) = (dC - PP*dD)/D;
+            
+        end
+        
+        % Set predicted m and P
+        m = mm;
+        P = PP;
+        
+        % Start the Kalman filter update step and precalculate variables
+        S    = H*P*H' + R;
+        [LS,notposdef] = chol(S,'lower');
+        
+        % If matrix is not positive definite, add jitter
+        if notposdef>0,
+            jitter = 1e-6*diag(rand(size(S,1),1));
+            [LS,notposdef] = chol(S+jitter,'lower');
+            
+            if notposdef>0,
+                gdata = nan;
+                gprior = nan;
+                g = nan;
+                return;
+            end
+        end
+        
+        HtiS = H'/LS/LS';
+        iS   = eye(size(S))/LS/LS';
+        K    = P*HtiS;    %K = P*H'/S;
+        v    = y(k) - H*m;
+        vtiS = v'/LS/LS';
+        
+        % Loop through all parameters (Kalman filter update step derivative)
+        for j=1:nparam
+            
+            % Innovation covariance derivative
+            dS = H*dP(:,:,j)*H' + dR(:,:,j);
+            
+            %       % Evaluate the energy derivative for j
+            %       eg(j) = eg(j) ...
+            %               + .5*trace(S\dS)     ... % can be improved
+            %               - .5*(H*dm(:,j))'/S*v       ...   % ((v'/S)*H*dm(:,j))'
+            %               - .5*(v'/S)*dS*(S\v) ... % can be impreved by cholesky factorization!
+            %               - .5*(v'/S)*(H*dm(:,j));
+            
+            % Evaluate the energy derivative for j (optimized from above)
+            gdata(j) = gdata(j) ...
+                + .5*sum(iS(:).*dS(:)) ...
+                - .5*(H*dm(:,j))*vtiS' ...
+                - .5*vtiS*dS*vtiS'     ...
+                - .5*vtiS*(H*dm(:,j));
+            
+            % Kalman filter update step derivatives
+            dK        = dP(:,:,j)*HtiS - P*HtiS*dS/LS/LS';
+            dm(:,j)   = dm(:,j) + dK*v - K*H*dm(:,j);
+            dKSKt     = dK*S*K';
+            dP(:,:,j) = dP(:,:,j) - dKSKt - K*dS*K' - dKSKt';
+            
+        end
+        
+        % Evaluate the energy
+        %    e = e + .5*log(det(2*pi*S)) + .5*v'/S*v;
+        edata = edata + .5*size(S,1)*log(2*pi) + sum(log(diag(LS))) + .5*vtiS*v;
+        
+        % Finish Kalman filter update step
+        m = m + K*v;
+        P = P - K*S*K';
+        %P = P - K*H*P; % also works
+        
+    end
+
+    % Re-order
+    gdata = gdata([2:end 1]);
+    
+    % Account for log transform
+    w = gp_pak(gp);
+    gdata = gdata.*exp(w);
+    
+    % Take all priors into account in the gradient
+    gprior = [];
+    for i=1:length(gp.cf)
+      gpcf = gp.cf{i};
+      gprior = [gprior -gp.cf{i}.fh.lpg(gpcf)];
+    end
+    gprior = [gprior -gp.lik.fh.lpg(gp.lik)];
+         
     % Return likelihood gradients
-    gdata = nan;
-    gprior = nan;
     g = gdata + gprior;
     
   otherwise
     error('Unknown type of Gaussian process!')
-    
+end
+
+function C = mblk(A,B)
+% 3 dimensional version of blk function
+
+% Get sizes
+sA=size(A); sB=size(B);
+
+% Check if A or B is empty
+Ae = ~any(sA==0); Be = ~any(sB==0);
+
+% Numel of sizes to 3
+sA = [sA Ae]; sA = sA(1:3);
+sB = [sB Be]; sB = sB(1:3);
+
+% Assign space for C
+C = zeros(sA+sB);
+
+% Set values of A if there is any
+if Ae
+    C(1:sA(1), 1:sA(2), 1:sA(3)) = A;
+end
+
+% Set values of B if there is any
+if Be
+    C(sA(1)+(1:sB(1)), ...
+        sA(2)+(1:sB(2)), ...
+        sA(3)+(1:sB(3))) = B;
 end
