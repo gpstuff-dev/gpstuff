@@ -45,6 +45,7 @@ function gpcf = gpcf_sexp(varargin)
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('magnSigma2',0.1, @(x) isscalar(x) && x>0);
   ip.addParamValue('lengthScale',1, @(x) isvector(x) && all(x>0));
+  ip.addParamValue('N',6, @(x) isvector(x) && all(x>0));
   ip.addParamValue('metric',[], @isstruct);
   ip.addParamValue('magnSigma2_prior', prior_logunif(), ...
                    @(x) isstruct(x) || isempty(x));
@@ -71,6 +72,9 @@ function gpcf = gpcf_sexp(varargin)
   end
   if init || ~ismember('magnSigma2',ip.UsingDefaults)
     gpcf.magnSigma2 = ip.Results.magnSigma2;
+  end
+  if init || ~ismember('N',ip.UsingDefaults)
+    gpcf.N = ip.Results.N;
   end
 
   % Initialize prior structure
@@ -147,6 +151,7 @@ function gpcf = gpcf_sexp(varargin)
     gpcf.fh.trcov  = @gpcf_sexp_trcov;
     gpcf.fh.trvar  = @gpcf_sexp_trvar;
     gpcf.fh.recappend = @gpcf_sexp_recappend;
+    gpcf.fh.cf2ss = @gpcf_sexp_cf2ss;
   end
 
 end
@@ -1311,4 +1316,20 @@ function reccf = gpcf_sexp_recappend(reccf, ri, gpcf)
     end
   
   end
+end
+
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_sexp_cf2ss(gpcf)
+%GPCF_MATERN_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the covariance function to state space form such that
+%    the process can be described by the stochastic differential equation
+%    of the form: 
+%      df(t)/dt = F f(t) + L w(t),
+%    where w(t) is a white noise process. The observation model now 
+%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
+
+  % Return model matrices and derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss(gpcf.magnSigma2, gpcf.lengthScale, gpcf.N);
+
 end

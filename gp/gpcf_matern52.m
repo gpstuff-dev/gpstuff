@@ -80,6 +80,7 @@ function gpcf = gpcf_matern52(varargin)
     gpcf.fh.trcov  = @gpcf_matern52_trcov;
     gpcf.fh.trvar  = @gpcf_matern52_trvar;
     gpcf.fh.recappend = @gpcf_matern52_recappend;
+    gpcf.fh.cf2ss = @gpcf_matern52_cf2ss;
   end
   
   % Initialize parameters
@@ -876,6 +877,22 @@ function reccf = gpcf_matern52_recappend(reccf, ri, gpcf)
       reccf.p.magnSigma2 = gpp.magnSigma2.fh.recappend(reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
     end
   end
+end
+
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_matern52_cf2ss(gpcf)
+%GPCF_MATERN_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the covariance function to state space form such that
+%    the process can be described by the stochastic differential equation
+%    of the form: 
+%      df(t)/dt = F f(t) + L w(t),
+%    where w(t) is a white noise process. The observation model now 
+%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
+
+  % Return model matrices and derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_matern52_to_ss(gpcf.magnSigma2, gpcf.lengthScale);
+
 end
 
 

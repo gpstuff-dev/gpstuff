@@ -866,7 +866,7 @@ function reccf = gpcf_matern32_recappend(reccf, ri, gpcf)
   end
 end
 
-function [foo] = gpcf_matern32_cf2ss(foo)
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_matern32_cf2ss(gpcf)
 %GPCF_MATERN_CF2SS Convert the covariance function to state space form
 %
 %  Description
@@ -877,6 +877,18 @@ function [foo] = gpcf_matern32_cf2ss(foo)
 %    where w(t) is a white noise process. The observation model now 
 %    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
 
-  warning('Not implemented for this covariance function.')
-
+  % Return model matrices and derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
+      cf_matern32_to_ss(gpcf.magnSigma2, gpcf.lengthScale);
+  
+%   % Calculate these gradients
+%   if isempty(gpcf.p.magnSigma2),  ind(1) = 0; else ind(1) = 1; end
+%   if isempty(gpcf.p.lengthScale), ind(2) = 0; else ind(2) = 1; end
+%   
+%   % Return gradients
+%   dF    = dF(:,:,ind);
+%   dQc   = dQc(:,:,ind);
+%   dPinf = dPinf(:,:,ind);
+  
 end
+
