@@ -483,24 +483,108 @@ switch gp.type
     % ============================================================
     % Kalman filtering and smoothing
     % ============================================================
-    
-    error('Likelihood evaluation not implemented for KALMAN.')
         
     % Extract parameters from gp model
-    % TODO
+    R = gp.lik.sigma2;
     
+    % Initialize model matrices
+    F   = [];
+    L   = [];
+    Qc  = [];
+    H   = [];
+    Pinf  = [];
     
-    % Make model from the gp.gpcf{j}
-    % TODO
+    for j=1:length(gp.cf)
+    % Form state-space model from the gp.gpcf{j}
+    [jF,jL,jQc,jH,jP0] = gp.cf{j}.fh.cf2ss(gp.cf{j});
     
+    % Stack model
+    F  = blkdiag(F,jF);
+    L  = blkdiag(L,jL);
+    Qc = blkdiag(Qc,jQc);
+    H  = [H jH];    
+    Pinf = blkdiag(Pinf,jP0);
+    end
+    
+    % Take unique values and sort
+    [x,ind] = unique(x(:),'first');
+    y = y(ind);
+    
+    % Time discretization
+    dt = x(2:end)-x(1:end-1);
+  
+    % Discrete-time model
+    [A,Q] = lti_solve(F,L,Qc,Pinf,dt);  
     
     % Run filter for evaluating the marginal likelihood
-    % TODO
     
-    
-    % Return likelihood
-    edata = nan;
-    
+    % Set prior
+    m = zeros(size(A,1),1);
+    P = Pinf;
+
+    % Initialize likelihood
+    edata = 0;
+
+    % Check if the model is the same for each step
+    if (size(A,3)==1 && size(Q,3)==1)
+  
+        % Kalman filtering
+        for k=1:size(y,1)
+            
+            % Prediction step
+            m = A * m;
+            P = A * P * A' + Q;
+            
+            % Update only if we have some data
+            S = H*P*H'+R;
+            %L = chol(S,'lower');
+            K = P*H'/S;
+            %K = P*H'/L'/L;
+            v = y(k)-H*m;
+            m = m + K*v;
+            P = P - K*H*P;
+            
+            % Update log likelihood
+            edata = edata + 1/2*log(det(2*pi*S)) + 1/2*v'/S*v;
+            
+            % Alternatively (if we have the chol factor L)
+            %n = size(S,1);
+            %edata = edata - n*log(2*pi)/2 - sum(log(diag(L))) - .5*v'/L'/L*v;
+            
+        end
+      
+    else
+        
+        % Kalman filtering
+        for k=1:size(y,1)
+            
+            % Prediction step
+            if k>1
+            m = A(:,:,k-1) * m;
+            P = A(:,:,k-1) * P * A(:,:,k-1)' + Q(:,:,k-1);
+            end
+            
+            % Update only if we have some data
+            S = H*P*H'+R;
+            %L = chol(S,'lower');
+            K = P*H'/S;
+            %K = P*H'/L'/L;
+            v = y(k)-H*m;
+            m = m + K*v;
+            P = P - K*H*P;
+            
+            % Update log likelihood (without Cholesky)
+            edata = edata + 1/2*log(det(2*pi*S)) + 1/2*v'/S*v;
+            
+            % Alternatively (if we have the chol factor L)
+            %n = size(S,1);
+            %edata = edata - n*log(2*pi)/2 - sum(log(diag(L))) - .5*v'/L'/L*v;
+            
+        end
+              
+        
+    end    
+
     
   otherwise
     error('Unknown type of Gaussian process!')
