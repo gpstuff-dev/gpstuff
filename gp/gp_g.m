@@ -25,6 +25,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
 % Copyright (c) 2007-2011 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2010 Heikki Peura
+% Copyright (c) 2014 Arno Solin
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -1316,26 +1317,26 @@ switch gp.type
     R = gp.lik.sigma2;
     
     % Initialize model matrices
-    F   = [];
-    L   = [];
-    Qc  = [];
-    H   = [];
-    P0  = [];
-    dF  = [];
-    dQc = [];
+    F     = [];
+    L     = [];
+    Qc    = [];
+    H     = [];
+    Pinf  = [];
+    dF    = [];
+    dQc   = [];
     dPinf = [];
     
     for j=1:length(gp.cf)
         
         % Form state-space model from the gp.gpcf{j}
-        [jF,jL,jQc,jH,jP0,jdF,jdQc,jdPinf,params] = gp.cf{j}.fh.cf2ss(gp.cf{j});
+        [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf,params] = gp.cf{j}.fh.cf2ss(gp.cf{j});
         
         % Stack model
         F  = blkdiag(F,jF);
         L  = blkdiag(L,jL);
         Qc = blkdiag(Qc,jQc);
         H  = [H jH];
-        P0 = blkdiag(P0,jP0);
+        Pinf = blkdiag(Pinf,jPinf);
         
         % Stack derivative matrices
         
@@ -1369,51 +1370,42 @@ switch gp.type
         % Allocate space for new derivatives fd*
         fdF = zeros([size(F,1),size(F,2), nder+1]);
         fdQc = zeros([size(Qc,1),size(Qc,2), nder+1]);
-        fdPinf = zeros([size(P0,1),size(P0,2), nder+1]);
+        fdPinf = zeros([size(Pinf,1),size(Pinf,2), nder+1]);
         
         % Assign old d* to new fd* if old one exists
         if ~isempty(dF); fdF(:,:,2:end) = dF; fdQc(:,:,2:end) = dQc; fdPinf(:,:,2:end) = dPinf; end;
         
         % Replace the old d* with the new one
-        dF = fdF; dQc =fdQc; dPinf = fdPinf;
+        dF = fdF; dQc = fdQc; dPinf = fdPinf;
     end
     
-    % Take unique values and sort
-    [x,ind] = unique(x(:),'first');
-    y = y(ind);  
+    % Run filter for evaluating the marginal likelihood 
+    % (for stable models, see the Matrix fraction decomposition version
+    %  for other models. However, this should do for now. ~Arno)
     
-    % Run filter for evaluating the marginal likelihood
-    
-    % Loop lengths
+    % Sort values
+    [x,ind] = sort(x(:));
+    y = y(ind);
+        
+    % State dimension, number of data points and number of parameters
+    n      = size(F,1); 
     steps  = numel(y);
     nparam = size(dF,3);
     
-    % Time steps
-    %dt = t(end) - t(end-1);
-    %t  = [t(:)' t(end)+dt];
-    dt = x(2) - x(1);
-    x  = [x(1)-dt; x(:)];
-    
-    % Allocate space
+    % Allocate for results
     edata  = 0;
     gdata = zeros(1,nparam);
     
     % Set up
-    Z  = zeros(size(F));
-    QC = L*Qc*L';
-    m  = zeros(size(F,1),1);
-    P  = P0;
-    dm = zeros(size(m,1),nparam);
+    Z  = zeros(n);
+    m  = zeros(n,1);
+    P  = Pinf;
+    dm = zeros(n,nparam);
     dP = dPinf;
-    mm = m;
-    PP = P;
-    
-    % Initial dt
     dt = -inf;
     
     % Allocate space for expm results
-    AA  = zeros(2*size(F,1),2*size(F,1),nparam);
-    AAA = zeros(4*size(F,1),4*size(F,1),nparam);
+    AA  = zeros(2*n,2*n,nparam);
     
     % Loop over all observations
     for k=1:steps
@@ -1422,65 +1414,46 @@ switch gp.type
         dt_old = dt;
         
         % The time discretization step length
-        dt = x(k+1)-x(k);
+        if (k>1)
+            dt = x(k)-x(k-1);
+        else
+            dt = 0;  
+        end
         
         % Loop through all parameters (Kalman filter prediction step)
         for j=1:nparam
             
             % Should we recalculate the matrix exponential?
-            if abs(dt-dt_old) > 1e-6
+            if abs(dt-dt_old) > 1e-9
                 
                 % The first matrix for the matrix factor decomposition
                 FF = [ F        Z;
-                    dF(:,:,j) F];
+                      dF(:,:,j) F];
                 
                 % Solve the matrix exponential
                 AA(:,:,j) = expm(FF*dt);
-                
+
             end
             
-            % Solve using matrix fraction decomposition
-            foo = AA(:,:,j)*[m; dm(:,j)];
-            
-            % Pick the parts
-            n       = size(F,1);
+            % Solve the differential equation
+            foo     = AA(:,:,j)*[m; dm(:,j)];
             mm      = foo(1:n,:);
             dm(:,j) = foo(n+(1:n),:);
-            
-            % Should we recalculate the matrix exponential?
-            if abs(dt-dt_old) > eps
-                
-                % Define W and G
-                W = L*dQc(:,:,j)*L'; % move out
-                G = dF(:,:,j);       % move out
-                
-                % The second matrix for the matrix factor decomposition
-                FFF = [F  QC   Z   Z;
-                    Z  -F'  Z   Z;
-                    G  W    F   QC;
-                    Z  -G'  Z   -F'];
-                
-                % Solve the matrix exponential
-                AAA(:,:,j) = expm(FFF*dt);
-                
+                        
+            % The discrete-time dynamical model
+            if (j==1)
+                A  = AA(1:n,1:n,j);
+                Q  = Pinf - A*Pinf*A';
+                PP = A*P*A' + Q;
             end
             
-            % Solve using matrix fraction decomposition
-            foo = AAA(:,:,j)*[P; eye(size(P)); dP(:,:,j); Z];
+            % The derivatives of A and Q
+            dA = AA(n+1:end,1:n,j);
+            dQ = dPinf(:,:,j) - dA*Pinf*A' - A*dPinf(:,:,j)*A' - A*Pinf*dA';
             
-            % Pick the parts
-            n  = size(F,1);
-            C  = foo(    (1:n),:);
-            D  = foo(  n+(1:n),:);
-            dC = foo(2*n+(1:n),:);
-            dD = foo(3*n+(1:n),:);
-            
-            % The prediction step covariance
-            if j==1, PP = C/D; end
-            
-            % Sove dP for j (C/D == P_{k|k-1})
-            dP(:,:,j) = (dC - PP*dD)/D;
-            
+            % The derivatives of P
+            dP(:,:,j) = dA*P*A' + A*dP(:,:,j)*A' + A*P*dA' + dQ;
+             
         end
         
         % Set predicted m and P
@@ -1506,7 +1479,7 @@ switch gp.type
         
         HtiS = H'/LS/LS';
         iS   = eye(size(S))/LS/LS';
-        K    = P*HtiS;    %K = P*H'/S;
+        K    = P*HtiS;
         v    = y(k) - H*m;
         vtiS = v'/LS/LS';
         
@@ -1515,13 +1488,6 @@ switch gp.type
             
             % Innovation covariance derivative
             dS = H*dP(:,:,j)*H' + dR(:,:,j);
-            
-            %       % Evaluate the energy derivative for j
-            %       eg(j) = eg(j) ...
-            %               + .5*trace(S\dS)     ... % can be improved
-            %               - .5*(H*dm(:,j))'/S*v       ...   % ((v'/S)*H*dm(:,j))'
-            %               - .5*(v'/S)*dS*(S\v) ... % can be impreved by cholesky factorization!
-            %               - .5*(v'/S)*(H*dm(:,j));
             
             % Evaluate the energy derivative for j (optimized from above)
             gdata(j) = gdata(j) ...
@@ -1539,24 +1505,22 @@ switch gp.type
         end
         
         % Evaluate the energy
-        %    e = e + .5*log(det(2*pi*S)) + .5*v'/S*v;
         edata = edata + .5*size(S,1)*log(2*pi) + sum(log(diag(LS))) + .5*vtiS*v;
         
         % Finish Kalman filter update step
         m = m + K*v;
         P = P - K*S*K';
-        %P = P - K*H*P; % also works
         
     end
 
-    % Re-order
+    % Re-order (TODO)
     gdata = gdata([2:end 1]);
     
     % Account for log transform
     w = gp_pak(gp);
     gdata = gdata.*exp(w);
     
-    % Take all priors into account in the gradient
+    % Take all priors into account in the gradient (TODO)
     gprior = [];
     for i=1:length(gp.cf)
       gpcf = gp.cf{i};
