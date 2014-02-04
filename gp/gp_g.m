@@ -1432,7 +1432,7 @@ switch gp.type
                 
                 % Solve the matrix exponential
                 AA(:,:,j) = expm(FF*dt);
-
+            
             end
             
             % Solve the differential equation
@@ -1453,7 +1453,7 @@ switch gp.type
             
             % The derivatives of P
             dP(:,:,j) = dA*P*A' + A*dP(:,:,j)*A' + A*P*dA' + dQ;
-             
+            
         end
         
         % Set predicted m and P
@@ -1504,8 +1504,8 @@ switch gp.type
             
         end
         
-        % Evaluate the energy
-        edata = edata + .5*size(S,1)*log(2*pi) + sum(log(diag(LS))) + .5*vtiS*v;
+        % Evaluate the energy (but only gradient required)
+        %edata = edata + .5*size(S,1)*log(2*pi) + sum(log(diag(LS))) + .5*vtiS*v;
         
         % Finish Kalman filter update step
         m = m + K*v;
