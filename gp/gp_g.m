@@ -1310,10 +1310,12 @@ switch gp.type
     % Kalman filtering and smoothing
     % ============================================================
     
-%     error('Likelihood evaluation not implemented for KALMAN.')
-
+    % Ensure that this is a purely temporal problem
+    if size(x,2) > 1,
+      error('The ''KALMAN'' option only supports one-dimensional data.')  
+    end
     
-    % Extract parameters from gp model
+    % Extract the noise magnitude from the GP likelihood model
     R = gp.lik.sigma2;
     
     % Initialize model matrices
@@ -1324,12 +1326,12 @@ switch gp.type
     Pinf  = [];
     dF    = [];
     dQc   = [];
-    dPinf = [];
-    
+    dPinf = [];    
+
     for j=1:length(gp.cf)
         
         % Form state-space model from the gp.gpcf{j}
-        [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf,params] = gp.cf{j}.fh.cf2ss(gp.cf{j});
+        [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf,params,jnhp] = gp.cf{j}.fh.cf2ss(gp.cf{j});
         
         % Stack model
         F  = blkdiag(F,jF);
@@ -1338,45 +1340,43 @@ switch gp.type
         H  = [H jH];
         Pinf = blkdiag(Pinf,jPinf);
         
-        % Stack derivative matrices
+        % TODO: solve gradient ordrer without nhp...
+        nhp{j} = jnhp;
         
-        % Id for used derivatives (which parameters are used)
-        %     idd = arrayfun(@(k) any(strcmpi(params.in{k}.name,pnames([pnames{:,1}]==j,2))),1:length(params.in));
-        idd = arrayfun(@(k) isfield(gp.cf{j},params.in{k}.name) && ...
-            ~isempty(gp.cf{j}.(params.in{k}.name)),1:length(params.in));
-        
-        % Add chosen derivatives
-        dF  = mblk(dF,jdF(:,:,idd));
-        dQc = mblk(dQc,jdQc(:,:,idd));
-        dPinf = mblk(dPinf, jdPinf(:,:,idd));
-        
+        if ~isempty(strfind(gp.infer_params, 'covariance'))
+            
+            % Add derivatives
+            % TODO: add derivatives w.r.t. optimized prior parameters (0)
+            dF      = mblk(dF,jdF);
+            dQc     = mblk(dQc,jdQc);
+            dPinf   = mblk(dPinf, jdPinf);
+        end
     end
     
-    % Add derivatives w.r.t sigma2 (R)
-    % Expects that sigma2 is the first optimized parameter if it is optimized
-    
     % Number of patrial derivatives (except R)
-    nder = min(size(dF,3),numel(dF));
+    nparam = min(size(dF,3),numel(dF));    
     
-    % Derivatives of measurement noise variance
-    dR = zeros(1,1,nder);
-    
-    % Check if sigma2 is optimized
-    if isfield(gp.lik.p,'sigma2') && ~isempty(gp.lik.p.('sigma2'))
-        % TODO: check that number of derivatives matches
-        dR = zeros(1,1,nder+1);
-        dR(1)=1;
+    % Gradient with respect to Gaussian likelihood function parameters
+    if ~isempty(gp.lik.p.('sigma2')) && ...
+            ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
+            isfield(gp.lik.fh,'trcov')
+        % Optimize noise magnitude
         
-        % Allocate space for new derivatives fd*
-        fdF = zeros([size(F,1),size(F,2), nder+1]);
-        fdQc = zeros([size(Qc,1),size(Qc,2), nder+1]);
-        fdPinf = zeros([size(Pinf,1),size(Pinf,2), nder+1]);
+        % Include R into parameters 
+        nparam = nparam + 1;
         
-        % Assign old d* to new fd* if old one exists
-        if ~isempty(dF); fdF(:,:,2:end) = dF; fdQc(:,:,2:end) = dQc; fdPinf(:,:,2:end) = dPinf; end;
+        % Derivative of noise magnitude w.r.t. itself (1)
+        dR = zeros(1,1,nparam);
+        dR(end) = 1;       
         
-        % Replace the old d* with the new one
-        dF = fdF; dQc = fdQc; dPinf = fdPinf;
+        % Derivatives of model matrices w.r.t. noise magnitude (0)
+        dF(:,:,nparam)    = zeros(size(F));
+        dQc(:,:,nparam)   = zeros(size(Qc));
+        dPinf(:,:,nparam) = zeros(size(Pinf));
+        
+    else
+        % Noise magnitude is not optiomized
+        dR = zeros(1,1,nparam);
     end
     
     % Run filter for evaluating the marginal likelihood 
@@ -1390,7 +1390,7 @@ switch gp.type
     % State dimension, number of data points and number of parameters
     n      = size(F,1); 
     steps  = numel(y);
-    nparam = size(dF,3);
+%     nparam = size(dF,3);
     
     % Allocate for results
     edata  = 0;
@@ -1512,24 +1512,45 @@ switch gp.type
         P = P - K*S*K';
         
     end
-
-    % Re-order (TODO)
-    gdata = gdata([2:end 1]);
     
     % Account for log transform
     w = gp_pak(gp);
     gdata = gdata.*exp(w);
     
     % Take all priors into account in the gradient (TODO)
+    % make to match optimized parameters..
     gprior = [];
-    for i=1:length(gp.cf)
-      gpcf = gp.cf{i};
-      gprior = [gprior -gp.cf{i}.fh.lpg(gpcf)];
+    if ~isempty(strfind(gp.infer_params, 'covariance'))
+        for i=1:length(gp.cf)
+            gprior = [gprior, -gp.cf{i}.fh.lpg(gp.cf{i})];
+        end
     end
-    gprior = [gprior -gp.lik.fh.lpg(gp.lik)];
-         
+    if ~isempty(gp.lik.p.('sigma2')) && ...
+            ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
+            isfield(gp.lik.fh,'trcov')
+        gprior = [gprior -gp.lik.fh.lpg(gp.lik)];
+    end
+    
+    
+    % TODO: re-order gdata to match gp_pak/unpak, do it better!
+    % [w, ws] = gp_pak(gp) --> w and ws do not match! Order is different
+    if ~isempty(strfind(gp.infer_params, 'covariance'))
+        gdatatemp = gdata;
+        gdata = [];
+        for k =1:length(gp.cf)
+            gdataj = gdatatemp(length(gdata)+1:length(gdata)+sum(nhp{k})+length(nhp{k}));
+            gdataj = gdataj(gdataj~=0);
+            gdata = [gdata, gdataj, zeros(1,sum(nhp{k})+length(nhp{k})-length(gdataj))];
+        end
+        if length(gdata) < length(gdatatemp), gdata(end+1) = gdatatemp(end); end;
+    end
+    
     % Return likelihood gradients
-    g = gdata + gprior;
+    if ~isempty(gprior)
+        g = gdata + gprior;
+    else
+        g = gdata;
+    end
     
   otherwise
     error('Unknown type of Gaussian process!')
