@@ -194,7 +194,7 @@ if ~ismember('selectedVariables',ip.UsingDefaults)
 end
 end
 
-function [w,s] = gpcf_ppcs0_pak(gpcf)
+function [w,s,h] = gpcf_ppcs0_pak(gpcf)
 %GPCF_PPCS0_PAK  Combine GP covariance function parameters into
 %                one vector
 %
@@ -213,21 +213,25 @@ function [w,s] = gpcf_ppcs0_pak(gpcf)
 %  See also
 %    GPCF_PPCS0_UNPAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
   
   if ~isempty(gpcf.p.magnSigma2)
     w = [w log(gpcf.magnSigma2)];
     s = [s; 'log(ppcs0.magnSigma2)'];
+    h = [h 1];
     % Hyperparameters of magnSigma2
-    [wh sh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    [wh, sh, hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end        
 
   if isfield(gpcf,'metric')
-    [wh sh]=gpcf.metric.fh.pak(gpcf.metric);
+    [wh, sh, hh]=gpcf.metric.fh.pak(gpcf.metric);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   else
     if ~isempty(gpcf.p.lengthScale)
       w = [w log(gpcf.lengthScale)];
@@ -236,10 +240,13 @@ function [w,s] = gpcf_ppcs0_pak(gpcf)
       else
         s = [s; 'log(ppcs0.lengthScale)'];
       end
+      h = [h ones(1,numel(gpcf.lengthScale))];
       % Hyperparameters of lengthScale
-      [wh  sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      [wh, sh, hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
   end
 
@@ -840,8 +847,8 @@ function DKff = gpcf_ppcs0_ginput(gpcf, x, x2, i1)
       
       row = ones(n,1);
       cols = 1:n;
-      for i = i1
-        for j = 1:n
+      for j = 1:n
+        for i = i1
           % Calculate the gradient matrix
           ind = find(d(:,j));
           apu = full(Dd(:,j)).*s2(i).*(x(j,i)-x(:,i));
@@ -940,8 +947,8 @@ function DKff = gpcf_ppcs0_ginput(gpcf, x, x2, i1)
       
       row = ones(n2,1);
       cols = 1:n2;
-      for i = i1
-        for j = 1:n
+      for j = 1:n
+        for i = i1
           % Calculate the gradient matrix
           ind = find(d(j,:));
           apu = Dd(j,:).*s2(i).*(x(j,i)-x2(:,i))';

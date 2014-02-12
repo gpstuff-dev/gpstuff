@@ -1,4 +1,4 @@
-function [w, s] = gp_pak(gp, param)
+function [w, s, h] = gp_pak(gp, param)
 %GP_PAK  Combine GP parameters into one vector
 %
 %  Description
@@ -36,6 +36,10 @@ function [w, s] = gp_pak(gp, param)
 %    labels for the weight vector elements, which makes diagnostics
 %    easier.
 %
+%    [W, WS, H] = GP_PAK(GP, PARAM) returns also hierarchy level H of 
+%    different parameters (0 for likelihood parameters and 1 for covariance
+%    function parameters)
+%
 %  See also
 %    GP_UNPAK, GP_SET
 %
@@ -46,7 +50,7 @@ function [w, s] = gp_pak(gp, param)
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-  w = []; s = {};
+  w = []; s = {}; h = [];
 
   if isfield(gp,'etr') && length(gp.etr) > 1
     if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')
@@ -56,7 +60,7 @@ function [w, s] = gp_pak(gp, param)
     ns = length(gp.etr);
     for i1 = 1:ns
       Gp = take_nth(gp,i1);
-      [w(i1,:) s] = gp_pak(Gp);
+      [w(i1,:), s, h] = gp_pak(Gp);
     end
   else
     
@@ -70,24 +74,46 @@ function [w, s] = gp_pak(gp, param)
       
       for i=1:ncf
         gpcf = gp.cf{i};
-        [wi, si] = gpcf.fh.pak(gpcf);
+        [wi, si, hi] = gpcf.fh.pak(gpcf);
         w = [w wi];
         s = [s; si];
+        h = [h hi];
       end
     end
     
     % Pack the parameters of likelihood function
     if ~isempty(strfind(param, 'likelihood'))
-      [wi si] = gp.lik.fh.pak(gp.lik);
+      [wi, si, hi] = gp.lik.fh.pak(gp.lik);
       w = [w wi];
       s = [s; si];
+      h = [h hi];
     end
     
     % Pack the inducing inputs
     if ~isempty(strfind(param, 'inducing'))
       if isfield(gp,'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
-        w = [w gp.X_u(:)'];
-        s = [s; sprintf('inducing x %d',numel(gp.X_u))];
+        if ~iscell(gp.p.X_u)
+          % One prior for all inducing inputs
+          w = [w gp.X_u(:)'];
+          s = [s; sprintf('inducing x %d',numel(gp.X_u))];
+          h = [h ones(1,numel(gp.X_u))];
+          [wi,si,hi]=gp.p.X_u.fh.pak(gp.p.X_u);
+          w = [w wi];
+          s = [s; si];
+          h = [h 1+hi];
+        else
+          % Own prior for each inducing input
+          for i=1:size(gp.X_u,1)
+            w = [w gp.X_u(i,:)];
+            s = [s; sprintf('inducing x %d',numel(gp.X_u(i,:)))];
+            h = [h ones(1,size(gp.X_u(i,:),2))];
+            [wi,si,hi]=gp.p.X_u{i}.fh.pak(gp.p.X_u{i});
+            si=strcat(repmat('prior-', size(si,1),1),si);
+            w = [w wi];
+            s = [s; si];
+            h = [h 1+hi];            
+          end
+        end
       end
     end
     
@@ -97,9 +123,10 @@ function [w, s] = gp_pak(gp, param)
       
       for i=1:mf
         gpmf = gp.meanf{i};
-        [wi, si] = gpmf.fh.pak(gpmf);
+        [wi, si, hi] = gpmf.fh.pak(gpmf);
         w = [w wi];
         s = [s; si];
+        h = [h, hi];
       end
     end
     

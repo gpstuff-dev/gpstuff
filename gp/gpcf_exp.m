@@ -157,7 +157,7 @@ function gpcf = gpcf_exp(varargin)
   
 end
 
-function [w,s] = gpcf_exp_pak(gpcf)
+function [w,s,h] = gpcf_exp_pak(gpcf)
 %GPCF_EXP_PAK  Combine GP covariance function parameters into
 %              one vector
 %
@@ -176,21 +176,25 @@ function [w,s] = gpcf_exp_pak(gpcf)
 %  See also
 %    GPCF_EXP_UNPAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
   
   if ~isempty(gpcf.p.magnSigma2)
     w = [w log(gpcf.magnSigma2)];
     s = [s; 'log(exp.magnSigma2)'];
+    h = [h 1];
     % Hyperparameters of magnSigma2
-    [wh sh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    [wh sh hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end        
   
   if isfield(gpcf,'metric')
-    [wm sm] = gpcf.metric.fh.pak(gpcf.metric);
+    [wm sm hm] = gpcf.metric.fh.pak(gpcf.metric);
     w = [w wm];
     s = [s; sm];
+    h = [h hm];
   else
     if ~isempty(gpcf.p.lengthScale)
       w = [w log(gpcf.lengthScale)];
@@ -199,10 +203,13 @@ function [w,s] = gpcf_exp_pak(gpcf)
       else
         s = [s; 'log(exp.lengthScale)'];
       end
+      h = [h ones(1, numel(gpcf.lengthScale))];
       % Hyperparameters of lengthScale
-      [wh sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      [wh, sh, hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
   end
   
@@ -617,8 +624,8 @@ function DKff = gpcf_exp_ginput(gpcf, x, x2, i1)
         dist = dist + s(i2).*(bsxfun(@minus,x(:,i2),x(:,i2)')).^2;
       end
       dist = sqrt(dist); 
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           D1 = zeros(n,n);
           D1(j,:) = -s(i).*bsxfun(@minus,x(j,i),x(:,i)');
           D1 = D1 + D1';
@@ -655,8 +662,8 @@ function DKff = gpcf_exp_ginput(gpcf, x, x2, i1)
         dist = dist + s(i2).*(bsxfun(@minus,x(:,i2),x2(:,i2)')).^2;
       end
       dist = sqrt(dist); 
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           D1 = zeros(n,n2);
           D1(j,:) = -s(i).*bsxfun(@minus,x(j,i),x2(:,i)');
           

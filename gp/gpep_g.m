@@ -42,6 +42,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
   method = ip.Results.method;
 
   gp=gp_unpak(gp, w);       % unpak the parameters
+  [tmp,tmp,hier]=gp_pak(gp);% Hierarchy of the parameters
   ncf = length(gp.cf);
 
   g = [];
@@ -295,11 +296,11 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % Gradient with respect to covariance function parameters
         if ~isempty(strfind(gp.infer_params, 'covariance'))
           % Evaluate the gradients from covariance functions
+          i1=0;
           for i=1:ncf
-            i1=0;
-            if ~isempty(gprior)
-              i1 = length(gprior);
-            end
+%             if ~isempty(gprior)
+%               i1 = length(gprior);
+%             end
             gpcf = gp.cf{i};
             if savememory
               np=gpcf.fh.cfg(gpcf,[],[],[],0);
@@ -320,7 +321,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 Bdl = b'*(DKff*b);
                 Cdl = sum(sum(invC.*DKff)); % help arguments for lengthScale
                 gdata(i1)=0.5.*(Cdl - Bdl);
-                gprior(i1) = gprior_cf(i2);
+%                 gprior(i1) = gprior_cf(i2);
               end
             else
               i1=0;
@@ -336,18 +337,25 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 end
                 trK=sum(sum(invC.*DKff));
                 gdata(i2)=0.5*(-1*dMNM + trK + trA{i2});
-                gprior(i1) = gprior_cf(i2);
+%                 gprior(i1) = gprior_cf(i2);
               end
             end
 
-            % Set the gradients of hyperparameter
-            if length(gprior_cf) > np
-              for i2=np+1:length(gprior_cf)
-                i1 = i1+1;
-                gdata(i1) = 0;
-                gprior(i1) = gprior_cf(i2);
-              end
-            end
+            gprior = [gprior gprior_cf];
+%             % Set the gradients of hyperparameter
+%             if length(gprior_cf) > np
+%               for i2=np+1:length(gprior_cf)
+%                 i1 = i1+1;
+%                 gdata(i1) = 0;
+%                 gprior(i1) = gprior_cf(i2);
+%               end
+%             end
+          end
+          if length(gprior) > length(gdata)
+            tmp=gdata;
+            gdata=zeros(size(gprior));
+            gdata(hier(1:length(gprior))==1) = tmp;
+            i1 = length(gdata);
           end
         end
 

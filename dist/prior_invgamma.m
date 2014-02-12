@@ -80,17 +80,20 @@ function p = prior_invgamma(varargin)
 
 end
 
-function [w, s] = prior_invgamma_pak(p)
+function [w, s, h] = prior_invgamma_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.sh)
     w = log(p.sh);
     s=[s; 'log(Invgamma.sh)'];
+    h = 1;
   end
   if ~isempty(p.p.s)
     w = [w log(p.s)];
     s=[s; 'log(Invgamma.s)'];
+    h = [h 1];
   end
 end
 

@@ -93,7 +93,7 @@ function lik = lik_gaussian(varargin)
 
 end
 
-function [w s] = lik_gaussian_pak(lik)
+function [w s, h] = lik_gaussian_pak(lik)
 %LIK_GAUSSIAN_PAK  Combine likelihood parameters into one vector.
 %
 %  Description
@@ -108,14 +108,16 @@ function [w s] = lik_gaussian_pak(lik)
 %  See also
 %    LIK_GAUSSIAN_UNPAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
   if ~isempty(lik.p.sigma2)
     w = [w log(lik.sigma2)];
     s = [s; 'log(gaussian.sigma2)'];
+    h = [h 0];
     % Hyperparameters of sigma2
-    [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
+    [wh sh, hh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end    
 
 end

@@ -61,7 +61,7 @@ function lik = lik_binomial(varargin)
 
 end
 
-function [w,s] = lik_binomial_pak(lik)
+function [w,s,h] = lik_binomial_pak(lik)
 %LIK_BINOMIAL_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -74,7 +74,7 @@ function [w,s] = lik_binomial_pak(lik)
 %  See also
 %    LIK_NEGBIN_UNPAK, GP_PAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
 end
 
 

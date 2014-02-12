@@ -157,7 +157,7 @@ function gpcf = gpcf_matern32(varargin)
 
 end
 
-function [w,s] = gpcf_matern32_pak(gpcf, w)
+function [w,s,h] = gpcf_matern32_pak(gpcf, w)
 %GPCF_MATERN32_PAK  Combine GP covariance function hyper-parameters
 %                   into one vector.
 %
@@ -176,21 +176,25 @@ function [w,s] = gpcf_matern32_pak(gpcf, w)
 %  See also
 %    GPCF_MATERN32_UNPAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
   
   if ~isempty(gpcf.p.magnSigma2)
     w = [w log(gpcf.magnSigma2)];
     s = [s; 'log(matern32.magnSigma2)'];
+    h = [h 1];
     % Hyperparameters of magnSigma2
-    [wh sh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    [wh sh hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end        
   
   if isfield(gpcf,'metric')
-    [wm sm] = gpcf.metric.fh.pak(gpcf.metric);
+    [wm sm hm] = gpcf.metric.fh.pak(gpcf.metric);
     w = [w wm];
     s = [s; sm];
+    h = [h hm];
   else
     if ~isempty(gpcf.p.lengthScale)
       w = [w log(gpcf.lengthScale)];
@@ -199,10 +203,13 @@ function [w,s] = gpcf_matern32_pak(gpcf, w)
       else
         s = [s; 'log(matern32.lengthScale)'];
       end
+      h = [h ones(1,numel(gpcf.lengthScale))];
       % Hyperparameters of lengthScale
-      [wh sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      [wh sh hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
   end
   
@@ -624,8 +631,8 @@ function DKff = gpcf_matern32_ginput(gpcf, x, x2, i1)
       if ~savememory
         i1=1:m;
       end
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           D1 = zeros(n,n);
           D1(j,:) = (s(i)).*bsxfun(@minus,x(j,i),x(:,i)');
           D1 = D1 + D1';
@@ -660,8 +667,8 @@ function DKff = gpcf_matern32_ginput(gpcf, x, x2, i1)
         i1=1:m;
       end
       ii1 = 0;
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           D1 = zeros(n,n2);
           D1(j,:) = (s(i)).*bsxfun(@minus,x(j,i),x2(:,i)');
           DK = -3.*ma2.*exp(-sqrt(3.*dist)).*D1;

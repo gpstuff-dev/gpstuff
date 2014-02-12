@@ -80,17 +80,20 @@ function p = prior_sqinvsinvchi2(varargin)
 
 end
 
-function [w, s] = prior_sqinvsinvchi2_pak(p)
+function [w, s, h] = prior_sqinvsinvchi2_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.s2)
     w = log(p.s2);
     s=[s; 'log(SqInv-Sinvchi2.s2)'];
+    h = 1;
   end
   if ~isempty(p.p.nu)
     w = [w log(p.nu)];
     s=[s; 'log(SqInv-Sinvchi2.nu)'];
+    h = [h 1];
   end
 end
 

@@ -89,7 +89,7 @@ function gpcf = gpcf_linear(varargin)
 
 end
 
-function [w, s] = gpcf_linear_pak(gpcf, w)
+function [w, s, h] = gpcf_linear_pak(gpcf, w)
 %GPCF_LINEAR_PAK  Combine GP covariance function parameters into one vector
 %
 %  Description
@@ -105,7 +105,7 @@ function [w, s] = gpcf_linear_pak(gpcf, w)
 %  See also
 %    GPCF_LINEAR_UNPAK
   
-  w = []; s = {};
+  w = []; s = {}; h =[];
   if ~isempty(gpcf.p.coeffSigma2)
     w = log(gpcf.coeffSigma2);
     if numel(gpcf.coeffSigma2)>1
@@ -113,10 +113,13 @@ function [w, s] = gpcf_linear_pak(gpcf, w)
     else
       s = [s; 'log(linear.coeffSigma2)'];
     end
+    h = [h ones(1, numel(gpcf.coeffSigma2))];
     % Hyperparameters of coeffSigma2
-    [wh sh] = gpcf.p.coeffSigma2.fh.pak(gpcf.p.coeffSigma2);
+    [wh, sh, hh] = gpcf.p.coeffSigma2.fh.pak(gpcf.p.coeffSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end
 end
 
@@ -436,8 +439,8 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2, i1)
       if ~savememory
         i1=1:length(gpcf.selectedVariables);
       end
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           
           DK = zeros(n);
           DK(j,:)=s(i)*x(:,gpcf.selectedVariables(i))';
@@ -452,8 +455,8 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2, i1)
       if ~savememory
         i1=1:m;
       end
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           
           DK = zeros(n);
           DK(j,:)=s(i)*x(:,i)';
@@ -483,8 +486,8 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2, i1)
       if ~savememory
         i1=1:length(gpcf.selectedVariables);
       end
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           
           DK = zeros(n, size(x2,1));
           DK(j,:)=s(i)*x2(:,gpcf.selectedVariables(i))';
@@ -497,8 +500,8 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2, i1)
       if ~savememory
         i1=1:m;
       end
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           
           DK = zeros(n, size(x2,1));
           DK(j,:)=s(i)*x2(:,i)';
