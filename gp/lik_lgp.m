@@ -53,7 +53,7 @@ function lik = lik_lgp(varargin)
 
 end
 
-function [w,s] = lik_lgp_pak(lik)
+function [w,s,h] = lik_lgp_pak(lik)
 %LIK_LGP_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -66,7 +66,7 @@ function [w,s] = lik_lgp_pak(lik)
 %  See also
 %    LIK_LGP_UNPAK, GP_PAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
 end
 
 

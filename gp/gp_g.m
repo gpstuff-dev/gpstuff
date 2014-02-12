@@ -64,6 +64,7 @@ end
 
 % unpak the parameters
 gp=gp_unpak(gp, w);
+[tmp,tmp,hier]=gp_pak(gp);
 ncf = length(gp.cf);
 if isfield(gp.lik, 'nondiagW')
   % Likelihoods with non-diagonal Hessian
@@ -196,9 +197,6 @@ switch gp.type
     i1=0;
     if ~isempty(strfind(gp.infer_params, 'covariance'))
       for i=1:ncf
-        if ~isempty(gprior)
-          i1 = length(gprior);
-        end
         
         gpcf = gp.cf{i};
         
@@ -314,7 +312,6 @@ switch gp.type
               end
             end
             gdata(i1)=0.5.*(Cdl - Bdl);
-            gprior(i1) = gprior_cf(i2);
           end
         else
           for i2 = 1:np
@@ -329,19 +326,11 @@ switch gp.type
             dMNM = invNM'*(DKff*invNM);           % d M'*N*M / d th
             trK = sum(sum(invC.*DKff));       % d log(Ky�?�) / d th
             gdata(i1)=0.5*(-1*dMNM + trK + trA);
-            gprior(i1) = gprior_cf(i2);
           end
         end
         
-        % Set the gradients of hyperparameter
-        if length(gprior_cf) > np
-          for i2=np+1:length(gprior_cf)
-            i1 = i1+1;
-            gdata(i1) = 0;
-            gprior(i1) = gprior_cf(i2);
-          end
-        end    
-      end
+        gprior = [gprior gprior_cf];   
+      end      
     end
     
     % =================================================================
@@ -375,18 +364,9 @@ switch gp.type
             dMNM = invNM'*(DCff{i2}*invNM);           % d M'*N*M / d th
             gdata(i1)=0.5*(-1*dMNM + trA + trK);
           end
-          gprior(i1) = gprior_lik(i2);
         end
       end
-      
-      % Set the gradients of hyperparameter
-      if ~isempty(gprior_lik) && length(gprior_lik) > length(DCff)
-        for i2=length(DCff)+1:length(gprior_lik)
-          i1 = i1+1;
-          gdata(i1) = 0;
-          gprior(i1) = gprior_lik(i2);
-        end
-      end
+      gprior = [gprior gprior_lik];
     end
     
     
@@ -427,16 +407,22 @@ switch gp.type
                 g_B(i) = 0.5* ( Ha'*Bt*Ha - sum(sum(iNH.*(BH'))) );
             end
             g_BB = g_B.*B(indB)';
+            % Interweave the mean functions parameters in correct order
+            g_bB = [-g_bb; -g_BB];
+            g_bB = g_bB(:)';            
             for i=1:nmf
                 gpmf = gp.meanf{i};
                 [lpg_b, lpg_B] = gpmf.fh.lpg(gpmf);
-                ll=length(lpg_b);
-                gdata = [gdata -g_bb((i-1)*ll+1:i*ll)];
-                gprior = [gprior -lpg_b];
-                ll=length(lpg_B);
-                gdata = [gdata -g_B((i-1)*ll+1:i*ll)];
-                gprior = [gprior -lpg_B];
+                gprior = [gprior -lpg_b -lpg_B];
+                % Check whether parameters are fixed or not
+                if isempty(lpg_b)
+                  g_bB(1+(i-1)*2)=NaN;
+                end
+                if isempty(lpg_B)
+                  g_bB(2+(i-1)*2)=NaN;
+                end
             end
+            gdata = [gdata g_bB(~isnan(g_bB))];
         else
           g=NaN;
           gdata = NaN;
@@ -444,8 +430,6 @@ switch gp.type
           return
         end
     end
-    
-    g = gdata + gprior;
     
   case 'FIC'
     % ============================================================
@@ -502,11 +486,8 @@ switch gp.type
     % Gradient with respect to covariance function parameters
     if ~isempty(strfind(gp.infer_params, 'covariance'))
       % Loop over the covariance functions
-      for i=1:ncf            
-        i1=0;
-        if ~isempty(gprior)
-          i1 = length(gprior);
-        end
+      i1=0;
+      for i=1:ncf        
         
         % Get the gradients of the covariance matrices 
         % and gprior from gpcf_* structures
@@ -542,17 +523,9 @@ switch gp.type
           gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
           gdata(i1) = gdata(i1) + 0.5.*(sum(DKff./La) - sum(LL.*DKff));
           gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
-          gprior(i1) = gprior_cf(i2);
         end
         
-        % Set the gradients of hyperparameter
-        if length(gprior_cf) > np
-          for i2=length(DKff)+1:length(gprior_cf)
-            i1 = i1+1;
-            gdata(i1) = 0;
-            gprior(i1) = gprior_cf(i2);
-          end
-        end
+        gprior = [gprior gprior_cf];
       end
     end
 
@@ -566,16 +539,15 @@ switch gp.type
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';
         gdata(i1)= gdata(i1) + 0.5*sum(DCff{i2}./La-sum(L.*L,2).*DCff{i2});
-        gprior(i1) = gprior_lik(i2);
       end
       % Set the gradients of hyperparameter
       if length(gprior_lik) > length(DCff)
         for i2=length(DCff)+1:length(gprior_lik)
           i1 = i1+1;
           gdata(i1) = 0;
-          gprior(i1) = gprior_lik(i2);
         end
-      end               
+      end 
+      gprior = [gprior gprior_lik];
     end
 
     % =================================================================
@@ -590,15 +562,16 @@ switch gp.type
         
         gdata(st+1:st+length(gp.X_u(:))) = 0;
         i1 = st+1;
-        for i = 1:size(gp.X_u,1)
-          if iscell(gp.p.X_u) % Own prior for each inducing input
+        gprior_ind=[];
+        if iscell(gp.p.X_u) % Own prior for each inducing input
+          for i = 1:size(gp.X_u,1)
             pr = gp.p.X_u{i};
-            gprior(i1:i1+m) = -pr.fh.lpg(gp.X_u(i,:), pr);
-          else % One prior for all inducing inputs
-            gprior(i1:i1+m-1) = -gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+            gprior_ind =[gprior_ind -pr.fh.lpg(gp.X_u(i,:), pr)];
           end
-          i1 = i1 + m;
+        else % One prior for all inducing inputs
+          gprior_ind = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
         end
+        gprior = [gprior gprior_ind];
         
         % Loop over the covariance functions
         for i=1:ncf
@@ -620,7 +593,12 @@ switch gp.type
               DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
             end
             for i2 = 1:length(DKuu)
-              i1=i1+1;
+              if savememory
+                % Sort the gradients in correct order
+                i1=st + i2*2-1 + (i3-1);
+              else
+                i1=i1+1;
+              end
               KfuiKuuKuu = iKuuKuf'*DKuu{i2};
             
               gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
@@ -633,9 +611,7 @@ switch gp.type
         end
       end
     end
-    
-    g = gdata + gprior;
-    
+        
   case {'PIC' 'PIC_BLOCK'}
     % ============================================================
     % PIC
@@ -698,11 +674,8 @@ switch gp.type
 
     if ~isempty(strfind(gp.infer_params, 'covariance'))
       % Loop over the  covariance functions
-      for i=1:ncf            
-        i1=0;
-        if ~isempty(gprior)
-          i1 = length(gprior);
-        end
+      i1=0;
+      for i=1:ncf      
         
         % Get the gradients of the covariance matrices 
         % and gprior from gpcf_* structures
@@ -750,17 +723,8 @@ switch gp.type
                         + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
                         sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})))));
           end
-          gprior(i1) = gprior_cf(i2);
         end
-        
-        % Set the gradients of hyperparameter
-        if length(gprior_cf) > np
-          for i2=np+1:length(gprior_cf)
-            i1 = i1+1;
-            gdata(i1) = 0;
-            gprior(i1) = gprior_cf(i2);
-          end
-        end
+        gprior = [gprior gprior_cf];
       end
     end
       
@@ -776,16 +740,8 @@ switch gp.type
         for kk=1:length(ind)
           gdata(i1)= gdata(i1) + 0.5*trace((inv(La{kk})-L(ind{kk},:)*L(ind{kk},:)')).*DCff{i2};
         end
-        gprior(i1) = gprior_lik(i2);
       end
-      % Set the gradients of hyperparameter
-      if length(gprior_lik) > length(DCff)
-        for i2=length(DCff)+1:length(gprior_lik)
-          i1 = i1+1;
-          gdata(i1) = 0;
-          gprior(i1) = gprior_lik(i2);
-        end
-      end
+      gprior = [gprior gprior_lik];
     end            
     
     % =================================================================
@@ -801,15 +757,16 @@ switch gp.type
         gdata(st+1:st+length(gp.X_u(:))) = 0;
         
         i1 = st+1;
-        for i = 1:size(gp.X_u,1)
-          if iscell(gp.p.X_u) % Own prior for each inducing input
+        gprior_ind=[];
+        if iscell(gp.p.X_u) % Own prior for each inducing input
+          for i = 1:size(gp.X_u,1)
             pr = gp.p.X_u{i};
-            gprior(i1:i1+m) = -pr.fh.lpg(gp.X_u(i,:), pr);
-          else % One prior for all inducing inputs
-            gprior(i1:i1+m-1) = -gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+            gprior_ind =[gprior_ind -pr.fh.lpg(gp.X_u(i,:), pr)];
           end
-          i1 = i1 + m;
+        else % One prior for all inducing inputs
+          gprior_ind = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
         end
+        gprior = [gprior gprior_ind];
         
         % Loop over the  covariance functions
         for i=1:ncf            
@@ -847,7 +804,6 @@ switch gp.type
         end
       end
     end
-    g = gdata + gprior;
     
   case 'CS+FIC'
     % ============================================================
@@ -930,11 +886,8 @@ switch gp.type
     % Gradient with respect to covariance function parameters
     if ~isempty(strfind(gp.infer_params, 'covariance'))
       % Loop over covariance functions 
+      i1=0;
       for i=1:ncf
-        i1=0;
-        if ~isempty(gprior)
-          i1 = length(gprior);
-        end
         
         gpcf = gp.cf{i};
         
@@ -981,7 +934,6 @@ switch gp.type
             %gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\((2.*K_uf') - KfuiKuuKuu).*iKuuKuf',2));
             gdata(i1) = gdata(i1) + 0.5.*sum(sum(ldlsolve(LD,temp3).*iKuuKuf',2));
             gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum(temp3.*iKuuKuf',2)) ); % corrected                
-            gprior(i1) = gprior_cf(i2);                    
           end
           
           % Evaluate the gradient for compact support covariance functions
@@ -1006,17 +958,9 @@ switch gp.type
               DKff=DKffc{i2};
             end
             gdata(i1) = 0.5*(sum(sum(siLa.*DKff',2)) - sum(sum(L.*(L'*DKff')')) - b*DKff*b');
-            gprior(i1) = gprior_cf(i2);
           end
         end
-        % Set the gradients of hyperparameter
-        if length(gprior_cf) > np
-          for i2=np+1:length(gprior_cf)
-            i1 = i1+1;
-            gdata(i1) = 0;
-            gprior(i1) = gprior_cf(i2);
-          end
-        end
+        gprior = [gprior gprior_cf];
       end
     end
     
@@ -1030,17 +974,8 @@ switch gp.type
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';
         gdata(i1)= gdata(i1) + 0.5*sum(idiagLa-LL).*DCff{i2};
-        gprior(i1) = gprior_lik(i2);
       end
-      
-      % Set the gradients of hyperparameter
-      if length(gprior_lik) > length(DCff)
-        for i2=length(DCff)+1:length(gprior_lik)
-          i1 = i1+1;
-          gdata(i1) = 0;
-          gprior(i1) = gprior_lik(i2);
-        end
-      end
+      gprior = [gprior gprior_lik];
     end
 
     % =================================================================
@@ -1055,15 +990,16 @@ switch gp.type
         
         gdata(st+1:st+length(gp.X_u(:))) = 0;
         i1 = st+1;
-        for i = 1:size(gp.X_u,1)
-          if iscell(gp.p.X_u) % Own prior for each inducing input
+        gprior_ind=[];
+        if iscell(gp.p.X_u) % Own prior for each inducing input
+          for i = 1:size(gp.X_u,1)
             pr = gp.p.X_u{i};
-            gprior(i1:i1+m) = -pr.fh.lpg(gp.X_u(i,:), pr);
-          else % One prior for all inducing inputs
-            gprior(i1:i1+m-1) = -gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+            gprior_ind =[gprior_ind -pr.fh.lpg(gp.X_u(i,:), pr)];
           end
-          i1 = i1 + m;
+        else % One prior for all inducing inputs
+          gprior_ind = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
         end
+        gprior = [gprior gprior_ind];
         
         for i=1:ncf
           i1=st;        
@@ -1102,9 +1038,7 @@ switch gp.type
         end
       end
     end
-    
-    g = gdata + gprior;
-    
+        
   case {'DTC' 'VAR' 'SOR'}
     % ============================================================
     % DTC/VAR/SOR
@@ -1163,11 +1097,8 @@ switch gp.type
     
     if ~isempty(strfind(gp.infer_params, 'covariance'))
       % Loop over the covariance functions
+      i1=0;
       for i=1:ncf            
-        i1=0;
-        if ~isempty(gprior)
-          i1 = length(gprior);
-        end
         
         % Get the gradients of the covariance matrices 
         % and gprior from gpcf_* structures
@@ -1205,17 +1136,8 @@ switch gp.type
             gdata(i1) = gdata(i1) + 0.5.*(sum(iLav.*DKff)-2.*sum(iLav'*sum(DKuf'.*iKuuKuf',2)) + ...
                                           sum(iLav'*sum(KfuiKuuKuu.*iKuuKuf',2))); % trace-term derivative
           end
-          gprior(i1) = gprior_cf(i2);
-        end
-        
-        % Set the gradients of hyperparameter
-        if length(gprior_cf) > np
-          for i2=np+1:length(gprior_cf)
-            i1 = i1+1;
-            gdata(i1) = 0;
-            gprior(i1) = gprior_cf(i2);
-          end
-        end
+        end        
+        gprior = [gprior gprior_cf];
       end
     end      
     
@@ -1232,24 +1154,15 @@ switch gp.type
         if strcmp(gp.type, 'VAR')
           gdata(i1)= gdata(i1) - 0.5*(sum((Kv_ff-Qv_ff)./La));
         end
-        
-        gprior(i1) = gprior_lik(i2);                        
       end
-      % Set the gradients of hyperparameter
-      if length(gprior_lik) > length(DCff)
-        for i2=length(DCff)+1:length(gprior_lik)
-          i1 = i1+1;
-          gdata(i1) = 0;
-          gprior(i1) = gprior_lik(i2);
-        end
-      end               
+      gprior = [gprior gprior_lik];              
     end        
     
     % =================================================================
     % Gradient with respect to inducing inputs
     if ~isempty(strfind(gp.infer_params, 'inducing'))
       if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
-        m = size(gp.X_u,2);
+        m = size(gp.X_u,1);
         st=0;
         if ~isempty(gprior)
           st = length(gprior);
@@ -1257,16 +1170,17 @@ switch gp.type
         
         gdata(st+1:st+length(gp.X_u(:))) = 0;
         i1 = st+1;
-        for i = 1:size(gp.X_u,1)
-          if iscell(gp.p.X_u) % Own prior for each inducing input
+        gprior_ind=[];
+        if iscell(gp.p.X_u) % Own prior for each inducing input
+          for i = 1:size(gp.X_u,1)            
             pr = gp.p.X_u{i};
-            gprior(i1:i1+m) = -pr.fh.lpg(gp.X_u(i,:), pr);
-          else % One prior for all inducing inputs
-            gprior(i1:i1+m-1) = -gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+            gprior_ind =[gprior_ind -pr.fh.lpg(gp.X_u(i,:), pr)];
           end
-          i1 = i1 + m;
+        else % One prior for all inducing inputs
+          gprior_ind = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
         end
-        
+        gprior = [gprior gprior_ind];
+        i1 = i1 + m;
         % Loop over the covariance functions
         for i=1:ncf
           i1 = st;
@@ -1302,8 +1216,6 @@ switch gp.type
         end
       end
     end
-    
-    g = gdata + gprior;
     
   case {'KALMAN'}  
     % ============================================================
@@ -1515,7 +1427,7 @@ switch gp.type
     
     % Account for log transform
     w = gp_pak(gp);
-    gdata = gdata.*exp(w);
+    gdata = gdata.*exp(w(hier<2)); % TODO
     
     % Take all priors into account in the gradient (TODO)
     % make to match optimized parameters..
@@ -1534,27 +1446,50 @@ switch gp.type
     
     % TODO: re-order gdata to match gp_pak/unpak, do it better!
     % [w, ws] = gp_pak(gp) --> w and ws do not match! Order is different
-    if ~isempty(strfind(gp.infer_params, 'covariance'))
-        gdatatemp = gdata;
-        gdata = [];
-        for k =1:length(gp.cf)
-            gdataj = gdatatemp(length(gdata)+1:length(gdata)+sum(nhp{k})+length(nhp{k}));
-            gdataj = gdataj(gdataj~=0);
-            gdata = [gdata, gdataj, zeros(1,sum(nhp{k})+length(nhp{k})-length(gdataj))];
-        end
-        if length(gdata) < length(gdatatemp), gdata(end+1) = gdatatemp(end); end;
-    end
+%     if ~isempty(strfind(gp.infer_params, 'covariance'))
+%         gdatatemp = gdata;
+%         gdata = [];
+%         for k =1:length(gp.cf)
+%             gdataj = gdatatemp(length(gdata)+1:length(gdata)+sum(nhp{k})+length(nhp{k}));
+%             gdataj = gdataj(gdataj~=0);
+%             gdata = [gdata, gdataj, zeros(1,sum(nhp{k})+length(nhp{k})-length(gdataj))];
+%         end
+%         if length(gdata) < length(gdatatemp), gdata(end+1) = gdatatemp(end); end;
+%     end
     
-    % Return likelihood gradients
-    if ~isempty(gprior)
-        g = gdata + gprior;
-    else
-        g = gdata;
-    end
-    
+%     % Return likelihood gradients
+%     if ~isempty(gprior)
+%         g = gdata + gprior;
+%     else
+%         g = gdata;
+%     end
+%     
   otherwise
     error('Unknown type of Gaussian process!')
 end
+
+% If ther parameters of the model (covariance function parameters,
+% likelihood function parameters, inducing inputs, mean function
+% parameters) have additional hyperparameters that are not fixed,
+% set the gradients in correct order
+if length(gprior) > length(gdata)
+  %gdata(gdata==0)=[];
+  tmp=gdata;
+  gdata = zeros(size(gprior));
+  % Set the gradients to right place
+  if any(hier==0)
+    gdata([hier(1:find(hier==0,1)-1)==1 ...  % Covariance function
+      hier(find(hier==0,1):find(hier==0,1)+length(gprior_lik)-1)==0 ... % Likelihood function
+      hier(find(hier==0,1)+length(gprior_lik):end)==1 | ... % Inducing inputs or ...
+      hier(find(hier==0,1)+length(gprior_lik):end)==-1]) = tmp; % Mean function parameters
+  else
+    if any(hier<0)
+      hier(hier==-1)=1;
+    end
+    gdata(hier==1) = tmp;
+  end
+end
+g = gdata + gprior;
 
 function C = mblk(A,B)
 % 3 dimensional version of blk function

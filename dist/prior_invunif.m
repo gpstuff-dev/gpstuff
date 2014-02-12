@@ -42,9 +42,10 @@ function p = prior_invunif(varargin)
   
 end
 
-function [w, s] = prior_invunif_pak(p, w)
+function [w, s, h] = prior_invunif_pak(p, w)
   w=[];
   s={};
+  h=[];
 end
 
 function [p, w] = prior_invunif_unpak(p, w)

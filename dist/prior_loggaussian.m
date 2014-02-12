@@ -76,17 +76,20 @@ function p = prior_loggaussian(varargin)
 
 end
 
-function [w, s] = prior_loggaussian_pak(p)
+function [w, s, h] = prior_loggaussian_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.mu)
     w = p.mu;
     s=[s; 'Log-Gaussian.mu'];
+    h = 1;
   end
   if ~isempty(p.p.s2)
     w = [w log(p.s2)];
     s=[s; 'log(Log-Gaussian.s2)'];
+    h = [h 1];
   end
 end
 

@@ -79,17 +79,20 @@ function p = prior_sqinvgamma(varargin)
 
 end
 
-function [w, s] = prior_sqinvgamma_pak(p)
+function [w, s, h] = prior_sqinvgamma_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.sh)
     w = log(p.sh);
     s=[s; 'log(SqInv-Gamma.sh)'];
+    h = 1;
   end
   if ~isempty(p.p.is)
     w = [w log(p.is)];
     s=[s; 'log(SqInv-Gamma.is)'];
+    h = [h 1];
   end
 end
 

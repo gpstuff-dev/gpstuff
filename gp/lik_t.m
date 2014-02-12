@@ -103,7 +103,7 @@ function lik = lik_t(varargin)
 
 end
 
-function [w, s] = lik_t_pak(lik)
+function [w, s, h] = lik_t_pak(lik)
 %LIK_T_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -120,20 +120,24 @@ function [w, s] = lik_t_pak(lik)
 %  See also
 %    LIK_T_UNPAK, GP_PAK
   
-  w = []; s = {};
+  w = []; s = {}; h=[];
   if ~isempty(lik.p.sigma2)
     w = [w log(lik.sigma2)];
     s = [s; 'log(lik.sigma2)'];
-    [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
+    h = [h 0];
+    [wh, sh, hh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end
   if ~isempty(lik.p.nu)
     w = [w log(log(lik.nu))];
     s = [s; 'loglog(lik.nu)'];
-    [wh sh] = lik.p.nu.fh.pak(lik.p.nu);
+    h = [h 0];
+    [wh, sh,hh] = lik.p.nu.fh.pak(lik.p.nu);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end        
 end
 

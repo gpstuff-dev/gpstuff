@@ -88,21 +88,25 @@ function p = prior_logt(varargin)
 
 end
 
-function [w, s] = prior_logt_pak(p)
+function [w, s, h] = prior_logt_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.mu)
     w = p.mu;
     s=[s; 'Log-Student-t.mu'];
+    h=1;
   end        
   if ~isempty(p.p.s2)
     w = [w log(p.s2)];
     s=[s; 'log(Log-Student-t.s2)'];
+    h = [h 1];
   end
   if ~isempty(p.p.nu)
     w = [w log(p.nu)];
     s=[s; 'log(Log-Student-t.nu)'];
+    h = [h 1];
   end
 end
 

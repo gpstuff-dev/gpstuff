@@ -551,6 +551,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           if ismember(opt.display,{'on','iter'}) && et>1
             fprintf('    Elapsed time %.2f seconds\n',et);
           end
+          % Check for multimodality
+          if any(p_th(2:end)>p_th(1))
+            warning(['Found better local optim during CCD expansion. Model parameters ' ...
+              'should be reoptimized with different initial values.']);
+          end
           
           % Remove points with NaN density
           dii=find(isnan(p_th));
