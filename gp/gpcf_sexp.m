@@ -46,7 +46,7 @@ function gpcf = gpcf_sexp(varargin)
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('magnSigma2',0.1, @(x) isscalar(x) && x>0);
   ip.addParamValue('lengthScale',1, @(x) isvector(x) && all(x>0));
-  ip.addParamValue('N',6, @(x) isvector(x) && all(x>0));
+  ip.addParamValue('N',6, @(x) isscalar(x) && mod(x,1)==0);
   ip.addParamValue('metric',[], @isstruct);
   ip.addParamValue('magnSigma2_prior', prior_logunif(), ...
                    @(x) isstruct(x) || isempty(x));
