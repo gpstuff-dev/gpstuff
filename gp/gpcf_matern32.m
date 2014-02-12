@@ -873,8 +873,8 @@ function reccf = gpcf_matern32_recappend(reccf, ri, gpcf)
   end
 end
 
-function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params,nhp] = gpcf_matern32_cf2ss(gpcf)
-%GPCF_MATERN_CF2SS Convert the covariance function to state space form
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_matern32_cf2ss(gpcf)
+%GPCF_MATERN32_CF2SS Convert the covariance function to state space form
 %
 %  Description
 %    Convert the covariance function to state space form such that
@@ -884,40 +884,18 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params,nhp] = gpcf_matern32_cf2ss(gpcf)
 %    where w(t) is a white noise process. The observation model now 
 %    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
 
-  % Return model matrices and derivatives and parameter information
+  % Return model matrices, derivatives and parameter information
   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
       cf_matern32_to_ss(gpcf.magnSigma2, gpcf.lengthScale);
   
-  % Parameternames in right order
-  pm = {'magnSigma2','lengthScale'};
-  
-  % Number of hyperparameters of hyperparameters
-  nhp = [];
-  
-  % Calculate these gradients
-  for k = 1:length(pm)
-      if isempty(gpcf.p.(pm{k})), 
-          ind(k) = false; 
-      else
-          ind(k) = true; 
-          nhp = [nhp,length(gpcf.p.(pm{k}).fh.pak(gpcf.p.(pm{k})))];
-      end
-  end
+  % Check optimized parameters
+  if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
+  if isempty(gpcf.p.lengthScale), ind(2) = false; else ind(2) = true; end
   
   % Use only optimized parameter gradients
   dF    = dF(:,:,ind);
   dQc   = dQc(:,:,ind);
   dPinf = dPinf(:,:,ind);
   
-%   % Add zeros for hyperparameters of hyperparamaters
-%   dF=zeros([size(F),0]); dQc=zeros([size(Qc),0]); dPinf=zeros([size(Pinf),0]);
-%   for k = 1:length(nhp)
-%          dF(:,:,end+1) = dF0(:,:,k);
-%          dQc(:,:,end+1) = dQc0(:,:,k);
-%          dPinf(:,:,end+1) = dPinf0(:,:,k);
-%          dF(:,:,end+1:end+nhp(k)) = zeros([size(F),nhp(k)]);
-%          dQc(:,:,end+1:end+nhp(k)) = zeros([size(Qc),nhp(k)]);
-%          dPinf(:,:,end+1:end+nhp(k)) = zeros([size(Pinf),nhp(k)]);
-%   end
 end
 

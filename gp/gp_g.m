@@ -1243,7 +1243,7 @@ switch gp.type
     for j=1:length(gp.cf)
         
         % Form state-space model from the gp.gpcf{j}
-        [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf,params,jnhp] = gp.cf{j}.fh.cf2ss(gp.cf{j});
+        [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
         
         % Stack model
         F  = blkdiag(F,jF);
@@ -1252,13 +1252,9 @@ switch gp.type
         H  = [H jH];
         Pinf = blkdiag(Pinf,jPinf);
         
-        % TODO: solve gradient ordrer without nhp...
-        nhp{j} = jnhp;
-        
         if ~isempty(strfind(gp.infer_params, 'covariance'))
             
             % Add derivatives
-            % TODO: add derivatives w.r.t. optimized prior parameters (0)
             dF      = mblk(dF,jdF);
             dQc     = mblk(dQc,jdQc);
             dPinf   = mblk(dPinf, jdPinf);
@@ -1302,7 +1298,6 @@ switch gp.type
     % State dimension, number of data points and number of parameters
     n      = size(F,1); 
     steps  = numel(y);
-%     nparam = size(dF,3);
     
     % Allocate for results
     edata  = 0;
@@ -1425,45 +1420,36 @@ switch gp.type
         
     end
     
-    % Account for log transform
-    w = gp_pak(gp);
-    gdata = gdata.*exp(w(hier<2)); % TODO
-    
-    % Take all priors into account in the gradient (TODO)
-    % make to match optimized parameters..
+    % Take all priors into account in the gradient
     gprior = [];
     if ~isempty(strfind(gp.infer_params, 'covariance'))
         for i=1:length(gp.cf)
             gprior = [gprior, -gp.cf{i}.fh.lpg(gp.cf{i})];
         end
     end
+    
+    gprior_lik = -gp.lik.fh.lpg(gp.lik);
     if ~isempty(gp.lik.p.('sigma2')) && ...
             ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
             isfield(gp.lik.fh,'trcov')
-        gprior = [gprior -gp.lik.fh.lpg(gp.lik)];
+        gprior = [gprior gprior_lik];
     end
     
+    % Account for log transform
+    w = gp_pak(gp);
     
-    % TODO: re-order gdata to match gp_pak/unpak, do it better!
-    % [w, ws] = gp_pak(gp) --> w and ws do not match! Order is different
-%     if ~isempty(strfind(gp.infer_params, 'covariance'))
-%         gdatatemp = gdata;
-%         gdata = [];
-%         for k =1:length(gp.cf)
-%             gdataj = gdatatemp(length(gdata)+1:length(gdata)+sum(nhp{k})+length(nhp{k}));
-%             gdataj = gdataj(gdataj~=0);
-%             gdata = [gdata, gdataj, zeros(1,sum(nhp{k})+length(nhp{k})-length(gdataj))];
-%         end
-%         if length(gdata) < length(gdatatemp), gdata(end+1) = gdatatemp(end); end;
-%     end
+    % Take correct values from w
+    if length(gdata) < length(w)
+        if any(hier==0)
+            w = w([hier(1:find(hier==0,1)-1)==1 ... % Covariance function
+                hier(find(hier==0,1):find(hier==0,1)+length(gprior_lik)-1)==0]); % Likelihood function
+        else
+            w = w(hier==1);
+        end
+    end
     
-%     % Return likelihood gradients
-%     if ~isempty(gprior)
-%         g = gdata + gprior;
-%     else
-%         g = gdata;
-%     end
-%     
+    gdata = gdata.*exp(w);
+    
   otherwise
     error('Unknown type of Gaussian process!')
 end
