@@ -90,24 +90,28 @@ function p = prior_t(varargin)
 
 end
 
-function [w, s] = prior_t_pak(p)
+function [w, s, h] = prior_t_pak(p)
 % This is a mandatory subfunction used for example 
 % in energy and gradient computations.
 
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.mu)
     w = p.mu;
     s=[s; 't.mu'];
+    h = 1;
   end        
   if ~isempty(p.p.s2)
     w = [w log(p.s2)];
     s=[s; 'log(t.s2)'];
+    h = [h 1];
   end
   if ~isempty(p.p.nu)
     w = [w log(p.nu)];
     s=[s; 'log(t.nu)'];
+    h = [h 1];
   end
 end
 

@@ -95,14 +95,17 @@ function [w, s] = gpcf_noise_pak(gpcf)
 %    GPCF_NOISE_UNPAK
 
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
   if ~isempty(gpcf.p.noiseSigma2)
     w(1) = log(gpcf.noiseSigma2);
     s = [s 'log(noise.noiseSigma2)'];
+    h = 1;
     % Hyperparameters of noiseSigma2
-    [wh sh] = gpcf.p.noiseSigma2.fh.pak(gpcf.p.noiseSigma2);
+    [wh, sh, hh] = gpcf.p.noiseSigma2.fh.pak(gpcf.p.noiseSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s sh];
+    h = [h 1+hh];
   end    
 
 end

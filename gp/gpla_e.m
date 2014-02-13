@@ -2055,6 +2055,32 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
         lik = gp.lik;
         eprior = eprior - lik.fh.lp(lik);
       end
+      
+      % ============================================================
+      % Evaluate the prior contribution to the error from the inducing inputs
+      % ============================================================
+      if ~isempty(strfind(gp.infer_params, 'inducing'))
+        if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+          if iscell(gp.p.X_u) % Own prior for each inducing input
+            for i = 1:size(gp.X_u,1)
+              pr = gp.p.X_u{i};
+              eprior = eprior - pr.fh.lp(gp.X_u(i,:), pr);
+            end
+          else
+            eprior = eprior - gp.p.X_u.fh.lp(gp.X_u(:), gp.p.X_u);
+          end
+        end
+      end
+      
+      % ============================================================
+      % Evaluate the prior contribution to the error from mean functions
+      % ============================================================
+      if ~isempty(strfind(gp.infer_params, 'mean'))
+        for i=1:length(gp.meanf)
+          gpmf = gp.meanf{i};
+          eprior = eprior - gpmf.fh.lp(gpmf);
+        end
+      end
 
       e = edata + eprior;
       

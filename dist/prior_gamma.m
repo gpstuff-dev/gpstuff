@@ -79,17 +79,20 @@ function p = prior_gamma(varargin)
 
 end
 
-function [w, s] = prior_gamma_pak(p)
+function [w, s, h] = prior_gamma_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.sh)
     w = log(p.sh);
     s=[s; 'log(Gamma.sh)'];
+    h = 1;
   end
   if ~isempty(p.p.is)
     w = [w log(p.is)];
     s=[s; 'log(Gamma.is)'];
+    h = [h 1];
   end
 end
 

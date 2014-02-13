@@ -70,7 +70,7 @@ function gpcf = gpcf_cat(varargin)
   
 end
 
-function [w,s] = gpcf_cat_pak(gpcf, w)
+function [w,s,h] = gpcf_cat_pak(gpcf, w)
 %GPCF_CAT_PAK  Combine GP covariance function parameters into
 %              one vector.
 %
@@ -86,7 +86,7 @@ function [w,s] = gpcf_cat_pak(gpcf, w)
 %  See also
 %    GPCF_CAT_UNPAK
   
-  w = []; s = {};
+  w = []; s = {}; h=[];
 end
 
 function [gpcf, w] = gpcf_cat_unpak(gpcf, w)
@@ -235,8 +235,8 @@ function [DKff, lpg]  = gpcf_cat_ginput(gpcf, x, x2, i1)
   
   if nargin == 2 || isempty(x2)
     ii1 = 0;
-    for i=1:m
-      for j = 1:n
+    for j = 1:n
+      for i=1:m
         ii1 = ii1 + 1;
         DKff{ii1} = zeros(n);
         lpg(ii1) = 0;
@@ -244,8 +244,8 @@ function [DKff, lpg]  = gpcf_cat_ginput(gpcf, x, x2, i1)
     end
   elseif nargin == 3 || nargin == 4
     ii1 = 0;
-    for i=1:m
-      for j = 1:n
+    for j = 1:n
+      for i=1:m
         ii1 = ii1 + 1;
         DKff{ii1} = zeros(n, size(x2,1));
         lpg(ii1) = 0; 

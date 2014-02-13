@@ -158,7 +158,7 @@ function gpcf = gpcf_exp(varargin)
   
 end
 
-function [w,s] = gpcf_exp_pak(gpcf)
+function [w,s,h] = gpcf_exp_pak(gpcf)
 %GPCF_EXP_PAK  Combine GP covariance function parameters into
 %              one vector
 %
@@ -177,21 +177,25 @@ function [w,s] = gpcf_exp_pak(gpcf)
 %  See also
 %    GPCF_EXP_UNPAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
   
   if ~isempty(gpcf.p.magnSigma2)
     w = [w log(gpcf.magnSigma2)];
     s = [s; 'log(exp.magnSigma2)'];
+    h = [h 1];
     % Hyperparameters of magnSigma2
-    [wh sh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    [wh sh hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end        
   
   if isfield(gpcf,'metric')
-    [wm sm] = gpcf.metric.fh.pak(gpcf.metric);
+    [wm sm hm] = gpcf.metric.fh.pak(gpcf.metric);
     w = [w wm];
     s = [s; sm];
+    h = [h hm];
   else
     if ~isempty(gpcf.p.lengthScale)
       w = [w log(gpcf.lengthScale)];
@@ -200,10 +204,13 @@ function [w,s] = gpcf_exp_pak(gpcf)
       else
         s = [s; 'log(exp.lengthScale)'];
       end
+      h = [h ones(1, numel(gpcf.lengthScale))];
       % Hyperparameters of lengthScale
-      [wh sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      [wh, sh, hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
   end
   
@@ -618,8 +625,8 @@ function DKff = gpcf_exp_ginput(gpcf, x, x2, i1)
         dist = dist + s(i2).*(bsxfun(@minus,x(:,i2),x(:,i2)')).^2;
       end
       dist = sqrt(dist); 
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           D1 = zeros(n,n);
           D1(j,:) = -s(i).*bsxfun(@minus,x(j,i),x(:,i)');
           D1 = D1 + D1';
@@ -656,8 +663,8 @@ function DKff = gpcf_exp_ginput(gpcf, x, x2, i1)
         dist = dist + s(i2).*(bsxfun(@minus,x(:,i2),x2(:,i2)')).^2;
       end
       dist = sqrt(dist); 
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           D1 = zeros(n,n2);
           D1(j,:) = -s(i).*bsxfun(@minus,x(j,i),x2(:,i)');
           
@@ -865,8 +872,8 @@ function reccf = gpcf_exp_recappend(reccf, ri, gpcf)
   end
 end
 
-function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params,nhp] = gpcf_exp_cf2ss(gpcf)
-%GPCF_MATERN_CF2SS Convert the covariance function to state space form
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_exp_cf2ss(gpcf)
+%GPCF_EXP_CF2SS Convert the covariance function to state space form
 %
 %  Description
 %    Convert the covariance function to state space form such that
@@ -876,40 +883,17 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params,nhp] = gpcf_exp_cf2ss(gpcf)
 %    where w(t) is a white noise process. The observation model now 
 %    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
 
-  % Return model matrices and derivatives and parameter information
-  [F,L,Qc,H,Pinf,dF0,dQc0,dPinf0,params] = ...
+  % Return model matrices, derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
       cf_exp_to_ss(gpcf.magnSigma2, gpcf.lengthScale);
   
-  % Parameternames in right order
-  pm = {'magnSigma2','lengthScale'};
-  
-  % Number of hyperparameters of hyperparameters
-  nhp = [];
-  
-  % Calculate these gradients
-  for k = 1:length(pm)
-      if isempty(gpcf.p.(pm{k})), 
-          ind(k) = false; 
-      else
-          ind(k) = true; 
-          nhp = [nhp,length(gpcf.p.(pm{k}).fh.pak(gpcf.p.(pm{k})))];
-      end
-  end
+  % Check optimized parameters
+  if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
+  if isempty(gpcf.p.lengthScale), ind(2) = false; else ind(2) = true; end
   
   % Use only optimized parameter gradients
-  dF0    = dF0(:,:,ind);
-  dQc0   = dQc0(:,:,ind);
-  dPinf0 = dPinf0(:,:,ind);
+  dF    = dF(:,:,ind);
+  dQc   = dQc(:,:,ind);
+  dPinf = dPinf(:,:,ind);
   
-  % Add zeros for hyperparameters of hyperparamaters
-  dF=zeros([size(F),0]); dQc=zeros([size(Qc),0]); dPinf=zeros([size(Pinf),0]);
-  for k = 1:length(nhp)
-         dF(:,:,end+1) = dF0(:,:,k);
-         dQc(:,:,end+1) = dQc0(:,:,k);
-         dPinf(:,:,end+1) = dPinf0(:,:,k);
-         dF(:,:,end+1:end+nhp(k)) = zeros([size(F),nhp(k)]);
-         dQc(:,:,end+1:end+nhp(k)) = zeros([size(Qc),nhp(k)]);
-         dPinf(:,:,end+1:end+nhp(k)) = zeros([size(Pinf),nhp(k)]);
-  end
-
 end

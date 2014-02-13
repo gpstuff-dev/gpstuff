@@ -29,6 +29,11 @@ function gpcf = gpcf_periodic(varargin)
 %      decay                  - determines whether the squared exponential 
 %                               decay term is used (1) or not (0). 
 %                               Not a hyperparameter for the function.
+%      N                      - degree of approximation in type 'KALMAN' [6]
+%      N_sexp                 - degree of sexp approximation in type 
+%                               'KALMAN' [6]
+%      valid                  - determines whether Bessel function is 
+%                               used (1) or not (0) in type 'KALMAN' [0]
 %      magnSigma2_prior       - prior structure for magnSigma2 [prior_logunif]
 %      lengthScale_prior      - prior structure for lengthScale [prior_t]
 %      lengthScale_sexp_prior - prior structure for lengthScale_sexp 
@@ -57,6 +62,9 @@ function gpcf = gpcf_periodic(varargin)
   ip.addParamValue('period',1, @(x) isscalar(x) && x>0);
   ip.addParamValue('lengthScale_sexp',10, @(x) isvector(x) && all(x>0));
   ip.addParamValue('decay',0, @(x) isscalar(x) && (x==0||x==1));
+  ip.addParamValue('N',6, @(x) isscalar(x) && mod(x,1)==0);
+  ip.addParamValue('N_sexp',6, @(x) isscalar(x) && mod(x,1)==0);
+  ip.addParamValue('valid',0, @(x) isscalar(x) && (x==0||x==1));
   ip.addParamValue('magnSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lengthScale_prior',prior_t, @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lengthScale_sexp_prior',[], @(x) isstruct(x) || isempty(x));
@@ -92,6 +100,15 @@ function gpcf = gpcf_periodic(varargin)
   if init || ~ismember('decay',ip.UsingDefaults)
     gpcf.decay = ip.Results.decay;
   end
+  if init || ~ismember('N',ip.UsingDefaults)
+    gpcf.N = ip.Results.N;
+  end
+  if init || ~ismember('N_sexp',ip.UsingDefaults)
+    gpcf.N_sexp = ip.Results.N_sexp;
+  end
+  if init || ~ismember('valid',ip.UsingDefaults)
+    gpcf.valid = ip.Results.valid;
+  end
   if init || ~ismember('magnSigma2_prior',ip.UsingDefaults)
     gpcf.p.magnSigma2 = ip.Results.magnSigma2_prior;
   end
@@ -122,11 +139,12 @@ function gpcf = gpcf_periodic(varargin)
     gpcf.fh.trcov  = @gpcf_periodic_trcov;
     gpcf.fh.trvar  = @gpcf_periodic_trvar;
     gpcf.fh.recappend = @gpcf_periodic_recappend;
+    gpcf.fh.cf2ss = @gpcf_periodic_cf2ss;
   end  
 
 end
 
-function [w, s] = gpcf_periodic_pak(gpcf)
+function [w, s, h] = gpcf_periodic_pak(gpcf)
 %GPCF_PERIODIC_PAK  Combine GP covariance function parameters into
 %                   one vector
 %
@@ -153,46 +171,58 @@ function [w, s] = gpcf_periodic_pak(gpcf)
     error('Periodic covariance function not compatible with metrics.');
   else
     i1=0;i2=1;
-    w = []; s = {};
+    w = []; s = {}; h=[];
     
     if ~isempty(gpcf.p.magnSigma2)
       w = [w log(gpcf.magnSigma2)];
       s = [s; 'log(periodic.magnSigma2)'];
+      h = [h 1];
       
       % Hyperparameters of magnSigma2
-      [wh sh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+      [wh, sh, hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
     
     if ~isempty(gpcf.p.lengthScale)
       w = [w log(gpcf.lengthScale)];
       s = [s; 'log(periodic.lengthScale)'];
+      h = [h ones(1,numel(gpcf.lengthScale))];
       
       % Hyperparameters of lengthScale
-      [wh  sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      [wh, sh, hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
     
     if ~isempty(gpcf.p.lengthScale_sexp)  && gpcf.decay == 1
       w = [w log(gpcf.lengthScale_sexp)];
       s = [s; 'log(periodic.lengthScale_sexp)'];
+      h = [h ones(1,numel(gpcf.lengthScale_sexp))];
       
       % Hyperparameters of lengthScale_sexp
-      [wh sh] = gpcf.p.lengthScale_sexp.fh.pak(gpcf.p.lengthScale_sexp);
+      [wh, sh, hh] = gpcf.p.lengthScale_sexp.fh.pak(gpcf.p.lengthScale_sexp);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
     
     if ~isempty(gpcf.p.period)
       w = [w log(gpcf.period)];
       s = [s; 'log(periodic.period)'];
+      h = [h 1];
       
       % Hyperparameters of period
-      [wh sh] = gpcf.p.period.fh.pak(gpcf.p.period);
+      [wh, sh, hh] = gpcf.p.period.fh.pak(gpcf.p.period);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
   end
 end
@@ -776,8 +806,8 @@ function DKff = gpcf_periodic_ginput(gpcf, x, x2, i1)
     if isfield(gpcf,'metric')
       error('Covariance function not compatible with metrics');
     else
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           DK = zeros(size(K));
           DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(j,i),x(:,i)')./gp_period);
           if gpcf.decay == 1
@@ -1076,4 +1106,60 @@ function reccf = gpcf_periodic_recappend(reccf, ri, gpcf)
     end
     
   end
+end
+
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_periodic_cf2ss(gpcf)
+%GPCF_PERIODIC_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the covariance function to state space form such that
+%    the process can be described by the stochastic differential equation
+%    of the form: 
+%      df(t)/dt = F f(t) + L w(t),
+%    where w(t) is a white noise process. The observation model now 
+%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
+
+  if gpcf.decay
+  % Case squared exponential
+      
+      % Return model matrices, derivatives and parameter information
+      [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
+          cf_quasiperiodic_to_ss(gpcf.magnSigma2,gpcf.lengthScale, ...
+          gpcf.period,gpcf.lengthScale_sexp,gpcf.N, ...
+          inf,gpcf.N_sexp,gpcf.valid);
+      
+      
+      % Check optimized parameters
+      if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
+      if isempty(gpcf.p.lengthScale), ind(2) = false; else ind(2) = true; end
+      if isempty(gpcf.p.lengthScale_sexp), ind(3) = false; else ind(3) = true; end
+      if isempty(gpcf.p.period), ind(4) = false; else ind(4) = true; end
+      
+      % Change order: lengthScale_sexp <--> period
+      % Use only optimized parameter gradients
+      % TODO: change the same order already in cf_quasiperiodic_..?
+      dF(:,:,[3,4])    = dF(:,:,[4,3]);
+      dQc(:,:,[3,4])   = dQc(:,:,[4,3]);
+      dPinf(:,:,[3,4]) = dPinf(:,:,[4,3]);
+      
+  else
+  % Case without squared exponential
+      
+      % Return model matrices, derivatives and parameter information
+      [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
+          cf_periodic_to_ss(gpcf.magnSigma2,gpcf.lengthScale, ...
+            gpcf.period,gpcf.N,gpcf.valid); 
+      
+      % Check optimized parameters
+      if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
+      if isempty(gpcf.p.lengthScale), ind(2) = false; else ind(2) = true; end
+      if isempty(gpcf.p.period), ind(3) = false; else ind(3) = true; end 
+      
+  end
+  
+  % Use only optimized parameter gradients
+  dF    = dF(:,:,ind);
+  dQc   = dQc(:,:,ind);
+  dPinf = dPinf(:,:,ind);
+  
 end

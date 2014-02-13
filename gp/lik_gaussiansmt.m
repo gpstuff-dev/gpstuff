@@ -166,8 +166,8 @@ function lik = lik_gaussiansmt(varargin)
 
 end
 
-function [w,s] = lik_gaussiansmt_pak(lik)
-  w = []; s = {};
+function [w,s,h] = lik_gaussiansmt_pak(lik)
+  w = []; s = {};h=[];
 end
 
 function [lik, w] = lik_gaussiansmt_unpak(lik, w)

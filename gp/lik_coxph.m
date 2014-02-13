@@ -101,7 +101,7 @@ function lik = lik_coxph(varargin)
     lik.fh.predcdf= @lik_coxph_predcdf;
   end
 
-  function [w,s] = lik_coxph_pak(lik)
+  function [w,s,h] = lik_coxph_pak(lik)
   %LIK_COXPH_PAK  Combine likelihood parameters into one vector.
   %
   %  Description 
@@ -115,7 +115,7 @@ function lik = lik_coxph(varargin)
   %   See also
   %   LIK_COXPH_UNPAK, GP_PAK
     
-    w=[];s={};
+    w=[];s={};h=[];
   end
 
 

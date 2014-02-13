@@ -76,7 +76,7 @@ function gpcf = gpcf_scaled(varargin)
 
 end
 
-function [w, s] = gpcf_scaled_pak(gpcf)
+function [w, s, h] = gpcf_scaled_pak(gpcf)
 %GPCF_scaled_PAK  Combine GP covariance function parameters into one vector
 %
 %  Description
@@ -88,12 +88,13 @@ function [w, s] = gpcf_scaled_pak(gpcf)
 %  See also
 %    GPCF_scaled_UNPAK
   
-  w = []; s = {};
+  w = []; s = {}; h=[];
   
   cf = gpcf.cf{1};
-  [wi si] = feval(cf.fh.pak, cf);
+  [wi si, hi] = feval(cf.fh.pak, cf);
   w = [w wi];
   s = [s; si];
+  h = [h hi];
 end
 
 function [gpcf, w] = gpcf_scaled_unpak(gpcf, w)
