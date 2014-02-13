@@ -28,7 +28,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_periodic_to_ss(magnSigma2, len
 %   function to a state space model. The covariance function is
 %   parameterized as follows:
 %
-%     k(tau) = magnSigma2 exp(-2 [sin(tau/(period pi))]^2/lengthScale^2)
+%     k(tau) = magnSigma2 exp(-2 [sin(pi*tau/period)]^2/lengthScale^2)
 %
 %   where magnSigma2 is the magnitude scale parameter, lengthScale the  
 %   distance scale parameter and period the repetition period length.
@@ -50,7 +50,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_periodic_to_ss(magnSigma2, len
 %   where r_k is the Gaussian measurement noise wit covariance R.
 %
 % References:
-%   Arno Solin and Simo Sï¿½rkkï¿½ (2014). Explicit link between periodic 
+%   Arno Solin and Simo Särkkä (2014). Explicit link between periodic 
 %     covariance functions and state space models. In Proceedings of the 
 %     Seventeenth International Conference on Artifcial Intelligence and 
 %     Statistics (AISTATS 2014). JMLR: W&CP, volume 33.
@@ -108,8 +108,8 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_periodic_to_ss(magnSigma2, len
     dFlengthScale = zeros(size(F));
 
     % Derivative of F w.r.t parameter period
-    dFperiod = -kron(diag((0:N)/period^2),[0 -1; 1 0])*2*pi;
-%     dFperiod = -kron(diag((0:N)/period^2),[0 -1; 1 0]);
+    dFperiod = -kron(diag((0:N)/period^2),[0 -2*pi; 2*pi 0]);
+    
     
     % Derivative of Qc w.r.t. parameter magnSigma2
     dQcmagnSigma2 = zeros(size(Qc));
@@ -215,11 +215,11 @@ function [a,dal] = seriescoeff(m,lengthScale,magnSigma2,valid_covariance)
     a(1) = .5*a(1);
 
     % The derivatives
-    dal = magnSigma2*lengthScale^-3/exp(lengthScale^-2)* ...
-        (4*besseli(0:m,lengthScale^-2) - ...
-         2*besseli((0:m)-1,lengthScale^-2) - ...
-         2*besseli((0:m)+2,lengthScale^-2));
-    
+    dal = zeros(1,m+1);
+    dal(2:end) = magnSigma2*lengthScale^-3/exp(lengthScale^-2)* ...
+       (-4*besseli(0:m-1,lengthScale^-2) + ...
+         4*(1+(1:m)*lengthScale^2).*besseli(1:m,lengthScale^-2));    
+        
     % The first element
     dal(1) = magnSigma2*lengthScale^-3/exp(lengthScale^-2)* ...
         (2*besseli(0,lengthScale^-2) - ...
