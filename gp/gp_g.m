@@ -1231,18 +1231,14 @@ switch gp.type
     R = gp.lik.sigma2;
     
     % Initialize model matrices
-    F     = [];
-    L     = [];
-    Qc    = [];
-    H     = [];
-    Pinf  = [];
-    dF    = [];
-    dQc   = [];
-    dPinf = [];    
+    F   = []; L     = []; Qc = [];
+    H   = []; Pinf  = []; dF = [];
+    dQc = []; dPinf = [];    
 
+    % For each covariance function
     for j=1:length(gp.cf)
         
-        % Form state-space model from the gp.gpcf{j}
+        % Form correpsonding state space model for this covariance function
         [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
         
         % Stack model
@@ -1252,25 +1248,26 @@ switch gp.type
         H  = [H jH];
         Pinf = blkdiag(Pinf,jPinf);
         
+        % Should the covariance parameters be inferred?
         if ~isempty(strfind(gp.infer_params, 'covariance'))
             
             % Add derivatives
             dF      = mblk(dF,jdF);
             dQc     = mblk(dQc,jdQc);
             dPinf   = mblk(dPinf, jdPinf);
+            
         end
     end
     
-    % Number of patrial derivatives (except R)
+    % Number of partial derivatives (not including R)
     nparam = min(size(dF,3),numel(dF));    
     
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(gp.lik.p.('sigma2')) && ...
             ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
             isfield(gp.lik.fh,'trcov')
-        % Optimize noise magnitude
         
-        % Include R into parameters 
+        % Include noise magnitude R into parameters 
         nparam = nparam + 1;
         
         % Derivative of noise magnitude w.r.t. itself (1)
@@ -1283,7 +1280,7 @@ switch gp.type
         dPinf(:,:,nparam) = zeros(size(Pinf));
         
     else
-        % Noise magnitude is not optiomized
+        % Noise magnitude is not optimized
         dR = zeros(1,1,nparam);
     end
     
@@ -1368,7 +1365,7 @@ switch gp.type
         P = PP;
         
         % Start the Kalman filter update step and precalculate variables
-        S    = H*P*H' + R;
+        S = H*P*H' + R;
         [LS,notposdef] = chol(S,'lower');
         
         % If matrix is not positive definite, add jitter
@@ -1478,29 +1475,29 @@ end
 g = gdata + gprior;
 
 function C = mblk(A,B)
-% 3 dimensional version of blk function
+%% mblk - Stack matrices by third dimension
 
-% Get sizes
-sA=size(A); sB=size(B);
+  % Get sizes
+  sA=size(A); sB=size(B);
 
-% Check if A or B is empty
-Ae = ~any(sA==0); Be = ~any(sB==0);
+  % Check if A or B is empty
+  Ae = ~any(sA==0); Be = ~any(sB==0);
 
-% Numel of sizes to 3
-sA = [sA Ae]; sA = sA(1:3);
-sB = [sB Be]; sB = sB(1:3);
+  % Numel of sizes to 3
+  sA = [sA Ae]; sA = sA(1:3);
+  sB = [sB Be]; sB = sB(1:3);
 
-% Assign space for C
-C = zeros(sA+sB);
+  % Assign space for C
+  C = zeros(sA+sB);
 
-% Set values of A if there is any
-if Ae
+  % Set values of A if there is any
+  if Ae
     C(1:sA(1), 1:sA(2), 1:sA(3)) = A;
-end
+  end
 
-% Set values of B if there is any
-if Be
+  % Set values of B if there is any
+  if Be
     C(sA(1)+(1:sB(1)), ...
-        sA(2)+(1:sB(2)), ...
-        sA(3)+(1:sB(3))) = B;
-end
+      sA(2)+(1:sB(2)), ...
+      sA(3)+(1:sB(3))) = B;
+  end
