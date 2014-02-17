@@ -1234,21 +1234,22 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
           m = size(gp.X_u,2);
           st=0;
-          if ~isempty(gprior)
-            st = length(gprior);
+          if ~isempty(gdata)
+            st = length(gdata);
           end
           
           gdata(st+1:st+length(gp.X_u(:))) = 0;
           i1 = st+1;
-          for i = 1:size(gp.X_u,1)
-            if iscell(gp.p.X_u) % Own prior for each inducing input
+          gprior_ind=[];
+          if iscell(gp.p.X_u) % Own prior for each inducing input
+            for i = 1:size(gp.X_u,1)
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
-            else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+              gprior_ind =[gprior_ind -pr.fh.lpg(gp.X_u(i,:), pr)];
             end
-            i1 = i1 + m;
+          else % One prior for all inducing inputs
+            gprior_ind = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
           end
+          gprior = [gprior gprior_ind];
           
           for i=1:ncf
             i1=st;
@@ -1484,21 +1485,22 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           m = size(gp.X_u,2);
           
           st=0;
-          if ~isempty(gprior)
-            st = length(gprior);
+          if ~isempty(gdata)
+            st = length(gdata);
           end
           gdata(st+1:st+length(gp.X_u(:))) = 0;
           
           i1 = st+1;
-          for i = 1:size(gp.X_u,1)
-            if iscell(gp.p.X_u) % Own prior for each inducing input
+          gprior_ind=[];
+          if iscell(gp.p.X_u) % Own prior for each inducing input
+            for i = 1:size(gp.X_u,1)
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
-            else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+              gprior_ind =[gprior_ind -pr.fh.lpg(gp.X_u(i,:), pr)];
             end
-            i1 = i1 + m;
+          else % One prior for all inducing inputs
+            gprior_ind = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
           end
+          gprior = [gprior gprior_ind];
           
           % Loop over the  covariance functions
           for i=1:ncf            
@@ -1648,11 +1650,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
       % =================================================================
       % Gradient with respect to covariance function parameters
       if ~isempty(strfind(gp.infer_params, 'covariance'))    
+        i1=0;
         for i=1:ncf
-          i1=0;
-          if ~isempty(gprior)
-            i1 = length(gprior);
-          end
+%           i1=0;
+%           if ~isempty(gprior)
+%             i1 = length(gprior);
+%           end
           
           gpcf = gp.cf{i};
           
@@ -1786,21 +1789,22 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
           m = size(gp.X_u,2);
           st=0;
-          if ~isempty(gprior)
-            st = length(gprior);
+          if ~isempty(gdata)
+            st = length(gdata);
           end
           
           gdata(st+1:st+length(gp.X_u(:))) = 0;
           i1 = st+1;
-          for i = 1:size(gp.X_u,1)
-            if iscell(gp.p.X_u) % Own prior for each inducing input
+          gprior_ind=[];
+          if iscell(gp.p.X_u) % Own prior for each inducing input
+            for i = 1:size(gp.X_u,1)
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
-            else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+              gprior_ind =[gprior_ind -pr.fh.lpg(gp.X_u(i,:), pr)];
             end
-            i1 = i1 + m;
+          else % One prior for all inducing inputs
+            gprior_ind = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
           end
+          gprior = [gprior gprior_ind];
           
           for i=1:ncf
             i1=st;
@@ -2036,15 +2040,16 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           
           gdata(st+1:st+length(gp.X_u(:))) = 0;
           i1 = st+1;
-          for i = 1:size(gp.X_u,1)
-            if iscell(gp.p.X_u) % Own prior for each inducing input
+          gprior_ind=[];
+          if iscell(gp.p.X_u) % Own prior for each inducing input
+            for i = 1:size(gp.X_u,1)
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
-            else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+              gprior_ind =[gprior_ind -pr.fh.lpg(gp.X_u(i,:), pr)];
             end
-            i1 = i1 + m;
+          else % One prior for all inducing inputs
+            gprior_ind = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
           end
+          gprior = [gprior gprior_ind];
           
           for i=1:ncf
             i1=st;
@@ -2106,14 +2111,14 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
   % hyperparameters that are not fixed,
   % set the gradients in correct order
   if length(gprior) > length(gdata)
-    gdata(gdata==0)=[];
+    %gdata(gdata==0)=[];
     tmp=gdata;
     gdata = zeros(size(gprior));
     % Set the gradients to right place
     if any(hier==0)
       gdata([hier(1:find(hier==0,1)-1)==1 ...  % Covariance function
-        hier(find(hier==0,1):find(hier==0,1)+length(gprior_lik)-1)==0 ... % Likelihood function
-        hier(find(hier==0,1)+length(gprior_lik):end)==1]) = tmp;  % Inducing inputs 
+        hier(find(hier==0,1):find(hier==0,1)+length(g_logPrior)-1)==0 ... % Likelihood function
+        hier(find(hier==0,1)+length(g_logPrior):end)==1]) = tmp;  % Inducing inputs 
     else
       gdata(hier==1)=tmp;
     end

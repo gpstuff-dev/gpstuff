@@ -539,13 +539,13 @@ switch gp.type
         gdata(i1)= -0.5*DCff{i2}.*b*b';
         gdata(i1)= gdata(i1) + 0.5*sum(DCff{i2}./La-sum(L.*L,2).*DCff{i2});
       end
-      % Set the gradients of hyperparameter
-      if length(gprior_lik) > length(DCff)
-        for i2=length(DCff)+1:length(gprior_lik)
-          i1 = i1+1;
-          gdata(i1) = 0;
-        end
-      end 
+%       % Set the gradients of hyperparameter
+%       if length(gprior_lik) > length(DCff)
+%         for i2=length(DCff)+1:length(gprior_lik)
+%           i1 = i1+1;
+%           gdata(i1) = 0;
+%         end
+%       end 
       gprior = [gprior gprior_lik];
     end
 
@@ -555,8 +555,8 @@ switch gp.type
       if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
         m = size(gp.X_u,2);
         st=0;
-        if ~isempty(gprior)
-          st = length(gprior);
+        if ~isempty(gdata)
+          st = length(gdata);
         end
         
         gdata(st+1:st+length(gp.X_u(:))) = 0;
@@ -750,8 +750,8 @@ switch gp.type
         m = size(gp.X_u,2);
         
         st=0;
-        if ~isempty(gprior)
-          st = length(gprior);
+        if ~isempty(gdata)
+          st = length(gdata);
         end
         gdata(st+1:st+length(gp.X_u(:))) = 0;
         
@@ -983,8 +983,8 @@ switch gp.type
       if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
         m = size(gp.X_u,2);
         st=0;
-        if ~isempty(gprior)
-          st = length(gprior);
+        if ~isempty(gdata)
+          st = length(gdata);
         end
         
         gdata(st+1:st+length(gp.X_u(:))) = 0;
@@ -1163,8 +1163,8 @@ switch gp.type
       if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
         m = size(gp.X_u,1);
         st=0;
-        if ~isempty(gprior)
-          st = length(gprior);
+        if ~isempty(gdata)
+          st = length(gdata);
         end
         
         gdata(st+1:st+length(gp.X_u(:))) = 0;

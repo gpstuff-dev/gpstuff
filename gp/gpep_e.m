@@ -1834,6 +1834,20 @@ end
               eprior = eprior - lik.fh.lp(lik);
             end
             
+            % Evaluate the prior contribution to the error from the inducing inputs
+            if ~isempty(strfind(gp.infer_params, 'inducing'))
+              if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+                if iscell(gp.p.X_u) % Own prior for each inducing input
+                  for i = 1:size(gp.X_u,1)
+                    pr = gp.p.X_u{i};
+                    eprior = eprior - pr.fh.lp(gp.X_u(i,:), pr);
+                  end
+                else
+                  eprior = eprior - gp.p.X_u.fh.lp(gp.X_u(:), gp.p.X_u);
+                end
+              end
+            end
+            
             % The last things to do
             if isfield(gp.latent_opt, 'display') && ismember(gp.latent_opt.display,{'final','iter'})
               fprintf('GPEP_E: Number of iterations in EP: %d \n', iter-1)
@@ -2514,6 +2528,20 @@ end
             if isfield(gp, 'lik') && isfield(gp.lik, 'p')
               likelih = gp.lik;
               eprior = eprior - likelih.fh.lp(likelih);
+            end
+            
+            % Evaluate the prior contribution to the error from the inducing inputs
+            if ~isempty(strfind(gp.infer_params, 'inducing'))
+              if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+                if iscell(gp.p.X_u) % Own prior for each inducing input
+                  for i = 1:size(gp.X_u,1)
+                    pr = gp.p.X_u{i};
+                    eprior = eprior - pr.fh.lp(gp.X_u(i,:), pr);
+                  end
+                else
+                  eprior = eprior - gp.p.X_u.fh.lp(gp.X_u(:), gp.p.X_u);
+                end
+              end
             end
             
             % the total energy

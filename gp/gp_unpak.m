@@ -80,7 +80,7 @@ if ~isempty(strfind(param, 'inducing'))
     if ~iscell(gp.p.X_u)
       % One prior for all inducing inputs
       lu = length(gp.X_u(:));
-      gp.X_u = reshape(w(1:lu), size(gp.X_u));
+      gp.X_u = reshape(w(1:lu), size(gp.X_u'))';
       if lu < length(w)
         w = w(lu+1:end);
       end

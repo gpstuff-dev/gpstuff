@@ -200,7 +200,8 @@ function gp = gp_set(varargin)
   ip.addParamValue('latent_method','Laplace', @(x) ischar(x) || iscell(x));
   ip.addParamValue('latent_opt',struct(), @isstruct);
   ip.addParamValue('X_u',[],  @(x) isreal(x) && all(isfinite(x(:))));
-  ip.addParamValue('Xu_prior',prior_unif,  @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('Xu_prior',prior_unif,  @(x) isstruct(x) || isempty(x) || ...
+                   iscell(x));
   ip.addParamValue('tr_index', [], @(x) ~isempty(x) || iscell(x))    
   ip.addParamValue('comp_cf', [], @(x) iscell(x))    
   ip.addParamValue('derivobs','off', @(x) islogical(x) || isscalar(x) || ...

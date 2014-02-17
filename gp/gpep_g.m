@@ -351,12 +351,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 %               end
 %             end
           end
-          if length(gprior) > length(gdata)
-            tmp=gdata;
-            gdata=zeros(size(gprior));
-            gdata(hier(1:length(gprior))==1) = tmp;
-            i1 = length(gdata);
-          end
+%           if length(gprior) > length(gdata)
+%             tmp=gdata;
+%             gdata=zeros(size(gprior));
+%             gdata(hier(1:length(gprior))==1) = tmp;
+%             i1 = length(gdata);
+%           end
         end
 
       case {'FIC'}
@@ -396,11 +396,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to covariance function parameters
         if ~isempty(strfind(gp.infer_params, 'covariance'))
+          i1=0;
           for i=1:ncf
-            i1=0;
-            if ~isempty(gprior)
-              i1 = length(gprior);
-            end
+%             i1=0;
+%             if ~isempty(gprior)
+%               i1 = length(gprior);
+%             end
 
             gpcf = gp.cf{i};
             % Get the gradients of the covariance matrices
@@ -440,7 +441,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 gdata(i1) = gdata(i1) + 0.5.*(sum(DKff./La) - sum(LL.*DKff));
                 gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
 
-                gprior(i1) = gprior_cf(i2);
+%                 gprior(i1) = gprior_cf(i2);
               end
 
             else
@@ -478,19 +479,19 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                     2*((nutilde.*DS./S)'*iSKfuiL)*(iSKfuiL'*nutilde) - nud*DTtilde*nud'; % nutilde'* d(sigma^-1)/dth *nutilde
                 gdata(i1) = gdata(i1) + 0.5*nuDpcovnu;
                 gdata(i1) = -gdata(i1);
-                gprior(i1) = gprior_cf(i2);
+%                 gprior(i1) = gprior_cf(i2);
               end
 
             end
-
-            % Set the gradients of hyperparameter
-            if length(gprior_cf) > np
-              for i2=np+1:length(gprior_cf)
-                i1 = i1+1;
-                gdata(i1) = 0;
-                gprior(i1) = gprior_cf(i2);
-              end
-            end
+            gprior = [gprior gprior_cf];
+%             % Set the gradients of hyperparameter
+%             if length(gprior_cf) > np
+%               for i2=np+1:length(gprior_cf)
+%                 i1 = i1+1;
+%                 gdata(i1) = 0;
+%                 gprior(i1) = gprior_cf(i2);
+%               end
+%             end
           end
 
         end
@@ -505,14 +506,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
             gdata_inducing(st+1:st+length(gp.X_u(:))) = 0;
             i1 = st+1;
-            for i = 1:size(gp.X_u,1)
-              if iscell(gp.p.X_u) % Own prior for each inducing input
+            gprior_inducing=[];
+            if iscell(gp.p.X_u) % Own prior for each inducing input
+              for i = 1:size(gp.X_u,1)
                 pr = gp.p.X_u{i};
-                gprior_inducing(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
-              else % One prior for all inducing inputs
-                gprior_inducing(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+                gprior_inducing =[gprior_inducing -pr.fh.lpg(gp.X_u(i,:), pr)];
               end
-              i1 = i1 + m;
+            else % One prior for all inducing inputs
+              gprior_inducing = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
             end
 
             for i=1:ncf
@@ -598,11 +599,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         if ~isempty(strfind(gp.infer_params, 'covariance'))
 
           % Evaluate the gradients from covariance functions
+          i1=0;
           for i=1:ncf
-            i1=0;
-            if ~isempty(gprior)
-              i1 = length(gprior);
-            end
+%             i1=0;
+%             if ~isempty(gprior)
+%               i1 = length(gprior);
+%             end
 
             % Get the gradients of the covariance matrices
             % and gprior from gpcf_* structures
@@ -652,17 +654,17 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                             + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
                             sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})))));
               end
-              gprior(i1) = gprior_cf(i2);
+%               gprior(i1) = gprior_cf(i2);
             end
-
-            % Set the gradients of hyperparameter
-            if length(gprior_cf) > np
-              for i2=np+1:length(gprior_cf)
-                i1 = i1+1;
-                gdata(i1) = 0;
-                gprior(i1) = gprior_cf(i2);
-              end
-            end
+            gprior=[gprior gprior_cf];
+%             % Set the gradients of hyperparameter
+%             if length(gprior_cf) > np
+%               for i2=np+1:length(gprior_cf)
+%                 i1 = i1+1;
+%                 gdata(i1) = 0;
+%                 gprior(i1) = gprior_cf(i2);
+%               end
+%             end
           end
 
         end
@@ -681,14 +683,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             gdata_inducing(st+1:st+length(gp.X_u(:))) = 0;
 
             i1 = st+1;
-            for i = 1:size(gp.X_u,1)
-              if iscell(gp.p.X_u) % Own prior for each inducing input
+            gprior_inducing=[];
+            if iscell(gp.p.X_u) % Own prior for each inducing input
+              for i = 1:size(gp.X_u,1)
                 pr = gp.p.X_u{i};
-                gprior_inducing(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
-              else % One prior for all inducing inputs
-                gprior_inducing(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+                gprior_inducing =[gprior_inducing -pr.fh.lpg(gp.X_u(i,:), pr)];
               end
-              i1 = i1 + m;
+            else % One prior for all inducing inputs
+              gprior_inducing = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
             end
 
             % Loop over the  covariance functions
@@ -777,11 +779,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to covariance function parameters
         if ~isempty(strfind(gp.infer_params, 'covariance'))
+          i1=0;
           for i=1:ncf
-            i1=0;
-            if ~isempty(gprior)
-              i1 = length(gprior);
-            end
+%             i1=0;
+%             if ~isempty(gprior)
+%               i1 = length(gprior);
+%             end
 
             gpcf = gp.cf{i};
 
@@ -825,7 +828,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 %gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\((2.*K_uf') - KfuiKuuKuu).*iKuuKuf',2));
                 gdata(i1) = gdata(i1) + 0.5.*sum(sum(ldlsolve(LD,2.*DKuf' - KfuiKuuKuu).*iKuuKuf',2));
                 gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
-                gprior(i1) = gprior_cf(i2);
+%                 gprior(i1) = gprior_cf(i2);
               end
 
               % Evaluate the gradient for compact support covariance functions
@@ -849,18 +852,18 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 end
                 i1 = i1+1;
                 gdata(i1) = 0.5*(sum(sum(siLa.*DKff',2)) - sum(sum(L.*(L'*DKff')')) - b*DKff*b');
-                gprior(i1) = gprior_cf(i2);
+%                 gprior(i1) = gprior_cf(i2);
               end
             end
-
-            % Set the gradients of hyperparameter
-            if length(gprior_cf) > np
-              for i2=np+1:length(gprior_cf)
-                i1 = i1+1;
-                gdata(i1) = 0;
-                gprior(i1) = gprior_cf(i2);
-              end
-            end
+            gprior = [gprior gprior_cf];
+%             % Set the gradients of hyperparameter
+%             if length(gprior_cf) > np
+%               for i2=np+1:length(gprior_cf)
+%                 i1 = i1+1;
+%                 gdata(i1) = 0;
+%                 gprior(i1) = gprior_cf(i2);
+%               end
+%             end
           end
 
         end
@@ -878,14 +881,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
             gdata_inducing(st+1:st+length(gp.X_u(:))) = 0;
             i1 = st+1;
-            for i = 1:size(gp.X_u,1)
-              if iscell(gp.p.X_u) % Own prior for each inducing input
+            gprior_inducing=[];
+            if iscell(gp.p.X_u) % Own prior for each inducing input
+              for i = 1:size(gp.X_u,1)
                 pr = gp.p.X_u{i};
-                gprior_inducing(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
-              else % One prior for all inducing inputs
-                gprior_inducing(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+                gprior_inducing =[gprior_inducing -pr.fh.lpg(gp.X_u(i,:), pr)];
               end
-              i1 = i1 + m;
+            else % One prior for all inducing inputs
+              gprior_inducing = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
             end
 
             for i=1:ncf
@@ -920,7 +923,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
                     gdata_inducing(i1) = gdata_inducing(i1) + 0.5.*sum(sum(ldlsolve(LD,(2.*DKuf{i2}') - KfuiKuuKuu).*iKuuKuf',2));
                     gdata_inducing(i1) = gdata_inducing(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
-                    gprior_inducing(i1) = gprior_inducing_ind(i2);
+%                     gprior_inducing(i1) = gprior_inducing_ind(i2);
                   end
                 end
               end
@@ -951,11 +954,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to covariance function parameters
         if ~isempty(strfind(gp.infer_params, 'covariance'))
+          i1=0;
           for i=1:ncf
-            i1=0;
-            if ~isempty(gprior)
-              i1 = length(gprior);
-            end
+%             i1=0;
+%             if ~isempty(gprior)
+%               i1 = length(gprior);
+%             end
 
             gpcf = gp.cf{i};
             % Get the gradients of the covariance matrices
@@ -989,17 +993,17 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
               gdata(i1) = -0.5.*((2*b*DKuf'-(b*KfuiKuuKuu))*(iKuuKuf*b'));
               gdata(i1) = gdata(i1) + 0.5.*(2.*(sum(iLav'*sum(DKuf'.*iKuuKuf',2))-sum(sum(L'.*(L'*DKuf'*iKuuKuf))))...
                                             - sum(iLav'*sum(KfuiKuuKuu.*iKuuKuf',2))+ sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-              gprior(i1) = gprior_cf(i2);
+%               gprior(i1) = gprior_cf(i2);
             end
-
-            % Set the gradients of hyperparameter
-            if length(gprior_cf) > np
-              for i2=np+1:length(gprior_cf)
-                i1 = i1+1;
-                gdata(i1) = 0;
-                gprior(i1) = gprior_cf(i2);
-              end
-            end
+            gprior = [gprior gprior_cf];
+%             % Set the gradients of hyperparameter
+%             if length(gprior_cf) > np
+%               for i2=np+1:length(gprior_cf)
+%                 i1 = i1+1;
+%                 gdata(i1) = 0;
+%                 gprior(i1) = gprior_cf(i2);
+%               end
+%             end
           end
 
         end
@@ -1013,14 +1017,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
             gdata_inducing(st+1:st+length(gp.X_u(:))) = 0;
             i1 = st+1;
-            for i = 1:size(gp.X_u,1)
-              if iscell(gp.p.X_u) % Own prior for each inducing input
+            gprior_inducing=[];
+            if iscell(gp.p.X_u) % Own prior for each inducing input
+              for i = 1:size(gp.X_u,1)
                 pr = gp.p.X_u{i};
-                gprior_inducing(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
-              else % One prior for all inducing inputs
-                gprior_inducing(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+                gprior_inducing =[gprior_inducing -pr.fh.lpg(gp.X_u(i,:), pr)];
               end
-              i1 = i1 + m;
+            else % One prior for all inducing inputs
+              gprior_inducing = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
             end
 
             for i=1:ncf
@@ -1139,6 +1143,23 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
     gdata = [gdata gdata_inducing];
     gprior = [gprior gprior_inducing];
 
+    % If ther parameters of the model (covariance function parameters,
+    % likelihood function parameters, inducing inputs) have additional
+    % hyperparameters that are not fixed, set the gradients in correct order
+    if length(gprior) > length(gdata)
+      %gdata(gdata==0)=[];
+      tmp=gdata;
+      gdata = zeros(size(gprior));
+      % Set the gradients to right place
+      if any(hier==0)
+        gdata([hier(1:find(hier==0,1)-1)==1 ...  % Covariance function
+          hier(find(hier==0,1):find(hier==0,1)+length(gprior_lik)-1)==0 ... % Likelihood function
+          hier(find(hier==0,1)+length(gprior_lik):end)==1]) = tmp;  % Inducing inputs
+      else
+        gdata(hier==1)=tmp;
+      end
+    end
+    
     % total gradient
     g = gdata + gprior;
 

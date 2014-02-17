@@ -94,7 +94,8 @@ function [w, s, h] = gp_pak(gp, param)
       if isfield(gp,'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
         if ~iscell(gp.p.X_u)
           % One prior for all inducing inputs
-          w = [w gp.X_u(:)'];
+          w = [w reshape(gp.X_u', numel(gp.X_u),1)'];
+%           w = [w gp.X_u'];
           s = [s; sprintf('inducing x %d',numel(gp.X_u))];
           h = [h ones(1,numel(gp.X_u))];
           [wi,si,hi]=gp.p.X_u.fh.pak(gp.p.X_u);

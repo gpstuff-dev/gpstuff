@@ -247,7 +247,7 @@ function [w,s,h] = gpcf_ppcs3_pak(gpcf)
       sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
-      h = [h; 1+hh];
+      h = [h 1+hh];
     end
   end
 
