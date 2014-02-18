@@ -958,7 +958,7 @@ function reccf = gpcf_rq_recappend(reccf, ri, gpcf)
     end
 
     reccf.alpha(ri,:)=gpcf.alpha;
-    if isfield(gpp,'alpha') && ~isempty(ri.p.alpha)
+    if isfield(gpp,'alpha') && ~isempty(gpp.alpha)
       reccf.p.alpha = gpp.alpha.fh.recappend(reccf.p.alpha, ri, gpcf.p.alpha);
     end
     
