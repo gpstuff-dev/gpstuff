@@ -1353,11 +1353,14 @@ switch gp.type
             
             % The derivatives of A and Q
             dA = AA(n+1:end,1:n,j);
-            dQ = dPinf(:,:,j) - dA*Pinf*A' - A*dPinf(:,:,j)*A' - A*Pinf*dA';
+            %dQ = dPinf(:,:,j) - dA*Pinf*A' - A*dPinf(:,:,j)*A' - A*Pinf*dA';
+            dAPinfAt = dA*Pinf*A';
+            dQ = dPinf(:,:,j) - dAPinfAt - A*dPinf(:,:,j)*A' - dAPinfAt';
             
             % The derivatives of P
-            dP(:,:,j) = dA*P*A' + A*dP(:,:,j)*A' + A*P*dA' + dQ;
-            
+            %dP(:,:,j) = dA*P*A' + A*dP(:,:,j)*A' + A*P*dA' + dQ;
+            dAPAt = dA*P*A';
+            dP(:,:,j) = dAPAt + A*dP(:,:,j)*A' + dAPAt' + dQ;
         end
         
         % Set predicted m and P
