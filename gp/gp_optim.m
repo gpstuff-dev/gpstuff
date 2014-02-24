@@ -39,7 +39,7 @@ function [gp, varargout] = gp_optim(gp, x, y, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_OPTIM';
-ip.addRequired('gp',@isstruct);
+ip.addRequired('gp',@(x) isstruct(x) || isempty(x));
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
@@ -48,16 +48,19 @@ ip.addParamValue('opt', [], @isstruct)
 ip.addParamValue('loss', 'e', @(x) ismember(lower(x),{'e', 'loo', 'kfcv', 'waic' 'waic' 'waicv' 'waicg'}))
 ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
 ip.parse(gp, x, y, varargin{:});
+if isempty(gp)
+  gp=gp_set();
+end
+if isempty(gp_pak(gp))
+  % nothing to optimize
+  return
+end
 z=ip.Results.z;
 optimf=ip.Results.optimf;
 opt=ip.Results.opt;
 loss=ip.Results.loss;
 k=ip.Results.k;
 
-if isempty(gp_pak(gp))
-  % nothing to optimize
-  return
-end
 
 switch lower(loss)
   case 'e'

@@ -72,7 +72,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GP_IA';
-  ip.addRequired('gp', @isstruct);
+  ip.addRequired('gp',@(x) isstruct(x) || isempty(x));
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addOptional('xt',[], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
@@ -113,7 +113,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   else
     ip.parse(gp, x, y, [], varargin{:});
   end
-  
+  if isempty(gp)
+    gp=gp_set();
+  end
   xt=ip.Results.xt;
   % integration parameters
   int_method=ip.Results.int_method;

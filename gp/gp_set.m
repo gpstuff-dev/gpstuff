@@ -15,12 +15,12 @@ function gp = gp_set(varargin)
 %    Parameters for Gaussian process
 %      cf           - Single covariance structure or cell array of 
 %                     covariance function structures created by
-%                     gpcf_* functions. The default is [].
-%                     This or meanf has to be defined as non-empty. 
+%                     gpcf_* functions. The default is [],
+%                     except if neither cf or meanf is given then the
+%                     the default is gpcf_sexp(). 
 %      meanf        - Single mean function structure or cell array of 
 %                     mean function function structures created by
 %                     gpmf_* functions. The default is [].
-%                     This or cf has to be defined as non-empty. 
 %                     Mean functions work only with GP type 'FULL'
 %      type         - Type of Gaussian process
 %                      'FULL'   full GP (default)
@@ -253,8 +253,8 @@ function gp = gp_set(varargin)
       end
     end
   end
-  if isempty(gp.cf) && isempty(gp.meanf)
-    error('At least one covariance or mean function has to defined')
+  if isempty(gp.cf) && (~isfield(gp,'meanf') || isempty(gp.meanf))
+    gp.cf={gpcf_sexp()};
   end
   % Inference for which parameters 
   if init || ~ismember('infer_params',ip.UsingDefaults)
