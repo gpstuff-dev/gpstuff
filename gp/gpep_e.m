@@ -1924,7 +1924,7 @@ end
             % initial energy (lnZ_ep)
             e = lnZ_q + lnZ_r -lnZ_s;
             
-            if ismember(display,{'final','iter'})
+            if ismember(display,{'iter'})
               fprintf('\nInitial energy: e=%.4f, hyperparameters:\n',e)
               fprintf('Cov:%s \n',sprintf(' %.2g,',gp_pak(gp,'covariance')))
               fprintf('Lik:%s \n',sprintf(' %.2g,',gp_pak(gp,'likelihood')))
