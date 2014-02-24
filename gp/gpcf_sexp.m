@@ -151,7 +151,7 @@ function gpcf = gpcf_sexp(varargin)
 
 end
 
-function [w,s] = gpcf_sexp_pak(gpcf)
+function [w,s,h] = gpcf_sexp_pak(gpcf)
 %GPCF_SEXP_PAK  Combine GP covariance function parameters into
 %               one vector
 %
@@ -170,15 +170,18 @@ function [w,s] = gpcf_sexp_pak(gpcf)
 %  See also
 %    GPCF_SEXP_UNPAK
 
-  w=[];s={};
+  w=[];s={}; h=[];
   
   if ~isempty(gpcf.p.magnSigma2)
     w = [w log(gpcf.magnSigma2)];
     s = [s; 'log(sexp.magnSigma2)'];
+    h = [h 1];
     % Hyperparameters of magnSigma2
-    [wh sh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    [wh sh, hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end        
 
   if isfield(gpcf,'metric')
@@ -193,10 +196,13 @@ function [w,s] = gpcf_sexp_pak(gpcf)
       else
         s = [s; 'log(sexp.lengthScale)'];
       end
+      h = [h ones(1,numel(gpcf.lengthScale))];
       % Hyperparameters of lengthScale
-      [wh  sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      [wh  sh, hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
   end
 
@@ -1031,8 +1037,8 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2, i1)
       else
         s = 1./gpcf.lengthScale.^2;
       end
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           DK = zeros(size(K));
           DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x(:,i)');
           DK = DK + DK';
@@ -1063,8 +1069,8 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2, i1)
         s = 1./gpcf.lengthScale.^2;
       end
       
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           DK= zeros(size(K));
           DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x2(:,i)');
           

@@ -105,7 +105,7 @@ function lik = lik_zinegbin(varargin)
     lik.fh.recappend = @lik_zinegbin_recappend;
   end
 
-  function [w,s] = lik_zinegbin_pak(lik)
+  function [w,s,h] = lik_zinegbin_pak(lik)
   %LIK_ZINEGBIN_PAK  Combine likelihood parameters into one vector.
   %
   %  Description 
@@ -119,13 +119,15 @@ function lik = lik_zinegbin(varargin)
   %   See also
   %   LIK_ZINEGBIN_UNPAK, GP_PAK
     
-    w=[];s={};
+    w=[];s={};h=[];
     if ~isempty(lik.p.disper)
       w = log(lik.disper);
       s = [s; 'log(zinegbin.disper)'];
-      [wh sh] = feval(lik.p.disper.fh.pak, lik.p.disper);
+      h = 0;
+      [wh, sh, hh] = feval(lik.p.disper.fh.pak, lik.p.disper);
       w = [w wh];
       s = [s; sh];
+      h = [h hh];
     end
   end
 

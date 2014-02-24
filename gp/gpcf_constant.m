@@ -76,7 +76,7 @@ function gpcf = gpcf_constant(varargin)
 
 end
 
-function [w, s] = gpcf_constant_pak(gpcf, w)
+function [w, s, h] = gpcf_constant_pak(gpcf, w)
 %GPCF_CONSTANT_PAK  Combine GP covariance function parameters into
 %                   one vector.
 %
@@ -93,15 +93,18 @@ function [w, s] = gpcf_constant_pak(gpcf, w)
 %  See also
 %    GPCF_CONSTANT_UNPAK
   
-  w = []; s = {};
+  w = []; s = {}; h=[];
   
   if ~isempty(gpcf.p.constSigma2)
     w = log(gpcf.constSigma2);
     s = [s 'log(constant.constSigma2)'];
+    h = 1;
     % Hyperparameters of constSigma2
-    [wh sh] = gpcf.p.constSigma2.fh.pak(gpcf.p.constSigma2);
+    [wh, sh, hh] = gpcf.p.constSigma2.fh.pak(gpcf.p.constSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s sh];
+    h = [h 1+hh];
   end        
 end
 
@@ -311,8 +314,8 @@ function DKff = gpcf_constant_ginput(gpcf, x, x2, i1)
   
   if nargin == 2 || isempty(x2)
     ii1 = 0;
-    for i=1:m
-      for j = 1:n
+    for j = 1:n
+      for i=1:m
         ii1 = ii1 + 1;
         DKff{ii1} = zeros(n);
       end
@@ -322,8 +325,8 @@ function DKff = gpcf_constant_ginput(gpcf, x, x2, i1)
     %K = feval(gpcf.fh.cov, gpcf, x, x2);
     
     ii1 = 0;
-    for i=1:m
-      for j = 1:n
+    for j = 1:n
+      for i=1:m
         ii1 = ii1 + 1;
         DKff{ii1} = zeros(n, size(x2,1));
         gprior(ii1) = 0; 

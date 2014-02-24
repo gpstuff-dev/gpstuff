@@ -384,13 +384,19 @@ function waic = gp_waic(gp, x, y, varargin)
       
       if isfield(gp{1}.lik.fh,'trcov')
         % Gaussian likelihood
+
         for i=1:tn
-          fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
-          fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
-          Elog(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-                                    .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))').^2), fmin, fmax);
-          Elog2(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-                                     .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
+%           fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
+%           fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
+          Elog(i) = sum((Ef(i,:).^4 + 3.*Varf(i,:).^2 - 4.*Ef(i,:).^3.*y(i) + 6.*Varf(i,:).*y(i).^2 + y(i).^4 + 6.*Ef(i,:).^2.*(Varf(i,:) + y(i).^2) ...
+            -4.*Ef(i,:).*(3.*Varf(i,:).*y(i) + y(i).^3) + 2.*sigma2(i,:).*(Ef(i,:).^2 + Varf(i,:) - 2.*Ef(i,:).*y(i) + y(i).^2) ...
+            .*log(2.*pi.*sigma2(i,:)) + sigma2(i,:).^2.*log(2.*pi.*sigma2(i,:)).^2)./(4.*sigma2(i,:).^2).*weight);
+          Elog2(i) = sum(((-Ef(i,:).^2-Varf(i,:)+2.*Ef(i,:).*y(i)-y(i).^2-sigma2(i,:).*log(2*pi*sigma2(i,:))) ...
+            ./(2.*sigma2(i,:))).*weight);
+%           Elog(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+%                                     .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))').^2), fmin, fmax);
+%           Elog2(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+%                                      .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
         end
         Elog2 = Elog2.^2;
         Vn = (Elog-Elog2);
@@ -422,10 +428,12 @@ function waic = gp_waic(gp, x, y, varargin)
       if isfield(gp{1}.lik.fh,'trcov')
         % Gaussian likelihood
         for i=1:tn
-          fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
-          fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
-          GUt(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-                                   .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
+%           fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
+%           fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
+          GUt(i) = sum(((-Ef(i,:).^2-Varf(i,:)+2.*Ef(i,:).*y(i)-y(i).^2-sigma2(i,:).*log(2*pi*sigma2(i,:))) ...
+            ./(2.*sigma2(i,:))).*weight);
+%           GUt(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+%                                    .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
         end
         waic = BUt-2*(BUt-GUt);
 

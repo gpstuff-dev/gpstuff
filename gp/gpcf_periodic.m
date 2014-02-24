@@ -126,7 +126,7 @@ function gpcf = gpcf_periodic(varargin)
 
 end
 
-function [w, s] = gpcf_periodic_pak(gpcf)
+function [w, s, h] = gpcf_periodic_pak(gpcf)
 %GPCF_PERIODIC_PAK  Combine GP covariance function parameters into
 %                   one vector
 %
@@ -153,46 +153,58 @@ function [w, s] = gpcf_periodic_pak(gpcf)
     error('Periodic covariance function not compatible with metrics.');
   else
     i1=0;i2=1;
-    w = []; s = {};
+    w = []; s = {}; h=[];
     
     if ~isempty(gpcf.p.magnSigma2)
       w = [w log(gpcf.magnSigma2)];
       s = [s; 'log(periodic.magnSigma2)'];
+      h = [h 1];
       
       % Hyperparameters of magnSigma2
-      [wh sh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+      [wh, sh, hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
     
     if ~isempty(gpcf.p.lengthScale)
       w = [w log(gpcf.lengthScale)];
       s = [s; 'log(periodic.lengthScale)'];
+      h = [h ones(1,numel(gpcf.lengthScale))];
       
       % Hyperparameters of lengthScale
-      [wh  sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      [wh, sh, hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
     
     if ~isempty(gpcf.p.lengthScale_sexp)  && gpcf.decay == 1
       w = [w log(gpcf.lengthScale_sexp)];
       s = [s; 'log(periodic.lengthScale_sexp)'];
+      h = [h ones(1,numel(gpcf.lengthScale_sexp))];
       
       % Hyperparameters of lengthScale_sexp
-      [wh sh] = gpcf.p.lengthScale_sexp.fh.pak(gpcf.p.lengthScale_sexp);
+      [wh, sh, hh] = gpcf.p.lengthScale_sexp.fh.pak(gpcf.p.lengthScale_sexp);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
     
     if ~isempty(gpcf.p.period)
       w = [w log(gpcf.period)];
       s = [s; 'log(periodic.period)'];
+      h = [h 1];
       
       % Hyperparameters of period
-      [wh sh] = gpcf.p.period.fh.pak(gpcf.p.period);
+      [wh, sh, hh] = gpcf.p.period.fh.pak(gpcf.p.period);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
   end
 end
@@ -776,8 +788,8 @@ function DKff = gpcf_periodic_ginput(gpcf, x, x2, i1)
     if isfield(gpcf,'metric')
       error('Covariance function not compatible with metrics');
     else
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           DK = zeros(size(K));
           DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(j,i),x(:,i)')./gp_period);
           if gpcf.decay == 1

@@ -98,7 +98,7 @@ function lik = lik_weibull(varargin)
 
 end
 
-function [w,s] = lik_weibull_pak(lik)
+function [w,s,h] = lik_weibull_pak(lik)
 %LIK_WEIBULL_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -112,13 +112,15 @@ function [w,s] = lik_weibull_pak(lik)
 %   See also
 %   LIK_WEIBULL_UNPAK, GP_PAK
   
-  w=[];s={};
+  w=[];s={};h=[];
   if ~isempty(lik.p.shape)
     w = log(lik.shape);
     s = [s; 'log(weibull.shape)'];
-    [wh sh] = lik.p.shape.fh.pak(lik.p.shape);
+    h = 0;
+    [wh, sh, hh] = lik.p.shape.fh.pak(lik.p.shape);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end
 end
 

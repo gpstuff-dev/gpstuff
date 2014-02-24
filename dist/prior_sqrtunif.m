@@ -9,7 +9,7 @@ function p = prior_sqrtunif(varargin)
 %    PRIOR_*
   
 % Copyright (c) 2009 Jarno Vanhatalo
-% Copyright (c) 2010 Jaakko Riihimäki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -43,9 +43,10 @@ function p = prior_sqrtunif(varargin)
 
 end
 
-function [w, s] = prior_sqrtunif_pak(p)
+function [w, s, h] = prior_sqrtunif_pak(p)
   w=[];
   s={};
+  h=[];
 end
 
 function [p, w] = prior_sqrtunif_unpak(p, w)

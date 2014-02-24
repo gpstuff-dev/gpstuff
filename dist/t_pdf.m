@@ -2,7 +2,7 @@ function y = t_pdf(x, v, mu, sigma)
 %T_PDF     Student's t probability density function (pdf).
 %
 %   Y = T_PDF(X,V,MU,SIGMA) Returns the Student's t pdf with
-%   V degrees of freedom, MU mean and SIGMA standard deviation at X.
+%   V degrees of freedom, MU mean and scale parameter SIGMA at X.
 %
 %   The size of Y is the common size of the input arguments. A scalar input  
 %   functions as a constant matrix of the same size as the other inputs.     

@@ -79,17 +79,20 @@ function p = prior_sinvchi2(varargin)
 
 end
 
-function [w, s] = prior_sinvchi2_pak(p)
+function [w, s, h] = prior_sinvchi2_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.s2)
     w = log(p.s2);
     s=[s; 'log(Sinvchi2.s2)'];
+    h = 1;
   end
   if ~isempty(p.p.nu)
     w = [w log(p.nu)];
     s=[s; 'log(Sinvchi2.nu)'];
+    h = [h 1];
   end
 end
 

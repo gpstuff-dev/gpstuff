@@ -62,7 +62,7 @@ function gpcf = gpcf_prod(varargin)
 
 end
 
-function [w, s] = gpcf_prod_pak(gpcf)
+function [w, s, h] = gpcf_prod_pak(gpcf)
 %GPCF_PROD_PAK  Combine GP covariance function parameters into one vector
 %
 %  Description
@@ -75,13 +75,14 @@ function [w, s] = gpcf_prod_pak(gpcf)
 %    GPCF_PROD_UNPAK
   
   ncf = length(gpcf.cf);
-  w = []; s = {};
+  w = []; s = {}; h=[];
   
   for i=1:ncf
     cf = gpcf.cf{i};
-    [wi si] = cf.fh.pak(cf);
+    [wi, si, hi] = cf.fh.pak(cf);
     w = [w wi];
     s = [s; si];
+    h = [h hi];
   end
 end
 

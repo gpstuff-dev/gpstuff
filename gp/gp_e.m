@@ -508,13 +508,13 @@ end
 % ============================================================
 if ~isempty(strfind(gp.infer_params, 'inducing'))
   if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
-    for i = 1:size(gp.X_u,1)
-      if iscell(gp.p.X_u) % Own prior for each inducing input
+    if iscell(gp.p.X_u) % Own prior for each inducing input
+      for i = 1:size(gp.X_u,1)        
         pr = gp.p.X_u{i};
-        eprior = eprior - pr.fh.lp(gp.X_u(i,:), pr);
-      else
-        eprior = eprior - gp.p.X_u.fh.lp(gp.X_u(i,:), gp.p.X_u);
+        eprior = eprior - pr.fh.lp(gp.X_u(i,:), pr);        
       end
+    else
+      eprior = eprior - gp.p.X_u.fh.lp(gp.X_u(:), gp.p.X_u);
     end
   end
 end
