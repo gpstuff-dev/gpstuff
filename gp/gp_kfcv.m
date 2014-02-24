@@ -226,6 +226,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   ip.addParamValue('save_results', false, @(x) islogical(x))
   ip.addParamValue('folder', [], @(x) ischar(x) )
   ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
+  ip.addParamValue('joint', 'off', @(x) ismember(x, {'off', 'on'}));
   ip.parse(gp, x, y, varargin{:});
   z=ip.Results.z;
   yt=ip.Results.yt;
@@ -242,6 +243,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   save_results=ip.Results.save_results;
   folder = ip.Results.folder;
   fcorr = ip.Results.fcorr;
+  joint = ip.Results.joint;
 
   [n,nin] = size(x);
   gp_orig = gp;
@@ -477,12 +479,25 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
       ztt=zt(inds,:);
     end
     
-    if predyt
-      [Eft(inds), Varft(inds), lpyt(inds), Eyt(inds), Varyt(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
-                                     tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
-    elseif predlpyt
-      [Eft(inds), Varft(inds),lpyt(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+    if strcmp(gplik.type,'Coxph')
+      [tmp,tmp,lpyt(inds)]=gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
                         tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
+    elseif predyt
+      [Eft(inds), Varft(inds), lpyt(inds), Eytt, Varytt] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+                                     tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
+      if ~isempty(Eytt)
+        Eyt(inds)=Eytt; 
+        Varyt(inds)=Varytt;
+      end
+    elseif predlpyt
+      if joint
+        [Eft(inds), Covft,lpyt(inds)] = gp_jpred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+                                                      tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
+        Varft(inds)=diag(Covft);
+      else
+        [Eft(inds), Varft(inds),lpyt(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+                                                      tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
+      end
     elseif predft
       [Eft(inds),Varft(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
                     tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
@@ -679,7 +694,11 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     if predyt
       [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst, 'fcorr', fcorr); 
     elseif predlpyt
-      [Eft, Varft,lpyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst, 'fcorr', fcorr);
+      if joint
+        [Eft, Varft,lpyt] = gp_jpred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst, 'fcorr', fcorr);
+      else
+        [Eft, Varft,lpyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst, 'fcorr', fcorr);
+      end
     elseif predft
       [Eft,Varft] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst, 'fcorr', fcorr);
     end
