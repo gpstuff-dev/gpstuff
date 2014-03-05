@@ -847,6 +847,172 @@ switch gp.type
         if ~isempty(yt)
           ljpyt = mnorm_lpdf(yt', Eyt', Covyt);
         end
+    end  
+
+  case {'KALMAN'}
+      
+    % Check inputs
+    if (size(x,2)>1) || (size(xt,2)>1),
+        error('The ''KALMAN'' option only supports scalar inputs.')
+    end
+    
+    % Combine observations and test points
+    xall = [x(:); xt(:)];
+    yall = [y(:); nan(numel(xt),1)];
+    
+    % Make sure the points are unique and in ascending order
+    [xall,sort_ind,return_ind] = unique(xall);
+    yall = yall(sort_ind);
+    
+    % Only return test indices;
+    return_ind = return_ind(end-numel(xt)+1:end);
+            
+    % Make model  
+    % Extract the noise magnitude from the GP likelihood model
+    R = gp.lik.sigma2;
+    
+    % Initialize model matrices
+    F    = [];
+    L    = [];
+    Qc   = [];
+    H    = [];
+    Pinf = [];
+    
+    % For each covariance function
+    for j=1:length(gp.cf)
+ 
+      % Form state-space model from the gp.cf{j}
+      [jF,jL,jQc,jH,jPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
+    
+      % Stack model
+      F    = blkdiag(F,jF);
+      L    = blkdiag(L,jL);
+      Qc   = blkdiag(Qc,jQc);
+      H    = [H jH];    
+      Pinf = blkdiag(Pinf,jPinf);
+      
+    end    
+          
+    % Set initial state
+    m = zeros(size(F,1),1);
+    P = Pinf;
+    
+    % Allocate space for results
+    MS = zeros(size(m,1),size(yall,1));
+    PS = zeros(size(m,1),size(m,1),size(yall,1));
+    GS = zeros(size(F,1),size(F,2),size(yall,1));
+    A = zeros(size(F,1),size(F,2),size(yall,1));
+    Q = zeros(size(P,1),size(P,2),size(yall,1));
+    
+    % Initial dt
+    dt = inf;
+    
+    % Run Kalman filter
+    for k=1:numel(yall)
+        
+        % Solve A using the method by Davison
+        if (k>1)
+            
+          % Discrete-time solution (only for stable systems)
+          dt_old = dt;
+          dt = xall(k)-xall(k-1);
+          
+          % Should we calculate a new discretization?
+          if abs(dt-dt_old) < 1e-9
+            A(:,:,k) = A(:,:,k-1); 
+            Q(:,:,k) = Q(:,:,k-1);
+          else       
+            A(:,:,k)  = expm(F*dt);
+            Q(:,:,k)  = Pinf - A(:,:,k)*Pinf*A(:,:,k)';
+          end
+          
+          % Prediction step
+          m = A(:,:,k) * m;
+          P = A(:,:,k) * P * A(:,:,k)' + Q(:,:,k);
+          
+        end
+        
+        % Update step
+        if ~isnan(yall(k))
+            S = H*P*H'+R;
+            K = P*H'/S;
+            v = yall(k,:)'-H*m;
+            m = m + K*v;
+            P = P - K*H*P;
+        end
+        
+        % Store estimate
+        MS(:,k)   = m;
+        PS(:,:,k) = P;
+                
+    end
+    
+    % Run RTS-smoother
+    for k=size(MS,2)-1:-1:1
+        
+        % Smoothing step (using Cholesky for stability, optimized)
+        PSk = PS(:,:,k);
+        L = chol(A(:,:,k+1)*PSk*A(:,:,k+1)'+Q(:,:,k+1),'lower');
+        G = PSk*A(:,:,k+1)'/L'/L;
+        m = MS(:,k) + G*(m-A(:,:,k+1)*MS(:,k));
+        P = PSk + G*(P-A(:,:,k+1)*PSk*A(:,:,k+1)'-Q(:,:,k+1))*G';
+        
+        % Store estimate
+        MS(:,k)   = m;
+        PS(:,:,k) = P;
+        GS(:,:,k) = G;
+                
+    end
+    
+    % Return covariance matrix
+    if nargout > 1
+        
+        % Initialize covariance matrix
+        Covft = zeros(length(xt));
+        
+        % Variances
+        Varft  = arrayfun(@(k) H*PS(:,:,k)*H',1:size(PS,3))';
+        
+        % Lower triangular
+        for k = 1:size(PS,3)-1
+            GSS = GS(:,:,k);
+            for j=1:size(PS,3)-k
+                Covft(k+j,k)=H*(GSS*PS(:,:,k+j))*H';
+                GSS = GSS*GS(:,:,k+j);
+            end
+        end
+        
+        % Add upper triangular and variances
+        Covft = Covft+Covft'+diag(Varft);
+        
+        % These indices shall remain
+        Covft = Covft(return_ind,return_ind);
+    end    
+    
+    % These indices shall remain
+    MS = MS(:,return_ind);
+    GS = GS(:,:,return_ind);
+    PS = PS(:,:,return_ind);
+    
+    % Return mean as column vector
+    Eft = (H*MS)';
+    
+    if nargout > 2
+        
+        % Return posterior predictive mean
+        Eyt = Eft;
+        
+        % Return posterior predictive covariance
+        Covyt = Covft + gp.lik.sigma2*eye(length(Covft));
+        
+        % Return logarithm of the predictive density
+        if ~isempty(yt)
+            
+            % Expects normal likelihood (applies to 'KALMAN')
+            ljpyt = mnorm_lpdf(yt', Eyt', Covyt);
+        else
+            ljpyt = [];
+        end
     end
    
 end

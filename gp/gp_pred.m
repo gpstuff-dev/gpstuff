@@ -906,7 +906,7 @@ switch gp.type
     % Initial dt
     dt = inf;
     
-    % Run filter for evaluating the marginal likelihood
+    % Kalman filter
     for k=1:numel(yall)
         
         % Solve A using the method by Davison
@@ -946,7 +946,7 @@ switch gp.type
                 
     end
     
-    % Run RTS-smoother
+    % RTS-smoother
     for k=size(MS,2)-1:-1:1
         
         % Smoothing step (using Cholesky for stability, optimized)
@@ -972,22 +972,20 @@ switch gp.type
     
     % Return variance as column vector
     if nargout > 1
-      Varft  = arrayfun(@(k) H*PS(:,:,k)*H',1:size(PS,3))';
+        Varft  = arrayfun(@(k) H*PS(:,:,k)*H',1:size(PS,3))';
     end
     
-    % Return posterior predictive mean
-    if nargout > 3
-        Eyt = Eft;
-    end
-    
-    % Return posterior predictive variance
-    if nargout > 4
-        Varyt = Varft + gp.lik.sigma2;
-    end
-    
-    % Return logarithm of the predictive density
     if nargout > 2
-        if ~isempty(yt) && nargout >4
+        
+        % Return posterior predictive mean
+        Eyt = Eft;
+        
+        % Return posterior predictive variance
+        Varyt = Varft + gp.lik.sigma2;
+        
+        % Return logarithm of the predictive density
+        if ~isempty(yt)
+            
             % Expects normal likelihood (applies to 'KALMAN')
             lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
         else
