@@ -1,11 +1,12 @@
-function matlab_install(SuiteSparse_path)
-%  Matlab function to compile all the c-files to mex in the GPstuff toolbox.
+function gpstuff_install(SuiteSparse_path)
+%  Matlab/Octave function to compile all the c-files to mex in the GPstuff toolbox.
 %
 %  Some of the sparse GP functionalities in the toolbox require 
 %  SuiteSparse toolbox by Tim Davis:
 %    http://www.cise.ufl.edu/research/sparse/SuiteSparse/current/SuiteSparse/
 %
-%  This package includes the SuiteSparse version 3.4. 
+%  This package includes the SuiteSparse version 3.4. Note that Octave
+%  GPstuff doesn't work with SuiteSparse at the moment.
 % 
 %  * To install without SuiteSparse run matlab_install
 %  * To install with SuiteSparse run matlab_install('SuiteSparseOn')
@@ -18,9 +19,7 @@ function matlab_install(SuiteSparse_path)
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
-
-
-    
+      
     if nargin < 1
         SuiteSparse_path = [];
         fprintf('\n The path to the SuiteSparse package is not provided. \n')

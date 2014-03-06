@@ -50,6 +50,7 @@ function lik = lik_multinomprobit(varargin)
     lik.fh.recappend = @lik_multinomprobit_recappend;
   end
   
+end
 
   function [w,s] = lik_multinomprobit_pak(lik)
   %LIK_MULTINOMPROBIT_PAK  Combine likelihood parameters into one vector.
@@ -416,4 +417,3 @@ function lik = lik_multinomprobit(varargin)
     end
     
   end
-end

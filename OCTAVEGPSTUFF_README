@@ -1,3 +1,3 @@
 This is Octave version of the GPstuff toolbox for matlab. In order to use Octave GPstuff, the following packages are needed: 
 Statistics and gsl. Octave version of GPstuff doesn't have all the functionalities of the matlab-version at the moment, namely 
-piecewise-polynomial covariance functions and some multilatent models. Octave GPstuff requires Octave version 3.6.3 or later.
+piecewise-polynomial covariance functions. Octave GPstuff requires Octave version 3.6.3 or later.

@@ -478,6 +478,7 @@ function [df,minf,maxf] = init_poisson_norm(yy,myy_i,sigm2_i,avgE)
              'even after looking hard!'])
     end
   end
+end
 
   function integrand = poisson_norm(f,avgE,ldconst,yy,myy_i,sigm2_i)
   % Poisson * Gaussian
@@ -513,7 +514,6 @@ function [df,minf,maxf] = init_poisson_norm(yy,myy_i,sigm2_i,avgE)
          -1/sigm2_i;
   end
 
-end
 
 function mu = lik_poisson_invlink(lik, f, z)
 %LIK_POISSON_INVLINK  Returns values of inverse link function

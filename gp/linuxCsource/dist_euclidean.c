@@ -24,7 +24,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include "mex.h"
+#ifndef HAVE_OCTAVE
 #include "matrix.h"
+#endif
+#ifndef true
+#define true 1
+#endif
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 
 void mexFunction(const int nlhs, mxArray *plhs[],

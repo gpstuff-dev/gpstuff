@@ -402,13 +402,13 @@ function [g_i] = lik_qgp_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   [m_0, fhncnt] = quadgk(tf, minf, maxf);
   [g_i, fhncnt] = quadgk(@(f) td(f, yy, sigma2, tau).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*sigma2;
+end
 
   function g = deriv(f, yy, sigma2, tau)
 
     g = -1/(2.*sigma2) + (yy-f)./(2.*sigma2^(3/2)).*(tau-(yy<=f));
     
   end
-end
 
 function [lpy, Ey, Vary] = lik_qgp_predy(lik, Ef, Varf, yt, zt)
 %LIK_QGP_PREDY  Returns the predictive mean, variance and density of y
@@ -557,7 +557,7 @@ function [df,minf,maxf] = init_qgp_norm(yy,myy_i,sigm2_i,sigma2,tau)
              'even after looking hard!'])
     end
   end
-  
+end
   function integrand = qgp_norm(f, ldconst, yy, sigma2, tau, myy_i, sigm2_i)
   % Quantile-GP * Gaussian
     integrand = exp(ldconst ...
@@ -581,9 +581,6 @@ function [df,minf,maxf] = init_qgp_norm(yy,myy_i,sigm2_i,sigma2,tau)
         + (myy_i - f)./sigm2_i;
   end
   
-  
-end
-
 function mu = lik_qgp_invlink(lik, f, z)
 %LIK_QGP_INVLINK  Returns values of inverse link function
 %             

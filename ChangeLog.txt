@@ -1,3 +1,8 @@
+2013-03-06 Version 4.4
+Big fixes
+ - Changed nested functions to subfunctions for compatibility with Octave 3.8.0
+ - Fixed compilation of C source files with Octave.
+
 2013-11-26 Version 4.3.1
 
 Improvements:

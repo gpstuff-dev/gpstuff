@@ -99,6 +99,7 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
     [e, edata, eprior, param] = gp.fh.ne(w, gp, x, y, z);
   end
 
+end
   function [e, edata, eprior, param] = laplace_algorithm(w, gp, x, y, z)
       
     if 0%~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && ...
@@ -2070,7 +2071,9 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
 % ==============================================================
 % Begin of the nested functions
 % ==============================================================
-%        
+%      
+end
+
 function [e, g, h] = egh(f, varargin)
   ikf = iKf(f');
   e = 0.5*f*ikf - gp.lik.fh.ll(gp.lik, y, f', z);
@@ -2090,7 +2093,7 @@ function ikf = iKf(f, varargin)
       ikf = ldlsolve(VD,f) - L*(L'*f);
   end
 end
-end
+
 function [edata,e,eprior,param] = set_output_for_notpositivedefinite()
   % Instead of stopping to chol error, return NaN
   edata=NaN;
@@ -2111,4 +2114,3 @@ function [edata,e,eprior,param] = set_output_for_notpositivedefinite()
 %   ch.w = NaN;
 end
 
-end

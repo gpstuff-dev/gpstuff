@@ -495,6 +495,7 @@ function [g_i] = lik_loglogistic_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   [m_0, fhncnt] = quadgk(tf, minf, maxf);
   [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*r;
+end
 
   function g = deriv(f, yc, yy, r)
     m = yy./exp(f);
@@ -504,7 +505,6 @@ function [g_i] = lik_loglogistic_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
       g = (1/r+log(m)) - 2./(1+m.^r).*m.^r.*log(m);
     end
   end
-end
 
 function [lpy, Ey, Vary] = lik_loglogistic_predy(lik, Ef, Varf, yt, zt)
 %LIK_LOGLOGISTIC_PREDY  Returns the predictive mean, variance and density of y
@@ -667,6 +667,7 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
              'even after looking hard!'])
     end
   end
+end
   
   function integrand = loglogistic_norm(f, ldconst, yc, r, yy, myy_i, sigm2_i)
   % loglogistic * Gaussian
@@ -726,7 +727,6 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
               -1/sigm2_i;
   end
 
-end
 
 function cdf = lik_loglogistic_predcdf(lik, Ef, Varf, yt)
 %LIK_LOGLOGISTIC_PREDCDF  Returns the predictive cdf evaluated at yt 

@@ -530,6 +530,7 @@ if ~isempty(strfind(gp.infer_params, 'mean'))
 end
 
 e = edata + eprior;
+end
 
 function [edata, eprior, e] = set_output_for_notpositivedefinite()
   %instead of stopping to chol error, return NaN
@@ -538,5 +539,4 @@ function [edata, eprior, e] = set_output_for_notpositivedefinite()
   e = NaN;
 end
 
-end
 

@@ -403,7 +403,7 @@ function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
              'even after looking hard!'])
     end
   end
-  
+end
   function integrand = logit_norm(f, ldconst, yy, myy_i, sigm2_i)
   % Logit * Gaussian
     integrand = exp(ldconst ...
@@ -434,9 +434,7 @@ function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
     g2 = -a*(yy./(a+1)).^2 ...
          -1/sigm2_i;
   end
-  
-end
-
+ 
 function p = lik_logit_invlink(lik, f, z)
 %LIK_LOGIT_INVLINK  Returns values of inverse link function
 %             
