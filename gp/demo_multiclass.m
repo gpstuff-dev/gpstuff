@@ -111,9 +111,9 @@ plot(x(y(:,1)==1,1),x(y(:,1)==1,2),'ro', 'linewidth', 2);
 plot(x(y(:,2)==1,1),x(y(:,2)==1,2),'x', 'linewidth', 2);
 plot(x(y(:,3)==1,1),x(y(:,3)==1,2),'kd', 'linewidth', 2);
 axis([-0.4 1.4 -0.4 1.4])
-contour(xtg1, xtg2, reshape(exp(pg(:,1)),30,30),'r', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(exp(pg(:,2)),30,30),'b', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(exp(pg(:,3)),30,30),'k', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(exp(pg(:,1)),30,30),0.1:0.1:1,'r', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(exp(pg(:,2)),30,30),0.1:0.1:1,'b', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(exp(pg(:,3)),30,30),0.1:0.1:1,'k', 'linewidth', 2)
 
 % MCMC approach
 

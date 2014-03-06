@@ -421,7 +421,7 @@ function [df,minf,maxf] = init_lgpc_norm(yy,myy_i,sigm2_i,avgE)
              'even after looking hard!'])
     end
   end
-
+end
   function integrand = lgpc_norm(f, ldconst, avgE, yy, myy_i, sigm2_i)
   % LGPC * Gaussian
     mu = avgE.*exp(f);
@@ -455,9 +455,7 @@ function [df,minf,maxf] = init_lgpc_norm(yy,myy_i,sigm2_i,avgE)
     g2 = -mu...
          -1/sigm2_i;
   end
-
-end
-
+  
 function mu = lik_lgpc_invlink(lik, f, z)
 %LIK_LGPC_INVLINK  Returns values of inverse link function
 %             

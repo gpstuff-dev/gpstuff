@@ -185,7 +185,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
   diagn.opt = opt;
   diagn.rej = rej;
   diagn.lvs = opt.stepadj;
-  
+end
   function [g, gdata, gprior] = f_g(w, gp, x, y, u, z, output)
     %F_G     Evaluate gradient function for transformed GP latent values
     %
@@ -691,4 +691,4 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
       output.Linv=Linv;
     end      
   end
-end
+

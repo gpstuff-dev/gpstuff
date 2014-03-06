@@ -95,6 +95,7 @@ else
   % this way each gp has its own peristent memory for EP
   [e, edata, eprior, param] = gp.fh.ne(w, gp, x, y, z);
 end
+end
 
   function [e, edata, eprior, param] = ep_algorithm(w, gp, x, y, z)    
     
@@ -2556,7 +2557,8 @@ end
         
       end
     end
-  end
+  end  
+
 
   function [e, edata, eprior, param] = set_output_for_notpositivedefinite()
     % Instead of stopping to chol error, return NaN
@@ -2580,7 +2582,6 @@ end
 %     ch.w = NaN;
   end
 
-end
 
 function [m_q,S_q,lnZ_q,L1,L2]=evaluate_q(nu_q,tau_q,K,display)
 

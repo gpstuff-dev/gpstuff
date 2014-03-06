@@ -100,7 +100,7 @@ function lik = lik_coxph(varargin)
     lik.fh.recappend = @lik_coxph_recappend;
     lik.fh.predcdf= @lik_coxph_predcdf;
   end
-
+end
   function [w,s] = lik_coxph_pak(lik)
   %LIK_COXPH_PAK  Combine likelihood parameters into one vector.
   %
@@ -1383,7 +1383,4 @@ function [logM_0, m_1, sigm2hati1] = lik_coxph_tiltedMoments(lik, y, i1, S2_i, M
       end
     end
   end
-
-
-end
 

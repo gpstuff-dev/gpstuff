@@ -91,7 +91,7 @@ function lik = lik_gaussianbl(varargin)
     lik.fh.trvar  = @lik_gaussianbl_trvar;
     lik.fh.recappend = @lik_gaussianbl_recappend;
   end
-  
+end
   function [w s] = lik_gaussianbl_pak(lik)
   %LIK_GAUSSIANBL_PAK  Combine likelihood parameters into one vector.
   %
@@ -366,4 +366,4 @@ function lik = lik_gaussianbl(varargin)
     end
   end
 
-end
+

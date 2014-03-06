@@ -452,12 +452,6 @@ function [logM_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, my
     logM_0(i) = log(m_0);
   end
 
-  function integrand = zeroth_moment(f, yy, nu, sigma2, myy_i, sigm2_i)
-    r = yy-f;
-    term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
-    integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
-    integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
-  end
 end
 
 function [g_i] = lik_t_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
@@ -547,24 +541,6 @@ function [g_i] = lik_t_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   if ~isempty(lik.p.nu)
     [g_i(2), fhncnt] = quadgk(@(f) znu(f).*zm(f) , lambdaconf(1), lambdaconf(2));
     g_i(2) = g_i(2)/m_0.*nu.*log(nu);
-  end
-  
-  function integrand = zeroth_moment(f, yy, nu, sigma2, myy_i, sigm2_i)
-    r = yy-f;
-    term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
-    integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
-    integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
-  end        
-
-  function g = deriv_nu(f, yy, nu, sigma2, myy_i, sigm2_i)
-    r = yy-f;
-    temp = 1 + r.^2./nu./sigma2;
-    g = psi((nu+1)/2)./2 - psi(nu/2)./2 - 1./(2.*nu) - log(temp)./2 + (nu+1)./(2.*temp).*(r./nu).^2./sigma2;
-  end
-
-  function g = deriv_sigma2(f, yy, nu, sigma2, myy_i, sigm2_i)
-    r = yy-f;
-    g  = -1/sigma2/2 + (nu+1)./2.*r.^2./(nu.*sigma2.^2 + r.^2.*sigma2);
   end
 
 end
@@ -858,36 +834,6 @@ function [g_i] = lik_t_siteDeriv2(likelih, y, yi, sigm2_i, myy_i, z, eta, lnZhat
       g_i(2) = g_i(2)/m_0.*nu.*log(nu);
     end
     
-  end
-  
-  function lpdf = lpt(f,C,yy,nu,sigma2,myy_i,sigm2_i,eta)
-    % logarithm of the tilted distribution
-    r = yy-f;
-    lpdf = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
-    lpdf = lpdf + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2);
-    lpdf = lpdf*eta - (0.5/sigm2_i) * (f-myy_i).^2 + (C-log(2*pi*sigm2_i)/2);
-  end
-
-  function g = deriv_nu(f,yy,nu,sigma2)
-    % derivative of the log-likelihood wrt nu
-    r = yy-f;
-    temp = r.^2 ./(nu*sigma2);
-    g = psi((nu+1)/2) - psi(nu/2) - 1/nu;
-    g = g + (1+1/nu).*temp./(1+temp);
-    
-    % for small values use a more accurate method for log(1+x)
-    ii = temp<1e3;
-    g(ii) = g(ii)  - log1p(temp(ii));
-    g(~ii) = g(~ii) - log(1+temp(~ii));
-    g = g*0.5;
-    
-  end
-
-  function g = deriv_sigma2(f,yy,nu,sigma2)
-    % derivative of the log-likelihood wrt sigma2
-    r = yy-f;
-    temp = r.^2 /sigma2;
-    g  = -1/sigma2/2 + ((1+1/nu)/2) * temp ./ (1 + temp/nu) /sigma2;
   end
 
 end
@@ -1184,4 +1130,54 @@ function reclik = lik_t_recappend(reclik, ri, lik)
     end
   end
 
+end
+
+
+function integrand = zeroth_moment(f, yy, nu, sigma2, myy_i, sigm2_i)
+r = yy-f;
+term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
+integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
+integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
+end
+
+
+function lpdf = lpt(f,C,yy,nu,sigma2,myy_i,sigm2_i,eta)
+% logarithm of the tilted distribution
+r = yy-f;
+lpdf = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
+lpdf = lpdf + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2);
+lpdf = lpdf*eta - (0.5/sigm2_i) * (f-myy_i).^2 + (C-log(2*pi*sigm2_i)/2);
+end
+
+function g = deriv_nu(f,yy,nu,sigma2)
+% derivative of the log-likelihood wrt nu
+r = yy-f;
+temp = r.^2 ./(nu*sigma2);
+g = psi((nu+1)/2) - psi(nu/2) - 1/nu;
+g = g + (1+1/nu).*temp./(1+temp);
+
+% for small values use a more accurate method for log(1+x)
+ii = temp<1e3;
+g(ii) = g(ii)  - log1p(temp(ii));
+g(~ii) = g(~ii) - log(1+temp(~ii));
+g = g*0.5;
+
+end
+
+function g = deriv_sigma2(f,yy,nu,sigma2)
+% derivative of the log-likelihood wrt sigma2
+r = yy-f;
+temp = r.^2 /sigma2;
+g  = -1/sigma2/2 + ((1+1/nu)/2) * temp ./ (1 + temp/nu) /sigma2;
+end
+
+function g = deriv_nu2(f, yy, nu, sigma2, myy_i, sigm2_i)
+r = yy-f;
+temp = 1 + r.^2./nu./sigma2;
+g = psi((nu+1)/2)./2 - psi(nu/2)./2 - 1./(2.*nu) - log(temp)./2 + (nu+1)./(2.*temp).*(r./nu).^2./sigma2;
+end
+
+function g = deriv_sigma22(f, yy, nu, sigma2, myy_i, sigm2_i)
+r = yy-f;
+g  = -1/sigma2/2 + (nu+1)./2.*r.^2./(nu.*sigma2.^2 + r.^2.*sigma2);
 end

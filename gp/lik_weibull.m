@@ -448,6 +448,7 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   [m_0, fhncnt] = quadgk(tf, minf, maxf);
   [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*r;
+end
 
   function g = deriv(f, yc, r, yy)
     if yc==0     
@@ -456,7 +457,6 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
       g = (1./r + log(yy)) - exp(-f).*yy.^r.*log(yy);
     end
   end
-end
 
 function [lpy, Ey, Vary] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
 %LIK_WEIBULL_PREDY  Returns the predictive mean, variance and density of y
@@ -639,7 +639,8 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
              'even after looking hard!'])
     end
   end
-  
+end
+
   function integrand = weibull_norm(f, ldconst, yc, yy, r, myy_i, sigm2_i)
   % Weibull * Gaussian
     if yc
@@ -691,7 +692,6 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
          -1/sigm2_i;
   end
 
-end
 
 function cdf = lik_weibull_predcdf(lik, Ef, Varf, yt)
 %LIK_WEIBULL_PREDCDF  Returns the predictive cdf evaluated at yt 

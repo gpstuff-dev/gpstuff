@@ -349,7 +349,7 @@ function gp = gp_set(varargin)
       error('No latent method needed with a Gaussian likelihood')
     end
     if isfield(gp,'latent_method')
-      gp=rmfield(gp,'latent_method')
+      gp=rmfield(gp,'latent_method');
     end
     gp.fh.e=@gp_e;
     gp.fh.g=@gp_g;

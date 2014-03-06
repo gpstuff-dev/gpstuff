@@ -87,6 +87,7 @@ function lik = lik_inputdependentnoise(varargin)
     lik.fh.predprcty = @lik_inputdependentnoise_predprcty;
     lik.fh.recappend = @lik_inputdependentnoise_recappend;
   end
+end
 
   function [w,s] = lik_inputdependentnoise_pak(lik)
   %LIK_INPUTDEPENDENTNOISE_PAK  Combine likelihood parameters into one vector.
@@ -507,4 +508,3 @@ function lik = lik_inputdependentnoise(varargin)
       reclik.p.sigma2 = feval(lik.p.sigma2.fh.recappend, reclik.p.sigma2, ri, lik.p.sigma2);
     end
   end
-end

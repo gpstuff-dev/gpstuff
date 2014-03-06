@@ -447,7 +447,7 @@ function [g_i] = lik_negbin_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   [m_0, fhncnt] = quadgk(tf, minf, maxf);
   [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*r;
-
+end
   function g = deriv(f, r, avgE, yy)
     mu = avgE.*exp(f);
     % Derivative using the psi function
@@ -459,7 +459,6 @@ function [g_i] = lik_negbin_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
     %        g = g + 1 ./ (i2 + r);
     %      end
   end
-end
 
 function [lpy, Ey, Vary] = lik_negbin_predy(lik, Ef, Varf, yt, zt)
 %LIK_NEGBIN_PREDY  Returns the predictive mean, variance and density of y
@@ -669,7 +668,7 @@ function [df,minf,maxf] = init_negbin_norm(yy,myy_i,sigm2_i,avgE,r)
              'even after looking hard!'])
     end
   end
-  
+end
   function integrand = negbin_norm(f, yy, ldconst, r, avgE, myy_i, sigm2_i)
   % Negative-binomial * Gaussian
     mu = avgE.*exp(f);
@@ -703,8 +702,6 @@ function [df,minf,maxf] = init_negbin_norm(yy,myy_i,sigm2_i,avgE,r)
     g2 = -(r*(r + yy))/(mu + r)^2.*mu ...
          -1/sigm2_i;
   end
-  
-end
 
 function mu = lik_negbin_invlink(lik, f, z)
 %LIK_NEGBIN_INVLINK  Returns values of inverse link function

@@ -500,6 +500,7 @@ function [g_i] = lik_loggaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   [m_0, fhncnt] = quadgk(tf, minf, maxf);
   [g_i, fhncnt] = quadgk(@(f) td(f, yy, yc, s2).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*s2;
+end
 
   function g = deriv(f, yy, yc, s2)
     if yc==0
@@ -511,7 +512,6 @@ function [g_i] = lik_loggaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
       g = -1./(2.*s2) + r.^2./(2.*s2^2);
     end
   end
-end
 
 function [lpy, Ey, Vary] = lik_loggaussian_predy(lik, Ef, Varf, yt, zt)
 %LIK_LOGGAUSSIAN_PREDY  Returns the predictive mean, variance and density of y
@@ -674,6 +674,7 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
     end
   end
   
+end
   function integrand = loggaussian_norm(f, ldconst, yy, yc, s2, myy_i, sigm2_i)
   % loggaussian * Gaussian
     if yc
@@ -733,7 +734,6 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
               -1/sigm2_i;
   end
 
-end
 
 function cdf = lik_loggaussian_predcdf(lik, Ef, Varf, yt)
 %LIK_LOGGAUSSIAN_PREDCDF  Returns the predictive cdf evaluated at yt 

@@ -1,6 +1,6 @@
 function gp_install(suiteSparse)
 %  Matlab function to compile all the c-files to mex in the GPstuff/gp
-%  folder.  The function is called from GPstuff/matlab_install.m but
+%  folder.  The function is called from GPstuff/gpstuff_install.m but
 %  can be run separately also.
 %
 %  If you want to use GPstuff without compactly supported (CS)

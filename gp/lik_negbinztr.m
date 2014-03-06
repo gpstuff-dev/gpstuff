@@ -531,16 +531,9 @@ function [g_i] = lik_negbinztr_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   
   % Integrate with quadgk
   [m_0, fhncnt] = quadgk(tf, minf, maxf);
-  [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
+  [g_i, fhncnt] = quadgk(@(f) td(f,avgE,r,yy).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*r;
 
-  function g = deriv(f)
-    mu = avgE.*exp(f);
-    % Derivative using the psi function
-    g = 1 + log(r./(r+mu)) - (r+yy)./(r+mu) + psi(r + yy) - psi(r);
-    lp0=r.*(log(r) - log(r+mu));
-    g = g -(1./(1 - exp(-lp0)).*(log(r./(mu + r)) - r./(mu + r) + 1));
-  end
 end
 
 function [g_i] = lik_negbinztr_siteDeriv2(lik, y, i1, sigm2_i, myy_i, z, eta, lnZhat)
@@ -587,14 +580,6 @@ function [g_i] = lik_negbinztr_siteDeriv2(lik, y, i1, sigm2_i, myy_i, z, eta, ln
   [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*r;
 
-  function g = deriv(f, avgE, r, yy)
-    mu = avgE.*exp(f);
-    % Derivative using the psi function
-    g = 1 + log(r./(r+mu)) - (r+yy)./(r+mu) + psi(r + yy) - psi(r);
-    lp0=r.*(log(r) - log(r+mu));
-    g = g -(1./(1 - exp(-lp0)).*(log(r./(mu + r)) - r./(mu + r) + 1));
-%     g = eta.*g;
-  end
 end
 
 function upfact = lik_negbinztr_upfact(gp, y, mu, ll, z)
@@ -926,20 +911,20 @@ function prctys = lik_negbinztr_predprcty(lik, Ef, Varf, zt, prcty)
       prctys(i1,i2)=a;
     end
   end
-
-  function expll = llvec(lik,yt,f,z)
-    % Compute vector of likelihoods of single predictions
-    n = length(yt);
-    if n>0
-      for i=1:n
-        expll(i) = exp(lik.fh.ll(lik, yt(i), f, z));
-      end
-    else
-      expll = 0;
-    end
-  end
-
 end
+function expll = llvec(lik,yt,f,z)
+  % Compute vector of likelihoods of single predictions
+  n = length(yt);
+  if n>0
+    for i=1:n
+      expll(i) = exp(lik.fh.ll(lik, yt(i), f, z));
+    end
+  else
+    expll = 0;
+  end
+end
+
+
 
 
 function mu = lik_negbinztr_invlink(lik, f, z)
@@ -1007,4 +992,12 @@ function reclik = lik_negbinztr_recappend(reclik, ri, lik)
       reclik.p.disper = lik.p.disper.fh.recappend(reclik.p.disper, ri, lik.p.disper);
     end
   end
+end
+
+function g = deriv(f,avgE,r,yy)
+  mu = avgE.*exp(f);
+  % Derivative using the psi function
+  g = 1 + log(r./(r+mu)) - (r+yy)./(r+mu) + psi(r + yy) - psi(r);
+  lp0=r.*(log(r) - log(r+mu));
+  g = g -(1./(1 - exp(-lp0)).*(log(r./(mu + r)) - r./(mu + r) + 1));
 end
