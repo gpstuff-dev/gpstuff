@@ -23,7 +23,7 @@ function mc_install
         mex -O -output resampstr linuxCsource/resampstr.c linuxCsource/binsgeq.c
         mex -O -output resampdet linuxCsource/resampdet.c linuxCsource/binsgeq.c
       else
-        mex --output bbmean linuxCsource/bbmean.c
+        mex --output bbmean.mex linuxCsource/bbmean.c
         mex --output resampres.mex linuxCsource/resampres.c linuxCsource/binsgeq.c
         mex --output resampsim.mex linuxCsource/resampsim.c linuxCsource/binsgeq.c
         mex --output resampstr.mex linuxCsource/resampstr.c linuxCsource/binsgeq.c
