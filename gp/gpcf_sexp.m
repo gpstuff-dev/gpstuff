@@ -431,6 +431,38 @@ function C = gpcf_sexp_trcov(gpcf, x)
   end
 end
 
+function [ef, covf] = gpcf_sexp_tiltedMoments(nutilde, tautilde, Elogl, Vlogl, i1)
+% 
+
+% Grid of evaluation points
+% lg=linspace(Elogl-6.*sqrt(Vlogl), Elogl+6.*sqrt(Vlogl),40);
+np=41;
+minf=Elogl-6.*sqrt(Vlogl);
+maxf=Elogl+6.*sqrt(Vlogl);
+
+% Loop over length-scales
+for j=i1
+  % Simpson's weights
+  np=51;
+  z=minf(j):(maxf(j)-minf(j))/(np-1):maxf;
+  dz=z(2)-z(1);
+  tmp=dz/3;
+  c=ones(np,1);
+  c([1 np])=tmp;
+  c(2:2:np-1)=4*tmp;
+  c(3:2:np-2)=2*tmp;
+  
+  % Evaluate Z^-1 and inv(inv(K)+tautilde) in a grid
+  for i=1:np
+    
+    
+    zz(i)=
+    
+  end
+end
+
+end
+
 function C = gpcf_sexp_trvar(gpcf, x)
 %GP_SEXP_TRVAR  Evaluate training variance vector
 %

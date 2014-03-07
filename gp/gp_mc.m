@@ -648,7 +648,7 @@ end
 function e = gpmc_e(w, gp, x, y, f, z)
 
   e=0;
-  if ~isempty(strfind(gp.infer_params, 'covariance'))
+  if ~isempty(strfind(gp.infer_params, 'covariance')) || ~isempty(strfind(gp.infer_params, 'likelihood'))
     e=e+gp_e(w, gp, x, f, 'z', z);
   end
   if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
@@ -666,7 +666,7 @@ end
 function g = gpmc_g(w, gp, x, y, f, z)
 
   g=[];
-  if ~isempty(strfind(gp.infer_params, 'covariance'))
+  if ~isempty(strfind(gp.infer_params, 'covariance')) || ~isempty(strfind(gp.infer_params, 'likelihood'))
     g=[g gp_g(w, gp, x, f, 'z', z)];
   end
   if ~isempty(strfind(gp.infer_params, 'likelihood')) ...

@@ -36,10 +36,15 @@ if ~(isfield(gp,'derivobs') && gp.derivobs)
   K = 0;
   if nargin < 3 || isempty(predcf)
     predcf = 1:ncf;
-  end      
-  for i=1:length(predcf)
-    gpcf = gp.cf{predcf(i)};
-    K = K + gpcf.fh.trvar(gpcf, x1);
+  end
+  if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude && ...
+      (~isfield(gp,'comp_cf') || (isfield(gp,'comp_cf') && sum(gp.comp_cf{1}==predcf)))
+    K=ones(n,1);
+  else
+    for i=1:length(predcf)
+      gpcf = gp.cf{predcf(i)};
+      K = K + gpcf.fh.trvar(gpcf, x1);
+    end
   end
 
   if ~isempty(gp.jitterSigma2)

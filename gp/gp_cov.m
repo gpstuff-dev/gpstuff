@@ -28,6 +28,11 @@ if ~(isfield(gp,'derivobs') && gp.derivobs)
   end      
   for i=1:length(predcf)
     gpcf = gp.cf{predcf(i)};
+    if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude
+      if ~isfield(gp,'comp_cf') || (isfield(gp,'comp_cf') && sum(gp.comp_cf{1}==predcf(i)))
+        gpcf.magnSigma2=1;
+      end
+    end
     C = C + gpcf.fh.cov(gpcf, x1, x2);
   end
 

@@ -1,4 +1,4 @@
-function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
+function [gp_array, P_TH, th, H, Ef, Varf, pf, ff] = gp_ia(gp, x, y, varargin)
 %GP_IA Integration approximation with grid, Monte Carlo or CCD integration
 %
 %  Description
@@ -63,7 +63,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   Default is 10.
 %       
 
-% Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
+% Copyright (c) 2009-2010 Ville Pietilï¿½inen, Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public

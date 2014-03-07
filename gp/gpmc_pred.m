@@ -112,7 +112,7 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_pred(gp, x, y, varargin)
       Ef=mean(Efs,2);
       Varf=mean(Varfs,2) + var(Efs,0,2);
       Ey=mean(Eys,2);
-      Vary=mean(Varys,2) + var(Eys,0,2);
+      Vary=mean(squeeze(Varys),2) + var(Eys,0,2);
       lpy=log(mean(exp(lpys),2));
   end
 

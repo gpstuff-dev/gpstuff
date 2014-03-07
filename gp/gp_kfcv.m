@@ -310,7 +310,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   
   % Initialize empty structures
   zz=zeros(n,1);
-  Eft=zz; Varft=zz; lpyt=zz; Eyt=zz; Varyt=zz;
+  %Eft=zz; Varft=zz; 
+  lpyt=zz; Eyt=zz; Varyt=zz;
   cvpreds.Eft=[]; cvpreds.Varft=[]; cvpreds.lpyt=[];
   cvpreds.Eyt=[]; cvpreds.Varyt=[];
   cvtrpreds.Eft=[]; cvtrpreds.Varft=[]; cvtrpreds.lpyt=[];
@@ -478,13 +479,13 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
     
     if predyt
-      [Eft(inds), Varft(inds), lpyt(inds), Eyt(inds), Varyt(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+      [Eft(inds,:), Varft(inds,:), lpyt(inds,:), Eyt(inds,:), Varyt(inds,:)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
                                      tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
     elseif predlpyt
-      [Eft(inds), Varft(inds),lpyt(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+      [Eft(inds,:), Varft(inds,:),lpyt(inds,:)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
                         tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
     elseif predft
-      [Eft(inds),Varft(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+      [Eft(inds,:),Varft(inds,:)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
                     tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
     end
     if ~predft

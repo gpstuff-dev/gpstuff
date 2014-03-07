@@ -23,7 +23,7 @@ prevstream=setrandstream(0);
 
 % Create toy data
 % x = 100*rand([40 1]);
-n = 500;
+n = 1000;
 x=linspace(-100,200,n)';
 f1 = [5.*sin(-3+0.2.*x(1:ceil(0.23*n))); 20*sin(0.1*x(ceil(0.23*n)+1:ceil(0.85*n))); 5.*sin(2.8+0.2.*x(ceil(0.85*n)+1:end))];
 f2 = 100*norm_pdf(x,110,20) + 100*norm_pdf(x,-10,20);
