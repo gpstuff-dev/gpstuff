@@ -27,8 +27,14 @@ x11=gp.xv;
 [n,m]=size(x1);
 [n4,m4]=size(x2);
 ncf=length(gp.cf);
+if isfield(gp, 'nvd')
+  % Only specific dimensions
+  ii1=gp.nvd;
+else
+  ii1=1:m;
+end
 for i1=1:ncf
-  gpcf = gp.cf{i1};    % Grad obs implemented only to sexp currently
+  gpcf = gp.cf{i1};    
   if m==1
     Gset1 = gpcf.fh.ginput4(gpcf, x11, x2);
     Gset2 = gpcf.fh.ginput4(gpcf, x2, x12);
@@ -50,10 +56,10 @@ for i1=1:ncf
     Gset2 = gpcf.fh.ginput4(gpcf, x2, x12);
     
     %Gather matrices from Gset (d k(x1,x2) /d x1)
-    Kfd=cat(2,Gset1{1:m});
-    Kdf=cat(1,Gset1{1:m});
-    Kfd22=cat(2,Gset2{1:m});
-    Kdf22=cat(1,Gset2{1:m})';
+    Kfd=cat(2,Gset1{ii1});
+    Kdf=cat(1,Gset1{ii1});
+    Kfd22=cat(2,Gset2{ii1});
+    Kdf22=cat(1,Gset2{ii1})';
     %   Kfd=-1*Kfd;
     %   Kfd2=-1*Kfd2;
     
@@ -75,6 +81,21 @@ for i1=1:ncf
         Kdd(i*n+1:(i+1)*n,j*n2+1:j*n2+n2) = Kdf2{ii3};
         Kdd(j*n+1:j*n+n,i*n2+1:(i+1)*n2) = Kdf2{ii3};
       end
+    end
+    if isfield(gp, 'nvd')
+      % Collect the monotonic dimensions
+      Kddtmp=[];
+      for ii2=1:length(ii1)
+        for ii3=ii2:length(ii1)
+          Kddtmp((ii2-1)*n+1:ii2*n, (ii3-1)*n2+1:ii3*n2) = ...
+            Kdd((ii1(ii2)-1)*n+1:ii1(ii2)*n,(ii1(ii3)-1)*n2+1:ii1(ii3)*n2);
+          if ii2~=ii3
+            Kddtmp((ii3-1)*n+1:ii3*n, (ii2-1)*n2+1:ii2*n2) = ...
+              Kdd((ii1(ii3)-1)*n+1:ii1(ii3)*n,(ii1(ii2)-1)*n2+1:ii1(ii2)*n2);
+          end
+        end
+      end
+      Kdd=Kddtmp;
     end
     
     % Gather all the matrices into one final matrix K which is the

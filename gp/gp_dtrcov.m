@@ -27,12 +27,18 @@ function [K, C] = gp_dtrcov(gp, x1, x2,predcf)
 % License.txt, included with the software, for details.
 if (isfield(gp,'derivobs') && gp.derivobs)
   ncf=length(gp.cf);
-  K=zeros(length(x1)+size(x2,2).*length(x2));
+  [n,m]=size(x2);
+  if isfield(gp, 'nvd')
+    % Only specific dimensions
+    ii1=gp.nvd;
+  else
+    ii1=1:m;
+  end
+  K=zeros(length(x1)+length(ii1).*length(x2));
   % Loop over covariance functions
   for i=1:ncf
     % Derivative observations
-    gpcf = gp.cf{i};            % only for sexp at the moment
-    [n,m]=size(x2);
+    gpcf = gp.cf{i};           
     if m==1
       Kff = gpcf.fh.trcov(gpcf, x1);
       Gset = gpcf.fh.ginput4(gpcf, x2,x1);
@@ -56,7 +62,7 @@ if (isfield(gp,'derivobs') && gp.derivobs)
       D= gpcf.fh.ginput2(gpcf, x2, x2);
       Kdf2 = gpcf.fh.ginput3(gpcf, x2 ,x2);
       
-      Kfd=cat(1,G{:});
+      Kfd=cat(1,G{ii1});
 %       Kfd=[G{1:m}];
       
       % Now build up Kdd m*n x m*n matrix, which contains all the
@@ -82,6 +88,22 @@ if (isfield(gp,'derivobs') && gp.derivobs)
       end
       % Sum the diag + no diag matrices
       Kdd=Kdd+Kddnodi;
+      
+      if isfield(gp, 'nvd')
+        % Collect the monotonic dimensions
+        Kddtmp=[];
+        for ii2=1:length(ii1)
+          for ii3=ii2:length(ii1)
+            Kddtmp((ii2-1)*n+1:ii2*n, (ii3-1)*n+1:ii3*n) = ...
+              Kdd((ii1(ii2)-1)*n+1:ii1(ii2)*n,(ii1(ii3)-1)*n+1:ii1(ii3)*n);
+            if ii2~=ii3
+              Kddtmp((ii3-1)*n+1:ii3*n, (ii2-1)*n+1:ii2*n) = ...
+                Kdd((ii1(ii3)-1)*n+1:ii1(ii3)*n,(ii1(ii2)-1)*n+1:ii1(ii2)*n);
+            end
+          end
+        end
+        Kdd=Kddtmp;
+      end
       
       % Gather all the matrices into one final matrix K which is the
       % training covariance matrix

@@ -592,7 +592,7 @@ end
                   end
                   n1=length(y);
                   n2=length(y2);
-                  n=size(x,2).*size(x,1);
+                  n=size(C,1);
                   nutilde = zeros(size(C,1),1);
                   tautilde = zeros(size(C,1),1);
                   muvec_i=zeros(size(C,1),1);
@@ -1021,10 +1021,9 @@ end
                   
                 end
                 if isfield(gp, 'lik2')
-%                   if isequal(gp.lik2.type, 'Gaussian')
                     param.Sigma=Sigm;
                     param.mf=mf;
-                    iter
+%                     iter
                 end
                 edata = logZep;
                 % Set something into La2
