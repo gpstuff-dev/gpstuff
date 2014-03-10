@@ -244,15 +244,20 @@ function [logM_0, m_1, sigm2hati1] = lik_probit_tiltedMoments(lik, y, i1, sigm2_
 %    error('lik_probit: The class labels have to be {-1,1}')
 %  end
 
-  a=realsqrt(1+sigm2_i);
-  zi=y(i1).*myy_i./a;
+  if isfield(lik, 'nu') 
+    nu=lik.nu;
+  else
+    nu=1;
+  end
+  a=realsqrt(1+sigm2_i/nu^2);
+  zi=y(i1).*myy_i./(nu*a);
   
   %normc_zi = 0.5.*erfc(-zi./sqrt(2)); % norm_cdf(zi)
   normc_zi = 0.5.*erfc(-zi./1.414213562373095); % norm_cdf(zi)
   %normp_zi = exp(-0.5.*zi.^2-log(2.*pi)./2); %norm_pdf(zi)
   normp_zi = exp(-0.5.*realpow(zi,2)-0.918938533204673); %norm_pdf(zi)
-  m_1=myy_i+(y(i1).*sigm2_i.*normp_zi)./(normc_zi.*a); % muhati1
-  sigm2hati1=sigm2_i-(sigm2_i.^2.*normp_zi)./((1+sigm2_i).*normc_zi).*(zi+normp_zi./normc_zi); % sigm2hati1
+  m_1=myy_i+(y(i1).*sigm2_i.*normp_zi)./(normc_zi.*nu.*a); % muhati1
+  sigm2hati1=sigm2_i-(sigm2_i.^2.*normp_zi)./((nu^2+sigm2_i).*normc_zi).*(zi+normp_zi./normc_zi); % sigm2hati1
   logM_0 = reallog(normc_zi);
 end
 

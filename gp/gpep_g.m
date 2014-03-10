@@ -233,10 +233,18 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       case 'FULL'   % A full GP
                     % Calculate covariance matrix and the site parameters
         [K, C] = gp_trcov(gp,x);
-
         [e, edata, eprior, p] = gpep_e(w, gp, x, y, 'z', z);
         [tautilde, nutilde, mu_i, sigm2_i, Z_i, eta] = ...
             deal(p.tautilde, p.nutilde, p.muvec_i, p.sigm2vec_i, p.logZ_i, p.eta);
+        L=p.L;
+        if isfield(gp, 'lik2')
+          x2=x;
+          x=gp.xv;
+          n=size(x2,1)+size(x,1).*size(x,2);
+          [K,C]=gp_dtrcov(gp,x2,x);
+          C=K;
+          L=chol(p.Sigma);
+        end
         if issparse(C)
           % If compact support covariance functions are used
           % the covariance matrix will be sparse
@@ -251,9 +259,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           invC = Stildesqroot*invC*Stildesqroot;
         else
           %[e, edata, eprior, tautilde, nutilde, L, tmp, tmp, mu_i, sigm2_i, Z_i, eta] = gpep_e(w, gp, x, y, 'z', z);
-          L=p.L;
 
-          if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
+          if all(tautilde > 0) && ~(isequal(gp.latent_opt.optim_method, 'robust-EP') ...
+            || (isfield(gp, 'lik2')))  %&& isequal(gp.lik2.type, 'Gaussian')))
             % This is the usual case where likelihood is log concave
             % for example, Poisson and probit
             % Stildesqroot=diag(sqrt(tautilde));
@@ -264,7 +272,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             temp=L\diag(Stildesqroot);
             invC = temp'*temp;
             b=nutilde-Stildesqroot.*(L'\(L\(Stildesqroot.*(C*nutilde))));
-          elseif isequal(gp.latent_opt.optim_method, 'robust-EP')
+          elseif isequal(gp.latent_opt.optim_method, 'robust-EP') || (isfield(gp, 'lik2')) ...
+              %&& isequal(gp.lik2.type, 'Gaussian'))
 
             A=bsxfun(@times,tautilde,L');   % Sf = L'*L;
             b=nutilde-A*(L*nutilde);        % (eye(n)-diag(tautilde)*Sf)\nutilde
@@ -298,15 +307,26 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           % Evaluate the gradients from covariance functions
           i1=0;
           for i=1:ncf
-%             if ~isempty(gprior)
-%               i1 = length(gprior);
-%             end
             gpcf = gp.cf{i};
-            if savememory
-              np=gpcf.fh.cfg(gpcf,[],[],[],0);
+            if isfield(gp, 'lik2')
+              savememory=0;
+              [n, m]=size(x);
+              DKffa = gpcf.fh.cfg(gpcf, x2);
+              DKdf = gpcf.fh.cfdg(gpcf, x, x2);
+              DKdd = gpcf.fh.cfdg2(gpcf, x);
+              
+              DKffc{1}=[DKffa{1} DKdf{1}';DKdf{1} DKdd{1}];
+              for i2=2:length(DKffa)
+                DKffc{i2}=[DKffa{i2} DKdf{i2}';DKdf{i2} DKdd{i2}];
+              end
+              np=length(DKffa);
             else
-              DKffc = gpcf.fh.cfg(gpcf, x);
-              np=length(DKffc);
+              if savememory
+                np=gpcf.fh.cfg(gpcf,[],[],[],0);
+              else
+                DKffc = gpcf.fh.cfg(gpcf, x);
+                np=length(DKffc);
+              end
             end
             gprior_cf = -gpcf.fh.lpg(gpcf);
 
@@ -321,7 +341,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 Bdl = b'*(DKff*b);
                 Cdl = sum(sum(invC.*DKff)); % help arguments for lengthScale
                 gdata(i1)=0.5.*(Cdl - Bdl);
-%                 gprior(i1) = gprior_cf(i2);
               end
             else
               i1=0;
@@ -337,26 +356,11 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 end
                 trK=sum(sum(invC.*DKff));
                 gdata(i2)=0.5*(-1*dMNM + trK + trA{i2});
-%                 gprior(i1) = gprior_cf(i2);
               end
             end
 
             gprior = [gprior gprior_cf];
-%             % Set the gradients of hyperparameter
-%             if length(gprior_cf) > np
-%               for i2=np+1:length(gprior_cf)
-%                 i1 = i1+1;
-%                 gdata(i1) = 0;
-%                 gprior(i1) = gprior_cf(i2);
-%               end
-%             end
           end
-%           if length(gprior) > length(gdata)
-%             tmp=gdata;
-%             gdata=zeros(size(gprior));
-%             gdata(hier(1:length(gprior))==1) = tmp;
-%             i1 = length(gdata);
-%           end
         end
 
       case {'FIC'}
@@ -398,11 +402,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         if ~isempty(strfind(gp.infer_params, 'covariance'))
           i1=0;
           for i=1:ncf
-%             i1=0;
-%             if ~isempty(gprior)
-%               i1 = length(gprior);
-%             end
-
             gpcf = gp.cf{i};
             % Get the gradients of the covariance matrices
             % and gprior from gpcf_* structures
@@ -441,7 +440,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 gdata(i1) = gdata(i1) + 0.5.*(sum(DKff./La) - sum(LL.*DKff));
                 gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
 
-%                 gprior(i1) = gprior_cf(i2);
               end
 
             else
@@ -479,19 +477,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                     2*((nutilde.*DS./S)'*iSKfuiL)*(iSKfuiL'*nutilde) - nud*DTtilde*nud'; % nutilde'* d(sigma^-1)/dth *nutilde
                 gdata(i1) = gdata(i1) + 0.5*nuDpcovnu;
                 gdata(i1) = -gdata(i1);
-%                 gprior(i1) = gprior_cf(i2);
               end
 
             end
             gprior = [gprior gprior_cf];
-%             % Set the gradients of hyperparameter
-%             if length(gprior_cf) > np
-%               for i2=np+1:length(gprior_cf)
-%                 i1 = i1+1;
-%                 gdata(i1) = 0;
-%                 gprior(i1) = gprior_cf(i2);
-%               end
-%             end
           end
 
         end
@@ -601,11 +590,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           % Evaluate the gradients from covariance functions
           i1=0;
           for i=1:ncf
-%             i1=0;
-%             if ~isempty(gprior)
-%               i1 = length(gprior);
-%             end
-
             % Get the gradients of the covariance matrices
             % and gprior from gpcf_* structures
             gpcf = gp.cf{i};
@@ -654,17 +638,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                             + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
                             sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})))));
               end
-%               gprior(i1) = gprior_cf(i2);
             end
             gprior=[gprior gprior_cf];
-%             % Set the gradients of hyperparameter
-%             if length(gprior_cf) > np
-%               for i2=np+1:length(gprior_cf)
-%                 i1 = i1+1;
-%                 gdata(i1) = 0;
-%                 gprior(i1) = gprior_cf(i2);
-%               end
-%             end
           end
 
         end
@@ -781,11 +756,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         if ~isempty(strfind(gp.infer_params, 'covariance'))
           i1=0;
           for i=1:ncf
-%             i1=0;
-%             if ~isempty(gprior)
-%               i1 = length(gprior);
-%             end
-
             gpcf = gp.cf{i};
 
             % Evaluate the gradient for FIC covariance functions
@@ -852,18 +822,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 end
                 i1 = i1+1;
                 gdata(i1) = 0.5*(sum(sum(siLa.*DKff',2)) - sum(sum(L.*(L'*DKff')')) - b*DKff*b');
-%                 gprior(i1) = gprior_cf(i2);
               end
             end
             gprior = [gprior gprior_cf];
-%             % Set the gradients of hyperparameter
-%             if length(gprior_cf) > np
-%               for i2=np+1:length(gprior_cf)
-%                 i1 = i1+1;
-%                 gdata(i1) = 0;
-%                 gprior(i1) = gprior_cf(i2);
-%               end
-%             end
           end
 
         end

@@ -66,8 +66,13 @@ function gpcf = gpcf_constant(varargin)
     gpcf.fh.unpak = @gpcf_constant_unpak;
     gpcf.fh.lp = @gpcf_constant_lp;
     gpcf.fh.lpg = @gpcf_constant_lpg;
-    gpcf.fh.cfg = @gpcf_constant_cfg;
+    gpcf.fh.cfg = @gpcf_constant_cfg;   
+    gpcf.fh.cfdg = @gpcf_constant_cfdg;
+    gpcf.fh.cfdg2 = @gpcf_constant_cfdg2;
     gpcf.fh.ginput = @gpcf_constant_ginput;
+    gpcf.fh.ginput2 = @gpcf_constant_ginput2;
+    gpcf.fh.ginput3 = @gpcf_constant_ginput3;
+    gpcf.fh.ginput4 = @gpcf_constant_ginput4;
     gpcf.fh.cov = @gpcf_constant_cov;
     gpcf.fh.trcov  = @gpcf_constant_trcov;
     gpcf.fh.trvar  = @gpcf_constant_trvar;
@@ -269,6 +274,75 @@ function DKff = gpcf_constant_cfg(gpcf, x, x2, mask, i1)
 end
 
 
+function DKff = gpcf_constant_cfdg(gpcf, x, x2)
+%GPCF_CONSTANT_CFDG  Evaluate gradient of covariance function, of
+%                which has been taken partial derivative with
+%                respect to x, with respect to parameters.
+%
+%  Description
+%    DKff = GPCF_CONSTANT_CFDG(GPCF, X) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of derivatived covariance matrix
+%    dK(df,f)/dhyp = d(d k(X,X)/dx)/dhyp, with respect to the
+%    parameters
+%
+%    Evaluate: DKff{1:m} = d Kff / d coeffSigma2
+%    m is the dimension of inputs. If ARD is used, then multiple
+%    coefficients. This subfunction is needed when using derivative 
+%    observations.
+%
+%  See also
+%    GPCF_CONSTANT_GINPUT
+
+[n,m]=size(x);
+ii1=0;
+DKff={};
+if ~isempty(gpcf.p.constSigma2)
+  dd=zeros(size(x,1),size(x2,1));
+  for i=1:m
+    DK{i}=dd;
+  end
+  ii1=ii1+1;
+  DKff{ii1}=cat(1,DK{1:m});
+end
+end
+
+function DKff = gpcf_constant_cfdg2(gpcf, x)
+%GPCF_CONSTANT_CFDG2  Evaluate gradient of covariance function, of
+%                 which has been taken partial derivatives with
+%                 respect to both input variables x, with respect
+%                 to parameters.
+%
+%  Description
+%    DKff = GPCF_CONSTANT_CFDG2(GPCF, X) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of derivative covariance matrix
+%    dK(df,df)/dhyp = d(d^2 k(X1,X2)/dX1dX2)/dhyp with respect to
+%    the parameters
+%
+%    Evaluate: DKff{1:m} = d Kff / d coeffSigma 
+%    m is the dimension of inputs. If ARD is used, then multiple
+%    lengthScales. This subfunction is needed when using derivative 
+%    observations.
+%
+%  See also
+%   GPCF_CONSTANT_GINPUT, GPCF_CONSTANT_GINPUT2
+
+[n,m]=size(x);
+ii1=0;
+dd=zeros(size(x,1),size(x,1));
+DKff={};
+if ~isempty(gpcf.p.constSigma2)
+  for k=1:m
+    for j=1:m
+      DK{k,j}=dd;
+    end
+  end
+  ii1=ii1+1;
+  DKff{ii1}=cell2mat(DK);
+end
+end
+
 function DKff = gpcf_constant_ginput(gpcf, x, x2, i1)
 %GPCF_CONSTANT_GINPUT  Evaluate gradient of covariance function with 
 %                      respect to x.
@@ -336,6 +410,98 @@ function DKff = gpcf_constant_ginput(gpcf, x, x2, i1)
   if nargin==5
     DKff=DKff{1};
   end
+end
+
+
+function DKff = gpcf_constant_ginput2(gpcf, x, x2)
+%GPCF_CONSTANT_GINPUT2  Evaluate gradient of covariance function with
+%                   respect to both input variables x and x2 (in
+%                   same dimension).
+%
+%  Description
+%    DKff = GPCF_CONSTANT_GINPUT2(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of twice derivatived covariance
+%    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
+%    elements). Input variable's dimensions are expected to be
+%    same. The function returns also DKff1 and DKff2 which are
+%    parts of DKff and needed with CFDG2. DKff = DKff1 -
+%    DKff2. This subfunction is needed when using derivative 
+%    observations.
+%   
+%  See also
+%    GPCF_CONSTANT_GINPUT, GPCF_CONSTANT_GINPUT2, GPCF_CONSTANT_CFDG2       
+
+[n,m]=size(x);
+ii1=0;
+DK=zeros(size(x,1),size(x2,1));
+for i=1:m
+  ii1=ii1+1;
+  DKff{ii1}=DK;
+end
+end
+
+function DKff = gpcf_constant_ginput3(gpcf, x, x2)
+%GPCF_CONSTANT_GINPUT3  Evaluate gradient of covariance function with
+%                   respect to both input variables x and x2 (in
+%                   different dimensions).
+%
+%  Description
+%    DKff = GPCF_CONSTANT_GINPUT3(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of twice derivatived covariance
+%    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
+%    elements). The derivative is calculated in multidimensional
+%    problem between input's observation dimensions which are not
+%    same. This subfunction is needed when using derivative 
+%    observations.
+%   
+%  See also
+%    GPCF_CONSTANT_GINPUT, GPCF_CONSTANT_GINPUT2, GPCF_CONSTANT_CFDG2        
+
+[n,m]=size(x);
+ii1=0;
+DK=zeros(size(x,1),size(x2,1));
+for i=1:m-1
+  for j=i+1:m
+    ii1=ii1+1;
+    DKff{ii1}=DK;
+  end
+end
+end
+
+function DKff = gpcf_constant_ginput4(gpcf, x, x2)
+%GPCF_CONSTANT_GINPUT  Evaluate gradient of covariance function with 
+%                  respect to x. Simplified and faster version of
+%                  constant_ginput, returns full matrices.
+%
+%  Description
+%    DKff = GPCF_CONSTANT_GINPUT4(GPCF, X) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of covariance matrix Kff = k(X,X) with
+%    respect to X (whole matrix). This subfunction is needed when 
+%    using derivative observations.
+%
+%    DKff = GPCF_CONSTANT_GINPUT4(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2) with respect to X (whole matrix). This subfunction 
+%    is needed when using derivative observations.
+%
+%  See also
+%    GPCF_CONSTANT_PAK, GPCF_CONSTANT_UNPAK, GPCF_CONSTANT_LP, GP_G
+
+[n,m]=size(x);
+i1=1:m;
+ii1=0;
+if nargin==2
+  x2=x;
+end
+DK=zeros(size(x,1),size(x2,1));
+for i=i1
+  ii1=ii1+1;
+  DKff{ii1}=DK;
+end
 end
 
 

@@ -530,10 +530,20 @@ end
         param.sigm2vec_i = ch.sigm2vec_i;
         param.logZ_i = ch.logZ_i;
         param.eta = ch.eta;
+        param.Sigma=ch.Sigma;
+        parma.mf=ch.mf;
       else
         
         switch gp.latent_opt.optim_method
-          case 'basic-EP'
+          case 'basic-EP'            
+            
+            % Monotonicity, get the virtual observations
+            if isfield(gp, 'lik2')
+              x2=x;
+              y2=y;
+              x=gp.xv;
+              y=gp.yv.*ones(size(x,1).*size(x,2),1);
+            end
             
             % The parameters or data have changed since
             % the last call for gpep_e. In this case we need to
@@ -561,7 +571,7 @@ end
             
             logM0 = zeros(n,1);
             muhat = zeros(n,1);
-            sigm2hat = zeros(n,1);
+            sigm2hat = zeros(n,1);                        
             
             % =================================================
             % First Evaluate the data contribution to the error
@@ -570,7 +580,28 @@ end
               % FULL
               % ============================================================
               case 'FULL'   % A full GP
-                [K,C] = gp_trcov(gp, x);
+                if ~isfield(gp, 'lik2')
+                  [K,C] = gp_trcov(gp, x);
+                else
+                  % Compute the prior covariance of f_joint (f
+                  % and df/dx)
+                  [K,C] = gp_dtrcov(gp, x2, x);
+                  if isequal(gp.lik2.type, 'Gaussian')
+                    Cp=K;
+                    C=K(size(x2,1)+1:end, size(x2,1)+1:end);
+                  end
+                  n1=length(y);
+                  n2=length(y2);
+                  n=size(x,2).*size(x,1);
+                  nutilde = zeros(size(C,1),1);
+                  tautilde = zeros(size(C,1),1);
+                  muvec_i=zeros(size(C,1),1);
+                  sigm2vec_i=zeros(size(C,1),1);
+                  mf=zeros(size(C,1),1);
+                  logM0 = zeros(size(C,1),1);
+                  muhat = zeros(size(C,1),1);
+                  sigm2hat = zeros(size(C,1),1);
+                end
                 if ~issparse(C)
                   % The EP algorithm for full support covariance function
                   if ~isfield(gp,'meanf')
@@ -586,6 +617,15 @@ end
                   while iter<=maxiter && ~convergence
                     logZep_old=logZep;
                     logM0_old=logM0;
+                                        
+                    if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian') ...
+                        && iter > 1
+                      mf=mf(size(x2,1)+1:end);
+                      Sigm=Sigm(size(x2,1)+1:end,size(x2,1)+1:end);
+                      tautilde=tautilde(size(x2,1)+1:end);
+                      nutilde=nutilde(size(x2,1)+1:end);
+                      C=C(size(x2,1)+1:end,size(x2,1)+1:end);
+                    end
                     
                     if isequal(gp.latent_opt.init_prev, 'on') && iter==1 && ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1) && isequal(datahash,ch.datahash)
                       tautilde=ch.tautilde;
@@ -601,12 +641,22 @@ end
                         sigm2vec_i=1./tau;
                         
                         % compute moments of tilted distributions
-                        [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
+                        
+                        if isfield(gp, 'lik2') && ~isequal(gp.lik2.type, 'Gaussian')
+                          % Now we have 2 likelihoods, neither of which is
+                          % Gaussian
+                          [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n1, sigm2vec_i(n2+1:end), muvec_i(n2+1:end), z);                          
+                          [logM02, muhat2, sigm2hat2] = gp.lik2.fh.tiltedMoments(gp.lik2, y2, 1:n2, sigm2vec_i(1:n2), muvec_i(1:n2), z);                          
+                          logM0=[logM02;logM0];
+                          muhat=[muhat2;muhat];
+                          sigm2hat=[sigm2hat2;sigm2hat];
+                        else
+                          [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
+                        end
                         if any(isnan(logM0))
                           [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
                           return
                         end
-                        
                         % update site parameters
                         deltatautilde=1./sigm2hat-tau-tautilde;
                         tautilde=tautilde+df.*deltatautilde;
@@ -614,7 +664,6 @@ end
                         nutilde=nutilde+df.*deltanutilde;
                       else
                         % sequential-EP
-                        muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
                         for i1=1:n
                           % Algorithm utilizing Cholesky updates
                           % This is numerically more stable but slower
@@ -624,7 +673,7 @@ end
                           % $$$                             tau_i=S11^-1-tautilde(i1);
                           % $$$                             nu_i=S11^-1*mf(i1)-nutilde(i1);
                           % $$$
-                          % $$$                             mu_i=nu_i/tau_i;
+                          % $$$                             mu_icovg=nu_i/tau_i;
                           % $$$                             sigm2_i=tau_i^-1;
                           % $$$
                           % $$$                             if sigm2_i < 0
@@ -698,6 +747,11 @@ end
                     
                     % Recompute the approximate posterior parameters
                     % parallel- and sequential-EP
+                    if isfield(gp, 'lik2') && isequal(gp.lik2.type,'Gaussian')
+                      tautilde=([1./gp.lik2.sigma2.*ones(size(x2,1),1); tautilde]);
+                      nutilde=[y2./gp.lik2.sigma2;nutilde];
+                      C=Cp;
+                    end
                     Stilde=tautilde;
                     Stildesqr=sqrt(Stilde);
                     
@@ -707,7 +761,7 @@ end
                       
                       %B=eye(n)+Stildesqr*C*Stildesqr;
                       B=bsxfun(@times,bsxfun(@times,Stildesqr,C),Stildesqr');
-                      B(1:n+1:end)=B(1:n+1:end)+1;
+                      B(1:size(B,1)+1:end)=B(1:size(B,1)+1:end)+1;
                       [L,notpositivedefinite] = chol(B,'lower');
                       if notpositivedefinite
                         [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
@@ -717,6 +771,10 @@ end
                       V=L\bsxfun(@times,Stildesqr,C);
                       Sigm=C-V'*V;
                       mf=Sigm*nutilde;
+                      if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian')
+                        sigm2vec_i=[1e-12.*ones(size(x2,1),1); sigm2vec_i];
+                        muvec_i=[zeros(size(x2,1),1); muvec_i];
+                      end
                       
                       % Compute the marginal likelihood
                       % Direct formula (3.65):
@@ -744,7 +802,8 @@ end
                       % 3. term
                       term3 = sum(logM0);
                       
-                      logZep = -(term41+term52+term5+term3);
+                      logZep = -(term41+term52+term5+term3)                     ;
+%                       pause(0.1)
                       iter=iter+1;
                       
                     else
@@ -960,6 +1019,12 @@ end
                     return
                   end
                   
+                end
+                if isfield(gp, 'lik2')
+%                   if isequal(gp.lik2.type, 'Gaussian')
+                    param.Sigma=Sigm;
+                    param.mf=mf;
+                    iter
                 end
                 edata = logZep;
                 % Set something into La2
@@ -2585,6 +2650,12 @@ end
         param.logZ_i = logZ_i;
         param.sigm2vec_i = sigm2vec_i;
         param.muvec_i = muvec_i;
+        if exist('Sigm','var')
+          param.Sigma=Sigm;
+        else
+          param.Sigma=[];
+        end
+        param.mf=mf;
         
         % store values to the cache
         ch=param;

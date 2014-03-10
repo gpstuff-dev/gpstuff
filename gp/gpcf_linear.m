@@ -80,7 +80,12 @@ function gpcf = gpcf_linear(varargin)
     gpcf.fh.lp = @gpcf_linear_lp;
     gpcf.fh.lpg = @gpcf_linear_lpg;
     gpcf.fh.cfg = @gpcf_linear_cfg;
+    gpcf.fh.cfdg = @gpcf_linear_cfdg;
+    gpcf.fh.cfdg2 = @gpcf_linear_cfdg2;
     gpcf.fh.ginput = @gpcf_linear_ginput;
+    gpcf.fh.ginput2 = @gpcf_linear_ginput2;
+    gpcf.fh.ginput3 = @gpcf_linear_ginput3;
+    gpcf.fh.ginput4 = @gpcf_linear_ginput4;
     gpcf.fh.cov = @gpcf_linear_cov;
     gpcf.fh.trcov  = @gpcf_linear_trcov;
     gpcf.fh.trvar  = @gpcf_linear_trvar;
@@ -376,6 +381,126 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask, i1)
   end
 end
 
+function DKff = gpcf_linear_cfdg(gpcf, x, x2)
+%GPCF_LINEAR_CFDG  Evaluate gradient of covariance function, of
+%                which has been taken partial derivative with
+%                respect to x, with respect to parameters.
+%
+%  Description
+%    DKff = GPCF_LINEAR_CFDG(GPCF, X) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of derivatived covariance matrix
+%    dK(df,f)/dhyp = d(d k(X,X)/dx)/dhyp, with respect to the
+%    parameters
+%
+%    Evaluate: DKff{1:m} = d Kff / d coeffSigma2
+%    m is the dimension of inputs. If ARD is used, then multiple
+%    coefficients. This subfunction is needed when using derivative 
+%    observations.
+%
+%  See also
+%    GPCF_LINEAR_GINPUT
+
+[n,m]=size(x);
+ii1=0;
+DKff={};
+if length(gpcf.coeffSigma2)==1
+  c=repmat(gpcf.coeffSigma2,1,m);
+else
+  c=gpcf.coeffSigma2;
+end
+if ~isempty(gpcf.p.coeffSigma2)
+  if length(gpcf.coeffSigma2)==1
+    % One coefficient
+    for i=1:m
+      if isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i)==0
+        DK{i}=zeros(size(x,1),size(x2,1));
+      else
+        DK{i}=c(1).*repmat(x2(:,i)',size(x,1),1);
+      end
+    end
+    ii1=ii1+1;
+    DKff{ii1}=cat(1,DK{1:m});
+  else
+    % ARD coefficients
+    for i=1:m
+      for j=1:m
+        if i~=j || (isfield(gpcf, 'selectedVariables') ...
+            && sum(gpcf.selectedVariables==i)==0)
+          DK{j}=zeros(size(x,1),size(x2,1));
+        else
+          DK{j}=c(i).*repmat(x2(:,j)',size(x,1),1);
+        end
+      end
+      ii1=ii1+1;
+      DKff{ii1}=cat(1,DK{1:m});
+    end
+  end
+end
+end
+
+function DKff = gpcf_linear_cfdg2(gpcf, x)
+%GPCF_LINEAR_CFDG2  Evaluate gradient of covariance function, of
+%                 which has been taken partial derivatives with
+%                 respect to both input variables x, with respect
+%                 to parameters.
+%
+%  Description
+%    DKff = GPCF_LINEAR_CFDG2(GPCF, X) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of derivative covariance matrix
+%    dK(df,df)/dhyp = d(d^2 k(X1,X2)/dX1dX2)/dhyp with respect to
+%    the parameters
+%
+%    Evaluate: DKff{1:m} = d Kff / d coeffSigma 
+%    m is the dimension of inputs. If ARD is used, then multiple
+%    lengthScales. This subfunction is needed when using derivative 
+%    observations.
+%
+%  See also
+%   GPCF_LINEAR_GINPUT, GPCF_LINEAR_GINPUT2
+
+
+[n,m]=size(x);
+ii1=0;
+if length(gpcf.coeffSigma2)==1
+  c=repmat(gpcf.coeffSigma2,1,m);
+else
+  c=gpcf.coeffSigma2;
+end
+if length(gpcf.coeffSigma2)==1
+  % One coefficient
+  for k=1:m
+    for j=1:m
+      if k~=j || (isfield(gpcf, 'selectedVariables') ...
+          && sum(gpcf.selectedVariables==i)==0)
+        DK{k,j}=zeros(size(x,1),size(x,1));
+      else
+        DK{k,j}=c(1).*ones(size(x,1),size(x,1));
+      end
+    end
+  end
+  ii1=ii1+1;
+  DKff{ii1}=cell2mat(DK);
+else
+  % ARD coefficients
+  for i1=1:m
+    for k=1:m
+      for j=1:m
+        if k~=j || j~=i1 || (isfield(gpcf, 'selectedVariables') ...
+            && sum(gpcf.selectedVariables==i1)==0)
+          DK{k,j}=zeros(size(x,1),size(x,1));
+        else
+          DK{k,j}=c(i1).*ones(size(x,1),size(x,1));
+        end
+      end
+    end
+    ii1=ii1+1;
+    DKff{ii1}=cell2mat(DK);  
+  end
+end
+end
+
 
 function DKff = gpcf_linear_ginput(gpcf, x, x2, i1)
 %GPCF_LINEAR_GINPUT  Evaluate gradient of covariance function with 
@@ -515,6 +640,114 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2, i1)
   end
 end
 
+function DKff = gpcf_linear_ginput2(gpcf, x, x2)
+%GPCF_LINEAR_GINPUT2  Evaluate gradient of covariance function with
+%                   respect to both input variables x and x2 (in
+%                   same dimension).
+%
+%  Description
+%    DKff = GPCF_LINEAR_GINPUT2(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of twice derivatived covariance
+%    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
+%    elements). Input variable's dimensions are expected to be
+%    same. The function returns also DKff1 and DKff2 which are
+%    parts of DKff and needed with CFDG2. DKff = DKff1 -
+%    DKff2. This subfunction is needed when using derivative 
+%    observations.
+%   
+%  See also
+%    GPCF_LINEAR_GINPUT, GPCF_LINEAR_GINPUT2, GPCF_LINEAR_CFDG2       
+
+[n,m]=size(x);
+ii1=0;
+if length(gpcf.coeffSigma2)==1
+  c=repmat(gpcf.coeffSigma2,1,m);
+else
+  c=gpcf.coeffSigma2;
+end
+for i=1:m
+  if isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i)==0
+    DK=zeros(size(x,1),size(x2,1));
+  else
+    DK=c(i).*ones(size(x,1),size(x2,1));
+  end
+  ii1=ii1+1;
+  DKff{ii1}=DK;
+end
+end
+
+function DKff = gpcf_linear_ginput3(gpcf, x, x2)
+%GPCF_LINEAR_GINPUT3  Evaluate gradient of covariance function with
+%                   respect to both input variables x and x2 (in
+%                   different dimensions).
+%
+%  Description
+%    DKff = GPCF_LINEAR_GINPUT3(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of twice derivatived covariance
+%    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
+%    elements). The derivative is calculated in multidimensional
+%    problem between input's observation dimensions which are not
+%    same. This subfunction is needed when using derivative 
+%    observations.
+%   
+%  See also
+%    GPCF_LINEAR_GINPUT, GPCF_LINEAR_GINPUT2, GPCF_LINEAR_CFDG2        
+
+[n,m]=size(x);
+ii1=0;
+DK=zeros(size(x,1),size(x2,1));
+for i=1:m-1
+  for j=i+1:m
+    ii1=ii1+1;
+    DKff{ii1}=DK;
+  end
+end
+end
+
+function DKff = gpcf_linear_ginput4(gpcf, x, x2)
+%GPCF_LINEAR_GINPUT  Evaluate gradient of covariance function with 
+%                  respect to x. Simplified and faster version of
+%                  linear_ginput, returns full matrices.
+%
+%  Description
+%    DKff = GPCF_LINEAR_GINPUT4(GPCF, X) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of covariance matrix Kff = k(X,X) with
+%    respect to X (whole matrix). This subfunction is needed when 
+%    using derivative observations.
+%
+%    DKff = GPCF_LINEAR_GINPUT4(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2) with respect to X (whole matrix). This subfunction 
+%    is needed when using derivative observations.
+%
+%  See also
+%    GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_LP, GP_G
+
+[n,m]=size(x);
+i1=1:m;
+ii1=0;
+if nargin==2
+  x2=x;
+end
+if length(gpcf.coeffSigma2)==1
+  c=repmat(gpcf.coeffSigma2,1,m);
+else
+  c=gpcf.coeffSigma2;
+end
+for i=i1
+  if isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i)==0
+    DK=zeros(size(x,1),size(x2,1));
+  else
+    DK=repmat(c(i)*x2(:,i)',size(x,1),1);
+  end
+  ii1=ii1+1;
+  DKff{ii1}=DK;
+end
+end
 
 function C = gpcf_linear_cov(gpcf, x1, x2, varargin)
 %GP_LINEAR_COV  Evaluate covariance matrix between two input vectors
