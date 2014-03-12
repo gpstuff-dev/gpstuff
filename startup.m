@@ -5,7 +5,7 @@ S = which(F);
 if exist('OCTAVE_VERSION', 'builtin')
   subfolders={'diag' 'dist' 'gp' 'mc' 'misc' 'optim' 'xunit', 'octave_compat', 'inputparser'};
 else
-  subfolders={'diag' 'dist' 'gp' 'mc' 'misc' 'optim' 'xunit'};
+  subfolders={'diag' 'dist' 'gp' 'mc' 'misc' 'optim' 'xunit', 'inputparser'};
 end
 for sf=subfolders
   addpath(strrep(S,[F '.m'],sf{:}))
