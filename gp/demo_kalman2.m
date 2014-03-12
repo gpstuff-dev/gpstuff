@@ -12,49 +12,63 @@
   y=y';
   y=y(:);
   x = (data(1):1/12:data(end,1)+11/12)';
+  
+  % Remove ones with error
   x = x(y>0);
   y = y(y>0);
   
+  % Remove mean from data
+  ymean = mean(y);
+  y = y-ymean;
+  
   % Show original data
   figure(1); clf
-    plot(x,y,'-k')
+    plot(x,y+ymean,'-k')
     xlabel('Time (year)');
     ylabel('CO_2 concentration (PPM)')
+  title('Kalman demo 2, Periodic Mauna Loa - Data')
   
   
 %% Construct the model
 
-  % First create squared exponential covariance function with ARD and 
-  % Gaussian noise structures...
-  gpcf1 = gpcf_sexp('lengthScale', 100, 'magnSigma2', 100);
-  gpcf2 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 1);
+  % We use a squared exponential function to deal with long term change,
+  % another SE for short term effects and a periodic component for
+  % the cyclic nature of the data. The period of the cycle is not
+  % optimised as it is strongly believed to be exactly 12 months.
+  gpcf1 = gpcf_sexp('lengthScale', 100, 'magnSigma2', 1000);
+  gpcf2 = gpcf_matern32('lengthScale', 1, 'magnSigma2', 1);
   gpcf3 = gpcf_periodic('decay',0,'magnSigma2',10,'period',1,'lengthScale',1);
   lik = lik_gaussian();
   
   % ... Then set the prior for the parameters of covariance functions...
-  pl = prior_t('s2', 3);
+  pl1 = prior_t('s2', 1000,'mu',100);
+  pl2 = prior_t('s2', 100,'mu',1);
   pm = prior_sqrtunif();
-  gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-  gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-  gpcf3 = gpcf_sexp(gpcf3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+  gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl1, 'magnSigma2_prior', pm);
+  gpcf2 = gpcf_matern32(gpcf2, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm);
+  gpcf3 = gpcf_periodic(gpcf3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
   
   % ... Finally create the GP structure
   gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3});
   
   % Set used type to KALMAN
-%   gp = gp_set(gp,'type','KALMAN');
+  gp = gp_set(gp,'type','KALMAN');
   
 %% Optimize hyperparameters and predict
 
   % Find hyperparameters
   opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','GradObj','off');
-  gp=gp_optim(gp,x,y,'optimf',@fminunc);
+  gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminunc);
   
   % Set the predicted area
   xt = (x(end):1/12:x(end)+ 20)';
   
   % Predict values
   [meanf,Varf] =  gp_pred(gp, x, y,'xt',xt);
+  
+  % Return mean
+  y = y + ymean;
+  meanf = meanf + ymean;
  
 %% Show result
 
@@ -66,7 +80,9 @@
   plot(x,y,'.k')
   xlabel('Time (years)');
   ylabel('CO_2 concentration (PPM)')
-  legend('95% confidence region', 'Monthly average measurements');
+  box on
+  legend('95% confidence region', 'Monthly average measurements','Location', 'NorthWest');
+  title('Kalman demo 2, Periodic Mauna Loa - Prediction')
   
     
   
