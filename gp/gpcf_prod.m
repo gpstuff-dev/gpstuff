@@ -58,6 +58,7 @@ function gpcf = gpcf_prod(varargin)
     gpcf.fh.trcov  = @gpcf_prod_trcov;
     gpcf.fh.trvar  = @gpcf_prod_trvar;
     gpcf.fh.recappend = @gpcf_prod_recappend;
+    gpcf.fh.cf2ss = @gpcf_prod_cf2ss;
   end
 
 end
@@ -594,4 +595,29 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
     end
   end
 end
+
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_prod_cf2ss(gpcf)
+%GPCF_MATERN32_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the covariance function to state space form such that
+%    the process can be described by the stochastic differential equation
+%    of the form: 
+%      df(t)/dt = F f(t) + L w(t),
+%    where w(t) is a white noise process. The observation model now 
+%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
+
+  % Vector of function handles of conversion functions from covariance 
+  % funktions to state-space 
+  cf2ssvect = cell(length(gpcf.cf),1);
+  for k = 1:length(gpcf.cf)
+      cf2ssvect{k} = @(x) gpcf.cf{k}.fh.cf2ss(gpcf.cf{k});
+  end
+  
+  % Return model matrices, derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
+      cf_prod_to_ss(cf2ssvect);
+  
+end
+
 
