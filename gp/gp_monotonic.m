@@ -130,8 +130,8 @@ Ef=Ef(size(x,1)+1:end);
 Ef=reshape(Ef,n,nvd);
 % Check whether monotonicity is satisfied
 while any(Ef(:).*gp.yv<0)
-  % Monotonicity not satisfied, add 2 "most wrong" predictions from the
-  % observation set to the virual observations.
+  % Monotonicity not satisfied, add 2 "most wrong" predictions, for each 
+  % dimension, from the observation set to the virual observations.
   fprintf('Latent function not monotonic, adding virtual observations.\n');
   gp.lik.nu=1e-6;
   for j=1:nvd
@@ -139,6 +139,7 @@ while any(Ef(:).*gp.yv<0)
   end
   ind=ind(1:2,:);
   inds=unique(ind(:));
+  clear ind;
   fprintf('Added %d virtual observations.\n', length(inds));
   xv=[xv;x(inds,:)];
   gp.xv=xv;

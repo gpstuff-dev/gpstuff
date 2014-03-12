@@ -89,6 +89,14 @@ function [w, s, h] = gp_pak(gp, param)
       h = [h hi];
     end
     
+    % Pack the parameters of the second likelihood function (monotonic)
+    if ~isempty(strfind(param, 'likelihood')) && isfield(gp, 'lik2')
+      [wi, si, hi] = gp.lik2.fh.pak(gp.lik2);
+      w = [w wi];
+      s = [s; si];
+      h = [h hi];
+    end
+    
     % Pack the inducing inputs
     if ~isempty(strfind(param, 'inducing'))
       if isfield(gp,'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)

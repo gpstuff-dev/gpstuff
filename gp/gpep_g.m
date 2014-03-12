@@ -240,10 +240,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         if isfield(gp, 'lik2')
           x2=x;
           x=gp.xv;
-          n=size(x2,1)+size(x,1).*size(x,2);
           [K,C]=gp_dtrcov(gp,x2,x);
+          n=size(K,1);
           C=K;
-          L=chol(p.Sigma);
+          L=p.La2;
+          n2=size(y,1);
+%           L=chol(p.Sigma);
         end
         if issparse(C)
           % If compact support covariance functions are used
@@ -1077,7 +1079,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
 
         gdata_lik = 0;
-        lik = gp.lik;
+        if isfield(gp, 'lik2')
+          lik = gp.lik2;
+        else
+          lik = gp.lik;
+        end
+          
         for k1 = 1:length(y)
           if isempty(eta)
             gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
@@ -1097,7 +1104,27 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         gdata = [gdata gdata_lik];
         gprior = [gprior gprior_lik];
       end
-
+    end    
+    if isfield(gp,'lik2') && isequal(gp.lik2.type, 'Gaussian')
+      % Monotonic GP with Gaussian likelihood
+      s2=gp.lik2.sigma2;
+%       DCff = blkdiag(s2.*eye(n2), zeros(70));
+%       gdata_lik = -(-0.5.*trace((C+diag(1./tautilde))\DCff) ...
+%         + 0.5.*(nutilde./tautilde)'*((C+diag(1./tautilde))\(DCff*((C+diag(1./tautilde))\(nutilde./tautilde)))));
+      Sigma=p.La2'*p.La2;
+      mf=Sigma*nutilde;
+      gdata_lik = -sum((-s2+diag(Sigma(1:n2,1:n2))+(mf(1:n2)-y).^2)./(2*s2.^2)).*s2;
+%       gdata_lik = gdata_lik - n2./2;% + sum(y.^2./(2*s2));
+      lik=gp.lik2;
+      if isfield(gp.lik2, 'p')
+        gprior_lik = -lik.fh.lpg(lik);
+      else
+        gprior_lik = zeros(size(gdata_lik));
+      end
+      
+      % set the gradients into vectors that will be returned
+      gdata = [gdata gdata_lik];
+      gprior = [gprior gprior_lik];
     end
 
     % add gradient with respect to inducing inputs (computed in gp.type sepcific way)

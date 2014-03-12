@@ -530,8 +530,6 @@ end
         param.sigm2vec_i = ch.sigm2vec_i;
         param.logZ_i = ch.logZ_i;
         param.eta = ch.eta;
-        param.Sigma=ch.Sigma;
-        parma.mf=ch.mf;
       else
         
         switch gp.latent_opt.optim_method
@@ -620,6 +618,8 @@ end
                                         
                     if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian') ...
                         && iter > 1
+                      mf_old=mf(1:n2);
+                      sigm_old=Sigm(1:n2,1:n2);
                       mf=mf(size(x2,1)+1:end);
                       Sigm=Sigm(size(x2,1)+1:end,size(x2,1)+1:end);
                       tautilde=tautilde(size(x2,1)+1:end);
@@ -771,10 +771,19 @@ end
                       V=L\bsxfun(@times,Stildesqr,C);
                       Sigm=C-V'*V;
                       mf=Sigm*nutilde;
-                      if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian')
-                        sigm2vec_i=[1e-12.*ones(size(x2,1),1); sigm2vec_i];
-                        muvec_i=[zeros(size(x2,1),1); muvec_i];
-                      end
+%                       if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian')
+% %                         if iter==1
+% %                           sigm_old=Cp(1:n2,1:n2);
+% %                           mf_old=mf(1:n2);
+% %                         end
+% %                         ssvec=1./(1./diag(sigm_old) - 1./gp.lik2.sigma2);
+% %                         muvec=ssvec.*(mf_old./diag(sigm_old) - y2.*gp.lik2.sigma2);
+% %                         sigm2vec_i=[ssvec; sigm2vec_i];
+% %                         muvec_i=[muvec; muvec_i];
+% %                         sigm2vec_i=[diag(C(1:size(x2,1),1:size(x2,1))); sigm2vec_i];
+%                         sigm2vec_i=[1e10*zeros(size(x2,1),1); sigm2vec_i];
+%                         muvec_i=[zeros(size(x2,1),1); muvec_i];
+%                       end
                       
                       % Compute the marginal likelihood
                       % Direct formula (3.65):
@@ -786,24 +795,48 @@ end
                       %         0.5*sum(log(sigm2vec_i+1./tautilde))+
                       %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
                       
-                      % 4. term & 1. term
-                      term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
-                      
-                      % 5. term (1/2 element) & 2. term
-                      T=1./sigm2vec_i;
-                      Cnutilde = C*nutilde;
-                      L2 = V*nutilde;
-                      term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
-                      term52 = term52.*0.5;
-                      
-                      % 5. term (2/2 element)
-                      term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-                      
-                      % 3. term
-                      term3 = sum(logM0);
-                      
-                      logZep = -(term41+term52+term5+term3)                     ;
-%                       pause(0.1)
+                      if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian')
+%                         [LCt, notpositivedefinite]=chol(C+diag(1./tautilde),'lower');
+                        mutilde=nutilde./tautilde;
+                        mustilde=nutilde./sqrt(tautilde);
+%                         if notpositivedefinite
+%                           [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+%                           return
+%                         end
+%                         logZep = -0.5.*mutilde'*(LCt'\(LCt\mutilde)) ...
+%                           - sum(log(diag(LCt))) ...
+%                           + sum((muvec_i-nutilde(n2+1:end)./tautilde(n2+1:end)).^2./(2.*(sigm2vec_i+1./tautilde(n2+1:end)))) ...
+%                           + sum(logM0) + 0.5.*sum(log(sigm2vec_i + 1./tautilde(n2+1:end)));
+                        
+                        logZep = -0.5.*mustilde'*(L'\(L\mustilde)) ...
+                          - sum(log(diag(L))) + 0.5.*sum(log(tautilde(1:n2))) ...
+                          + sum((muvec_i-mutilde(n2+1:end)).^2./(2.*(sigm2vec_i+1./tautilde(n2+1:end)))) ...
+                          + sum(logM0) + 0.5.*sum(log(sigm2vec_i.*tautilde(n2+1:end)+1));
+                        
+                        logZep = -logZep;
+                      else
+                        % 4. term & 1. term
+                        term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
+                        
+%                         if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian')
+%                           sigm2vec_i(1:size(x2,1))=Inf;
+%                         end
+                        
+                        % 5. term (1/2 element) & 2. term
+                        T=1./sigm2vec_i;
+                        Cnutilde = C*nutilde;
+                        L2 = V*nutilde;
+                        term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
+                        term52 = term52.*0.5;
+                        
+                        % 5. term (2/2 element)
+                        term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                        
+                        % 3. term
+                        term3 = sum(logM0);                        
+
+                        logZep = -(term41+term52+term5+term3);
+                      end
                       iter=iter+1;
                       
                     else
@@ -1020,14 +1053,19 @@ end
                   end
                   
                 end
+                La2 = B;
                 if isfield(gp, 'lik2')
-                    param.Sigma=Sigm;
-                    param.mf=mf;
-%                     iter
+                  %                     param.Sigma=Sigm;
+                  %                     param.mf=mf;
+                  [La2,notpositivedefinite]=chol(Sigm);
+                  if notpositivedefinite
+                    [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
+%                   iter
                 end
                 edata = logZep;
                 % Set something into La2
-                La2 = B;
                 b = 0;
                 
                 % ============================================================
