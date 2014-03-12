@@ -771,19 +771,6 @@ end
                       V=L\bsxfun(@times,Stildesqr,C);
                       Sigm=C-V'*V;
                       mf=Sigm*nutilde;
-%                       if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian')
-% %                         if iter==1
-% %                           sigm_old=Cp(1:n2,1:n2);
-% %                           mf_old=mf(1:n2);
-% %                         end
-% %                         ssvec=1./(1./diag(sigm_old) - 1./gp.lik2.sigma2);
-% %                         muvec=ssvec.*(mf_old./diag(sigm_old) - y2.*gp.lik2.sigma2);
-% %                         sigm2vec_i=[ssvec; sigm2vec_i];
-% %                         muvec_i=[muvec; muvec_i];
-% %                         sigm2vec_i=[diag(C(1:size(x2,1),1:size(x2,1))); sigm2vec_i];
-%                         sigm2vec_i=[1e10*zeros(size(x2,1),1); sigm2vec_i];
-%                         muvec_i=[zeros(size(x2,1),1); muvec_i];
-%                       end
                       
                       % Compute the marginal likelihood
                       % Direct formula (3.65):
@@ -796,17 +783,8 @@ end
                       %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
                       
                       if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian')
-%                         [LCt, notpositivedefinite]=chol(C+diag(1./tautilde),'lower');
                         mutilde=nutilde./tautilde;
                         mustilde=nutilde./sqrt(tautilde);
-%                         if notpositivedefinite
-%                           [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
-%                           return
-%                         end
-%                         logZep = -0.5.*mutilde'*(LCt'\(LCt\mutilde)) ...
-%                           - sum(log(diag(LCt))) ...
-%                           + sum((muvec_i-nutilde(n2+1:end)./tautilde(n2+1:end)).^2./(2.*(sigm2vec_i+1./tautilde(n2+1:end)))) ...
-%                           + sum(logM0) + 0.5.*sum(log(sigm2vec_i + 1./tautilde(n2+1:end)));
                         
                         logZep = -0.5.*mustilde'*(L'\(L\mustilde)) ...
                           - sum(log(diag(L))) + 0.5.*sum(log(tautilde(1:n2))) ...
@@ -817,10 +795,6 @@ end
                       else
                         % 4. term & 1. term
                         term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
-                        
-%                         if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian')
-%                           sigm2vec_i(1:size(x2,1))=Inf;
-%                         end
                         
                         % 5. term (1/2 element) & 2. term
                         T=1./sigm2vec_i;
