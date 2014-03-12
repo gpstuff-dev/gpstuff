@@ -86,6 +86,7 @@ function lik = lik_gaussian(varargin)
     lik.fh.lp = @lik_gaussian_lp;
     lik.fh.lpg = @lik_gaussian_lpg;
     lik.fh.cfg = @lik_gaussian_cfg;
+    lik.fh.tiltedMoments = @lik_gaussian_tiltedMoments;
     lik.fh.trcov  = @lik_gaussian_trcov;
     lik.fh.trvar  = @lik_gaussian_trvar;
     lik.fh.recappend = @lik_gaussian_recappend;
@@ -192,6 +193,28 @@ function lpg = lik_gaussian_lpg(lik)
       lpg = [lpg lpgs(2:end)];
     end            
   end
+end
+
+function [logM_0, m_1, sigm2hati1] = lik_gaussian_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+%LIK_PROBIT_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+%
+%  Description
+%    [M_0, M_1, M2] = LIK_PROBIT_TILTEDMOMENTS(LIK, Y, I, S2,
+%    MYY) takes a likelihood structure LIK, class labels Y, index
+%    I and cavity variance S2 and mean MYY. Returns the zeroth
+%    moment M_0, mean M_1 and variance M_2 of the posterior
+%    marginal (see Rasmussen and Williams (2006): Gaussian
+%    processes for Machine Learning, page 55). This subfunction 
+%    is needed when using EP for inference with non-Gaussian 
+%    likelihoods.
+%
+%  See also
+%    GPEP_E
+
+  m_1=myy_i;
+  sigm2hati1=sigm2_i;
+  logM_0=zeros(size(y));
+  
 end
 
 function DKff = lik_gaussian_cfg(lik, x, x2)

@@ -245,18 +245,32 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
         
+        if ~isfield(gp, 'lik2')
+          [K, C]=gp_trcov(gp,x);
+          kstarstar = gp_trvar(gp, xt, predcf);
+          ntest=size(xt,1);
+          K_nf=gp_cov(gp,xt,x,predcf);
+          [n,nin] = size(x);
+        else
+          x2=x;
+          y2=y;
+          x=gp.xv;
+          y=gp.yv.*ones(size(x,1).*size(x,2),1);
+          [K,C]=gp_dtrcov(gp,x2,x);
+          kstarstar = diag(gp_dtrcov(gp,xt,xt, predcf));
+%           kstarstar=kstarstar(1:size(xt,1));
+          ntest=size(xt,1);
+          K_nf=gp_dcov(gp,x2,xt,predcf)';
+          [n,nin] = size(x);
+        end
         
-        [K, C]=gp_trcov(gp,x);
-        kstarstar = gp_trvar(gp, xt, predcf);
-        ntest=size(xt,1);
-        K_nf=gp_cov(gp,xt,x,predcf);
-        [n,nin] = size(x);
-        
-        if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
+        if all(tautilde > 0) && ~(isequal(gp.latent_opt.optim_method, 'robust-EP') ...
+            || isfield(gp, 'lik2'))
           % This is the usual case where likelihood is log concave
           % for example, Poisson and probit
           sqrttautilde = sqrt(tautilde);
-          Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
+          Stildesqroot = sparse(1:length(sqrttautilde), 1:length(sqrttautilde),...
+            sqrttautilde, length(sqrttautilde),  length(sqrttautilde));
           
           if ~isfield(gp,'meanf')
             if issparse(L)          % If compact support covariance functions are used
@@ -645,7 +659,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
   
   % ============================================================
   % Evaluate also the predictive mean and variance of new observation(s)
-  % ============================================================  
+  % ============================================================    
   if ~isequal(fcorr, 'off')
     if nargout == 3
       if isempty(yt)
@@ -661,10 +675,38 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
       if isempty(yt)
         lpyt=[];
       else
-        lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+        if isfield(gp, 'lik2')
+          yt=[yt(1:ntest); gp.yd.*ones(size(Eft(ntest+1:end)))];
+          if isequal(gp.lik2.type, 'Gaussian')
+            Eyt1=Eft(1:ntest);
+            Varyt1=Varft(1:ntest)+gp.lik2.sigma2;
+            lpyt1=norm_lpdf(yt(1:ntest), Eyt1, sqrt(Varyt1));
+          else
+            lpyt1 = gp.lik.fh.predy(gp.lik, Eft(1:ntest), Varft(1:ntest), yt(1:ntest), zt);
+          end
+          lpyt2 = gp.lik.fh.predy(gp.lik, Eft(ntest+1:end), Varft(ntest+1:end), yt(ntest+1:end), zt);
+          lpyt=[lpyt1;lpyt2];
+        else
+          lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+        end
       end
     elseif nargout > 3
-      [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+      if isfield(gp, 'lik2')
+        yt=[yt(1:ntest); gp.yd.*ones(size(Eft(ntest+1:end)))];
+        if isequal(gp.lik2.type, 'Gaussian')
+          Eyt1=Eft(1:ntest);
+          Varyt1=Varft(1:ntest)+gp.lik2.sigma2;
+          lpyt1=norm_lpdf(yt(1:ntest), Eyt1, sqrt(Varyt1));
+        else          
+          [lpyt1, Eyt1, Varyt1] = gp.lik2.fh.predy(gp.lik, Eft(1:ntest), Varft(1:ntest), yt(1:ntest), zt);
+        end
+        [lpyt2, Eyt2, Varyt2] = gp.lik.fh.predy(gp.lik, Eft(ntest+1:end), Varft(ntest+1:end), yt(ntest+1:end), zt);
+        lpyt=[lpyt1;lpyt2];
+        Eyt=[Eyt1;Eyt2];
+        Varyt=[Varyt1;Varyt2];
+      else
+        [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+       end
     end
   end
 end

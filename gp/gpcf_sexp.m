@@ -672,7 +672,7 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask, i1)
 
 end
 
-function DKff = gpcf_sexp_cfdg(gpcf, x)
+function DKff = gpcf_sexp_cfdg(gpcf, x, x2)
 %GPCF_SEXP_CFDG  Evaluate gradient of covariance function, of
 %                which has been taken partial derivative with
 %                respect to x, with respect to parameters.
@@ -696,7 +696,10 @@ function DKff = gpcf_sexp_cfdg(gpcf, x)
   
   [n, m] =size(x);
   ii1=0;
-  Cdm = gpcf.fh.ginput4(gpcf, x);
+  if nargin<3
+    x2=x;
+  end
+  Cdm = gpcf.fh.ginput4(gpcf, x, x2);
   
   % grad with respect to MAGNSIGMA
   if ~isempty(gpcf.p.magnSigma2)
@@ -721,7 +724,7 @@ function DKff = gpcf_sexp_cfdg(gpcf, x)
         s = 1./gpcf.lengthScale.^2;
         dist = 0;
         for i=1:m
-          D = bsxfun(@minus,x(:,i),x(:,i)');
+          D = bsxfun(@minus,x(:,i),x2(:,i)');
           dist = dist + D.^2;
         end
         % input dimension is 1
@@ -745,7 +748,7 @@ function DKff = gpcf_sexp_cfdg(gpcf, x)
         end
         %Preparing
         for i=1:m
-          dist{i} = bsxfun(@minus,x(:,i),x(:,i)').^2;
+          dist{i} = bsxfun(@minus,x(:,i),x2(:,i)').^2;
           s(i) = 1./gpcf.lengthScale(i);
         end
 
@@ -1222,9 +1225,9 @@ function DKff = gpcf_sexp_ginput4(gpcf, x, x2, i1)
   else
     flag=0;
     K = gpcf.fh.cov(gpcf, x, x2);
-    if isequal(x,x2)
-      error('ginput4 fuktio saa vaaran inputin')
-    end
+%     if isequal(x,x2)
+%       error('ginput4 fuktio saa vaaran inputin')
+%     end
   end
   if nargin<4
     i1=1:m;
