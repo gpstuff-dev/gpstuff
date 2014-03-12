@@ -10,13 +10,14 @@ demos={'demo_binomial1', ...
 invalid_demos={};
 iter=0;
 failed=0;
+path=strrep(which('run_tests'), 'run_tests.m', '');
 for ii=1:length(demos)
   iter=iter+1;
   setrandstream(0);  
   if exist('OCTAVE_VERSION','builtin')
-    values.real=load(['octave/realValues_' strrep(demos{ii}, 'demo_', '')]);
+    values.real=load([path 'octave/realValues_' strrep(demos{ii}, 'demo_', '')]);
   else
-    values.real=load(['matlab/realValues_' strrep(demos{ii}, 'demo_', '')]);
+    values.real=load([path 'matlab/realValues_' strrep(demos{ii}, 'demo_', '')]);
   end
   field=fieldnames(values.real);
   fprintf('\nRunning demo: %s\n\n', demos{ii});
@@ -55,4 +56,4 @@ for ii=1:length(demos)
   close all;
 end
 invalid_demos
-fprintf('Failed %d of %d tests\n',failed, iter);
+fprintf('Failed %d of %d tests. Checko struct invalid_demos for further details.\n',failed, iter);

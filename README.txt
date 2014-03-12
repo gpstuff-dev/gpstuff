@@ -75,7 +75,7 @@ Table of contents:
 3. CONTENTS
    
    The GPstuff packge contains the following subdirectories:
-   diag  dist  gp  mc  misc  optim  xunit  SuiteSparse
+   diag  dist  gp  mc  misc  optim  test_gpstuff  SuiteSparse
 
    Each folder contains Contents.m, which summarizes the functions
    in the folder. 
@@ -85,12 +85,9 @@ Table of contents:
 
 4. TESTING THE INSTALLATION
 
-   Installation can be tested by running command test_all, which
-   runs all demos and compares the computed results to pre-saved
-   results. Running test_all takes about one hour and it requires
-   that 'xunit' toolbox is in the Matlab path. xunit package can be
-   downloaded from
-   http://www.mathworks.com/matlabcentral/fileexchange/22846-matlab-xunit-test-framework
+   Installation can be tested by running command run_tests, which
+   runs specific demos and compares the computed results to pre-saved
+   results. 
 
 5. USER QUIDE (VERY SHORT)
 
