@@ -503,8 +503,13 @@ switch gp.type
     for j=1:length(gp.cf)
  
       % Form state-space model from the gp.cf{j}
-      [jF,jL,jQc,jH,jPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
-    
+      try
+        [jF,jL,jQc,jH,jPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
+      catch
+        [edata, eprior, e] = set_output_for_notpositivedefinite;
+        return 
+      end
+        
       % Stack model
       F    = blkdiag(F,jF);
       L    = blkdiag(L,jL);
