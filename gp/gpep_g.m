@@ -316,6 +316,17 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
               DKffa = gpcf.fh.cfg(gpcf, x2);
               DKdf = gpcf.fh.cfdg(gpcf, x, x2);
               DKdd = gpcf.fh.cfdg2(gpcf, x);
+              if isfield(gp, 'nvd')
+                % Select monotonic dimensions
+                inds=[];
+                for idd=1:length(gp.nvd)
+                  inds=[inds size(x,1)*(gp.nvd(idd)-1)+1:size(x,1)*gp.nvd(idd)];
+                end
+                for ijj=1:length(DKdd)                  
+                  DKdf{ijj}=DKdf{ijj}(inds,:);
+                  DKdd{ijj}=DKdd{ijj}(inds,inds);
+                end
+              end
               
               DKffc{1}=[DKffa{1} DKdf{1}';DKdf{1} DKdd{1}];
               for i2=2:length(DKffa)

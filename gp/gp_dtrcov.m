@@ -76,11 +76,11 @@ if (isfield(gp,'derivobs') && gp.derivobs)
         t1=1;
         Kddnodi=zeros(m*n,m*n);
         for i=1:m-1
-          aa=zeros(m-1,m);
+          aa=zeros(1,m);
           t2=t1+m-2-(i-1);
-          aa(m-1,i)=1;
+          aa(1,i)=1;
           k=kron(aa,cat(1,zeros((i)*n,n),Kdf2{t1:t2}));
-          k(1:n*m,:)=[];
+          %k(1:n*m,:)=[];
           k=k+k';
           Kddnodi = Kddnodi + k;
           t1=t2+1;

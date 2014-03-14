@@ -27,7 +27,8 @@ function [K, C] = gp_trcov(gp, x1, predcf)
 % License.txt, included with the software, for details.
 
 % no covariance functions?
-if length(gp.cf)==0 || (nargin>2 && ~isempty(predcf) && predcf(1)==0)
+if length(gp.cf)==0 || (nargin>2 && ~isempty(predcf) && predcf(1)==0) ...
+    || isfield(gp, 'lik2')
   K=[];
   C=[];
   if nargout>1 && isfield(gp.lik.fh,'trcov')

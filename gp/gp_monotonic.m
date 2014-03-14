@@ -110,8 +110,8 @@ else
 end
 if ~isfield(gp, 'xv')
   gp.xv=x(randsample(size(x,1),nv),:);
-  xv=gp.xv;
 end
+xv=gp.xv;
 if isempty(opt) || ~isfield(opt, 'TolX')
   % No options structure given or not a proper options structure
   opt=optimset('TolX',1e-4,'TolFun',1e-4,'Display','iter');
