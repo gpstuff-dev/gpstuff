@@ -316,16 +316,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
               DKffa = gpcf.fh.cfg(gpcf, x2);
               DKdf = gpcf.fh.cfdg(gpcf, x, x2);
               DKdd = gpcf.fh.cfdg2(gpcf, x);
-              if isfield(gp, 'nvd')
-                % Select monotonic dimensions
-                inds=[];
-                for idd=1:length(gp.nvd)
-                  inds=[inds size(x,1)*(gp.nvd(idd)-1)+1:size(x,1)*gp.nvd(idd)];
-                end
-                for ijj=1:length(DKdd)                  
-                  DKdf{ijj}=DKdf{ijj}(inds,:);
-                  DKdd{ijj}=DKdd{ijj}(inds,inds);
-                end
+              % Select monotonic dimensions
+              inds=[];
+              for idd=1:length(gp.nvd)
+                inds=[inds size(x,1)*(gp.nvd(idd)-1)+1:size(x,1)*gp.nvd(idd)];
+              end
+              for ijj=1:length(DKdd)
+                DKdf{ijj}=DKdf{ijj}(inds,:);
+                DKdd{ijj}=DKdd{ijj}(inds,inds);
               end
               
               DKffc{1}=[DKffa{1} DKdf{1}';DKdf{1} DKdd{1}];
@@ -930,10 +928,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         if ~isempty(strfind(gp.infer_params, 'covariance'))
           i1=0;
           for i=1:ncf
-%             i1=0;
-%             if ~isempty(gprior)
-%               i1 = length(gprior);
-%             end
 
             gpcf = gp.cf{i};
             % Get the gradients of the covariance matrices
@@ -967,17 +961,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
               gdata(i1) = -0.5.*((2*b*DKuf'-(b*KfuiKuuKuu))*(iKuuKuf*b'));
               gdata(i1) = gdata(i1) + 0.5.*(2.*(sum(iLav'*sum(DKuf'.*iKuuKuf',2))-sum(sum(L'.*(L'*DKuf'*iKuuKuf))))...
                                             - sum(iLav'*sum(KfuiKuuKuu.*iKuuKuf',2))+ sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-%               gprior(i1) = gprior_cf(i2);
             end
             gprior = [gprior gprior_cf];
-%             % Set the gradients of hyperparameter
-%             if length(gprior_cf) > np
-%               for i2=np+1:length(gprior_cf)
-%                 i1 = i1+1;
-%                 gdata(i1) = 0;
-%                 gprior(i1) = gprior_cf(i2);
-%               end
-%             end
           end
 
         end
@@ -1082,7 +1067,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
     if ~strcmp(gp.type,'VAR')
       % =================================================================
       % Gradient with respect to likelihood function parameters
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && (isfield(gp.lik.fh, 'siteDeriv') ...
+          || (isfield(gp, 'lik2') && isfield(gp.lik2.fh, 'siteDeriv')))
 
         if isempty(sigm2_i)
           sigm2_i=p.sigm2vec_i;

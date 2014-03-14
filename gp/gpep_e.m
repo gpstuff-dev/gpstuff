@@ -540,7 +540,7 @@ end
               x2=x;
               y2=y;
               x=gp.xv;
-              y=gp.yv.*ones(size(x,1).*size(x,2),1);
+              y=gp.yv.*ones(size(x,1).*length(gp.nvd),1);
             end
             
             % The parameters or data have changed since
@@ -1029,8 +1029,6 @@ end
                 end
                 La2 = B;
                 if isfield(gp, 'lik2')
-                  %                     param.Sigma=Sigm;
-                  %                     param.mf=mf;
                   [La2,notpositivedefinite]=chol(Sigm);
                   if notpositivedefinite
                     [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
