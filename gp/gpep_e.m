@@ -540,7 +540,9 @@ end
               x2=x;
               y2=y;
               x=gp.xv;
-              y=gp.yv.*ones(size(x,1).*length(gp.nvd),1);
+              %y=gp.yv.*ones(size(x,1).*length(gp.nvd),1);
+              y=bsxfun(@times, gp.yv, ones(size(gp.xv,1),length(gp.nvd)));
+              y=y(:);
             end
             
             % The parameters or data have changed since

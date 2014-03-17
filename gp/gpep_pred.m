@@ -255,13 +255,11 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
           x2=x;
           y2=y;
           x=gp.xv;
-          y=gp.yv.*ones(size(x,1).*size(x,2),1);
           [K,C]=gp_dtrcov(gp,x2,x);
-          kstarstar = diag(gp_dtrcov(gp,xt,xt, predcf));
-%           kstarstar=kstarstar(1:size(xt,1));
+          kstarstar=gp_trvar(rmfield(gp,'derivobs'),xt);
           ntest=size(xt,1);
           K_nf=gp_dcov(gp,x2,xt,predcf)';
-          [n,nin] = size(x);
+          K_nf(ntest+1:end,:)=[];
         end
         
         if all(tautilde > 0) && ~(isequal(gp.latent_opt.optim_method, 'robust-EP') ...
@@ -323,6 +321,19 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
           % An alternative implementation for avoiding negative variances
           [Eft,V]=pred_var(tautilde,K,K_nf,nutilde);
           Varft=kstarstar-V;
+          
+          if nargout > 3 && isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian')
+            % Gaussian likelihood with monotonicity -> analytical
+            % predictions for f, see e.g. gp_monotonic, gpep_predgrad
+            Eyt=Eft;
+            Varyt=Varft+gp.lik2.sigma2;
+            if ~isempty(yt)
+              lpyt=norm_lpdf(yt, Eyt, sqrt(Varyt));
+            else
+              lpyt=[];
+            end
+            return
+          end
           
         end
         % ============================================================
@@ -675,38 +686,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
       if isempty(yt)
         lpyt=[];
       else
-        if isfield(gp, 'lik2')
-          yt=[yt(1:ntest); gp.yd.*ones(size(Eft(ntest+1:end)))];
-          if isequal(gp.lik2.type, 'Gaussian')
-            Eyt1=Eft(1:ntest);
-            Varyt1=Varft(1:ntest)+gp.lik2.sigma2;
-            lpyt1=norm_lpdf(yt(1:ntest), Eyt1, sqrt(Varyt1));
-          else
-            lpyt1 = gp.lik.fh.predy(gp.lik, Eft(1:ntest), Varft(1:ntest), yt(1:ntest), zt);
-          end
-          lpyt2 = gp.lik.fh.predy(gp.lik, Eft(ntest+1:end), Varft(ntest+1:end), yt(ntest+1:end), zt);
-          lpyt=[lpyt1;lpyt2];
-        else
-          lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
-        end
+        lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
       end
     elseif nargout > 3
-      if isfield(gp, 'lik2')
-        yt=[yt(1:ntest); gp.yd.*ones(size(Eft(ntest+1:end)))];
-        if isequal(gp.lik2.type, 'Gaussian')
-          Eyt1=Eft(1:ntest);
-          Varyt1=Varft(1:ntest)+gp.lik2.sigma2;
-          lpyt1=norm_lpdf(yt(1:ntest), Eyt1, sqrt(Varyt1));
-        else          
-          [lpyt1, Eyt1, Varyt1] = gp.lik2.fh.predy(gp.lik, Eft(1:ntest), Varft(1:ntest), yt(1:ntest), zt);
-        end
-        [lpyt2, Eyt2, Varyt2] = gp.lik.fh.predy(gp.lik, Eft(ntest+1:end), Varft(ntest+1:end), yt(ntest+1:end), zt);
-        lpyt=[lpyt1;lpyt2];
-        Eyt=[Eyt1;Eyt2];
-        Varyt=[Varyt1;Varyt2];
-      else
-        [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
-       end
+      [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
     end
   end
 end

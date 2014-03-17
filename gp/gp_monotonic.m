@@ -64,7 +64,7 @@ ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
 ip.addParamValue('opt', [], @isstruct)
 ip.addParamValue('optimize', 'off', @(x) ismember(x, {'on', 'off'}));
 ip.addParamValue('nvd', [], @(x) isreal(x) && all(x>0));
-ip.addParamValue('dir', 1, @(x) isscalar(x) && sum(x==[-1 1])==1);
+ip.addParamValue('dir', 1, @(x) (sum(x==1)+sum(x==-1) == length(x)));
 ip.parse(gp, varargin{:});
 x=ip.Results.x;
 y=ip.Results.y;
@@ -89,14 +89,6 @@ if isempty(nv)
   frac=0.25;
   nv=floor(frac.*size(x,1));
 end
-if ~isempty(dir)
-  gp.yv=dir;
-else
-  if ~isfield(gp, 'yv')
-    % Set the latent function as increasing
-    gp.yv=1;
-  end
-end
 if ~isempty(nvd)
   gp.nvd=nvd;
   nvd=length(nvd);
@@ -105,11 +97,30 @@ else
     gp=rmfield(gp, 'nvd');
     nvd=size(x,2);
   else
-    nvd=length(gp.nvd);
+    if isfield(gp, 'nvd')
+      nvd=length(gp.nvd);
+    else
+      nvd=size(x,2);
+      gp.nvd=1:size(x,2);
+    end
+  end
+end
+if ~isempty(dir)
+  if numel(dir)==1
+    gp.yv=repmat(dir,1,length(gp.nvd));
+  else
+    gp.yv=dir;
+  end
+else
+  if ~isfield(gp, 'yv')
+    % Set the latent function as increasing
+    gp.yv=ones(1,length(gp.nvd));
   end
 end
 if ~isfield(gp, 'xv')
-  gp.xv=x(randsample(size(x,1),nv),:);
+  [tmp,xv]=kmeans(x, nv);
+  %gp.xv=x(randsample(size(x,1),nv),:);
+  gp.xv=xv;
 end
 xv=gp.xv;
 if isempty(opt) || ~isfield(opt, 'TolX')
@@ -125,17 +136,21 @@ if isequal(optimize, 'on')
   gp=gp_optim(gp,x,y,'opt',opt, 'z', z, 'optimf', optimf);
 end
 n=size(x,1);
-Ef=gp_pred(gp,x,y,x, 'z', z);
-Ef=Ef(size(x,1)+1:end);
-Ef=reshape(Ef,n,nvd);
-% Check whether monotonicity is satisfied
-while any(Ef(:).*gp.yv<0)
+[tmp,itst]=cvit(size(x,1),10);
+% Predict gradients at the training points 
+Ef=zeros(size(x,1),nvd);
+for i=1:10
+  % Predict in blocks to save memory
+  Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
+end
+% Check if monotonicity is satisfied
+while any(any(bsxfun(@times,Ef, gp.yv)<0))
   % Monotonicity not satisfied, add 2 "most wrong" predictions, for each 
   % dimension, from the observation set to the virual observations.
   fprintf('Latent function not monotonic, adding virtual observations.\n');
   gp.lik.nu=1e-6;
   for j=1:nvd
-    [~,ind(:,j)]=sort(Ef(:,j).*gp.yv,'ascend');
+    [~,ind(:,j)]=sort(Ef(:,j).*gp.yv(j),'ascend');
   end
   ind=ind(1:2,:);
   inds=unique(ind(:));
@@ -147,9 +162,12 @@ while any(Ef(:).*gp.yv<0)
   if isequal(optimize, 'on')
     gp=gp_optim(gp,x,y,'opt',opt,'z',z, 'optimf', optimf);
   end
-  Ef=gp_pred(gp,x,y,x,'z',z);
-  Ef=Ef(size(x,1)+1:end);
-  Ef=reshape(Ef,n,nvd);
+  % Predict gradients at the training points
+  %Ef=gpep_predgrad(gp,x,y,x,'z',z);
+  for i=1:10
+    % Predict in blocks to save memory
+    Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
+  end
 end
 
 end
