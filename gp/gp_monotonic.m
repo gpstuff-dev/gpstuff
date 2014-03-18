@@ -32,10 +32,10 @@ function gp = gp_monotonic(gp, varargin)
 %                 as usual fmin*-functions. Default is @fminscg.
 %      optimize - Option whether to optimize GP parameters. Default = 'off'. 
 %      nvd      - Dimensions for which the latent functions is assumed to
-%                 be monotonic. Default is all the dimensions.
-%      dir      - Whether the latent function is assumed to be
-%                 monotonically increasing (dir=1, default) or decreasing
-%                 (dir=-1).
+%                 be monotonic. Uase negative elements for monotonically
+%                 decreasing and positive elements for monotonically
+%                 increasing dimensions. Default 1:size(X,2), i.e.
+%                 monotonically for all covariate dimensions.
 %
 %  See also
 %    GP_SET
@@ -63,8 +63,7 @@ ip.addParamValue('nv', [], @(x) isreal(x) && isscalar(x))
 ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
 ip.addParamValue('opt', [], @isstruct)
 ip.addParamValue('optimize', 'off', @(x) ismember(x, {'on', 'off'}));
-ip.addParamValue('nvd', [], @(x) isreal(x) && all(x>0));
-ip.addParamValue('dir', 1, @(x) (sum(x==1)+sum(x==-1) == length(x)));
+ip.addParamValue('nvd', [], @(x) isreal(x));
 ip.parse(gp, varargin{:});
 x=ip.Results.x;
 y=ip.Results.y;
@@ -74,7 +73,6 @@ opt=ip.Results.opt;
 optimf=ip.Results.optimf;
 optimize=ip.Results.optimize;
 nvd=ip.Results.nvd;
-dir=ip.Results.dir;
 % Check appropriate fields in GP structure and modify if necessary to make
 % proper monotonic GP structure
 if ~isfield(gp, 'lik2') || ~isequal(gp.lik.type, 'Probit')
@@ -91,35 +89,23 @@ if isempty(nv)
 end
 if ~isempty(nvd)
   gp.nvd=nvd;
-  nvd=length(nvd);
 else
   if isfield(gp, 'nvd') && ~ismember('nvd',ip.UsingDefaults(:)) 
-    gp=rmfield(gp, 'nvd');
-    nvd=size(x,2);
   else
-    if isfield(gp, 'nvd')
-      nvd=length(gp.nvd);
-    else
-      nvd=size(x,2);
+    if ~isfield(gp, 'nvd')
       gp.nvd=1:size(x,2);
     end
   end
 end
-if ~isempty(dir)
-  if numel(dir)==1
-    gp.yv=repmat(dir,1,length(gp.nvd));
-  else
-    gp.yv=dir;
-  end
-else
-  if ~isfield(gp, 'yv')
-    % Set the latent function as increasing
-    gp.yv=ones(1,length(gp.nvd));
-  end
-end
+dir = round(gp.nvd./abs(gp.nvd));
+gp.nvd=abs(gp.nvd);
+gp.yv=dir;
+nvd=length(gp.nvd);
 if ~isfield(gp, 'xv')
-  [tmp,xv]=kmeans(x, nv);
-  %gp.xv=x(randsample(size(x,1),nv),:);
+  S=warning('off','stats:kmeans:EmptyCluster');
+  [tmp,xv]=kmeans(x, nv, 'Start','uniform', ...
+    'EmptyAction', 'singleton');
+  warning(S);
   gp.xv=xv;
 end
 xv=gp.xv;

@@ -16,7 +16,7 @@
 % License.txt, included with the software, for details.
 
 % Toy data
-setrandstream(1);
+setrandstream(0);
 x=rand(300,2);
 [xt1,xt2]=meshgrid(linspace(0,1,25), linspace(0,1,25));
 xt=[xt1(:) xt2(:)];
@@ -34,7 +34,7 @@ gp2=gp;
 % decreasing latent function for both input dimensions and optimize the
 % parameters
 opt=optimset('TolX',1e-4,'TolFun',1e-4,'Display','iter');
-gp=gp_monotonic(gp,x,y,'nv', 35, 'dir', -1, 'nvd', [1 2], 'optimize', 'on', ...
+gp=gp_monotonic(gp,x,y,'nv', 35, 'nvd', [-1 -2], 'optimize', 'on', ...
   'opt', opt, 'optimf', @fminlbfgs);
 % Optimize the normal GP for comparison
 gp2=gp_optim(gp2,x,y,'opt',opt, 'optimf', @fminlbfgs);
