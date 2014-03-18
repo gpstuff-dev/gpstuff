@@ -1036,7 +1036,7 @@ end
                     [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
                     return
                   end
-                  iter
+%                   iter
                 end
                 edata = logZep;
                 % Set something into La2
