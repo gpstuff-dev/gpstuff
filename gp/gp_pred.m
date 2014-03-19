@@ -875,6 +875,7 @@ switch gp.type
     L    = [];
     Qc   = [];
     H    = [];
+    Hs   = [];
     Pinf = [];
     
     % For each covariance function
@@ -883,6 +884,13 @@ switch gp.type
       % Form state-space model from the gp.cf{j}
       [jF,jL,jQc,jH,jPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
     
+      % Make Hs according to requested covariance components
+      if isempty(predcf) || any(predcf==j)
+        Hs = [Hs jH];  
+      else
+        Hs = [Hs 0*jH];  
+      end
+      
       % Stack model
       F    = blkdiag(F,jF);
       L    = blkdiag(L,jL);
@@ -899,7 +907,6 @@ switch gp.type
     % Allocate space for results
     MS = zeros(size(m,1),size(yall,1));
     PS = zeros(size(m,1),size(m,1),size(yall,1));
-    GS = zeros(size(F,1),size(F,2),size(yall,1));
     A = zeros(size(F,1),size(F,2),size(yall,1));
     Q = zeros(size(P,1),size(P,2),size(yall,1));
     
@@ -921,8 +928,8 @@ switch gp.type
             A(:,:,k) = A(:,:,k-1); 
             Q(:,:,k) = Q(:,:,k-1);
           else       
-            A(:,:,k)  = expm(F*dt);
-            Q(:,:,k)  = Pinf - A(:,:,k)*Pinf*A(:,:,k)';
+            A(:,:,k) = expm(F*dt);
+            Q(:,:,k) = Pinf - A(:,:,k)*Pinf*A(:,:,k)';
           end
           
           % Prediction step
@@ -949,9 +956,19 @@ switch gp.type
     % RTS-smoother
     for k=size(MS,2)-1:-1:1
         
-        % Smoothing step (using Cholesky for stability, optimized)
+        % Smoothing step (using Cholesky for stability)
         PSk = PS(:,:,k);
-        L = chol(A(:,:,k+1)*PSk*A(:,:,k+1)'+Q(:,:,k+1),'lower');
+        
+        % Solve the Cholesky factorization
+        [L,notposdef] = chol(A(:,:,k+1)*PSk*A(:,:,k+1)'+Q(:,:,k+1),'lower');
+        
+        % Numerical problems in Cheloseky, retry with jitter
+        if notposdef>0
+          jitter = gp.jitterSigma2*diag(rand(size(A,1),1));
+          [L,notposdef] = chol(A(:,:,k+1)*PSk*A(:,:,k+1)'+Q(:,:,k+1)+jitter,'lower');
+        end
+        
+        % Continue smoothing step
         G = PSk*A(:,:,k+1)'/L'/L;
         m = MS(:,k) + G*(m-A(:,:,k+1)*MS(:,k));
         P = PSk + G*(P-A(:,:,k+1)*PSk*A(:,:,k+1)'-Q(:,:,k+1))*G';
@@ -959,7 +976,6 @@ switch gp.type
         % Store estimate
         MS(:,k)   = m;
         PS(:,:,k) = P;
-        GS(:,:,k) = G;
                 
     end    
     
@@ -968,13 +984,14 @@ switch gp.type
     PS = PS(:,:,return_ind);
     
     % Return mean as column vector
-    Eft = (H*MS)';
+    Eft = (Hs*MS)';
     
     % Return variance as column vector
     if nargout > 1
-        Varft  = arrayfun(@(k) H*PS(:,:,k)*H',1:size(PS,3))';
+        Varft  = arrayfun(@(k) Hs*PS(:,:,k)*Hs',1:size(PS,3))';
     end
     
+    % Return posterior predictive outputs
     if nargout > 2
         
         % Return posterior predictive mean
@@ -984,12 +1001,11 @@ switch gp.type
         Varyt = Varft + gp.lik.sigma2;
         
         % Return logarithm of the predictive density
-        if ~isempty(yt)
-            
-            % Expects normal likelihood (applies to 'KALMAN')
-            lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+        if ~isempty(yt)  
+          % Assumes Gaussian likelihood (applies to 'KALMAN')
+          lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
         else
-            lpyt = [];
+          lpyt = [];
         end
     end
 end
