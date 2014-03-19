@@ -267,8 +267,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
           % This is the usual case where likelihood is log concave
           % for example, Poisson and probit
           sqrttautilde = sqrt(tautilde);
-          Stildesqroot = sparse(1:length(sqrttautilde), 1:length(sqrttautilde),...
-            sqrttautilde, length(sqrttautilde),  length(sqrttautilde));
+          nstt=length(sqrttautilde);
+          Stildesqroot = sparse(1:nstt, 1:nstt, sqrttautilde, nstt,  nstt);
           
           if ~isfield(gp,'meanf')
             if issparse(L)          % If compact support covariance functions are used
