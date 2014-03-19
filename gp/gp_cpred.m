@@ -21,6 +21,10 @@ function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt,ind,varargin)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
 %               for ith case. 
+%      zt     - optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%               Some likelihoods may use this. For example, in case of 
+%               Poisson likelihood we have z_i=E_i, that is, the expected 
+%               value for the ith case. 
 %      plot   - option for plotting, 'off' (default) or 'on'
 %      target - option for choosing what is computed 'f' (default),
 %               'mu' or 'cdf'
@@ -35,6 +39,7 @@ ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addRequired('ind', @(x) ~isempty(x) && isvector(x))
 ip.addParamValue('var',  [], @(x) isreal(x))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
@@ -47,6 +52,7 @@ ip.addParamValue('plot', 'off', @(x)  ismember(x, {'on', 'off'}))
 ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('target', 'f', @(x) ismember(x,{'f','mu','cdf'}))
 ip.parse(gp, x, y, xt, ind, varargin{:});
+zt=ip.Results.zt;
 options=struct();
 options.predcf=ip.Results.predcf;
 options.tstind=ip.Results.tstind;
@@ -61,8 +67,13 @@ if ~isempty(yt)
 end
 z=ip.Results.z;
 if ~isempty(z)
-  options.zt=z;
   options.z=z;
+end
+if ~isempty(zt)
+  options.zt=zt;
+end
+if isempty(zt)
+  options.zt=z;
 end
 
 [tmp, nin] = size(x);
