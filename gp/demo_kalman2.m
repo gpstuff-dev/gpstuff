@@ -49,7 +49,8 @@
   pl = prior_t('s2', 10,'nu',3);
   gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
   gpcf3 = gpcf_matern52(gpcf3, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
-  gpcf21 = gpcf_periodic(gpcf21, 'lengthScale_prior', pl, 'magnSigma2_prior', [], 'period_prior',[]);
+  gpcf21 = gpcf_periodic(gpcf21, 'lengthScale_prior', pl,...
+      'magnSigma2_prior', [], 'period_prior',[]);
   gpcf22 = gpcf_matern52(gpcf22, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
   
   % Then we multiply the periodic covariance function and matern52
@@ -97,9 +98,23 @@
   xlabel('Time (years)');
   ylabel('CO_2 concentration (PPM)')
   box on
-  legend('95% confidence region', 'Monthly average measurements','Location', 'NorthWest');
-  caption1 = sprintf('Kalman demo 2, Periodic Mauna Loa - Prediction \nGP sexp+periodic*matern52+matern52+noise:  l_1= %.2f, s^2_1 = %.2f, \n l_{2,per}= %.2f, s^2_2 = %.2f, p=%.2f, l_{2,mat52} = %.2f, \n l_3= %.2f, s^2_3 = %.2f, \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.cf{1}.lengthScale, gp.cf{2}.cf{2}.magnSigma2, gp.cf{2}.cf{1}.period, gp.cf{2}.cf{2}.lengthScale, gp.cf{3}.lengthScale, gp.cf{3}.magnSigma2, gp.lik.sigma2);
-  title(caption1)
+  legend('95% confidence region', 'Monthly average measurements',...
+      'Location', 'NorthWest');
+
+  % Title rows 1-5
+  caption1 = sprintf('Kalman demo 2, Periodic Mauna Loa - Prediction \n');
+  caption2 = sprintf('sexp+periodic*matern52+matern52+noise: \n');
+  caption3 = sprintf('l_1= %.2f, s^2_1 = %.2f, \n ',... 
+      gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2);
+  caption4 = sprintf(['l_{2,per}= %.2f, s^2_2 = %.2f,',...
+                      ' p=%.2f, l_{2,mat52} = %.2f, \n '],... 
+      gp.cf{2}.cf{1}.lengthScale, gp.cf{2}.cf{2}.magnSigma2,...
+      gp.cf{2}.cf{1}.period, gp.cf{2}.cf{2}.lengthScale);
+  caption5 = sprintf('l_3= %.2f, s^2_3 = %.2f, \n s^2_{noise} = %.2f',... 
+      gp.cf{3}.lengthScale, gp.cf{3}.magnSigma2, gp.lik.sigma2);
+  
+  % Set title
+  title([caption1,caption2,caption3,caption4,caption5])
   
   figure(3); clf;
   [AX, H1, H2] = plotyy(x, Eft_full2, x, Eft_full1);
