@@ -1373,7 +1373,7 @@ switch gp.type
         
         % If matrix is not positive definite, add jitter
         if notposdef>0,
-            jitter = 1e-6*diag(rand(size(S,1),1));
+            jitter = gp.jitterSigma2*diag(rand(size(S,1),1));
             [LS,notposdef] = chol(S+jitter,'lower');
             
             if notposdef>0,
