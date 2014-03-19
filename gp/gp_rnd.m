@@ -627,15 +627,27 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             end
             [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
             
-            [K, C]=gp_trcov(gp,x);
-            K = gp_trcov(gp, xt, predcf);
-            ntest=size(xt,1);
-            K_nf=gp_cov(gp,xt,x,predcf);
-            [n,nin] = size(x);
+            if ~isfield(gp, 'lik2')
+              [K, C]=gp_trcov(gp,x);
+              K = gp_trcov(gp, xt, predcf);
+              ntest=size(xt,1);
+              K_nf=gp_cov(gp,xt,x,predcf);
+              [n,nin] = size(x);
+            else
+              x2=x;
+              y2=y;
+              x=gp.xv;
+              [K,C]=gp_dtrcov(gp,x2,x);
+              K = gp_trcov(rmfield(gp,{'derivobs' 'lik2'}), xt, predcf);
+              ntest=size(xt,1);
+              K_nf=gp_dcov(gp,x2,xt,predcf)';
+              K_nf(ntest+1:end,:)=[];
+            end
             
             if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
               sqrttautilde = sqrt(tautilde);
-              Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
+              nstt=length(sqrttautilde);
+              Stildesqroot = sparse(1:nstt, 1:nstt, sqrttautilde, nstt, nstt);
               
               if issparse(L)
                 zz=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
