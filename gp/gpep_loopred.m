@@ -58,7 +58,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
   if nargout > 3
     [tmp, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, muvec_i, sigm2vec_i, [], z);
   end
-  if size(Eft1,1)>n
+  if size(Eft,1)>n
     Eft=Eft(1:n);
     Varft=Varft(1:n);
     lpyt=lpyt(1:n);
