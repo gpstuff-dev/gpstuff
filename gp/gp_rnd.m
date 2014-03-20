@@ -85,7 +85,7 @@ tn = size(x,1);
 sampyt=[];
 if isstruct(gp) && numel(gp.jitterSigma2)==1
   % Single GP
-  if isfield(gp.lik.fh,'trcov') || isfield(gp, 'latentValues')
+  if (isfield(gp.lik.fh,'trcov') && ~isfield(gp,'lik2')) || isfield(gp, 'latentValues')
     % ===================================
     % Gaussian likelihood or MCMC with latent values
     % ===================================

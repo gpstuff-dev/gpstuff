@@ -586,7 +586,7 @@ end
                   % Compute the prior covariance of f_joint (f
                   % and df/dx)
                   [K,C] = gp_dtrcov(gp, x2, x);
-                  if isequal(gp.lik2.type, 'Gaussian')
+                  if isequal(gp.lik.type, 'Gaussian')
                     Cp=K;
                     C=K(size(x2,1)+1:end, size(x2,1)+1:end);
                   end
@@ -618,7 +618,7 @@ end
                     logZep_old=logZep;
                     logM0_old=logM0;
                                         
-                    if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian') ...
+                    if isfield(gp, 'lik2') && isequal(gp.lik.type, 'Gaussian') ...
                         && iter > 1
                       mf_old=mf(1:n2);
                       sigm_old=Sigm(1:n2,1:n2);
@@ -644,14 +644,19 @@ end
                         
                         % compute moments of tilted distributions
                         
-                        if isfield(gp, 'lik2') && ~isequal(gp.lik2.type, 'Gaussian')
-                          % Now we have 2 likelihoods, neither of which is
-                          % Gaussian
-                          [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n1, sigm2vec_i(n2+1:end), muvec_i(n2+1:end), z);                          
-                          [logM02, muhat2, sigm2hat2] = gp.lik2.fh.tiltedMoments(gp.lik2, y2, 1:n2, sigm2vec_i(1:n2), muvec_i(1:n2), z);                          
-                          logM0=[logM02;logM0];
-                          muhat=[muhat2;muhat];
-                          sigm2hat=[sigm2hat2;sigm2hat];
+                        if isfield(gp, 'lik2')
+                          % Now we have 2 likelihoods, do atleast one EP
+                          % approximation and check whether the "main"
+                          % likelihood is Gaussian or not
+                          if ~isequal(gp.lik.type, 'Gaussian')
+                            [logM0, muhat, sigm2hat] = gp.lik2.fh.tiltedMoments(gp.lik2, y, 1:n1, sigm2vec_i(n2+1:end), muvec_i(n2+1:end), z);
+                            [logM02, muhat2, sigm2hat2] = gp.lik.fh.tiltedMoments(gp.lik, y2, 1:n2, sigm2vec_i(1:n2), muvec_i(1:n2), z);                            
+                            logM0=[logM02;logM0];
+                            muhat=[muhat2;muhat];
+                            sigm2hat=[sigm2hat2;sigm2hat];
+                          else                            
+                            [logM0, muhat, sigm2hat] = gp.lik2.fh.tiltedMoments(gp.lik2, y, 1:n1, sigm2vec_i, muvec_i, z);
+                          end
                         else
                           [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
                         end
@@ -749,9 +754,9 @@ end
                     
                     % Recompute the approximate posterior parameters
                     % parallel- and sequential-EP
-                    if isfield(gp, 'lik2') && isequal(gp.lik2.type,'Gaussian')
-                      tautilde=([1./gp.lik2.sigma2.*ones(size(x2,1),1); tautilde]);
-                      nutilde=[y2./gp.lik2.sigma2;nutilde];
+                    if isfield(gp, 'lik2') && isequal(gp.lik.type,'Gaussian')
+                      tautilde=[1./gp.lik.sigma2.*ones(size(x2,1),1); tautilde];
+                      nutilde=[y2./gp.lik.sigma2;nutilde];
                       C=Cp;
                     end
                     Stilde=tautilde;
@@ -784,7 +789,7 @@ end
                       %         0.5*sum(log(sigm2vec_i+1./tautilde))+
                       %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
                       
-                      if isfield(gp, 'lik2') && isequal(gp.lik2.type, 'Gaussian')
+                      if isfield(gp, 'lik2') && isequal(gp.lik.type, 'Gaussian')
                         mutilde=nutilde./tautilde;
                         mustilde=nutilde./sqrt(tautilde);
                         

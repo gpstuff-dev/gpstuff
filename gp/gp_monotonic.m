@@ -75,10 +75,8 @@ optimize=ip.Results.optimize;
 nvd=ip.Results.nvd;
 % Check appropriate fields in GP structure and modify if necessary to make
 % proper monotonic GP structure
-if ~isfield(gp, 'lik2') || ~isequal(gp.lik.type, 'Probit')
-  lik=gp.lik;
-  gp=gp_set(gp,'lik', lik_probit());
-  gp.lik2=lik;
+if ~isfield(gp, 'lik2') || ~ismember(gp.lik2.type, {'Probit', 'Logit'}) 
+  gp.lik2=lik_probit();
 end
 gp.derivobs=1;
 % Set the virtual observations, here we use 25% of the observations as
@@ -134,7 +132,7 @@ while any(any(bsxfun(@times,Ef, gp.yv)<0))
   % Monotonicity not satisfied, add 2 "most wrong" predictions, for each 
   % dimension, from the observation set to the virual observations.
   fprintf('Latent function not monotonic, adding virtual observations.\n');
-  gp.lik.nu=1e-6;
+  gp.lik2.nu=1e-6;
   for j=1:nvd
     [~,ind(:,j)]=sort(Ef(:,j).*gp.yv(j),'ascend');
   end

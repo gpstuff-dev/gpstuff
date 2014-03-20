@@ -199,13 +199,13 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_predgrad(gp, x, y, varargin)
     else
       yt=bsxfun(@times, gp.yv, ones(size(gp.xv)));
       yt=yt(:);
-      lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+      lpyt = gp.lik2.fh.predy(gp.lik2, Eft, Varft, yt, zt);
     end
     lpyt=reshape(lpyt, size(xt,1),  length(gp.nvd));
   elseif nargout > 3
     yt=bsxfun(@times, gp.yv, ones(size(gp.xv)));
     yt=yt(:);
-    [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+    [lpyt, Eyt, Varyt] = gp.lik2.fh.predy(gp.lik2, Eft, Varft, yt, zt);
     lpyt=reshape(lpyt, size(xt,1),  length(gp.nvd));
     Eyt=reshape(Eyt, size(xt,1),  length(gp.nvd));
     Varyt=reshape(Varyt, size(xt,1),  length(gp.nvd));

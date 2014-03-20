@@ -1068,7 +1068,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       % =================================================================
       % Gradient with respect to likelihood function parameters
       if ~isempty(strfind(gp.infer_params, 'likelihood')) && (isfield(gp.lik.fh, 'siteDeriv') ...
-          || (isfield(gp, 'lik2') && isfield(gp.lik2.fh, 'siteDeriv')))
+          || (isfield(gp, 'lik2') && isfield(gp.lik.fh, 'siteDeriv')))
 
         if isempty(sigm2_i)
           sigm2_i=p.sigm2vec_i;
@@ -1102,9 +1102,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         gprior = [gprior gprior_lik];
       end
     end    
-    if isfield(gp,'lik2') && isequal(gp.lik2.type, 'Gaussian')
+    if isfield(gp,'lik2') && isequal(gp.lik.type, 'Gaussian')
       % Monotonic GP with Gaussian likelihood
-      s2=gp.lik2.sigma2;
+      s2=gp.lik.sigma2;
 %       DCff = blkdiag(s2.*eye(n2), zeros(70));
 %       gdata_lik = -(-0.5.*trace((C+diag(1./tautilde))\DCff) ...
 %         + 0.5.*(nutilde./tautilde)'*((C+diag(1./tautilde))\(DCff*((C+diag(1./tautilde))\(nutilde./tautilde)))));
@@ -1113,8 +1113,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       gdata_lik = -sum((-s2+diag(Sigma(1:n2,1:n2))+(mf(1:n2)-y).^2)./(2*s2.^2)).*s2;
 %       gdata_lik = gdata_lik - n2./2;% + sum(y.^2./(2*s2));
       lik=gp.lik2;
-      if isfield(gp.lik2, 'p')
-        gprior_lik = -lik.fh.lpg(lik);
+      if isfield(gp.lik, 'p')  && ~isempty(gp.lik.p.sigma2)
+        gprior_lik = -gp.lik.fh.lpg(gp.lik);
       else
         gprior_lik = zeros(size(gdata_lik));
       end
