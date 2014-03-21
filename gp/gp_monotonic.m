@@ -40,12 +40,13 @@ function gp = gp_monotonic(gp, varargin)
 %  See also
 %    GP_SET
 %
-%  References
+%  Reference
 %     
-%    Riihimäki (2009). Gaussian processes with monotonicity information. 
-%    International Conference on Artificial Intelligence and Statistics 
-%    (AISTATS), 2010, pp. 645-652.
-
+%    Riihimäki and Vehtari (2010). Gaussian processes with
+%    monotonicity information.  Journal of Machine Learning Research:
+%    Workshop and Conference Proceedings, 9:645-652.
+%
+  
 % Copyright (c) 2014 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

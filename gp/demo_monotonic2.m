@@ -7,6 +7,16 @@
 %    covariance between derivative of the latent function and the latent
 %    functions and the cross-covariance terms.
 %
+%  References
+%
+%    Riihimäki and Vehtari (2010). Gaussian processes with
+%    monotonicity information.  Journal of Machine Learning Research:
+%    Workshop and Conference Proceedings, 9:645-652.
+%
+%    Broffitt, J. D. (1988). Increasing and increasing convex Bayesian
+%    graduation. Transactions of the Society of Actuaries, 40(1), 115-48.
+%
+
 %  See also DEMO_*, GP_MONOTONIC, DEMO_MONOTONIC1
 
 % Copyright (c) 2014 Ville Tolvanen, Aki Vehtari
@@ -19,9 +29,7 @@
 % better to sample hyperparameters with MCMC, but for faster demo CCD
 % integration with gp_ia is used below
 
-% Mortality rate data from Broffitt, J. D. (1988). Increasing and
-% increasing convex Bayesian graduation. Transactions of the Society
-% of Actuaries, 40(1), 115-48.
+% Mortality rate data from Broffitt (1988)
 % N is the number of people insured under a certain policy
 % y is the number of insured who died
 S = which('demo_monotonic2');

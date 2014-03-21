@@ -7,6 +7,12 @@
 %    covariance between derivative of the latent function and the latent
 %    functions and the cross-covariance terms.
 %
+%  Reference
+%     
+%    Riihimäki and Vehtari (2010). Gaussian processes with
+%    monotonicity information.  Journal of Machine Learning Research:
+%    Workshop and Conference Proceedings, 9:645-652.
+%
 %  See also DEMO_*, GP_MONOTONIC
 
 % Copyright (c) 2014 Ville Tolvanen
