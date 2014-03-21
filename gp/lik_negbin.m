@@ -13,7 +13,7 @@ function lik = lik_negbin(varargin)
 %
 %    Parameters for Negative-binomial likelihood [default]
 %      disper       - dispersion parameter r [10]
-%      disper_prior - prior for disper [prior_logunif]
+%      disper_prior - prior for disper [prior_gamma('sh',2,'is',.1)]
 %  
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in
@@ -51,7 +51,8 @@ function lik = lik_negbin(varargin)
   ip.FunctionName = 'LIK_NEGBIN';
   ip.addOptional('lik', [], @isstruct);
   ip.addParamValue('disper',10, @(x) isscalar(x) && x>0);
-  ip.addParamValue('disper_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('disper_prior',prior_gamma('sh',2,'is',.1), ...
+                   @(x) isstruct(x) || isempty(x));
   ip.parse(varargin{:});
   lik=ip.Results.lik;
   

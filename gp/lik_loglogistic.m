@@ -424,7 +424,7 @@ function [logM_0, m_1, sigm2hati1] = lik_loglogistic_tiltedMoments(lik, y, i1, s
     RTOL = 1.e-6;
     ATOL = 1.e-10;
     [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-    if isnan(m_0)
+    if isnan(m_0)||~isreal(m_0)
       logM_0=NaN;
       return
     end
@@ -437,6 +437,10 @@ function [logM_0, m_1, sigm2hati1] = lik_loglogistic_tiltedMoments(lik, y, i1, s
       ATOL = ATOL.^2;
       RTOL = RTOL.^2;
       [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+      if isnan(m_0)||~isreal(m_0)
+        logM_0=NaN;
+        return
+      end
       sigm2hati1(i) = m_2 - m_1(i).^2;
       if sigm2hati1(i) >= sigm2_i(i)
         error('lik_loglogistic_tilted_moments: sigm2hati1 >= sigm2_i');
