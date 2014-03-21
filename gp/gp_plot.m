@@ -79,7 +79,7 @@ ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
 ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
 ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('target', 'f', @(x) ismember(x,{'f','mu','cdf'}))
-ip.addParamValue('normdata', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('normdata', [], @(x) isempty(x) || isstruct(x))
 if numel(varargin)==0 || isnumeric(varargin{1})
   % inputParser should handle this, but it doesn't
   ip.parse(gp, x, y, varargin{:});
@@ -107,8 +107,18 @@ if isempty(xt)
 end
 target = ip.Results.target;
 tr = ip.Results.tr;
-normdata = ip.Results.normdata;
-[xmean,xstd,ymean,ystd]=deal(normdata(1),normdata(2),normdata(3),normdata(4));
+% normdata
+nd=ip.Results.normdata;
+ipnd=inputParser;
+ipnd.FunctionName = 'normdata';
+ipnd.addParamValue('xmean',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('xstd',1,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('xlog',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('ymean',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('ystd',1,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('ylog',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.parse(nd);
+nd=ipnd.Results;
 
 if iscell(gp)
   liktype=gp{1}.lik.type;
@@ -121,25 +131,31 @@ end
 if m==1
   if isequal(liktype, 'Gaussian')
     [Ef, Varf,~,Ey,Vary] = gp_pred(gp, x, y, xt, options);
-    xtd=denormdata(xt,xmean,xstd);
     Stdf=sqrt(Varf);
     Stdy=sqrt(Vary);
-    if ~isempty(normdata)
-      xt=denormdata(xt,xmean,xstd);
-      Ef=denormdata(Ef,ymean,ystd);
-      Stdf=Stdf*ystd;
-      Ey=denormdata(Ey,ymean,ystd);
-      Stdy=Stdy*ystd;
-    end
-    plot(xt, Ef, '-r', xt, Ef-1.64*Stdf, '-.r', xt, Ef+1.64*Stdf, '-.r',xt, Ey-1.64*Stdy, '--r', xt, Ey+1.64*Stdy, '--r')
+    xt=denormdata(xt,nd.xmean,nd.xstd);
+    Ef=denormdata(Ef,nd.ymean,nd.ystd);
+    Stdf=Stdf*nd.ystd;
+    Ey=denormdata(Ey,nd.ymean,nd.ystd);
+    Stdy=Stdy*nd.ystd;
+    plot(xt, Ef, '-b', xt, Ef-1.64*Stdf, '--b', xt, Ef+1.64*Stdf, '--b',xt, Ey-1.64*Stdy, ':b', xt, Ey+1.64*Stdy, ':b')
   else
     switch target
       case 'f'
         [Ef, Varf] = gp_pred(gp, x, y, xt, options);
-        plot(xt, Ef, 'ob', xt, Ef, '-k', xt, Ef-1.64*sqrt(Varf), '--b', xt, Ef+1.64*sqrt(Varf), '--b')
+        Stdf=sqrt(Varf);
+        xt=denormdata(xt,nd.xmean,nd.xstd);
+        Ef=denormdata(Ef,nd.ymean,nd.ystd);
+        Stdf=Stdf*ystd;
+        plot(xt, Ef, '-b', xt, Ef-1.64*Stdf, '--b', xt, Ef+1.64*Stdf, '--b')
       case 'mu'
-      prctmu = gp_predprctmu(gp, x, y, xt, options);
-      Ef = prctmu; Varf = [];
+        prctmu = gp_predprctmu(gp, x, y, xt, options);
+        xt=denormdata(xt,nd.xmean,nd.xstd);
+        prctmu=denormdata(prctmu,nd.ymean,nd.ystd);
+        Ef = prctmu; Varf = [];
+        plot(xt, prctmu(:,2), '-b', xt, prctmu(:,1), '--b', xt, prctmu(:,3), '--b')
     end
   end
+else
+  error('Not yet implemented for size(x,2)>1')
 end
