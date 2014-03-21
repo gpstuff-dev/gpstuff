@@ -44,7 +44,7 @@ zt=repmat(1000,size(y)).*(sum(d.y)./sum(d.N));
 % Basic GP
 pl=prior_t();
 pm=prior_sqrtt();
-cfl=gpcf_linear('coeffSigma2_prior',pm);
+cfl=gpcf_linear('coeffSigma2',10^2,'coeffSigma2_prior',[]);
 cfs=gpcf_sexp('lengthScale',.4,'lengthScale_prior',pl,'magnSigma2_prior', pm);
 lik=lik_poisson();
 % Alternative GP models a) sexp b) lin + sexp
