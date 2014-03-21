@@ -15,8 +15,8 @@ function p = prior_gamma(varargin)
 %    second edition, Gelman et.al. 2004.
 %
 %    Parameters for Gamma prior [default]
-%      sh       - shape [4]
-%      is       - inverse scale [1]
+%      sh       - shape (alpha) [4]
+%      is       - inverse scale (beta) [1]
 %      sh_prior - prior for sh [prior_fixed]
 %      is_prior - prior for is [prior_fixed]
 %
