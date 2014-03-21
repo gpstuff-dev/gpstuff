@@ -52,7 +52,14 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
 %      bounded   - in 1D case tells if the density is bounded from left
 %                  or right (default is [0 0]). In unbounded case,
 %                  decreasing tails are assumed.
-
+%
+%  Reference
+%
+%    Jaakko Riihimäki and Aki Vehtari (2014). Laplace approximation
+%    for logistic Gaussian process density estimation and
+%    regression. Bayesian analysis, in press.
+%
+  
 % Copyright (c) 2011-2013 Jaakko Riihimäki and Aki Vehtari
 % Copyright (c) 2013 Enrique Lelo de Larrea Andrade
 
