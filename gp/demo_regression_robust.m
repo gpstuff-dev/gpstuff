@@ -54,10 +54,16 @@
 %
 %  See Vanhatalo et.al. for discussion on the model and methods.
 %
-%  References:
-%    Vanhatalo, J., Jylänki P. and Vehtari, A. (2009). Gaussian
-%    process regression with Student-t likelihood. Advances in
-%    Neural Information Processing systems
+%  References
+%
+%    Jarno Vanhatalo, Pasi Jylänki and Aki Vehtari (2009). Gaussian
+%    process regression with Student-t likelihood. In Y. Bengio et al,
+%    editors, Advances in Neural Information Processing Systems 22,
+%    pp. 1910-1918
+%
+%    Pasi Jylänki, Jarno Vanhatalo and Aki Vehtari (2011). Robust
+%    Gaussian process regression with a Student-t likelihood. Journal
+%    of Machine Learning Research, 12(Nov):3227-3257.
 %
 %    Gelman, Carlin, Stern, Dunson, Vehtari, and Rubin (2013). 
 %    Bayesian data Analysis, third edition.
