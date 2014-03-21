@@ -147,6 +147,10 @@ switch gp.type
           b = C\y;
         else
           [invNM invAt HinvC]=mean_gf(gp,x,C,invC,[],[],y,'gaussian');
+          if isnan(invNM)
+            g=NaN;gdata=NaN;gprior=NaN;
+            return
+          end
         end
         warning(ws1);
         warning(ws2);

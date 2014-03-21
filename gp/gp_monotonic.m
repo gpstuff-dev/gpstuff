@@ -95,7 +95,11 @@ else
     end
   end
 end
-dir = round(gp.nvd./abs(gp.nvd));
+if isfield(gp, 'yv')
+  dir=gp.yv;
+else
+  dir = round(gp.nvd./abs(gp.nvd));
+end
 gp.nvd=abs(gp.nvd);
 gp.yv=dir;
 nvd=length(gp.nvd);

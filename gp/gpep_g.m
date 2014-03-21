@@ -1075,12 +1075,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           mu_i=p.muvec_i;
         end
 
-        gdata_lik = 0;
-        if isfield(gp, 'lik2')
-          lik = gp.lik2;
-        else
-          lik = gp.lik;
-        end
+        gdata_lik = 0;       
+        lik = gp.lik;
           
         for k1 = 1:length(y)
           if isempty(eta)

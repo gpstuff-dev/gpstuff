@@ -551,7 +551,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                   s3=DKg-((WDKg./Lbt)+(iStL'*(iStL*WDKg)));
                   
                   gdata(i1) = -(s1 + s2'*s3);
-%                   gprior(i1) = gprior_cf(i2);
+                  gprior(i1) = gprior_cf(i2);
                 end
                 
               else
@@ -585,29 +585,29 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                   end
                   
                   gdata(i1) = -(s1 + s2'*s3);
-%                   gprior(i1) = gprior_cf(i2);
+                  gprior(i1) = gprior_cf(i2);
                 end
               end
-              gprior = [gprior gprior_cf];             
-%               if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
-%                 % Set the gradients of hyperparameter
-%                 if length(gprior_cf) > length(DKa)
-%                   for i2=length(DKa)+1:length(gprior_cf)
-%                     i1 = i1+1;
-%                     gdata(i1) = 0;
-%                     gprior(i1) = gprior_cf(i2);
-%                   end
-%                 end
-%               else
-%                 % Set the gradients of hyperparameter
-%                 if length(gprior_cf) > np
-%                   for i2=np+1:length(gprior_cf)
-%                     i1 = i1+1;
-%                     gdata(i1) = 0;
-%                     gprior(i1) = gprior_cf(i2);
-%                   end
-%                 end
-%               end
+%               gprior = [gprior gprior_cf];             
+              if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
+                % Set the gradients of hyperparameter
+                if length(gprior_cf) > length(DKa)
+                  for i2=length(DKa)+1:length(gprior_cf)
+                    i1 = i1+1;
+                    gdata(i1) = 0;
+                    gprior(i1) = gprior_cf(i2);
+                  end
+                end
+              else
+                % Set the gradients of hyperparameter
+                if length(gprior_cf) > np
+                  for i2=np+1:length(gprior_cf)
+                    i1 = i1+1;
+                    gdata(i1) = 0;
+                    gprior(i1) = gprior_cf(i2);
+                  end
+                end
+              end
             end
           end
           
