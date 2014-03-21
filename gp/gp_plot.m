@@ -93,8 +93,13 @@ options.predcf=ip.Results.predcf;
 options.tstind=ip.Results.tstind;
 z=ip.Results.z;
 if ~isempty(z)
-  options.zt=z;
   options.z=z;
+end
+if ~isempty(zt)
+  options.zt=zt;
+end
+if isempty(zt)
+  options.zt=z;
 end
 if isempty(xt)
   xt=x;
