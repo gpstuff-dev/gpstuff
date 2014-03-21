@@ -175,18 +175,15 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %    DEMO_MODELASSESMENT1, GP_PEFF, GP_DIC
 %
 %  References:
-%    Spiegelhalter, Best, Carlin and van der Linde (2002). Bayesian
-%    measures of model complexity and fit. J. R. Statist. Soc. B,
-%    64, 583-639.
-%
-%    Gelman, Carlin, Stern and Rubin (2004) Bayesian Data Analysis,
-%    second edition. Chapman & Hall / CRC.
-%
 %    Aki Vehtari and Jouko Lampinen. Bayesian model assessment and
 %    comparison using cross-validation predictive densities. Neural
 %    Computation, 14(10):2439-2468, 2002.
 %
-
+%    Andrew Gelman, Jessica Hwang and Aki Vehtari (2013). 
+%    Understanding predictive information criteria for Bayesian
+%    models. Statistics and Computing, in press
+%
+  
 %  Experimental features
 %      inf_method - inference method. Possible methods are
 %                    'LOO'      parameters optimized using leave-one-out

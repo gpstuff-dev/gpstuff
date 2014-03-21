@@ -32,7 +32,7 @@
 %    The MCMC can be performed either by utilizing the scale
 %    mixture representation of the Student-t distribution or the
 %    actual distribution. The scale mixture representation is given
-%    as in Gelman et.al (2004)
+%    as in Gelman et al. (2013)
 %
 %          y_i ~ N (f_i, a^2*U_i)
 %          U_i ~ Inv-Chi^2 (nu, t^2),
@@ -54,13 +54,13 @@
 %
 %  See Vanhatalo et.al. for discussion on the model and methods.
 %
-%  Refernces:
-%    Vanhatalo, J., Jyl�nki P. and Vehtari, A. (2009). Gaussian
+%  References:
+%    Vanhatalo, J., Jylänki P. and Vehtari, A. (2009). Gaussian
 %    process regression with Student-t likelihood. Advances in
 %    Neural Information Processing systems
 %
-%    Gelman, Carlin, Stern and Rubin (2004) Bayesian Data Analysis,
-%    second edition. Chapman & Hall / CRC.
+%    Gelman, Carlin, Stern, Dunson, Vehtari, and Rubin (2013). 
+%    Bayesian data Analysis, third edition.
 %
 
 % Copyright (c) 2010 Jarno Vanhatalo, Aki Vehtari

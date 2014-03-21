@@ -29,30 +29,33 @@ function waic = gp_waic(gp, x, y, varargin)
 %    GP can be a Gaussian process structure, a record structure
 %    from GP_MC or an array of GPs from GP_IA.
 %
-%   OPTIONS is optional parameter-value pair
-%      method - method to evaluate waic, 'V' = Variance method, 'G' = Gibbs
-%               training utility method (default = 'V')
-%      form   - return form: 'mean' returns the mean value, 'sum' returns the 
-%               sum value, 'dic' return the -2*sum value (deviance)
-%               and 'all' returns the values for all data points
-%               (default = 'mean')
-%      z      - optional observed quantity in triplet (x_i,y_i,z_i)
-%               Some likelihoods may use this. For example, in case of 
-%               Poisson likelihood we have z_i=E_i, that is, expected value 
-%               for ith case. 
+%  OPTIONS is optional parameter-value pair
+%    method - method to evaluate waic, 'V' = Variance method, 'G' = Gibbs
+%             training utility method (default = 'V')
+%    form   - return form: 'mean' returns the mean value, 'sum' returns the 
+%             sum value, 'dic' return the -2*sum value (deviance)
+%             and 'all' returns the values for all data points
+%             (default = 'mean')
+%    z      - optional observed quantity in triplet (x_i,y_i,z_i)
+%             Some likelihoods may use this. For example, in case of 
+%             Poisson likelihood we have z_i=E_i, that is, expected value 
+%             for ith case. 
 %
-%   See also
-%     GP_DIC, DEMO_MODELASSESMENT1, DEMO_MODELASSESMENT2
+%  See also
+%    GP_DIC, DEMO_MODELASSESMENT1, DEMO_MODELASSESMENT2
 %
-%   References
+%  References
 %     
-%     Watanabe(2010). Equations of states in singular statistical
-%     estimation. Neural Networks 23 (2010), 20-34
+%    Watanabe(2010). Equations of states in singular statistical
+%    estimation. Neural Networks 23 (2010), 20-34
 %
-%     Watanabe(2010). Asymptotic Equivalance of Bayes Cross Validation and
-%     Widely applicable Information Criterion in Singular Learning Theory.
-%     Journal of Machine Learning Research 11 (2010), 3571-3594.
+%    Watanabe(2010). Asymptotic Equivalance of Bayes Cross Validation and
+%    Widely applicable Information Criterion in Singular Learning Theory.
+%    Journal of Machine Learning Research 11 (2010), 3571-3594.
 %     
+%    Andrew Gelman, Jessica Hwang and Aki Vehtari (2013). 
+%    Understanding predictive information criteria for Bayesian
+%    models. Statistics and Computing, in press
 %
 
 % Copyright (c) 2011-2013 Ville Tolvanen

@@ -309,7 +309,7 @@ function lp = gpcf_periodic_lp(gpcf)
     % are sampled are from space W = log(w) where w is all the "real" samples.
     % On the other hand errors are evaluated in the W-space so we need take
     % into account also the  Jacobian of transformation W -> w = exp(W).
-    % See Gelman et.al., 2004, Bayesian data Analysis, second edition, p24.
+    % See Gelman et al. (2013), Bayesian Data Analysis, third edition, p. 21.
     
     if ~isempty(gpcf.p.magnSigma2)
       lp = gpp.magnSigma2.fh.lp(gpcf.magnSigma2, gpp.magnSigma2) +log(gpcf.magnSigma2);
