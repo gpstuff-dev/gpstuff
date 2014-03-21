@@ -245,7 +245,7 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
             e = 0.5*MNM + Econst;
             
             lps(:,i1)=-e+ll;
-            lpq(:,i1) = mnorm_lpdf2(qr,Ef(i1,:),1.0*Covf(:,:,i1));
+            lpq(:,i1) = mnorm_lpdf(qr,Ef(i1,:),1.0*Covf(:,:,i1));
           end
           lps2=lps-max(lps(:));
           lqs=sumlogs(bsxfun(@plus,lps2,log(P_TH)),2);
