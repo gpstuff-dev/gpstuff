@@ -11,8 +11,8 @@ function p = prior_sinvchi2(varargin)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
 %
-%    Parameterisation is done by Bayesian Data Analysis,  
-%    second edition, Gelman et.al 2004.
+%    The parameterization is as in Gelman, Carlin, Stern, Dunson, Vehtari,
+%    and Rubin (2013). Bayesian Data Analysis, third edition.
 %    
 %    Parameters for Scaled-Inv-Chi^2 [default]
 %      s2       - scale squared (variance) [1]

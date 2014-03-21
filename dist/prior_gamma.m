@@ -11,8 +11,8 @@ function p = prior_gamma(varargin)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
 %  
-%    Parametrisation is done by Bayesian Data Analysis,  
-%    second edition, Gelman et.al. 2004.
+%    The parameterization is as in Gelman, Carlin, Stern, Dunson, Vehtari,
+%    and Rubin (2013). Bayesian Data Analysis, third edition.
 %
 %    Parameters for Gamma prior [default]
 %      sh       - shape (alpha) [4]
