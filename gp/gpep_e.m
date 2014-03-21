@@ -25,6 +25,21 @@ function [e, edata, eprior, param] = gpep_e(w, gp, varargin)
 %          Poisson likelihood we have z_i=E_i, that is, expected
 %          value for ith case.
 %
+%  References
+%
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
+%
+%    van Gerven, M., Cseke, B., Oostenveld, R., and Heskes, T. (2009). 
+%    Bayesian source localization with the multivariate Laplace prior. 
+%    In Advances in Neural Information Processing Systems 22, ed.\
+%    Y. Bengio, D. Schuurmans, J. Lafferty, C. K. I. Williams, and
+%    A. Culotta, 1901--1909.
+%
+%    Pasi Jylänki, Jarno Vanhatalo and Aki Vehtari (2011). Robust
+%    Gaussian process regression with a Student-t likelihood. Journal
+%    of Machine Learning Research, 12(Nov):3227-3257.
+%
 %  See also
 %    GP_SET, GP_E, GPEP_G, GPEP_PRED
 
