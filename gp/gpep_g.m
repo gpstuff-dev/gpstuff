@@ -314,22 +314,24 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
               savememory=0;
               [n, m]=size(x);
               DKffa = gpcf.fh.cfg(gpcf, x2);
-              DKdf = gpcf.fh.cfdg(gpcf, x, x2);
-              DKdd = gpcf.fh.cfdg2(gpcf, x);
-              % Select monotonic dimensions
-              inds=[];
-              nvd=abs(gp.nvd);
-              for idd=1:length(gp.nvd)
-                inds=[inds size(x,1)*(nvd(idd)-1)+1:size(x,1)*nvd(idd)];
-              end
-              for ijj=1:length(DKdd)
-                DKdf{ijj}=DKdf{ijj}(inds,:);
-                DKdd{ijj}=DKdd{ijj}(inds,inds);
-              end
-              
-              DKffc{1}=[DKffa{1} DKdf{1}';DKdf{1} DKdd{1}];
-              for i2=2:length(DKffa)
-                DKffc{i2}=[DKffa{i2} DKdf{i2}';DKdf{i2} DKdd{i2}];
+              if ~isempty(DKffa)
+                DKdf = gpcf.fh.cfdg(gpcf, x, x2);
+                DKdd = gpcf.fh.cfdg2(gpcf, x);
+                % Select monotonic dimensions
+                inds=[];
+                nvd=abs(gp.nvd);
+                for idd=1:length(gp.nvd)
+                  inds=[inds size(x,1)*(nvd(idd)-1)+1:size(x,1)*nvd(idd)];
+                end
+                for ijj=1:length(DKffa)
+                  DKdf{ijj}=DKdf{ijj}(inds,:);
+                  DKdd{ijj}=DKdd{ijj}(inds,inds);
+                end
+                
+                DKffc{1}=[DKffa{1} DKdf{1}';DKdf{1} DKdd{1}];
+                for i2=2:length(DKffa)
+                  DKffc{i2}=[DKffa{i2} DKdf{i2}';DKdf{i2} DKdd{i2}];
+                end
               end
               np=length(DKffa);
             else

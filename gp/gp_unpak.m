@@ -74,8 +74,8 @@ if ~isempty(strfind(param, 'likelihood'))
   [gp.lik w] = gp.lik.fh.unpak(gp.lik, w);
   
   % Unpack the parameters of the second likelihood function (monotonicity)
-  if isfield(gp, 'lik2')
-    [gp.lik2 w] = gp.lik2.fh.unpak(gp.lik2, w);
+  if isfield(gp, 'lik_mono')
+    [gp.lik_mono w] = gp.lik_mono.fh.unpak(gp.lik_mono, w);
   end
 end
 

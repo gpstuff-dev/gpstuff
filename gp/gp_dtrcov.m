@@ -1,8 +1,8 @@
 function [K, C] = gp_dtrcov(gp, x1, x2,predcf)
-%GP_TRCOV  Evaluate training covariance matrix (gp_cov + noise covariance).
+%GP_DTRCOV  Evaluate training covariance matrix (gp_cov + noise covariance).
 %
 %  Description
-%    K = GP_TRCOV(GP, TX, PREDCF) takes in Gaussian process GP and
+%    K = GP_DTRCOV(GP, TX, PREDCF) takes in Gaussian process GP and
 %    matrix TX that contains training input vectors to GP. Returns
 %    (noiseless) covariance matrix K for latent values, which is
 %    formed as a sum of the covariance matrices from covariance
@@ -12,7 +12,7 @@ function [K, C] = gp_dtrcov(gp, x1, x2,predcf)
 %    for forming the matrix. If not given, the matrix is formed
 %    with all functions.
 %
-%    [K, C] = GP_TRCOV(GP, TX, PREDCF) returns also the (noisy)
+%    [K, C] = GP_DTRCOV(GP, TX, PREDCF) returns also the (noisy)
 %    covariance matrix C for observations y, which is sum of K and
 %    diagonal term, for example, from Gaussian noise.
 %
@@ -118,11 +118,10 @@ if (isfield(gp,'derivobs') && gp.derivobs)
   end
   if nargout > 1
     C = K;
-    if isfield(gp,'lik2') && isequal(gp.lik2.type, 'Gaussian');
-      % Add Gaussian noise to the covariance
-      % same noise for obs and grad obs
-      lik2 = gp.lik2;
-      Noi=lik2.fh.trcov(lik2, x1);
+    if isfield(gp,'lik_mono') && isequal(gp.lik.type, 'Gaussian');
+      % Add Gaussian noise to the obs part of covariance
+      lik = gp.lik;
+      Noi=lik.fh.trcov(lik, x1);
       x2=repmat(x1,m,1);
       Cff = Kff + Noi;
       C = [Cff Kfd'; Kfd Kdd];

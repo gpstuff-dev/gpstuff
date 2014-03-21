@@ -85,7 +85,7 @@ tn = size(x,1);
 sampyt=[];
 if isstruct(gp) && numel(gp.jitterSigma2)==1
   % Single GP
-  if (isfield(gp.lik.fh,'trcov') && ~isfield(gp,'lik2')) || isfield(gp, 'latentValues')
+  if (isfield(gp.lik.fh,'trcov') && ~isfield(gp,'lik_mono')) || isfield(gp, 'latentValues')
     % ===================================
     % Gaussian likelihood or MCMC with latent values
     % ===================================
@@ -627,7 +627,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             end
             [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
             
-            if ~isfield(gp, 'lik2')
+            if ~isfield(gp, 'lik_mono')
               [K, C]=gp_trcov(gp,x);
               K = gp_trcov(gp, xt, predcf);
               ntest=size(xt,1);
@@ -638,7 +638,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               y2=y;
               x=gp.xv;
               [K,C]=gp_dtrcov(gp,x2,x);
-              K = gp_trcov(rmfield(gp,{'derivobs' 'lik2'}), xt, predcf);
+              K = gp_trcov(rmfield(gp,{'derivobs' 'lik_mono'}), xt, predcf);
               ntest=size(xt,1);
               K_nf=gp_dcov(gp,x2,xt,predcf)';
               K_nf(ntest+1:end,:)=[];
