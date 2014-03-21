@@ -29,7 +29,7 @@ x11=gp.xv;
 ncf=length(gp.cf);
 if isfield(gp, 'nvd')
   % Only specific dimensions
-  ii1=gp.nvd;
+  ii1=abs(gp.nvd);
 else
   ii1=1:m;
 end

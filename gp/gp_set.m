@@ -344,7 +344,7 @@ function gp = gp_set(varargin)
     end
   end
   % Latent method
-  if isfield(gp.lik.fh,'trcov') && ~isfield(gp, 'lik2')
+  if isfield(gp.lik.fh,'trcov') && ~isfield(gp, 'lik_mono')
     % Gaussian likelihood
     if ~ismember('latent_method',ip.UsingDefaults)
       error('No latent method needed with a Gaussian likelihood')

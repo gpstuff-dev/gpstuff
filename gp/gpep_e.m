@@ -551,12 +551,13 @@ end
           case 'basic-EP'            
             
             % Monotonicity, get the virtual observations
-            if isfield(gp, 'lik2')
+            if isfield(gp, 'lik_mono')
               x2=x;
               y2=y;
               x=gp.xv;
               %y=gp.yv.*ones(size(x,1).*length(gp.nvd),1);
-              y=bsxfun(@times, gp.yv, ones(size(gp.xv,1),length(gp.nvd)));
+              yv=round(gp.nvd./abs(gp.nvd));
+              y=bsxfun(@times, yv, ones(size(gp.xv,1),length(gp.nvd)));
               y=y(:);
             end
             
@@ -595,7 +596,7 @@ end
               % FULL
               % ============================================================
               case 'FULL'   % A full GP
-                if ~isfield(gp, 'lik2')
+                if ~isfield(gp, 'lik_mono')
                   [K,C] = gp_trcov(gp, x);
                 else
                   % Compute the prior covariance of f_joint (f
@@ -633,7 +634,7 @@ end
                     logZep_old=logZep;
                     logM0_old=logM0;
                                         
-                    if isfield(gp, 'lik2') && isequal(gp.lik.type, 'Gaussian') ...
+                    if isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian') ...
                         && iter > 1
                       mf_old=mf(1:n2);
                       sigm_old=Sigm(1:n2,1:n2);
@@ -659,18 +660,18 @@ end
                         
                         % compute moments of tilted distributions
                         
-                        if isfield(gp, 'lik2')
+                        if isfield(gp, 'lik_mono')
                           % Now we have 2 likelihoods, do atleast one EP
                           % approximation and check whether the "main"
                           % likelihood is Gaussian or not
                           if ~isequal(gp.lik.type, 'Gaussian')
-                            [logM0, muhat, sigm2hat] = gp.lik2.fh.tiltedMoments(gp.lik2, y, 1:n1, sigm2vec_i(n2+1:end), muvec_i(n2+1:end), z);
+                            [logM0, muhat, sigm2hat] = gp.lik_mono.fh.tiltedMoments(gp.lik_mono, y, 1:n1, sigm2vec_i(n2+1:end), muvec_i(n2+1:end), z);
                             [logM02, muhat2, sigm2hat2] = gp.lik.fh.tiltedMoments(gp.lik, y2, 1:n2, sigm2vec_i(1:n2), muvec_i(1:n2), z);                            
                             logM0=[logM02;logM0];
                             muhat=[muhat2;muhat];
                             sigm2hat=[sigm2hat2;sigm2hat];
                           else                            
-                            [logM0, muhat, sigm2hat] = gp.lik2.fh.tiltedMoments(gp.lik2, y, 1:n1, sigm2vec_i, muvec_i, z);
+                            [logM0, muhat, sigm2hat] = gp.lik_mono.fh.tiltedMoments(gp.lik_mono, y, 1:n1, sigm2vec_i, muvec_i, z);
                           end
                         else
                           [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
@@ -769,7 +770,7 @@ end
                     
                     % Recompute the approximate posterior parameters
                     % parallel- and sequential-EP
-                    if isfield(gp, 'lik2') && isequal(gp.lik.type,'Gaussian')
+                    if isfield(gp, 'lik_mono') && isequal(gp.lik.type,'Gaussian')
                       tautilde=[1./gp.lik.sigma2.*ones(size(x2,1),1); tautilde];
                       nutilde=[y2./gp.lik.sigma2;nutilde];
                       C=Cp;
@@ -804,7 +805,7 @@ end
                       %         0.5*sum(log(sigm2vec_i+1./tautilde))+
                       %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
                       
-                      if isfield(gp, 'lik2') && isequal(gp.lik.type, 'Gaussian')
+                      if isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian')
                         mutilde=nutilde./tautilde;
                         mustilde=nutilde./sqrt(tautilde);
                         
@@ -1050,7 +1051,7 @@ end
                   
                 end
                 La2 = B;
-                if isfield(gp, 'lik2')
+                if isfield(gp, 'lik_mono')
                   [La2,notpositivedefinite]=chol(Sigm);
                   if notpositivedefinite
                     [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();

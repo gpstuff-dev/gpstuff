@@ -30,7 +30,7 @@ if (isfield(gp,'derivobs') && gp.derivobs)
   [n,m]=size(x2);
   if isfield(gp, 'nvd')
     % Only specific dimensions
-    ii1=gp.nvd;
+    ii1=abs(gp.nvd);
   else
     ii1=1:m;
   end

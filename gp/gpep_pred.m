@@ -245,7 +245,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
         
-        if ~isfield(gp, 'lik2')
+        if ~isfield(gp, 'lik_mono')
           [K, C]=gp_trcov(gp,x);
           kstarstar = gp_trvar(gp, xt, predcf);
           ntest=size(xt,1);
@@ -263,7 +263,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         end
         
         if all(tautilde > 0) && ~(isequal(gp.latent_opt.optim_method, 'robust-EP') ...
-            || isfield(gp, 'lik2'))
+            || isfield(gp, 'lik_mono'))
           % This is the usual case where likelihood is log concave
           % for example, Poisson and probit
           sqrttautilde = sqrt(tautilde);
@@ -322,7 +322,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
           [Eft,V]=pred_var(tautilde,K,K_nf,nutilde);
           Varft=kstarstar-V;
           
-          if nargout > 3 && isfield(gp, 'lik2') && isequal(gp.lik.type, 'Gaussian')
+          if nargout > 3 && isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian')
             % Gaussian likelihood with monotonicity -> analytical
             % predictions for f, see e.g. gp_monotonic, gpep_predgrad
             Eyt=Eft;

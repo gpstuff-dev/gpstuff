@@ -76,8 +76,8 @@ optimize=ip.Results.optimize;
 nvd=ip.Results.nvd;
 % Check appropriate fields in GP structure and modify if necessary to make
 % proper monotonic GP structure
-if ~isfield(gp, 'lik2') || ~ismember(gp.lik2.type, {'Probit', 'Logit'}) 
-  gp.lik2=lik_probit();
+if ~isfield(gp, 'lik_mono') || ~ismember(gp.lik_mono.type, {'Probit', 'Logit'}) 
+  gp.lik_mono=lik_probit();
 end
 gp.derivobs=1;
 % Set the virtual observations, here we use 25% of the observations as
@@ -96,13 +96,6 @@ else
     end
   end
 end
-if isfield(gp, 'yv')
-  dir=gp.yv;
-else
-  dir = round(gp.nvd./abs(gp.nvd));
-end
-gp.nvd=abs(gp.nvd);
-gp.yv=dir;
 nvd=length(gp.nvd);
 if ~isfield(gp, 'xv')
   S=warning('off','stats:kmeans:EmptyCluster');
@@ -133,13 +126,14 @@ for i=1:10
   Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
 end
 % Check if monotonicity is satisfied
-while any(any(bsxfun(@times,Ef, gp.yv)<0))
+yv=round(gp.nvd./abs(gp.nvd));
+while any(any(bsxfun(@times,Ef, yv)<0))
   % Monotonicity not satisfied, add 2 "most wrong" predictions, for each 
   % dimension, from the observation set to the virual observations.
   fprintf('Latent function not monotonic, adding virtual observations.\n');
-  gp.lik2.nu=1e-6;
+  gp.lik_mono.nu=1e-6;
   for j=1:nvd
-    [~,ind(:,j)]=sort(Ef(:,j).*gp.yv(j),'ascend');
+    [~,ind(:,j)]=sort(Ef(:,j).*yv(j),'ascend');
   end
   ind=ind(1:2,:);
   inds=unique(ind(:));

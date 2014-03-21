@@ -237,7 +237,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         [tautilde, nutilde, mu_i, sigm2_i, Z_i, eta] = ...
             deal(p.tautilde, p.nutilde, p.muvec_i, p.sigm2vec_i, p.logZ_i, p.eta);
         L=p.L;
-        if isfield(gp, 'lik2')
+        if isfield(gp, 'lik_mono')
           x2=x;
           x=gp.xv;
           [K,C]=gp_dtrcov(gp,x2,x);
@@ -263,7 +263,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           %[e, edata, eprior, tautilde, nutilde, L, tmp, tmp, mu_i, sigm2_i, Z_i, eta] = gpep_e(w, gp, x, y, 'z', z);
 
           if all(tautilde > 0) && ~(isequal(gp.latent_opt.optim_method, 'robust-EP') ...
-            || (isfield(gp, 'lik2')))  %&& isequal(gp.lik2.type, 'Gaussian')))
+            || (isfield(gp, 'lik_mono')))  %&& isequal(gp.lik_mono.type, 'Gaussian')))
             % This is the usual case where likelihood is log concave
             % for example, Poisson and probit
             % Stildesqroot=diag(sqrt(tautilde));
@@ -274,8 +274,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             temp=L\diag(Stildesqroot);
             invC = temp'*temp;
             b=nutilde-Stildesqroot.*(L'\(L\(Stildesqroot.*(C*nutilde))));
-          elseif isequal(gp.latent_opt.optim_method, 'robust-EP') || (isfield(gp, 'lik2')) ...
-              %&& isequal(gp.lik2.type, 'Gaussian'))
+          elseif isequal(gp.latent_opt.optim_method, 'robust-EP') || (isfield(gp, 'lik_mono')) ...
+              %&& isequal(gp.lik_mono.type, 'Gaussian'))
 
             A=bsxfun(@times,tautilde,L');   % Sf = L'*L;
             b=nutilde-A*(L*nutilde);        % (eye(n)-diag(tautilde)*Sf)\nutilde
@@ -310,7 +310,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           i1=0;
           for i=1:ncf
             gpcf = gp.cf{i};
-            if isfield(gp, 'lik2')
+            if isfield(gp, 'lik_mono')
               savememory=0;
               [n, m]=size(x);
               DKffa = gpcf.fh.cfg(gpcf, x2);
@@ -318,8 +318,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
               DKdd = gpcf.fh.cfdg2(gpcf, x);
               % Select monotonic dimensions
               inds=[];
+              nvd=abs(gp.nvd);
               for idd=1:length(gp.nvd)
-                inds=[inds size(x,1)*(gp.nvd(idd)-1)+1:size(x,1)*gp.nvd(idd)];
+                inds=[inds size(x,1)*(nvd(idd)-1)+1:size(x,1)*nvd(idd)];
               end
               for ijj=1:length(DKdd)
                 DKdf{ijj}=DKdf{ijj}(inds,:);
@@ -1068,7 +1069,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       % =================================================================
       % Gradient with respect to likelihood function parameters
       if ~isempty(strfind(gp.infer_params, 'likelihood')) && (isfield(gp.lik.fh, 'siteDeriv') ...
-          || (isfield(gp, 'lik2') && isfield(gp.lik.fh, 'siteDeriv')))
+          || (isfield(gp, 'lik_mono') && isfield(gp.lik.fh, 'siteDeriv')))
 
         if isempty(sigm2_i)
           sigm2_i=p.sigm2vec_i;
@@ -1098,7 +1099,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         gprior = [gprior gprior_lik];
       end
     end    
-    if isfield(gp,'lik2') && isequal(gp.lik.type, 'Gaussian')
+    if isfield(gp,'lik_mono') && isequal(gp.lik.type, 'Gaussian')
       % Monotonic GP with Gaussian likelihood
       s2=gp.lik.sigma2;
 %       DCff = blkdiag(s2.*eye(n2), zeros(70));
@@ -1108,7 +1109,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       mf=Sigma*nutilde;
       gdata_lik = -sum((-s2+diag(Sigma(1:n2,1:n2))+(mf(1:n2)-y).^2)./(2*s2.^2)).*s2;
 %       gdata_lik = gdata_lik - n2./2;% + sum(y.^2./(2*s2));
-      lik=gp.lik2;
+      lik=gp.lik_mono;
       if isfield(gp.lik, 'p')  && ~isempty(gp.lik.p.sigma2)
         gprior_lik = -gp.lik.fh.lpg(gp.lik);
       else

@@ -155,7 +155,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_predgrad(gp, x, y, varargin)
         x2=x;
         y2=y;
         x=gp.xv;
-        y=bsxfun(@times,gp.yv,ones(size(gp.xv,1),length(gp.nvd)));
+        yv=round(gp.nvd./abs(gp.nvd));
+        y=bsxfun(@times,yv,ones(size(gp.xv,1),length(gp.nvd)));
         [K,C]=gp_dtrcov(gp,x2,x);
         kstarstar = diag(gp_dtrcov(gp,xt,xt, predcf));
         kstarstar(1:size(xt,1))=[];
@@ -197,15 +198,11 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_predgrad(gp, x, y, varargin)
     if isempty(yt)
       lpyt=[];
     else
-      yt=bsxfun(@times, gp.yv, ones(size(gp.xv)));
-      yt=yt(:);
-      lpyt = gp.lik2.fh.predy(gp.lik2, Eft, Varft, yt, zt);
+      lpyt = gp.lik_mono.fh.predy(gp.lik_mono, Eft, Varft, yt, zt);
     end
     lpyt=reshape(lpyt, size(xt,1),  length(gp.nvd));
   elseif nargout > 3
-    yt=bsxfun(@times, gp.yv, ones(size(gp.xv)));
-    yt=yt(:);
-    [lpyt, Eyt, Varyt] = gp.lik2.fh.predy(gp.lik2, Eft, Varft, yt, zt);
+    [lpyt, Eyt, Varyt] = gp.lik_mono.fh.predy(gp.lik_mono, Eft, Varft, yt, zt);
     lpyt=reshape(lpyt, size(xt,1),  length(gp.nvd));
     Eyt=reshape(Eyt, size(xt,1),  length(gp.nvd));
     Varyt=reshape(Varyt, size(xt,1),  length(gp.nvd));
