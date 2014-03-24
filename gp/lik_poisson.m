@@ -12,10 +12,11 @@ function lik = lik_poisson(varargin)
 %      vector whose components are transformed to relative risk
 %      exp(f_i). 
 %  
-%    When using the Poisson likelihood you need to give the vector
-%    z as an extra parameter to each function that requires y also. 
-%    For example, you should call gpla_e as follows 
-%    gpla_e(w, gp, x, y, 'z', z)
+%    When using the Poisson likelihood you can give the
+%    vector z as an extra parameter to each function that requires
+%    also y. For example, you can call gp_optim as follows:
+%      gp_optim(gp, x, y, 'z', z)
+%    If z is not given or it is empty, then z_i=1 is used.
 %
 %  See also
 %    GP_SET, LIK_*
@@ -114,12 +115,8 @@ function logLik = lik_poisson_ll(lik, y, f, z)
 %  See also
 %    LIK_POISSON_LLG, LIK_POISSON_LLG3, LIK_POISSON_LLG2, GPLA_E
 
-  
-  if isempty(z)
-    error(['lik_poisson -> lik_poisson_ll: missing z!'... 
-           'Poisson likelihood needs the expected number of '...
-           'occurrences as an extra input z. See, for       '...
-           'example, lik_poisson and gpla_e.            ']);
+  if numel(z)==0
+    z=1;
   end
   
   lambda = z.*exp(f);
@@ -143,11 +140,8 @@ function deriv = lik_poisson_llg(lik, y, f, param, z)
 %  See also
 %    LIK_POISSON_LL, LIK_POISSON_LLG2, LIK_POISSON_LLG3, GPLA_E
   
-  if isempty(z)
-    error(['lik_poisson -> lik_poisson_llg: missing z!'... 
-           'Poisson likelihood needs the expected number of '...
-           'occurrences as an extra input z. See, for       '...
-           'example, lik_poisson and gpla_e.            ']);
+  if numel(z)==0
+    z=1;
   end
   
   switch param
@@ -174,11 +168,8 @@ function g2 = lik_poisson_llg2(lik, y, f, param, z)
 %  See also
 %    LIK_POISSON_LL, LIK_POISSON_LLG, LIK_POISSON_LLG3, GPLA_E
 
-  if isempty(z)
-    error(['lik_poisson -> lik_poisson_llg2: missing z!'... 
-           'Poisson likelihood needs the expected number of  '...
-           'occurrences as an extra input z. See, for        '...
-           'example, lik_poisson and gpla_e.             ']);
+  if numel(z)==0
+    z=1;
   end
   
   switch param
@@ -202,11 +193,8 @@ function third_grad = lik_poisson_llg3(lik, y, f, param, z)
 %  See also
 %    LIK_POISSON_LL, LIK_POISSON_LLG, LIK_POISSON_LLG2, GPLA_E, GPLA_G
   
-  if isempty(z)
-    error(['lik_poisson -> lik_poisson_llg3: missing z!'... 
-           'Poisson likelihood needs the expected number of  '...
-           'occurrences as an extra input z. See, for        '...
-           'example, lik_poisson and gpla_e.             ']);
+  if numel(z)==0
+    z=1;
   end
   
   switch param
@@ -231,16 +219,13 @@ function [logM_0, m_1, sigm2hati1] = lik_poisson_tiltedMoments(lik, y, i1, sigm2
 %  See also
 %    GPEP_E
 
-  
-%  if isempty(z)
-%    error(['lik_poisson -> lik_poisson_tiltedMoments: missing z!'... 
-%           'Poisson likelihood needs the expected number of             '...
-%           'occurrences as an extra input z. See, for                   '...
-%           'example, lik_poisson and gpla_e.                        ']);
-%  end
+  if numel(z)==0
+    avgE = ones(size(i1));
+  else
+    avgE = z(i1);
+  end
   
   yy = y(i1);
-  avgE = z(i1);
   logM_0=zeros(size(yy));
   m_1=zeros(size(yy));
   sigm2hati1=zeros(size(yy));
@@ -297,16 +282,12 @@ function [lpy, Ey, Vary] = lik_poisson_predy(lik, Ef, Varf, yt, zt)
 %    is needed when computing posterior predictive distributions for 
 %    future observations.
 %        
-
 %
 %  See also 
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-  if isempty(zt)
-    error(['lik_poisson -> lik_poisson_predy: missing zt!'... 
-           'Poisson likelihood needs the expected number of     '...
-           'occurrences as an extra input zt. See, for           '...
-           'example, lik_poisson and gpla_e.                ']);
+  if numel(zt)==0
+    zt=ones(size(Ef));
   end
   
   avgE = zt;
@@ -370,11 +351,8 @@ function prctys = lik_poisson_predprcty(lik, Ef, Varf, zt, prcty)
 %  See also 
 %    GP_PREDPCTY
 
-  if isempty(zt)
-    error(['lik_poisson -> lik_poisson_predprcty: missing z!'... 
-           'Poisson likelihood needs the expected number of       '...
-           'occurrences as an extra input z. See, for             '...
-           'example, lik_poisson and gpla_e.                 ']);
+  if numel(zt)==0
+    zt=ones(size(Ef));
   end
   
   opt=optimset('TolX',.5,'Display','off');
@@ -526,6 +504,9 @@ function mu = lik_poisson_invlink(lik, f, z)
 %     See also
 %     LIK_POISSON_LL, LIK_POISSON_PREDY
   
+  if numel(z)==0
+    z=1;
+  end
   mu = bsxfun(@times,z,exp(f));
 end
 

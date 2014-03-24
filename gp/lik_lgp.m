@@ -222,7 +222,7 @@ function [logM_0, m_1, sigm2hati1] = lik_lgp_tiltedMoments(lik, y, i1, sigm2_i, 
 %  See also
 %    GPEP_E
 
-% Not applicable
+  error('Not implemented')
   
 end
 
@@ -251,7 +251,7 @@ function [lpy, Ey, Vary] = lik_lgp_predy(lik, Ef, Varf, yt, zt)
 %  See also 
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-% Not applicable
+  error('Not implemented')
   
 end
 
