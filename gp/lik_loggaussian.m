@@ -4,9 +4,8 @@ function lik = lik_loggaussian(varargin)
 %  Description
 %    LIK = LIK_LOGGAUSSIAN('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %    creates a likelihood structure for right censored log-Gaussian
-%    survival model in which the named parameters have the
-%    specified values. Any unspecified parameters are set to
-%    default values.
+%    survival model in which the named parameters have the specified
+%    values. Any unspecified parameters are set to default values.
 %  
 %    LIK = LIK_LOGGAUSSIAN(LIK,'PARAM1',VALUE1,'PARAM2,VALUE2,...)
 %    modify a likelihood structure with the named parameters
@@ -208,7 +207,7 @@ function ll = lik_loggaussian_ll(lik, y, f, z)
 %  See also
 %    LIK_LOGGAUSSIAN_LLG, LIK_LOGGAUSSIAN_LLG3, LIK_LOGGAUSSIAN_LLG2, GPLA_E
   
-  if isempty(z)
+  if numel(z)==0
     z=0;
   end
 
@@ -239,7 +238,7 @@ function llg = lik_loggaussian_llg(lik, y, f, param, z)
 %  See also
 %    LIK_LOGGAUSSIAN_LL, LIK_LOGGAUSSIAN_LLG2, LIK_LOGGAUSSIAN_LLG3, GPLA_E
 
-  if isempty(z)
+  if numel(z)==0
     z=0;
   end
 
@@ -291,7 +290,7 @@ function llg2 = lik_loggaussian_llg2(lik, y, f, param, z)
 %  See also
 %    LIK_LOGGAUSSIAN_LL, LIK_LOGGAUSSIAN_LLG, LIK_LOGGAUSSIAN_LLG3, GPLA_E
 
-  if isempty(z)
+  if numel(z)==0
     z=0;
   end
 
@@ -345,7 +344,7 @@ function llg3 = lik_loggaussian_llg3(lik, y, f, param, z)
 %  See also
 %    LIK_LOGGAUSSIAN_LL, LIK_LOGGAUSSIAN_LLG, LIK_LOGGAUSSIAN_LLG2, GPLA_E, GPLA_G
 
-  if isempty(z)
+  if numel(z)==0
     z=0;
   end
 
@@ -406,7 +405,7 @@ function [logM_0, m_1, sigm2hati1] = lik_loggaussian_tiltedMoments(lik, y, i1, s
 %  See also
 %    GPEP_E
   
- if isempty(z)
+ if numel(z)==0
    z=zeros(size(y));
  end
   
@@ -471,7 +470,7 @@ function [g_i] = lik_loggaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %  See also
 %    GPEP_G
 
-  if isempty(z)
+  if numel(z)==0
     z=zeros(size(y));
   end
 
@@ -526,7 +525,7 @@ function [lpy, Ey, Vary] = lik_loggaussian_predy(lik, Ef, Varf, yt, zt)
 %  See also
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-  if isempty(zt)
+  if numel(zt)==0
     zt=zeros(size(yt));
   end
 

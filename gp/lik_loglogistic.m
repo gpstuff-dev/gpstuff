@@ -1,18 +1,17 @@
 function lik = lik_loglogistic(varargin)
-%LIK_LOGLOGISTIC Create a right censored log-logistic likelihood structure 
+%LIK_LOGLOGISTIC  Create a right censored log-logistic likelihood structure 
 %
 %  Description
 %    LIK = LIK_LOGLOGISTIC('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
-%    creates a likelihood structure for right censored log-logistic
-%    survival model in which the named parameters have the
-%    specified values. Any unspecified parameters are set to
-%    default values.
+%    creates a likelihood structure for a right censored log-logistic
+%    survival model in which the named parameters have the specified
+%    values. Any unspecified parameters are set to default values.
 %  
 %    LIK = LIK_LOGLOGISTIC(LIK,'PARAM1',VALUE1,'PARAM2,VALUE2,...)
 %    modify a likelihood structure with the named parameters
 %    altered with the specified values.
 %
-%    Parameters for loggaussian likelihood [default]
+%    Parameters for log-logistic likelihood [default]
 %      shape       - shape parameter r [1]
 %      shape_prior - prior for shape [prior_logunif]
 %  
@@ -31,7 +30,7 @@ function lik = lik_loglogistic(varargin)
 %    z is a vector of censoring indicators with z = 0 for uncensored event
 %    and z = 1 for right censored event. 
 %
-%    When using the log-Gaussian likelihood you can give the
+%    When using the log-logistic likelihood you can give the
 %    vector z as an extra parameter to each function that requires
 %    also y. For example, you can call gp_optim as follows:
 %      gp_optim(gp, x, y, 'z', z)
@@ -208,7 +207,7 @@ function ll = lik_loglogistic_ll(lik, y, f, z)
 %  See also
 %    LIK_LOGLOGISTIC_LLG, LIK_LOGLOGISTIC_LLG3, LIK_LOGLOGISTIC_LLG2, GPLA_E
   
-  if isempty(z)
+  if numel(z)==0
     % no censoring
     z=0;
   end
@@ -240,7 +239,7 @@ function llg = lik_loglogistic_llg(lik, y, f, param, z)
 %  See also
 %    LIK_LOGLOGISTIC_LL, LIK_LOGLOGISTIC_LLG2, LIK_LOGLOGISTIC_LLG3, GPLA_E
 
-  if isempty(z)
+  if numel(z)==0
     % no censoring
     z=0;
   end
@@ -293,7 +292,7 @@ function llg2 = lik_loglogistic_llg2(lik, y, f, param, z)
 %  See also
 %    LIK_LOGLOGISTIC_LL, LIK_LOGLOGISTIC_LLG, LIK_LOGLOGISTIC_LLG3, GPLA_E
 
-  if isempty(z)
+  if numel(z)==0
     % no censoring
     z=0;
   end
@@ -348,7 +347,7 @@ function llg3 = lik_loglogistic_llg3(lik, y, f, param, z)
 %  See also
 %    LIK_LOGLOGISTIC_LL, LIK_LOGLOGISTIC_LLG, LIK_LOGLOGISTIC_LLG2, GPLA_E, GPLA_G
 
-  if isempty(z)
+  if numel(z)==0
     % no censoring
     z=0;
   end
@@ -402,7 +401,7 @@ function [logM_0, m_1, sigm2hati1] = lik_loglogistic_tiltedMoments(lik, y, i1, s
 %  See also
 %    GPEP_E
   
- if isempty(z)
+ if numel(z)==0
    % no censoring
    z=zeros(size(y));
  end
@@ -471,7 +470,7 @@ function [g_i] = lik_loglogistic_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %  See also
 %    GPEP_G
 
-  if isempty(z)
+  if numel(z)==0
     % no censoring
     z=zeros(size(y));
   end
@@ -525,7 +524,7 @@ function [lpy, Ey, Vary] = lik_loglogistic_predy(lik, Ef, Varf, yt, zt)
 %  See also
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-  if isempty(zt)
+  if numel(zt)==0
     % no censoring
     zt=zeros(size(yt));
   end
