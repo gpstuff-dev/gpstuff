@@ -2,23 +2,23 @@ function [C, Cinv] = gp_dcov(gp, x1, x2, predcf)
 %GP_COV  Evaluate covariance matrix between two input vectors.
 %
 %  Description
-%    C = GPCOV(GP, TX, X, PREDCF) takes in Gaussian process GP and
-%    two matrixes TX and X that contain input vectors to GP.
-%    Returns covariance matrix C. Every element ij of C contains
-%    covariance between inputs i in TX and j in X. PREDCF is an
-%    optional array specifying the indexes of covariance functions,
-%    which are used for forming the matrix. If empty or not given,
-%    the matrix is formed with all functions.
+%    C = GP_DCOV(GP, X1, X2, PREDCF) takes in Gaussian process GP and
+%    two matrixes X1 and X2 that contain input vectors to GP.
+%    Returns covariance matrix C between the latent values in the training
+%    inputs X1 & XV and the test inputs X2. XV denotes the virtual input we
+%    have (GP.XV). The covariance is computed between latent vector [f
+%    df/dx_1 df/dx_2, ... df/dx_d], evaluated at X1 for f and XV for df/dx
+%    respectively, and [f df/dx_1 df/dx_2, ... df/dx_d] evaluated at X2 
+%    for both the f and its gradient.
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen
+% Copyright (c) 2014 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-% Are gradient observations available; derivobs=1->yes, derivobs=0->no
-Cinv=[];
 % Split the training data for normal latent input and gradient inputs
 x12=x1;
 x11=gp.xv;
@@ -31,6 +31,7 @@ if isfield(gp, 'nvd')
   % Only specific dimensions
   ii1=abs(gp.nvd);
 else
+  % All dimensions
   ii1=1:m;
 end
 for i1=1:ncf
@@ -43,7 +44,6 @@ for i1=1:ncf
     
     Kdf=Gset1{1};
     Kfd=Gset2{1};
-    %Kfd = -1.*Kdf;
     C = [Kff Kfd'; Kdf Kdd{1}];
     
     % Input dimension is >1
@@ -60,8 +60,6 @@ for i1=1:ncf
     Kdf=cat(1,Gset1{ii1});
     Kfd22=cat(2,Gset2{ii1});
     Kdf22=cat(1,Gset2{ii1})';
-    %   Kfd=-1*Kfd;
-    %   Kfd2=-1*Kfd2;
     
     % both x derivatives, same dimension (to diagonal blocks)
     D = gpcf.fh.ginput2(gpcf, x11, x2);
@@ -83,7 +81,9 @@ for i1=1:ncf
       end
     end
     if isfield(gp, 'nvd')
-      % Collect the monotonic dimensions
+      % Collect the correct gradient dimensions, i.e. select the blocks
+      % that correspond to the input dimensions for which we want the
+      % gradients to be monotonic
       Kddtmp=[];
       for ii2=1:length(ii1)
         for ii3=ii2:length(ii1)
