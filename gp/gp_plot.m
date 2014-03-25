@@ -146,7 +146,7 @@ if m==1
         Stdf=sqrt(Varf);
         xt=denormdata(xt,nd.xmean,nd.xstd);
         Ef=denormdata(Ef,nd.ymean,nd.ystd);
-        Stdf=Stdf*ystd;
+        Stdf=Stdf*nd.ystd;
         plot(xt, Ef, '-b', xt, Ef-1.64*Stdf, '--b', xt, Ef+1.64*Stdf, '--b')
       case 'mu'
         prctmu = gp_predprctmu(gp, x, y, xt, options);
