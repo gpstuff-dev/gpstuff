@@ -158,7 +158,7 @@ function gp = gp_set(varargin)
 %    GP_PRED, GP_MC, GP_IA, ...
 %
 %  References:
-%    Qui�onero-Candela, J. and Rasmussen, C. E. (2005). A unifying
+%    Quinonero-Candela, J. and Rasmussen, C. E. (2005). A unifying
 %    view of sparse approximate Gaussian process regression. 
 %    Journal of Machine Learning Research, 6(3):1939-1959.
 %
@@ -177,10 +177,16 @@ function gp = gp_set(varargin)
 %    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and
 %    global phenomena with sparse Gaussian processes. Proceedings
 %    of the 24th Conference on Uncertainty in Artificial
-%    Intelligence,
+%    Intelligence.
+%
+%    Simo Sarkka, Arno Solin, Jouni Hartikainen (2013). 
+%    Spatiotemporal learning via infinite-dimensional Bayesian 
+%    filtering and smoothing. IEEE Signal Processing Magazine, 
+%    30(4):51-61.
 
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
   
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -345,7 +351,7 @@ function gp = gp_set(varargin)
   if ismember(gp.type,{'KALMAN'})
       
     % Check likelihood function
-    if ~strcmpi(gp.lik.type,'Gaussian')
+    if ~strcmpi(gp.lik.type,'Gaussian') && ~strcmpi(gp.lik.type,'Poisson')
       error('The ''KALMAN'' option only supports Gaussian likelihoods.')
     end
     

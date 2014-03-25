@@ -33,6 +33,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
 % Copyright (c) 2010 Heikki Peura
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -484,6 +485,15 @@ switch gp.type
     % Kalman filtering and smoothing
     % ============================================================
     
+    % The implementation below is primarily based on the methods 
+    % presented in the following publication. If you find this 
+    % useful as a part of your own research, please cite the paper.
+    %
+    % Simo Sarkka, Arno Solin, Jouni Hartikainen (2013). 
+    %   Spatiotemporal Learning via Infinite-Dimensional Bayesian 
+    %   Filtering and Smoothing. IEEE Signal Processing Magazine, 
+    %   30(4):51-61.
+    
     % Ensure that this is a purely temporal problem
     if size(x,2) > 1,
       error('The ''KALMAN'' option only supports one-dimensional data.')  
@@ -533,30 +543,30 @@ switch gp.type
     % Run filter for evaluating the marginal likelihood
     for k=1:size(y,1)
         
-        % Solve A using the method by Davison
-        if (k>1)
+      % Solve A using the method by Davison
+      if (k>1)
             
-          % Discrete-time solution (only for stable systems)
-          dt = x(k)-x(k-1);
-          A  = expm(F*dt);
-          Q  = Pinf - A*Pinf*A';
-
-          % Prediction step
-          m = A * m;
-          P = A * P * A' + Q;
-          
-        end
+        % Discrete-time solution (only for stable systems)
+        dt = x(k)-x(k-1);
+        A  = expm(F*dt);
+        Q  = Pinf - A*Pinf*A';
         
-        % Update step
-        S = H*P*H'+R;
-        K = P*H'/S;
-        v = y(k)-H*m;
-        m = m + K*v;
-        P = P - K*H*P;
+        % Prediction step
+        m = A * m;
+        P = A * P * A' + Q;
         
-        % Update log likelihood
-        edata = edata + 1/2*log(det(2*pi*S)) + 1/2*v'/S*v;
-                
+      end
+      
+      % Update step
+      S = H*P*H'+R;
+      K = P*H'/S;
+      v = y(k)-H*m;
+      m = m + K*v;
+      P = P - K*H*P;
+      
+      % Update log likelihood
+      edata = edata + 1/2*log(det(2*pi*S)) + 1/2*v'/S*v;
+      
     end
     
   otherwise
