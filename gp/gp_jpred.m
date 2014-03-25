@@ -73,6 +73,7 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, varargin)
 % Copyright (c) 2008 Jouni Hartikainen
 % Copyright (c) 2011-2012 Ville Tolvanen
 % Copyright (c) 2010,2012 Aki Vehtari
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -850,7 +851,19 @@ switch gp.type
     end  
 
   case {'KALMAN'}
-      
+    % ============================================================
+    % Kalman filtering and smoothing
+    % ============================================================
+
+    % The implementation below is primarily based on the methods 
+    % presented in the following publication. If you find this 
+    % useful as a part of your own research, please cite the paper.
+    %
+    % Simo Sarkka, Arno Solin, Jouni Hartikainen (2013). 
+    %   Spatiotemporal Learning via Infinite-Dimensional Bayesian 
+    %   Filtering and Smoothing. IEEE Signal Processing Magazine, 
+    %   30(4):51-61.
+    
     % Check inputs
     if (size(x,2)>1) || (size(xt,2)>1),
         error('The ''KALMAN'' option only supports scalar inputs.')
@@ -861,13 +874,12 @@ switch gp.type
     yall = [y(:); nan(numel(xt),1)];
     
     % Make sure the points are unique and in ascending order
-    [xall,sort_ind,return_ind] = unique(xall);
+    [xall,sort_ind,return_ind] = unique(xall,'first');
     yall = yall(sort_ind);
     
     % Only return test indices;
     return_ind = return_ind(end-numel(xt)+1:end);
             
-    % Make model  
     % Extract the noise magnitude from the GP likelihood model
     R = gp.lik.sigma2;
     
@@ -910,83 +922,94 @@ switch gp.type
     % Run Kalman filter
     for k=1:numel(yall)
         
-        % Solve A using the method by Davison
-        if (k>1)
+      % Solve A using the method by Davison
+      if (k>1)
             
-          % Discrete-time solution (only for stable systems)
-          dt_old = dt;
-          dt = xall(k)-xall(k-1);
+        % Discrete-time solution (only for stable systems)
+        dt_old = dt;
+        dt = xall(k)-xall(k-1);
           
-          % Should we calculate a new discretization?
-          if abs(dt-dt_old) < 1e-9
-            A(:,:,k) = A(:,:,k-1); 
-            Q(:,:,k) = Q(:,:,k-1);
-          else       
-            A(:,:,k)  = expm(F*dt);
-            Q(:,:,k)  = Pinf - A(:,:,k)*Pinf*A(:,:,k)';
-          end
-          
-          % Prediction step
-          m = A(:,:,k) * m;
-          P = A(:,:,k) * P * A(:,:,k)' + Q(:,:,k);
-          
+        % Should we calculate a new discretization?
+        if abs(dt-dt_old) < 1e-9
+          A(:,:,k) = A(:,:,k-1);
+          Q(:,:,k) = Q(:,:,k-1);
+        else
+          A(:,:,k)  = expm(F*dt);
+          Q(:,:,k)  = Pinf - A(:,:,k)*Pinf*A(:,:,k)';
         end
         
-        % Update step
-        if ~isnan(yall(k))
-            S = H*P*H'+R;
-            K = P*H'/S;
-            v = yall(k,:)'-H*m;
-            m = m + K*v;
-            P = P - K*H*P;
-        end
+        % Prediction step
+        m = A(:,:,k) * m;
+        P = A(:,:,k) * P * A(:,:,k)' + Q(:,:,k);
         
-        % Store estimate
-        MS(:,k)   = m;
-        PS(:,:,k) = P;
-                
+      end
+      
+      % Update step
+      if ~isnan(yall(k))
+        S = H*P*H'+R;
+        K = P*H'/S;
+        v = yall(k,:)'-H*m;
+        m = m + K*v;
+        P = P - K*H*P;
+      end
+      
+      % Store estimate
+      MS(:,k)   = m;
+      PS(:,:,k) = P;
+      
     end
     
     % Run RTS-smoother
     for k=size(MS,2)-1:-1:1
-        
-        % Smoothing step (using Cholesky for stability, optimized)
-        PSk = PS(:,:,k);
-        L = chol(A(:,:,k+1)*PSk*A(:,:,k+1)'+Q(:,:,k+1),'lower');
-        G = PSk*A(:,:,k+1)'/L'/L;
-        m = MS(:,k) + G*(m-A(:,:,k+1)*MS(:,k));
-        P = PSk + G*(P-A(:,:,k+1)*PSk*A(:,:,k+1)'-Q(:,:,k+1))*G';
-        
-        % Store estimate
-        MS(:,k)   = m;
-        PS(:,:,k) = P;
-        GS(:,:,k) = G;
+      
+      % Smoothing step (using Cholesky for stability)
+      PSk = PS(:,:,k);
+      
+      % Solve the Cholesky factorization
+      [L,notposdef] = chol(A(:,:,k+1)*PSk*A(:,:,k+1)'+Q(:,:,k+1),'lower');
+      
+      % Numerical problems in Cheloseky, retry with jitter
+      if notposdef>0
+        jitter = gp.jitterSigma2*diag(rand(size(A,1),1));
+        L = chol(A(:,:,k+1)*PSk*A(:,:,k+1)'+Q(:,:,k+1)+jitter,'lower');
+      end
+      
+      % Continue smoothing step
+      G = PSk*A(:,:,k+1)'/L'/L;
+      m = MS(:,k) + G*(m-A(:,:,k+1)*MS(:,k));
+      P = PSk + G*(P-A(:,:,k+1)*PSk*A(:,:,k+1)'-Q(:,:,k+1))*G';
+      
+      % Store estimate
+      MS(:,k)   = m;
+      PS(:,:,k) = P;
+      GS(:,:,k) = G;
                 
     end
     
     % Return covariance matrix
     if nargout > 1
         
-        % Initialize covariance matrix
-        Covft = zeros(length(xt));
+      % Initialize covariance matrix
+      Covft = zeros(size(PS,3));
         
-        % Variances
-        Varft  = arrayfun(@(k) H*PS(:,:,k)*H',1:size(PS,3))';
+      % Variances
+      Varft  = arrayfun(@(k) H*PS(:,:,k)*H',1:size(PS,3))';
         
-        % Lower triangular
-        for k = 1:size(PS,3)-1
-            GSS = GS(:,:,k);
-            for j=1:size(PS,3)-k
-                Covft(k+j,k)=H*(GSS*PS(:,:,k+j))*H';
-                GSS = GSS*GS(:,:,k+j);
-            end
+      % Lower triangular
+      for k = 1:size(PS,3)-1
+        GSS = GS(:,:,k);
+        for j=1:size(PS,3)-k
+          Covft(k+j,k) = H*(GSS*PS(:,:,k+j))*H';
+          GSS = GSS*GS(:,:,k+j);
         end
+      end
         
-        % Add upper triangular and variances
-        Covft = Covft+Covft'+diag(Varft);
-        
-        % These indices shall remain
-        Covft = Covft(return_ind,return_ind);
+      % Add upper triangular and variances
+      Covft = Covft+Covft'+diag(Varft);
+      
+      % These indices shall remain
+      Covft = Covft(return_ind,return_ind);
+      
     end    
     
     % These indices shall remain
@@ -999,20 +1022,19 @@ switch gp.type
     
     if nargout > 2
         
-        % Return posterior predictive mean
-        Eyt = Eft;
+      % Return posterior predictive mean
+      Eyt = Eft;
         
-        % Return posterior predictive covariance
-        Covyt = Covft + gp.lik.sigma2*eye(length(Covft));
+      % Return posterior predictive covariance
+      Covyt = Covft + gp.lik.sigma2*eye(length(Covft));
         
-        % Return logarithm of the predictive density
-        if ~isempty(yt)
-            
-            % Expects normal likelihood (applies to 'KALMAN')
-            ljpyt = mnorm_lpdf(yt', Eyt', Covyt);
-        else
-            ljpyt = [];
-        end
+      % Return logarithm of the predictive density,
+      % assumes Gaussian likelihood (applies to 'KALMAN')
+      if ~isempty(yt)
+        ljpyt = mnorm_lpdf(yt', Eyt', Covyt);
+      else
+        ljpyt = [];
+      end
     end
    
 end
