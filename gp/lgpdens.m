@@ -1,4 +1,4 @@
-function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
+function [p,pq,xx,gp,ess,eig,q,r,pjr] = lgpdens(x,varargin)
 %LGPDENS Logistic-Gaussian Process density estimate for 1D and 2D data
 % 
 %  Description  
@@ -970,7 +970,7 @@ function gp = gpsmooth(xx,yy,gpcf,latent_method,int_method,display,speedup,gridn
   %exp(gp_pak(gp));
   
   if strcmpi(latent_method,'MCMC')
-    % gpia coule be used to get integartion limits for slice sampling
+    % gpia could be used to get integartion limits for slice sampling
     % gpia=gp_ia(gp, xx, yy, 'int_method', 'CCD', 'display', displ);
     % for i1=1:numel(gpia)
     %   ws(i1,:)=gp_pak(gpia{i1});
