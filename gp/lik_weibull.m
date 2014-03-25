@@ -353,13 +353,11 @@ function [logM_0, m_1, sigm2hati1] = lik_weibull_tiltedMoments(lik, y, i1, sigm2
 %  See also
 %    GPEP_E
   
-%  if numel(z)==0
-%    error(['lik_weibull -> lik_weibull_tiltedMoments: missing z!'... 
-%           'Weibull likelihood needs the censoring            '...
-%           'indicators as an extra input z. See, for                 '...
-%           'example, lik_weibull and gpep_e.                       ']);
-%  end
-  
+ if numel(z)==0
+   % no censoring
+   z=zeros(size(y));
+ end
+ 
   yy = y(i1);
   yc = 1-z(i1);
   r = lik.shape;
