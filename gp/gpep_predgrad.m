@@ -2,11 +2,15 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_predgrad(gp, x, y, varargin)
 %GPEP_PRED  Predictions with Gaussian Process EP approximation
 %
 %  Description
-%    [EFT, VARFT] = GPEP_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT] = GPEP_PREDGRAD(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
-%    predictive distribution at test inputs XT. Returns a posterior
-%    mean EFT and variance VARFT of latent variables.
+%    predictive distribution of the derivative of f at test inputs XT. 
+%    Returns a posterior mean EFT and variance VARFT of latent variables.
+%    Results are stacked so that first NT elements correspond to the
+%    derivative w.r.t first dimension, elements from NT+1 to 2*NT
+%    correspond to derivative w.r.t second dimensions and so on. Dimensions
+%    which to predict are determined by field NVD in the GP structure.
 %
 %    [EFT, VARFT, LPYT] = GPEP_PRED(GP, X, Y, XT, 'yt', YT, OPTIONS)
 %    returns also logarithm of the predictive density LPYT of the
@@ -46,28 +50,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_predgrad(gp, x, y, varargin)
 %               Default is 'off'. For EP possible method is 'fact'.
 %               If method is 'on', 'fact' is used for EP.
 %
-%    NOTE! In case of FIC and PIC sparse approximation the
-%    prediction for only some PREDCF covariance functions is just
-%    an approximation since the covariance functions are coupled in
-%    the approximation and are not strictly speaking additive
-%    anymore.
-%
-%    For example, if you use covariance such as K = K1 + K2 your
-%    predictions Eft1 = gpep_pred(GP, X, Y, X, 'predcf', 1) and
-%    Eft2 = gpep_pred(gp, x, y, x, 'predcf', 2) should sum up to
-%    Eft = gpep_pred(gp, x, y, x). That is Eft = Eft1 + Eft2. With
-%    FULL model this is true but with FIC and PIC this is true only
-%    approximately. That is Eft \approx Eft1 + Eft2.
-%
-%    With CS+FIC the predictions are exact if the PREDCF covariance
-%    functions are all in the FIC part or if they are CS
-%    covariances.
-%
-%    NOTE! When making predictions with a subset of covariance
-%    functions with FIC approximation the predictive variance can
-%    in some cases be ill-behaved i.e. negative or unrealistically
-%    small. This may happen because of the approximative nature of
-%    the prediction.
+%    NOTE! Sparse approximations are not currently implemented for
+%    monotonic GP's.
 %
 %  See also
 %    GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
@@ -76,6 +60,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_predgrad(gp, x, y, varargin)
 % Copyright (c) 2010      Heikki Peura
 % Copyright (c) 2011      Pasi Jyl�nki
 % Copyright (c) 2012 Aki Vehtari
+% Copyright (c) 2014 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file

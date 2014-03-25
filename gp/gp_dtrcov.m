@@ -2,15 +2,11 @@ function [K, C] = gp_dtrcov(gp, x1, x2,predcf)
 %GP_DTRCOV  Evaluate training covariance matrix (gp_cov + noise covariance).
 %
 %  Description
-%    K = GP_DTRCOV(GP, TX, PREDCF) takes in Gaussian process GP and
-%    matrix TX that contains training input vectors to GP. Returns
-%    (noiseless) covariance matrix K for latent values, which is
-%    formed as a sum of the covariance matrices from covariance
-%    functions in gp.cf array. Every element ij of K contains
-%    covariance between inputs i and j in TX. PREDCF is an array
-%    specifying the indexes of covariance functions, which are used
-%    for forming the matrix. If not given, the matrix is formed
-%    with all functions.
+%    K = GP_DTRCOV(GP, X1, XV, PREDCF) takes in Gaussian process GP and
+%    matrix X1 that contains training input vectors to GP with XV that 
+%    contains the virtual inputs. Returns the covariance matrix K between
+%    elements of latent vector [f df/dx_1 df/dx_2, ..., df/dx_d] where f is
+%    evaluated at X1 and df/dx_i at XV.
 %
 %    [K, C] = GP_DTRCOV(GP, TX, PREDCF) returns also the (noisy)
 %    covariance matrix C for observations y, which is sum of K and
@@ -21,6 +17,7 @@ function [K, C] = gp_dtrcov(gp, x1, x2,predcf)
 
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen
+% Copyright (c) 2014 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
