@@ -79,7 +79,7 @@ ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
 ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
 ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('target', 'f', @(x) ismember(x,{'f','mu','cdf'}))
-ip.addParamValue('normdata', [], @(x) isempty(x) || isstruct(x))
+ip.addParamValue('normdata', struct(), @(x) isempty(x) || isstruct(x))
 if numel(varargin)==0 || isnumeric(varargin{1})
   % inputParser should handle this, but it doesn't
   ip.parse(gp, x, y, varargin{:});
