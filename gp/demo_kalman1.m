@@ -37,7 +37,7 @@
 %% Generate data
   
   % Discretize x (measurement points)
-  x = pi*randn(128,1)/2;
+  x = 10*rand(32,1)-5;
   
   % Test points (evaluation points)
   xt = linspace(-5,5,128)';
