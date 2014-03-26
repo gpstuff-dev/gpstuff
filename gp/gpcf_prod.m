@@ -620,14 +620,14 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_prod_cf2ss(gpcf)
       % Initial function handle 
       fh = @(x) gpcf.cf{k}.fh.cf2ss(gpcf.cf{k});
       
+      % Deal with the periodic (deterministic) covariance function
+      % as a special case
       if isequal(gpcf.cf{k}.type,'gpcf_periodic') && gpcf.cf{k}.decay == 0
-          
-          % Case of periodic covariance function
-          cf2ssvect{k} = @(x) cf2ss_periodicprod(fh);
+        cf2ssvect{k} = @(x) cf2ss_periodicprod(fh);
       else
-          % Other covariance functions
-          cf2ssvect{k} = fh;
+        cf2ssvect{k} = fh;
       end
+      
   end
   
   % Return model matrices, derivatives and parameter information
@@ -637,7 +637,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_prod_cf2ss(gpcf)
 end
 
 function [F,L,Pinf1,H,Pinf,dF,dPinf,dPinf1,params] = cf2ss_periodicprod(fh)
-% CF2SS_PREIODICPROD - Computes Qc values for periodic covariance production
+% CF2SS_PERIODICPROD - Computes Qc values for periodic covariance production
 
  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = fh();
  Pinf1 = Pinf; dPinf1 = dPinf;
