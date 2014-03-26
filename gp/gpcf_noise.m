@@ -76,7 +76,7 @@ function gpcf = gpcf_noise(varargin)
 
 end
 
-function [w, s] = gpcf_noise_pak(gpcf)
+function [w, s, h] = gpcf_noise_pak(gpcf)
 %GPCF_NOISE_PAK  Combine GP covariance function parameters into
 %                one vector.
 %
