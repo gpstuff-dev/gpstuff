@@ -80,9 +80,9 @@ end
 nd=ip.Results.normdata;
 ipnd=inputParser;
 ipnd.FunctionName = 'normdata';
-ipnd.addParamValue('xmean',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
-ipnd.addParamValue('xstd',1,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
-ipnd.addParamValue('xlog',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('xmean',zeros(1,size(x,2)),@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('xstd',ones(1,size(x,2)),@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('xlog',zeros(1,size(x,2)),@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
 ipnd.addParamValue('ymean',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
 ipnd.addParamValue('ystd',1,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
 ipnd.addParamValue('ylog',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
@@ -156,9 +156,7 @@ if length(ind)==1
   end
   if isequal(plot_results, 'on')
     if ind>0
-      if isfield(gp,'normdata')
-        xtnn=denormdata(xtnn,nd.xmean(ind),nd.xstd(ind));
-      end
+      xtnn=denormdata(xtnn,nd.xmean(ind),nd.xstd(ind));
       deltadist=gp_finddeltadist(gp);
       if ~ismember(ind,deltadist)
         switch target
@@ -246,10 +244,8 @@ elseif length(ind)==2
     end
     
     if isequal(plot_results, 'on')
-      if isfield(gp,'normdata')
-        xtnn1=denormdata(xtnn1,nd.xmean(ind(1)),nd.xstd(ind(1)));
-        xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
-      end
+      xtnn1=denormdata(xtnn1,nd.xmean(ind(2)),nd.xstd(ind(2)));
+      xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
       if nu1>2 && nu2==2
         lstyle10='or';lstyle11='-r';lstyle12='--r';
         lstyle20='ob';lstyle21='-b';lstyle22='--b';
@@ -339,10 +335,8 @@ elseif length(ind)==2
     XT1(indd==0) = NaN; XT2(indd==0) = NaN; Ef(indd==0) = NaN; Varf(indd==0) = NaN;
     
     if isequal(plot_results, 'on')
-      if isfield(gp,'normdata')
-        xtnn1=denormdata(xtnn1,nd.xmean(ind(1)),nd.xstd(ind(1)));
-        xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
-      end
+      xtnn1=denormdata(xtnn1,nd.xmean(ind(1)),nd.xstd(ind(1)));
+      xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
       pcolor(reshape(XT1,numel(xtnn2),numel(xtnn1)), reshape(XT2,numel(xtnn2),numel(xtnn1)), reshape(Ef,numel(xtnn2),numel(xtnn1)))
       shading flat
       colormap(mapcolor(Ef,repmat(nanmedian(Ef(:)),[1 2])))
