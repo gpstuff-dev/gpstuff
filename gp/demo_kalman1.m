@@ -1,22 +1,39 @@
 %% Kalman Demo 1 (Sinc Regression)
 %
-% [... add description here ...]
+%  The benefit from the state space formulation is that the 
+%  computational complexity is linear with respect to the number
+%  of data points. Due to efficient matrix solvers in Matlab 
+%  (favoring the traditional GP solution over sequential looping),
+%  the advantages in speed start to show in datasets with thousands
+%  of data points.
 %
-% The implementation that is used below is primarily based on the
-% methods presented in the following publication. If you find this
-% useful as a part of your own research, please cite the paper.
+%  The take-home message from this demo is that the GP can be
+%  set up exactly as any other GP regression model in GPstuff, 
+%  and then solved by Kalman filtering methods by specifying the
+%  'type' in the GP structure to be 'KALMAN'.
 %
-% Simo Sarkka, Arno Solin, Jouni Hartikainen (2013).
-%   Spatiotemporal Learning via Infinite-Dimensional Bayesian
-%   Filtering and Smoothing. IEEE Signal Processing Magazine,
-%   30(4):51-61.
+%  The implementation that is used below is primarily based on the
+%  methods presented in the following publications:
 %
-% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
+%  [1] Simo Sarkka, Arno Solin, Jouni Hartikainen (2013).
+%      Spatiotemporal learning via infinite-dimensional Bayesian
+%      filtering and smoothing. IEEE Signal Processing Magazine,
+%      30(4):51-61.
 %
-% This software is distributed under the GNU General Public
-% License (version 3 or later); please refer to the file
-% License.txt, included with the software, for details.
+%  [2] Jouni Hartikainen and Simo Sarkka (2010). Kalman filtering and 
+%      smoothing solutions to temporal Gaussian process regression 
+%      models. Proceedings of IEEE International Workshop on Machine 
+%      Learning for Signal Processing (MLSP).
 %
+%  [3] Simo Sarkka (2013). Bayesian filtering and smoothing. Cambridge 
+%      University Press.
+%
+%  Copyright (c) 2014 Arno Solin and Jukka Koskenranta
+%
+%  This software is distributed under the GNU General Public
+%  License (version 3 or later); please refer to the file
+%  License.txt, included with the software, for details.
+
 %% Generate data
   
   % Discretize x (measurement points)
@@ -60,7 +77,7 @@
   gp = gp_optim(gp, x, y);
   
   % Predict values at test inputs xt
-  [Ef,Varf] = gp_pred(gp, x, y, 'xt', xt);
+  [Eft,Varft] = gp_pred(gp, x, y, 'xt', xt);
   
   
 %% Compare against full GP solution (table)
@@ -87,13 +104,13 @@
     % Draw 95% uncertainty interval
     color=0.85*[1,1,1];
     p=patch([xt; flipud(xt)], ...
-            [Ef+1.96*sqrt(Varf); flipud(Ef-1.96*sqrt(Varf))],color);
+            [Eft+1.96*sqrt(Varft); flipud(Eft-1.96*sqrt(Varft))],color);
     set(p,'EdgeColor','none')
   
     % Show data and predicted mean
     h=plot(xt,sinc(xt),'-r', ...
            x,y,'+k', ...
-           xt,Ef,'--','LineWidth', 1, 'MarkerSize',5);
+           xt,Eft,'--','LineWidth', 1, 'MarkerSize',5);
        
     % Legend and labels   
     xlabel('Input, x');
