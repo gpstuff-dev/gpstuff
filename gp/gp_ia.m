@@ -460,18 +460,18 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 ind = ceil(j/2);
                 temp(ind)=dir;
                 
-                % Find the scaling parameter so that when we move 2 std
-                % from the mode, the log density drops (approximately) by 2
+                % Find the scaling parameter so that when we move sqrt(2) std
+                % from the mode, the log density drops (approximately) by 1
                 
                 % First order approximation (as in gmrflib/approx-inference.c)
-                lt=-fh_e(w+2*temp*z,gp,x,y,options);
+                lt=-fh_e(w+sqrt(2)*temp*z,gp,x,y,options);
                 if l0>lt
-                  t=sqrt(2/(l0-lt));
+                  t=sqrt(1/(l0-lt));
                 else
                   t=1;
                 end
                 ts(j)=t;
-                sd(points(:,ind)*dir>0, ind) = max(min(t,3),1/3);
+                sd(points(:,ind)*dir>0, ind) = max(min(t,10),1/10);
 
 %              % Alternative more accurate but slower optimization based
 %              % approach. No gradient and single-variable, so use
