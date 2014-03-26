@@ -28,8 +28,8 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_matern52_to_ss(magnSigma2, len
 %               exp(-sqrt(3) |tau|/lengthScale),
 %
 %   where magnSigma2 is the magnitude scale parameter, lengthScale the  
-%   distance scale parameter, nu the smoothness scale parameter and tau 
-%   time difference between states, tau = t-t'.
+%   distance scale parameter, and tau the time difference between states, 
+%   tau = t-t'.
 %     This function takes the covariance function parameters as inputs and
 %   outputs the corresponding state space model matrices. The state space
 %   model is given as follows in terms of a stochastic differential
@@ -37,34 +37,47 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_matern52_to_ss(magnSigma2, len
 %
 %      df(t)/dt = F f(t) + L w(t),
 %
-%   where w(t) is a white noise process with spectral denisty Qc.
-%   Observation model for discrete observation y_k of f(t_k) at step k, 
+%   where w(t) is a white noise process with spectral denisty Qc. The
+%   observation model for discrete observation y_k of f(t_k) at step k, 
 %   is as follows 
 %
-%      y_k = H f(t_k) + r_k, r_k ~ N(0, R) 
+%      y_k = H f(t_k) + r_k, r_k ~ N(0, R),
 %
-%   where r_k is the Gaussian measurement noise wit covariance R.
-%     Pinf is the stationary covariance between states. Value of Pinf at 
-%   the column j and row i, Pinf(i,j), is defined as follow,
+%   where r_k is the Gaussian measurement noise with covariance R.
+%     Pinf is the stationary covariance, where the value of Pinf(i,j), 
+%   is defined as follows
 %   
 %      Pinf(i,j) = E[(f_i(t)-E[f_i(t)])(f_j(t)-E[f_j(t)])],
 %
 %   where f_i(t) is component i of state vector f(t).
-%     Derivatives: All have same form, for example, dF has the following
+%     Derivatives: All have same form. For example, dF has the following
 %   form:
 %
 %       dF(:,:,1) = dF/d(magnSigma2 = input parameter_1),
-%       dF(:,:,i) = dF/d(input parameter_i),
+%       dF(:,:,i) = dF/d(input parameter_i).
 %
-%   where d is partial derivative. All derivatives (d*) has 3 dimensions.
+% References:
+%
+%   [1] Simo Sarkka, Arno Solin, Jouni Hartikainen (2013).
+%       Spatiotemporal learning via infinite-dimensional Bayesian
+%       filtering and smoothing. IEEE Signal Processing Magazine,
+%       30(4):51-61.
+%
+%   [2] Jouni Hartikainen and Simo Sarkka (2010). Kalman filtering and 
+%       smoothing solutions to temporal Gaussian process regression 
+%       models. Proceedings of IEEE International Workshop on Machine 
+%       Learning for Signal Processing (MLSP).
 %
 % See also:
 %   COV_MATERN52, SPEC_MATERN52
 %
 % Copyright:
-%   2012-2013 Arno Solin
-%   2013      Jukka Koskenranta
+%   2012-2014   Arno Solin
+%   2013-2014   Jukka Koskenranta
 %
+%  This software is distributed under the GNU General Public
+%  License (version 3 or later); please refer to the file
+%  License.txt, included with the software, for details.
 
 %% Apply defaults
 
