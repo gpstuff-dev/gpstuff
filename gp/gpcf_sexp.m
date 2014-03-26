@@ -1340,6 +1340,10 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_sexp_cf2ss(gpcf)
   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
       cf_se_to_ss(gpcf.magnSigma2,gpcf.lengthScale,gpcf.N);
   
+  % Balance matrices for numerical stability
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf] = ...
+      ss_balance(F,L,Qc,H,Pinf,dF,dQc,dPinf);
+  
   % Check optimized parameters
   if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
   if isempty(gpcf.p.lengthScale), ind(2) = false; else ind(2) = true; end

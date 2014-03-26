@@ -1128,6 +1128,9 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_periodic_cf2ss(gpcf)
           gpcf.period,gpcf.lengthScale_sexp,gpcf.N, ...
           inf,gpcf.N_sexp,gpcf.valid);
       
+      % Balance matrices for numerical stability
+      [F,L,Qc,H,Pinf,dF,dQc,dPinf] = ...
+        ss_balance(F,L,Qc,H,Pinf,dF,dQc,dPinf);
       
       % Check optimized parameters
       if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
