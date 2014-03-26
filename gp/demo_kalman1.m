@@ -60,7 +60,7 @@
   gp = gp_optim(gp, x, y);
   
   % Predict values at test inputs xt
-  [meanf,Varf] = gp_pred(gp, x, y, 'xt', xt);
+  [Ef,Varf] = gp_pred(gp, x, y, 'xt', xt);
   
   
 %% Compare against full GP solution (table)
@@ -87,13 +87,13 @@
     % Draw 95% uncertainty interval
     color=0.85*[1,1,1];
     p=patch([xt; flipud(xt)], ...
-            [meanf+1.96*sqrt(Varf); flipud(meanf-1.96*sqrt(Varf))],color);
+            [Ef+1.96*sqrt(Varf); flipud(Ef-1.96*sqrt(Varf))],color);
     set(p,'EdgeColor','none')
   
     % Show data and predicted mean
     h=plot(xt,sinc(xt),'-r', ...
            x,y,'+k', ...
-           xt,meanf,'--','LineWidth', 1, 'MarkerSize',5);
+           xt,Ef,'--','LineWidth', 1, 'MarkerSize',5);
        
     % Legend and labels   
     xlabel('Input, x');
