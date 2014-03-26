@@ -24,6 +24,7 @@ function gpcf = gpcf_sexp(varargin)
 %      selectedVariables - vector defining which inputs are used [all]
 %                          selectedVariables is shorthand for using
 %                          metric_euclidean with corresponding components
+%      N                 - Degree of approximation in type 'KALMAN' [6]
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in
@@ -34,6 +35,7 @@ function gpcf = gpcf_sexp(varargin)
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -45,6 +47,7 @@ function gpcf = gpcf_sexp(varargin)
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('magnSigma2',0.1, @(x) isscalar(x) && x>0);
   ip.addParamValue('lengthScale',1, @(x) isvector(x) && all(x>0));
+  ip.addParamValue('N',6, @(x) isscalar(x) && mod(x,1)==0);
   ip.addParamValue('metric',[], @isstruct);
   ip.addParamValue('magnSigma2_prior', prior_logunif(), ...
                    @(x) isstruct(x) || isempty(x));
@@ -71,6 +74,9 @@ function gpcf = gpcf_sexp(varargin)
   end
   if init || ~ismember('magnSigma2',ip.UsingDefaults)
     gpcf.magnSigma2 = ip.Results.magnSigma2;
+  end
+  if init || ~ismember('N',ip.UsingDefaults)
+    gpcf.N = ip.Results.N;
   end
 
   % Initialize prior structure
@@ -147,6 +153,7 @@ function gpcf = gpcf_sexp(varargin)
     gpcf.fh.trcov  = @gpcf_sexp_trcov;
     gpcf.fh.trvar  = @gpcf_sexp_trvar;
     gpcf.fh.recappend = @gpcf_sexp_recappend;
+    gpcf.fh.cf2ss = @gpcf_sexp_cf2ss;
   end
 
 end
@@ -1339,4 +1346,41 @@ function reccf = gpcf_sexp_recappend(reccf, ri, gpcf)
     end
   
   end
+end
+
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_sexp_cf2ss(gpcf)
+%GPCF_SEXP_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the covariance function to state space form such that
+%    the process can be described by the stochastic differential equation
+%    of the form: 
+%      df(t)/dt = F f(t) + L w(t),
+%    where w(t) is a white noise process. The observation model now 
+%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
+%
+%  References:
+%    Simo Sarkka, Arno Solin, Jouni Hartikainen (2013).
+%    Spatiotemporal learning via infinite-dimensional Bayesian
+%    filtering and smoothing. IEEE Signal Processing Magazine,
+%    30(4):51-61.
+%
+
+  % Return model matrices, derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
+      cf_se_to_ss(gpcf.magnSigma2,gpcf.lengthScale,gpcf.N);
+  
+  % Balance matrices for numerical stability
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf] = ...
+      ss_balance(F,L,Qc,H,Pinf,dF,dQc,dPinf);
+  
+  % Check which parameters are optimized
+  if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
+  if isempty(gpcf.p.lengthScale), ind(2) = false; else ind(2) = true; end
+  
+  % Return only those derivatives that are needed
+  dF    = dF(:,:,ind);
+  dQc   = dQc(:,:,ind);
+  dPinf = dPinf(:,:,ind);
+  
 end
