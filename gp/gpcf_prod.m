@@ -611,13 +611,31 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_prod_cf2ss(gpcf)
   % funktions to state-space 
   cf2ssvect = cell(length(gpcf.cf),1);
   for k = 1:length(gpcf.cf)
-      cf2ssvect{k} = @(x) gpcf.cf{k}.fh.cf2ss(gpcf.cf{k});
+     
+      % Initial function handle 
+      fh = @(x) gpcf.cf{k}.fh.cf2ss(gpcf.cf{k});
+      
+      if isequal(gpcf.cf{k}.type,'gpcf_periodic') && gpcf.cf{k}.decay == 0
+          
+          % Case of periodic covariance function
+          cf2ssvect{k} = @(x) cf2ss_periodicprod(fh);
+      else
+          % Other covariance functions
+          cf2ssvect{k} = fh;
+      end
   end
   
   % Return model matrices, derivatives and parameter information
   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
       cf_prod_to_ss(cf2ssvect);
   
+end
+
+function [F,L,Pinf1,H,Pinf,dF,dPinf,dPinf1,params] = cf2ss_periodicprod(fh)
+% CF2SS_PREIODICPROD - Computes Qc values for periodic covariance production
+
+ [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = fh();
+ Pinf1 = Pinf; dPinf1 = dPinf;
 end
 
 
