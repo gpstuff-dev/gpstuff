@@ -117,7 +117,9 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss (magnSigma2, lengthSc
   
   % Compute Pinf only if requested
   if nargout > 4,
-    Pinf = are(F',zeros(size(F)),L*Qc*L');
+    %Pinf = are(F',zeros(size(F)),L*Qc*L');
+    Pinf = lyap2(F,L*Qc*L');
+    Pinf = (Pinf+Pinf')/2;
   end
   
 %% Calculate derivatives %TODO
