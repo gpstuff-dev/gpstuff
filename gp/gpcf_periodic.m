@@ -1127,8 +1127,8 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_periodic_cf2ss(gpcf)
 %    Conference on Artifcial Intelligence and Statistics (AISTATS 2014).
 %
 
-  if gpcf.decay
   % Case squared exponential (i.e. quasi-periodic)
+  if gpcf.decay
       
       % Return model matrices, derivatives and parameter information
       [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
@@ -1152,8 +1152,8 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_periodic_cf2ss(gpcf)
       dQc(:,:,[3,4])   = dQc(:,:,[4,3]);
       dPinf(:,:,[3,4]) = dPinf(:,:,[4,3]);
       
-  else
   % Case without squared exponential (i.e. purely periodic)
+  else
       
       % Return model matrices, derivatives and parameter information
       [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...

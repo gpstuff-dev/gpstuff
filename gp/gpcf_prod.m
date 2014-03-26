@@ -11,6 +11,7 @@ function gpcf = gpcf_prod(varargin)
   
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -597,18 +598,22 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
 end
 
 function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_prod_cf2ss(gpcf)
-%GPCF_MATERN32_CF2SS Convert the covariance function to state space form
+%GPCF_PROD_CF2SS Convert the covariance function to state space form
 %
 %  Description
-%    Convert the covariance function to state space form such that
-%    the process can be described by the stochastic differential equation
-%    of the form: 
-%      df(t)/dt = F f(t) + L w(t),
-%    where w(t) is a white noise process. The observation model now 
-%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
+%    Convert the sum of two covariance functions to the corresponding
+%    sum of two state space models. Details on how this is done can
+%    be found in the reference:
+%
+%  References
+%    Arno Solin and Simo Sarkka (2014). Explicit link between periodic 
+%    covariance functions and state space models. Accepted for 
+%    publication in Proceedings of the Seventeenth International 
+%    Conference on Artifcial Intelligence and Statistics (AISTATS 2014).
+%
 
-  % Vector of function handles of conversion functions from covariance 
-  % funktions to state-space 
+  % Vector of function handles of conversion functions 
+  % from covariance functions to state space 
   cf2ssvect = cell(length(gpcf.cf),1);
   for k = 1:length(gpcf.cf)
       cf2ssvect{k} = @(x) gpcf.cf{k}.fh.cf2ss(gpcf.cf{k});
