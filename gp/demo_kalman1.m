@@ -45,8 +45,8 @@
   pm = prior_logunif();
   
   % The GP covariance function
-  gpcf = gpcf_matern52('lengthScale', lengthScale, ...
-                       'magnSigma2', magnSigma2, ...
+  gpcf = gpcf_matern52('lengthScale', 1, ...
+                       'magnSigma2', 1, ...
                        'lengthScale_prior', pl, ...
                        'magnSigma2_prior', pm);
   
@@ -61,7 +61,7 @@
   
   % Predict values at test inputs xt
   [meanf,Varf] = gp_pred(gp, x, y, 'xt', xt);
- 
+  
   
 %% Compare against full GP solution (table)
 

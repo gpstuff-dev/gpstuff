@@ -1,32 +1,31 @@
-%% Kalman demo 2, Periodic Mauna Loa
-
-
+%% Kalman Demo 2  (Mauna Loa Periodic CO2 Readings)
+%
+%
+%
+%
 %% Load the data
 
   % Load the data
   S = which('demo_kalman2.m');
   L = strrep(S,'demo_kalman2.m','demodata/maunaloa_data.txt');
-  
+
+  % Set training data (x = time in years, y = CO2 observations)
   data=load(L);
-  y = data(:, 2:13);
-  y=y';
-  y=y(:);
-  x = (data(1):1/12:data(end,1)+11/12)';
+  y = data(:, 2:13)';  y=y(:);
+  x = (data(1,1):1/12:data(end,1)+11/12)';
   
-  % Remove data points with error
-  x = x(y>0);
-  y = y(y>0);
+  % Remove data points with missing information
+  x = x(y>0); y = y(y>0);
   
-  % Remove mean from data
-  ymean = mean(y);
-  y = y-ymean;
+  % Make data zero mean
+  ymean = mean(y); y = y-ymean;
   
   % Show original data
   figure(1); clf
     plot(x,y+ymean,'-k')
     xlabel('Time (year)');
     ylabel('CO_2 concentration (PPM)')
-  title('Kalman demo 2, Periodic Mauna Loa - Data')
+    title('Kalman Demo 2  (Mauna Loa Periodic CO2 Readings) - Data')
   
   
 %% Construct the model
@@ -67,10 +66,50 @@
   % Set used type to KALMAN
   gp = gp_set(gp,'type','KALMAN');
   
+  
+%% Set up GP model
+
+  % Noise variance prior
+  ps2 = prior_logunif(); 
+
+  % The likelihood model
+  lik = lik_gaussian('sigma2', 1, 'sigma2_prior', ps2);
+  
+  % Covariance function hyperparameter priors
+  pl = prior_logunif(); 
+  pm = prior_logunif();
+  
+  % A squared exponential covariance function 
+  % to deal with the smooth long term effects
+  gpcf1 = gpcf_sexp('lengthScale', 100, 'magnSigma2', 5000, ...
+                    'lengthScale_prior',pl,'magnSigma2_prior',pl);
+
+  % A quasi-periodic covariance function deals with peridic 
+  % variation in the data. The quasi-periodic covariance function 
+  % is a product of a periodic covariance function and a squared
+  % exponential. 
+  gpcf2 = gpcf_periodic('magnSigma2',1,'lengthScale',1,'period',1, ...
+                        'decay',1,'lengthScale_sexp',100, ...
+                        'lengthScale_prior',pl,'magnSigma2_prior',pl, ...
+                        'lengthScale_sexp_prior',pl);
+
+                
+  % A Matern52 covariance function deals with short term
+  % non-periodic effects that remain otherwise unexplained
+  gpcf3 = gpcf_matern52('lengthScale', 10, 'magnSigma2', 10, ...
+                        'lengthScale_prior',pl,'magnSigma2_prior',pl);
+
+  % Finally create the GP structure
+  gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3});
+  
+  % Set used type to KALMAN
+  gp = gp_set(gp,'type','KALMAN');
+
+  
 %% Optimize hyperparameters and predict
 
   % Find hyperparameters
-  opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
+  opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','GradObj','off');
   gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
   
   % Set the predicted area
@@ -83,9 +122,6 @@
   [Eft_full1, Varft_full1] = gp_pred(gp, x, y, x, 'predcf', 1);
   [Eft_full2, Varft_full2] = gp_pred(gp, x, y, x, 'predcf', [2 3]);
   
-  % Return mean
-  y = y + ymean;
-  meanf = meanf + ymean;
  
 %% Show result
 
