@@ -22,7 +22,7 @@ if ~(exist(path, 'dir') == 7)
     mkdir(path)
 end
 path = strcat(path, '/testKalman1'); 
-save(path, 'Ef', 'Varf', 'Covft');
+save(path, 'Eft', 'Varft', 'Covft');
 
 % Set back initial random stream
 setrandstream(prevstream);
@@ -31,8 +31,8 @@ drawnow;clear;close all
 % Compare test values to real values.
 
 function testPredictionsKalman1
-values.real = load('realValuesKalman1', 'Ef', 'Varf','Covft');
-values.test = load(strrep(which('test_kalman1.m'), 'test_kalman1.m', 'testValues/testKalman1'), 'Ef', 'Varf','Covft');
-assertElementsAlmostEqual(values.real.Ef, values.test.Ef, 'relative', 0.10);
-assertElementsAlmostEqual(values.real.Varf, values.test.Varf, 'relative', 0.10);
+values.real = load('realValuesKalman1', 'Eft', 'Varft','Covft');
+values.test = load(strrep(which('test_kalman1.m'), 'test_kalman1.m', 'testValues/testKalman1'), 'Eft', 'Varft','Covft');
+assertElementsAlmostEqual(values.real.Eft, values.test.Eft, 'relative', 0.10);
+assertElementsAlmostEqual(values.real.Varft, values.test.Varft, 'relative', 0.10);
 assertElementsAlmostEqual(values.real.Covft, values.test.Covft, 'relative', 0.10);
