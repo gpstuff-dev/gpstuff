@@ -5,8 +5,8 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss (magnSigma2, lengthSc
 %   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss(magnSigma2, lengthScale, N)
 %
 % In:
-%   magnSigma2  - Matern magnitude scale parameter (default: 1)
-%   lengthScale - Matern distance scale parameter (default: 1)
+%   magnSigma2  - Magnitude scale parameter (default: 1)
+%   lengthScale - Length scale parameter (default: 1)
 %   N           - Degree of approximation (default: 6)
 %
 % Out:
@@ -28,7 +28,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss (magnSigma2, lengthSc
 %     k(t) = magnSigma2 exp(-|t|^2/(2 lengthScale^2))
 %
 %   where magnSigma2 is the magnitude scale parameter, lengthScale the  
-%   distance scale parameter and nu the smoothness scale parameter.
+%   distance scale parameter.
 %     This function takes the covariance function parameters as inputs and
 %   outputs the corresponding state space model matrices. The state space
 %   model is given as follows in terms of a stochastic differential
@@ -36,34 +36,55 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss (magnSigma2, lengthSc
 %
 %      df(t)/dt = F f(t) + L w(t),
 %
-%   where w(t) is a white noise process with spectral denisty Qc.
-%   Observation model for discrete observation y_k of f(t_k) at step k, 
+%   where w(t) is a white noise process with spectral denisty Qc. The
+%   observation model for discrete observation y_k of f(t_k) at step k, 
 %   is as follows 
 %
-%      y_k = H f(t_k) + r_k, r_k ~ N(0, R) 
+%      y_k = H f(t_k) + r_k, r_k ~ N(0, R),
 %
-%   where r_k is the Gaussian measurement noise wit covariance R.
-%     Pinf is the stationary covariance between states. Value of Pinf at 
-%   the column j and row i, Pinf(i,j), is defined as follow,
+%   where r_k is the Gaussian measurement noise with covariance R.
+%     Pinf is the stationary covariance, where the value of Pinf(i,j), 
+%   is defined as follows
 %   
 %      Pinf(i,j) = E[(f_i(t)-E[f_i(t)])(f_j(t)-E[f_j(t)])],
 %
 %   where f_i(t) is component i of state vector f(t).
-%     Derivatives: All have same form, for example, dF has the following
+%     Derivatives: All have same form. For example, dF has the following
 %   form:
 %
 %       dF(:,:,1) = dF/d(magnSigma2 = input parameter_1),
-%       dF(:,:,i) = dF/d(input parameter_i),
+%       dF(:,:,i) = dF/d(input parameter_i).
 %
-%   where d is partial derivative. All derivatives (d*) has 3 dimensions.
+%     NOTE: In case of the squared exponential covariance function, the
+%   state space model is just an approximation. In this implementation
+%   the approximation is constructed by a Taylor expansion. The degree
+%   of the approximation may be controlled through the parameter 'N'.
+%   The resulting state space model might become numerically unstable.
+%   Numerical robustness may be enhanced by calling 'ss_balance'.
+%
+% References:
+%
+%   [1] Simo Sarkka, Arno Solin, Jouni Hartikainen (2013).
+%       Spatiotemporal learning via infinite-dimensional Bayesian
+%       filtering and smoothing. IEEE Signal Processing Magazine,
+%       30(4):51-61.
+%
+%   [2] Jouni Hartikainen and Simo Sarkka (2010). Kalman filtering and 
+%       smoothing solutions to temporal Gaussian process regression 
+%       models. Proceedings of IEEE International Workshop on Machine 
+%       Learning for Signal Processing (MLSP).
 %
 % See also:
-%   COV_SE, SPEC_SE
+%   COV_SE, SPEC_SE, SS_BALANCE
 %
 % Copyright:
-%   2012-2013 Arno Solin
-%   2013      Jukka Koskenranta
+%   2012-2014   Arno Solin
+%   2013-2014   Jukka Koskenranta
 %
+%  This software is distributed under the GNU General Public
+%  License (version 3 or later); please refer to the file
+%  License.txt, included with the software, for details.
+
 
 %% Apply defaults
 
@@ -76,14 +97,14 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss (magnSigma2, lengthSc
   % Check if N is given
   if nargin < 3 || isempty(N), N = 6; end
 
-%% Form state space model
   
+%% Form state space model
   
   % Derived constants
   kappa = 1/2/lengthScale^2;
   
   % Precalculate factorial
-  fn = factorial(N); %same as N!
+  fn = factorial(N);
   
   % Process noise spectral density
   Qc = magnSigma2*sqrt(pi/kappa)*fn*(4*kappa)^N;
@@ -117,12 +138,19 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss (magnSigma2, lengthSc
   
   % Compute Pinf only if requested
   if nargout > 4,
-    %Pinf = are(F',zeros(size(F)),L*Qc*L');
+    
+    % Solve the corresponding Lyapunov problem
+    %   F*Pinf + Pinf*F' + L*Qc*L' = 0
     Pinf = lyap2(F,L*Qc*L');
-    Pinf = (Pinf+Pinf')/2;
+
+    % The same thing can be solved as a solution to the
+    % algebraic Riccati equation (less stable) 
+    %Pinf = are(F',zeros(size(F)),L*Qc*L');
+
   end
   
-%% Calculate derivatives %TODO
+  
+%% Calculate derivatives
 
   % Calculate derivatives only if requested
   if nargout > 5
@@ -133,7 +161,6 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss (magnSigma2, lengthSc
     % Derivative of F w.r.t parameter lengthScale
     dFlengthScale = zeros(size(F));
     dFlengthScale(end,:) = -a(end:-1:2)/lengthScale.*(-N:1:-1);
-    
     
     % Derivative of Qc w.r.t. parameter magnSigma2
     dQcmagnSigma2 = sqrt(pi/kappa)*fn*(4*kappa)^N;

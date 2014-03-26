@@ -1,27 +1,46 @@
 function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_sum_to_ss(cf2ss)  
-% CF_SUM_TO_SS - Multiple temporal SS forms into a one model
+%% CF_SUM_TO_SS - Sum of several state space models
 %
 % Syntax:
-%   [F,L,Qc,H,P0,dF,dQc,dPinf,dR,Hs] = cf_sum_to_ss(cf2ss)  
+%   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_sum_to_ss(cf2ss)
 %
 % In:
-%   cf2ss       - Cell vector of function handles,
-%                 [Fj,Lj,Qcj,Hj,Pinfj,dFj,dQcj,dPinfj] = cf2ss{k}();  
+%   cf2ss       - Cell vector of function handles (see below)
 %
 % Out:
-%   F           - Feedback matrix for superposition model
-%   L           - Noise effect matrix for superposition model
-%   Qc          - Spectral density of white noise process w(t) for superposition model
-%   H           - Observation model matrix for superposition model
-%   Pinf        - Covariance of the stationary process for superposition model
-%   dF          - Derivatives of F w.r.t. parameters for superposition model
-%   dQc         - Derivatives of Qc w.r.t. parameters for superposition model
-%   dPinf       - Derivatives of Pinf w.r.t. parameters for superposition model
-%   Hs          - Componentwise observation model matrix 
+%   F           - Feedback matrix
+%   L           - Noise effect matrix
+%   Qc          - Spectral density of white noise process w(t)
+%   H           - Observation model matrix
+%   Pinf        - Covariance of the stationary process
+%   dF          - Derivatives of F w.r.t. parameters
+%   dQc         - Derivatives of Qc w.r.t. parameters
+%   dPinf       - Derivatives of Pinf w.r.t. parameters
+%   params      - Input and output parameter information
+%
+% Description:
+%   Calculate the state space formulation corresponding the the following
+%   covariance function:
+%
+%     k(t) = k_1(t) + k_2(t) + ... + k_n(t),
+%    
+%   that is, the state space model of a sum of several state space
+%   models. The state space model corresponding to covaraince function
+%   k_j is given by the function handle in cf2ss{j} such that:
+%
+%     [F,L,Qc,H,Pinf,dF,dQc,dPinf] = cf2ss{k}();
 %
 % Copyright:
-%   2014      Jukka Koskenranta
+%   2012-2014   Arno Solin
+%   2013-2014   Jukka Koskenranta
+%
+%   This software is distributed under the GNU General Public
+%   License (version 3 or later); please refer to the file
+%   License.txt, included with the software, for details.
 
+%% Sums of two state space models by stacking the models
+
+  % Initialize model matrices
   F      = [];
   L      = [];
   Qc     = [];
@@ -60,9 +79,8 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_sum_to_ss(cf2ss)
   end
 end
 
-
 function C = mblk(A,B)
-% 3 dimensional version of blk function
+% Three-dimensional version of the blk function
 
   % Get sizes
   sA=size(A); sB=size(B);

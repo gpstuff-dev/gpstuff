@@ -51,10 +51,10 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_quasiperiodic_to_ss(magnSigma2
 %   where r_k is the Gaussian measurement noise wit covariance R.
 %
 % References:
-%   Arno Solin and Simo Särkkä (2014). Explicit link between periodic 
-%     covariance functions and state space models. In Proceedings of the 
-%     Seventeenth International Conference on Artifcial Intelligence and 
-%     Statistics (AISTATS 2014). JMLR: W&CP, volume 33.
+%   [1] Arno Solin and Simo Särkkä (2014). Explicit link between periodic 
+%       covariance functions and state space models. In Proceedings of the 
+%       Seventeenth International Conference on Artifcial Intelligence and 
+%       Statistics (AISTATS 2014). JMLR: W&CP, volume 33.
 %
 % See also:
 %   CF_PERIODIC_TO_SS, CF_MATERN_TO_SS, SPEC_QUASIPERIODIC, COV_QUASIPERIODIC
@@ -62,6 +62,9 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_quasiperiodic_to_ss(magnSigma2
 % Copyright:
 %   2012-2014 Arno Solin
 %
+%  This software is distributed under the GNU General Public
+%  License (version 3 or later); please refer to the file
+%  License.txt, included with the software, for details.
 
 %% Apply defaults
 

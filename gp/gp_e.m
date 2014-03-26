@@ -484,15 +484,23 @@ switch gp.type
     % ============================================================
     % Kalman filtering and smoothing
     % ============================================================
-    
+    %
     % The implementation below is primarily based on the methods 
     % presented in the following publication. If you find this 
-    % useful as a part of your own research, please cite the paper.
+    % useful as a part of your own research, please cite the papers.
     %
-    % Simo Sarkka, Arno Solin, Jouni Hartikainen (2013). 
-    %   Spatiotemporal Learning via Infinite-Dimensional Bayesian 
-    %   Filtering and Smoothing. IEEE Signal Processing Magazine, 
-    %   30(4):51-61.
+    %  [1] Simo Sarkka, Arno Solin, Jouni Hartikainen (2013).
+    %      Spatiotemporal learning via infinite-dimensional Bayesian
+    %      filtering and smoothing. IEEE Signal Processing Magazine,
+    %      30(4):51-61.
+    %
+    %  [2] Simo Sarkka (2013). Bayesian filtering and smoothing. 
+    %      Cambridge University Press.
+    %
+    %  [3] Simo Sarkka (2006). Recursive Bayesian inference on stochastic
+    %      differential equations. Doctoral dissertation, Helsinki 
+    %      University of Technology, Filand.
+    %
     
     % Ensure that this is a purely temporal problem
     if size(x,2) > 1,

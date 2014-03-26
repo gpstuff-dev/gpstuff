@@ -889,6 +889,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_exp_cf2ss(gpcf)
 %    Spatiotemporal learning via infinite-dimensional Bayesian
 %    filtering and smoothing. IEEE Signal Processing Magazine,
 %    30(4):51-61.
+%
 
   % Return model matrices, derivatives and parameter information
   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
