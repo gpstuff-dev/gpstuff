@@ -135,7 +135,7 @@
     legend('95% confidence region', ...
            'Monthly average measurements',...
            'Location', 'NorthWest');
-
+    
     % Axis options
     box on; axis tight; set(gca,'Layer','top')
 
