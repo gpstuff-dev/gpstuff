@@ -179,7 +179,7 @@ function gp = gp_set(varargin)
 %    of the 24th Conference on Uncertainty in Artificial
 %    Intelligence.
 %
-%    Simo Sarkka, Arno Solin, Jouni Hartikainen (2013). 
+%    Sarkka, S., Solin, A., Hartikainen, J. (2013). 
 %    Spatiotemporal learning via infinite-dimensional Bayesian 
 %    filtering and smoothing. IEEE Signal Processing Magazine, 
 %    30(4):51-61.
@@ -351,7 +351,7 @@ function gp = gp_set(varargin)
   if ismember(gp.type,{'KALMAN'})
       
     % Check likelihood function
-    if ~strcmpi(gp.lik.type,'Gaussian') && ~strcmpi(gp.lik.type,'Poisson')
+    if ~strcmpi(gp.lik.type,'Gaussian')
       error('The ''KALMAN'' option only supports Gaussian likelihoods.')
     end
     

@@ -888,6 +888,7 @@ switch gp.type
     L    = [];
     Qc   = [];
     H    = [];
+    Hs   = [];
     Pinf = [];
     
     % For each covariance function
@@ -896,6 +897,13 @@ switch gp.type
       % Form state-space model from the gp.cf{j}
       [jF,jL,jQc,jH,jPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
     
+      % Make Hs according to requested covariance components
+      if isempty(predcf) || any(predcf==j)
+        Hs = [Hs jH];  
+      else
+        Hs = [Hs 0*jH];  
+      end
+      
       % Stack model
       F    = blkdiag(F,jF);
       L    = blkdiag(L,jL);
@@ -959,7 +967,7 @@ switch gp.type
       
     end
     
-    % Run RTS-smoother
+    % Run Rauch-Tung-Striebel smoother
     for k=size(MS,2)-1:-1:1
       
       % Smoothing step (using Cholesky for stability)
@@ -993,13 +1001,13 @@ switch gp.type
       Covft = zeros(size(PS,3));
         
       % Variances
-      Varft  = arrayfun(@(k) H*PS(:,:,k)*H',1:size(PS,3))';
+      Varft  = arrayfun(@(k) Hs*PS(:,:,k)*Hs',1:size(PS,3))';
         
       % Lower triangular
       for k = 1:size(PS,3)-1
         GSS = GS(:,:,k);
         for j=1:size(PS,3)-k
-          Covft(k+j,k) = H*(GSS*PS(:,:,k+j))*H';
+          Covft(k+j,k) = Hs*(GSS*PS(:,:,k+j))*Hs';
           GSS = GSS*GS(:,:,k+j);
         end
       end
@@ -1014,12 +1022,11 @@ switch gp.type
     
     % These indices shall remain
     MS = MS(:,return_ind);
-    GS = GS(:,:,return_ind);
-    PS = PS(:,:,return_ind);
     
     % Return mean as column vector
-    Eft = (H*MS)';
+    Eft = (Hs*MS)';
     
+    % Return posterior predictive values
     if nargout > 2
         
       % Return posterior predictive mean
