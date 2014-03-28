@@ -13,7 +13,7 @@ function lik = lik_negbin(varargin)
 %
 %    Parameters for Negative-binomial likelihood [default]
 %      disper       - dispersion parameter r [10]
-%      disper_prior - prior for disper [prior_logunif]
+%      disper_prior - prior for disper [prior_gamma('sh',2,'is',.1)]
 %  
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in
@@ -30,10 +30,11 @@ function lik = lik_negbin(varargin)
 %    whose components are transformed to relative risk
 %    exp(f_i). 
 %
-%    When using the Negbin likelihood you need to give the vector z
-%    as an extra parameter to each function that requires also y. 
-%    For example, you should call gpla_e as follows: gpla_e(w, gp,
-%    x, y, 'z', z)
+%    When using the Negbin likelihood you can give the
+%    vector z as an extra parameter to each function that requires
+%    also y. For example, you can call gp_optim as follows:
+%      gp_optim(gp, x, y, 'z', z)
+%    If z is not given or it is empty, then z_i=1 is used.
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
@@ -51,7 +52,8 @@ function lik = lik_negbin(varargin)
   ip.FunctionName = 'LIK_NEGBIN';
   ip.addOptional('lik', [], @isstruct);
   ip.addParamValue('disper',10, @(x) isscalar(x) && x>0);
-  ip.addParamValue('disper_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('disper_prior',prior_gamma('sh',2,'is',.1), ...
+                   @(x) isstruct(x) || isempty(x));
   ip.parse(varargin{:});
   lik=ip.Results.lik;
   
@@ -207,13 +209,9 @@ function ll = lik_negbin_ll(lik, y, f, z)
 %  See also
 %    LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, LIK_NEGBIN_LLG2, GPLA_E
   
-  if isempty(z)
-    error(['lik_negbin -> lik_negbin_ll: missing z!    '... 
-           'Negbin likelihood needs the expected number of    '...
-           'occurrences as an extra input z. See, for         '...
-           'example, lik_negbin and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
-
   
   r = lik.disper;
   mu = exp(f).*z;
@@ -234,13 +232,9 @@ function llg = lik_negbin_llg(lik, y, f, param, z)
 %  See also
 %    LIK_NEGBIN_LL, LIK_NEGBIN_LLG2, LIK_NEGBIN_LLG3, GPLA_E
 
-  if isempty(z)
-    error(['lik_negbin -> lik_negbin_llg: missing z!    '... 
-           'Negbin likelihood needs the expected number of    '...
-           'occurrences as an extra input z. See, for         '...
-           'example, lik_negbin and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
-
   
   mu = exp(f).*z;
   r = lik.disper;
@@ -283,11 +277,8 @@ function llg2 = lik_negbin_llg2(lik, y, f, param, z)
 %  See also
 %    LIK_NEGBIN_LL, LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, GPLA_E
 
-  if isempty(z)
-    error(['lik_negbin -> lik_negbin_llg2: missing z!   '... 
-           'Negbin likelihood needs the expected number of    '...
-           'occurrences as an extra input z. See, for         '...
-           'example, lik_negbin and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
 
   
@@ -321,13 +312,9 @@ function llg3 = lik_negbin_llg3(lik, y, f, param, z)
 %  See also
 %    LIK_NEGBIN_LL, LIK_NEGBIN_LLG, LIK_NEGBIN_LLG2, GPLA_E, GPLA_G
 
-  if isempty(z)
-    error(['lik_negbin -> lik_negbin_llg3: missing z!   '... 
-           'Negbin likelihood needs the expected number of    '...
-           'occurrences as an extra input z. See, for         '...
-           'example, lik_negbin and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
-
   
   mu = exp(f).*z;
   r = lik.disper;
@@ -360,15 +347,13 @@ function [logM_0, m_1, sigm2hati1] = lik_negbin_tiltedMoments(lik, y, i1, sigm2_
 %  See also
 %    GPEP_E
   
-%  if isempty(z)
-%    error(['lik_negbin -> lik_negbin_tiltedMoments: missing z!'... 
-%           'Negbin likelihood needs the expected number of            '...
-%           'occurrences as an extra input z. See, for                 '...
-%           'example, lik_negbin and gpep_e.                       ']);
-%  end
+  if numel(z)==0
+    avgE = ones(size(i1));
+  else
+    avgE = z(i1);
+  end
   
   yy = y(i1);
-  avgE = z(i1);
   r = lik.disper;
   logM_0=zeros(size(yy));
   m_1=zeros(size(yy));
@@ -427,15 +412,13 @@ function [g_i] = lik_negbin_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %  See also
 %    GPEP_G
 
-  if isempty(z)
-    error(['lik_negbin -> lik_negbin_siteDeriv: missing z!'... 
-           'Negbin likelihood needs the expected number of        '...
-           'occurrences as an extra input z. See, for             '...
-           'example, lik_negbin and gpla_e.                   ']);
+  if numel(z)==0
+    avgE = ones(size(i1));
+  else
+    avgE = z(i1);
   end
 
   yy = y(i1);
-  avgE = z(i1);
   r = lik.disper;
   
   % get a function handle of an unnormalized tilted distribution 
@@ -487,11 +470,8 @@ function [lpy, Ey, Vary] = lik_negbin_predy(lik, Ef, Varf, yt, zt)
 %  See also
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-  if isempty(zt)
-    error(['lik_negbin -> lik_negbin_predy: missing zt!'... 
-           'Negbin likelihood needs the expected number of    '...
-           'occurrences as an extra input zt. See, for         '...
-           'example, lik_negbin and gpla_e.               ']);
+  if numel(zt)==0
+    zt=ones(size(Ef));
   end
 
   avgE = zt;
@@ -558,11 +538,8 @@ function prctys = lik_negbin_predprcty(lik, Ef, Varf, zt, prcty)
 %  See also 
 %    GP_PREDPCTY
 
-  if isempty(zt)
-    error(['lik_negbin -> lik_negbin_predprcty: missing zt!'... 
-           'Negbin likelihood needs the expected number of    '...
-           'occurrences as an extra input zt. See, for         '...
-           'example, lik_negbin and gpla_e.               ']);
+  if numel(zt)==0
+    zt=ones(size(Ef));
   end
   
   opt=optimset('TolX',.5,'Display','off');
@@ -719,6 +696,9 @@ function mu = lik_negbin_invlink(lik, f, z)
 %     See also
 %     LIK_NEGBIN_LL, LIK_NEGBIN_PREDY
   
+  if numel(z)==0
+    z=1;
+  end
   mu = bsxfun(@times,z,exp(f));
 end
 

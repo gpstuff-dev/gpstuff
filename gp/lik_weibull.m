@@ -1,12 +1,11 @@
 function lik = lik_weibull(varargin)
-%LIK_WEIBULL    Create a right censored Weibull likelihood structure 
+%LIK_WEIBULL  Create a right censored Weibull likelihood structure 
 %
 %  Description
 %    LIK = LIK_WEIBULL('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
-%    creates a likelihood structure for right censored Weibull
-%    survival model in which the named parameters have the
-%    specified values. Any unspecified parameters are set to
-%    default values.
+%    creates a likelihood structure for a right censored Weibull
+%    survival model in which the named parameters have the specified
+%    values. Any unspecified parameters are set to default values.
 %  
 %    LIK = LIK_WEIBULL(LIK,'PARAM1',VALUE1,'PARAM2,VALUE2,...)
 %    modify a likelihood structure with the named parameters
@@ -30,7 +29,7 @@ function lik = lik_weibull(varargin)
 %    vector of censoring indicators with z = 0 for uncensored event
 %    and z = 1 for right censored event.
 %
-%    When using the log-Gaussian likelihood you can give the
+%    When using the Weibull likelihood you can give the
 %    vector z as an extra parameter to each function that requires
 %    also y. For example, you can call gp_optim as follows:
 %      gp_optim(gp, x, y, 'z', z)
@@ -208,7 +207,7 @@ function ll = lik_weibull_ll(lik, y, f, z)
 %  See also
 %    LIK_WEIBULL_LLG, LIK_WEIBULL_LLG3, LIK_WEIBULL_LLG2, GPLA_E
   
-  if isempty(z)
+  if numel(z)==0
     % no censoring
     z=0;
   end
@@ -240,7 +239,7 @@ function llg = lik_weibull_llg(lik, y, f, param, z)
 %  See also
 %    LIK_WEIBULL_LL, LIK_WEIBULL_LLG2, LIK_WEIBULL_LLG3, GPLA_E
 
-  if isempty(z)
+  if numel(z)==0
     % no censoring
     z=0;
   end
@@ -287,7 +286,7 @@ function llg2 = lik_weibull_llg2(lik, y, f, param, z)
 %  See also
 %    LIK_WEIBULL_LL, LIK_WEIBULL_LLG, LIK_WEIBULL_LLG3, GPLA_E
 
-  if isempty(z)
+  if numel(z)==0
     % no censoring
     z=0;
   end
@@ -320,7 +319,7 @@ function llg3 = lik_weibull_llg3(lik, y, f, param, z)
 %  See also
 %    LIK_WEIBULL_LL, LIK_WEIBULL_LLG, LIK_WEIBULL_LLG2, GPLA_E, GPLA_G
 
-  if isempty(z)
+  if numel(z)==0
     % no censoring
     z=0;
   end
@@ -354,13 +353,11 @@ function [logM_0, m_1, sigm2hati1] = lik_weibull_tiltedMoments(lik, y, i1, sigm2
 %  See also
 %    GPEP_E
   
-%  if isempty(z)
-%    error(['lik_weibull -> lik_weibull_tiltedMoments: missing z!'... 
-%           'Weibull likelihood needs the censoring            '...
-%           'indicators as an extra input z. See, for                 '...
-%           'example, lik_weibull and gpep_e.                       ']);
-%  end
-  
+ if numel(z)==0
+   % no censoring
+   z=zeros(size(y));
+ end
+ 
   yy = y(i1);
   yc = 1-z(i1);
   r = lik.shape;
@@ -422,7 +419,7 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %  See also
 %    GPEP_G
 
-  if isempty(z)
+  if numel(z)==0
     % no censoring
     z=zeros(size(y));
   end
@@ -475,9 +472,9 @@ function [lpy, Ey, Vary] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
 %  See also
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-  if isempty(zt)
+  if numel(zt)==0
     % no censoring
-    z=zeros(size(yt));
+    zt=zeros(size(yt));
   end
 
   yc = 1-zt;

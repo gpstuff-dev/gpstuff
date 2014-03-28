@@ -26,16 +26,13 @@ if nargin < 1,
 end
 
 [n,m]=size(x);
-xmu=x-repmat(mu,n,1);  
+xmu=bsxfun(@minus,x,mu);
 if ~issparse(S)
     % Use Cholesky decomposition, since it is faster and
     % numerically more stable.
     L=chol(S,'lower');
-    y=zeros(n,1);
-    for i1=1:n
-      b=L\xmu(i1,:)';
-      y(i1)=-b'*b;
-    end
+    b=L\xmu';
+    y=-sum(b.^2,1)';
     y=(.5*y-sum(log(diag(L)))-.5*m*log(2*pi));
 else
     LD = ldlchol(S);

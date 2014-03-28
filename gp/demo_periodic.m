@@ -117,7 +117,7 @@ gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2});
+gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2}, 'jitterSigma2',1e-9);
 
 % -----------------------------
 % --- Conduct the inference ---

@@ -21,6 +21,10 @@ function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt,ind,varargin)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
 %               for ith case. 
+%      zt     - optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%               Some likelihoods may use this. For example, in case of 
+%               Poisson likelihood we have z_i=E_i, that is, the expected 
+%               value for the ith case. 
 %      plot   - option for plotting, 'off' (default) or 'on'
 %      target - option for choosing what is computed 'f' (default),
 %               'mu' or 'cdf'
@@ -35,6 +39,7 @@ ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addRequired('ind', @(x) ~isempty(x) && isvector(x))
 ip.addParamValue('var',  [], @(x) isreal(x))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
@@ -46,7 +51,9 @@ ip.addParamValue('method', 'mean', @(x)  ismember(x, {'median', 'mean' 'mode'}))
 ip.addParamValue('plot', 'off', @(x)  ismember(x, {'on', 'off'}))
 ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('target', 'f', @(x) ismember(x,{'f','mu','cdf'}))
+ip.addParamValue('normdata', struct(), @(x) isempty(x) || isstruct(x))
 ip.parse(gp, x, y, xt, ind, varargin{:});
+zt=ip.Results.zt;
 options=struct();
 options.predcf=ip.Results.predcf;
 options.tstind=ip.Results.tstind;
@@ -61,9 +68,26 @@ if ~isempty(yt)
 end
 z=ip.Results.z;
 if ~isempty(z)
-  options.zt=z;
   options.z=z;
 end
+if ~isempty(zt)
+  options.zt=zt;
+end
+if isempty(zt)
+  options.zt=z;
+end
+% normdata
+nd=ip.Results.normdata;
+ipnd=inputParser;
+ipnd.FunctionName = 'normdata';
+ipnd.addParamValue('xmean',zeros(1,size(x,2)),@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('xstd',ones(1,size(x,2)),@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('xlog',zeros(1,size(x,2)),@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('ymean',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('ystd',1,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.addParamValue('ylog',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd.parse(nd);
+nd=ipnd.Results;
 
 [tmp, nin] = size(x);
 
@@ -132,6 +156,7 @@ if length(ind)==1
   end
   if isequal(plot_results, 'on')
     if ind>0
+      xtnn=denormdata(xtnn,nd.xmean(ind),nd.xstd(ind));
       deltadist=gp_finddeltadist(gp);
       if ~ismember(ind,deltadist)
         switch target
@@ -219,6 +244,8 @@ elseif length(ind)==2
     end
     
     if isequal(plot_results, 'on')
+      xtnn1=denormdata(xtnn1,nd.xmean(ind(2)),nd.xstd(ind(2)));
+      xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
       if nu1>2 && nu2==2
         lstyle10='or';lstyle11='-r';lstyle12='--r';
         lstyle20='ob';lstyle21='-b';lstyle22='--b';
@@ -231,10 +258,10 @@ elseif length(ind)==2
         switch target
           case 'f'
             plot(xtnn1, Ef1, lstyle10, xtnn1, Ef1, lstyle11, xtnn1, Ef1-1.64*sqrt(Varf1), lstyle12, xtnn1, Ef1+1.64*sqrt(Varf1), lstyle12); hold on;
-            plot(xtnn2, Ef2, lstyle20, xtnn2, Ef2, lstyle21, xtnn2, Ef2-1.64*sqrt(Varf2), lstyle22, xtnn2, Ef2+1.64*sqrt(Varf2), lstyle22);
+            plot(xtnn2, Ef2, lstyle20, xtnn2, Ef2, lstyle21, xtnn2, Ef2-1.64*sqrt(Varf2), lstyle22, xtnn2, Ef2+1.64*sqrt(Varf2), lstyle22); hold off;
           case 'mu'
             plot(xtnn1, prctmu1(:,2), lstyle10, xtnn1, prctmu1(:,2), lstyle11, xtnn1, prctmu1(:,1), lstyle12, xtnn1, prctmu1(:,3), lstyle12); hold on;
-            plot(xtnn2, prctmu2(:,2), lstyle20, xtnn2, prctmu2(:,2), lstyle21, xtnn2, prctmu2(:,1), lstyle22, xtnn2, prctmu2(:,3), lstyle22);
+            plot(xtnn2, prctmu2(:,2), lstyle20, xtnn2, prctmu2(:,2), lstyle21, xtnn2, prctmu2(:,1), lstyle22, xtnn2, prctmu2(:,3), lstyle22); hold off;
         end
       else
         delta=(diff(xtnn1(1:2))/10);
@@ -308,6 +335,8 @@ elseif length(ind)==2
     XT1(indd==0) = NaN; XT2(indd==0) = NaN; Ef(indd==0) = NaN; Varf(indd==0) = NaN;
     
     if isequal(plot_results, 'on')
+      xtnn1=denormdata(xtnn1,nd.xmean(ind(1)),nd.xstd(ind(1)));
+      xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
       pcolor(reshape(XT1,numel(xtnn2),numel(xtnn1)), reshape(XT2,numel(xtnn2),numel(xtnn1)), reshape(Ef,numel(xtnn2),numel(xtnn1)))
       shading flat
       colormap(mapcolor(Ef,repmat(nanmedian(Ef(:)),[1 2])))

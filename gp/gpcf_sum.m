@@ -11,6 +11,7 @@ function gpcf = gpcf_sum(varargin)
   
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -58,6 +59,7 @@ function gpcf = gpcf_sum(varargin)
     gpcf.fh.trcov  = @gpcf_sum_trcov;
     gpcf.fh.trvar  = @gpcf_sum_trvar;
     gpcf.fh.recappend = @gpcf_sum_recappend;
+    gpcf.fh.cf2ss = @gpcf_sum_cf2ss;
   end
 
 end
@@ -520,5 +522,26 @@ function reccf = gpcf_sum_recappend(reccf, ri, gpcf)
       reccf.cf{i} = cf.fh.recappend(reccf.cf{i}, ri, cf);
     end
   end
+end
+
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_sum_cf2ss(gpcf)
+%GPCF_SUM_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the sum of two covariance functions to the corresponding
+%    sum of two state space models.
+%
+
+  % Vector of function handles of conversion functions 
+  % from covariance functions to state space 
+  cf2ssvect = cell(length(gpcf.cf),1);
+  for k = 1:length(gpcf.cf)
+      cf2ssvect{k} = @(x) gpcf.cf{k}.fh.cf2ss(gpcf.cf{k});
+  end
+  
+  % Return model matrices, derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
+      cf_sum_to_ss(cf2ssvect);
+  
 end
 

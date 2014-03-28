@@ -505,6 +505,7 @@ function record = recappend(record)
   ncf = length(gp.cf);
   
   if nargin == 0   % Initialize record structure
+    record=gp;
     record.type = gp.type;
     record.lik = gp.lik;
     if isfield(gp,'latent_method')

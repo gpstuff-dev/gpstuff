@@ -76,7 +76,7 @@ function gpcf = gpcf_noise(varargin)
 
 end
 
-function [w, s] = gpcf_noise_pak(gpcf)
+function [w, s, h] = gpcf_noise_pak(gpcf)
 %GPCF_NOISE_PAK  Combine GP covariance function parameters into
 %                one vector.
 %
@@ -158,8 +158,8 @@ function lp = gpcf_noise_lp(gpcf)
 % are sampled are from space W = log(w) where w is all the
 % "real" samples. On the other hand errors are evaluated in the
 % W-space so we need take into account also the Jacobian of
-% transformation W -> w = exp(W). See Gelman et.al., 2004,
-% Bayesian data Analysis, second edition, p24.
+% transformation W -> w = exp(W). See Gelman et al. (2013),
+% Bayesian Data Analysis, third edition, p. 21.
   
   lp = 0;
   gpp=gpcf.p;

@@ -34,12 +34,13 @@
 %    are computed.
 %
 %    Laplace, EP, and MCMC approximations are compared. Laplace and
-%    MCMC results are similar to results in Gelman et al (2004),
-%    who used equivalent but explicitly parametrized model.
+%    MCMC results are similar to results in Gelman, Carlin, Stern, 
+%    Dunson, Vehtari, and Rubin (2013), who used equivalent but explicitly 
+%    parametrized model.
 %
 %  Reference
-%    Gelman et al (2004). Bayesian data Analysis, second edition,
-%      Chapman & Hall/CRC.
+%    Gelman, Carlin, Stern, Dunson, Vehtari, and Rubin (2013). 
+%    Bayesian data Analysis, third edition.
 %
 %  See also DEMO_BINOMIAL1, DEMO_BINOMIAL_APC, DEMO_IMPROVEMARGINALS2
 
@@ -50,7 +51,7 @@
 % License.txt, included with the software, for details.
 
 
-% Bioassay data from Gelman et al (p. 89, 2004)
+% Bioassay data from Gelman et al (p. 74, 2013)
 x=[-0.86 -0.3 -0.05 .73]';
 % number of trials
 N=[5 5 5 5]';
@@ -65,7 +66,7 @@ Ntgrid=ones(size(xgrid))*5;
 
 % Create parts of the covariance function
 % S-InvChi2 prior produces t_nu-prior for weights
-% Scales are approximately as suggested by Gelman
+% Scales are approximately as suggested by Gelman et al (2013)
 cfc = gpcf_constant('constSigma2_prior',prior_sinvchi2('s2',10^2,'nu',4));
 cfl = gpcf_linear('coeffSigma2_prior',prior_sinvchi2('s2',2.5^2,'nu',4));
 % Create the GP structure
@@ -92,10 +93,10 @@ pbetapositive=normcdf(0,Eft,sqrt(Varft));
 
 % Get samples from the joint distribution of the latent values at 0 and 1
 % to compute the corresponding linear model parameters alpha and beta
-% in Gelman et al (2004)
+% in Gelman et al (2013)
 fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000);
 a=fs(1,:);b=fs(2,:)-fs(1,:);
-% compute samples from the LD50 given b>0 (see, Gelman et al (2004))
+% compute samples from the LD50 given b>0 (see, Gelman et al (2013))
 ld50s=-a(b>0)./b(b>0);
 
 % Make predictions for the latent value at test points
@@ -175,10 +176,10 @@ pbetapositive=normcdf(0,Eft,sqrt(Varft));
 
 % Get samples from the joint distribution of the latent values at 0 and 1
 % to compute the corresponding linear model parameters alpha and beta
-% in Gelman et al (2004)
+% in Gelman et al (2013)
 fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000);
 a=fs(1,:);b=fs(2,:)-fs(1,:);
-% compute samples from the LD50 given b>0 (see, Gelman et al (2004))
+% compute samples from the LD50 given b>0 (see, Gelman et al (2013))
 ld50s=-a(b>0)./b(b>0);
 
 % Make predictions for the latent value at test points
@@ -247,10 +248,10 @@ pbetapositive=mean((Efts+randn(size(Efts)).*sqrt(Varfts))<0);
 
 % Get samples from the joint distribution of the latent values at 0 and 1
 % to compute the corresponding linear model parameters alpha and beta
-% in Gelman et al (2004)
+% in Gelman et al (2013)
 fs = gp_rnd(rgp, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000);
 a=fs(1,:);b=fs(2,:)-fs(1,:);
-% compute samples from the LD50 given b>0 (see, Gelman et al (2004))
+% compute samples from the LD50 given b>0 (see, Gelman et al (2013))
 ld50s=-a(b>0)./b(b>0);
 
 % Make predictions for the latent value at test points

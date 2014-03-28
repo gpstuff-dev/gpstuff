@@ -31,8 +31,9 @@ if isstruct(x)
     % single structure
     names = fieldnames(x);
     for i=1:size(names,1)
-      if isequal(names{i},'xtime')
+      if ismember(names{i},{'xtime' 'xv'})
         % Coxph model has ntime x 1 vector, which should be passed as is
+        % monotonic GP has nv x 1 vector, which should be passed as is
         continue
       end
       value = getfield(x,names{i});

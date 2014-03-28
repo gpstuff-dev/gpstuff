@@ -25,9 +25,19 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
 %          Poisson likelihood we have z_i=E_i, that is, expected
 %          value for ith case.
 %
+%  References
+%
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
+%
+%    Jarno Vanhatalo, Pasi Jylänki and Aki Vehtari (2009). Gaussian
+%    process regression with Student-t likelihood. In Y. Bengio et al,
+%    editors, Advances in Neural Information Processing Systems 22,
+%    pp. 1910-1918
+% 
 %  See also
 %    GP_SET, GP_E, GPLA_G, GPLA_PRED
-%
+
 %  Description 2
 %    Additional properties meant only for internal use.
 %  

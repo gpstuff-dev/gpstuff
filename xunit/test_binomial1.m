@@ -34,13 +34,13 @@ initTestSuite;
   function testPredictiveMeanAndVariance
     values.real = load('realValuesBinomial1.mat','Eyt_la','Varyt_la');
     values.test = load(strrep(which('test_binomial1.m'), 'test_binomial1.m', 'testValues/testBinomial1.mat'),'Eyt_la','Varyt_la');
-    assertElementsAlmostEqual(mean(values.real.Eyt_la), mean(values.test.Eyt_la), 'relative', 0.1);
-    assertElementsAlmostEqual(mean(values.real.Varyt_la), mean(values.test.Varyt_la), 'relative', 0.1);
+    assertElementsAlmostEqual((values.real.Eyt_la), (values.test.Eyt_la), 'relative', 0.1);
+    assertElementsAlmostEqual((values.real.Varyt_la), (values.test.Varyt_la), 'relative', 0.1);
 
 
   function testPredictiveDensity
     values.real = load('realValuesBinomial1.mat','lpyt_la');
     values.test = load(strrep(which('test_binomial1.m'), 'test_binomial1.m', 'testValues/testBinomial1.mat'),'lpyt_la');
-    assertElementsAlmostEqual(mean(values.real.lpyt_la), mean(values.test.lpyt_la), 'relative', 0.1);
+    assertElementsAlmostEqual((values.real.lpyt_la), (values.test.lpyt_la), 'relative', 0.1);
 
 

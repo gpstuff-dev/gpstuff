@@ -14,8 +14,8 @@ function lik = lik_binomial(varargin)
 %
 %    When using Binomial likelihood you need to give the vector z
 %    as an extra parameter to each function that requires y also. 
-%    For example, you should call gpla_e as follows
-%      gpla_e(w, gp, x, y, 'z', z)
+%    For example, you should call gp_optim as follows
+%      gp_optim(gp, x, y, 'z', z)
 %
 %  See also
 %    GP_SET, LIK_*
@@ -118,7 +118,7 @@ function ll = lik_binomial_ll(lik, y, f, z)
     error(['lik_binomial -> lik_binomial_ll: missing z!'... 
            'Binomial likelihood needs the expected number of   '...
            'occurrences as an extra input z. See, for         '...
-           'example, lik_binomial and gpla_e.             ']);
+           'example, lik_binomial and gp_optim.             ']);
   end
   
   expf = exp(f);
@@ -147,7 +147,7 @@ function llg = lik_binomial_llg(lik, y, f, param, z)
     error(['lik_binomial -> lik_binomial_llg: missing z!'... 
            'Binomial likelihood needs the expected number of   '...
            'occurrences as an extra input z. See, for         '...
-           'example, lik_binomial and gpla_e.             ']);
+           'example, lik_binomial and gp_optim.             ']);
   end
   
   switch param
@@ -180,7 +180,7 @@ function llg2 = lik_binomial_llg2(lik, y, f, param, z)
     error(['lik_binomial -> lik_binomial_llg2: missing z!'... 
            'Binomial likelihood needs the expected number of    '...
            'occurrences as an extra input z. See, for          '...
-           'example, lik_binomial and gpla_e.              ']);
+           'example, lik_binomial and gp_optim.              ']);
   end
   
   switch param
@@ -212,7 +212,7 @@ function llg3 = lik_binomial_llg3(lik, y, f, param, z)
     error(['lik_binomial -> lik_binomial_llg3: missing z!'... 
            'Binomial likelihood needs the expected number of    '...
            'occurrences as an extra input z. See, for          '...
-           'example, lik_binomial and gpla_e.              ']);
+           'example, lik_binomial and gp_optim.              ']);
   end
   
   switch param
@@ -243,7 +243,7 @@ function [logM_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm
 %    error(['lik_binomial -> lik_binomial_tiltedMoments: missing z!'... 
 %           'Binomial likelihood needs the expected number of               '...
 %           'occurrences as an extra input z. See, for                     '...
-%           'example, lik_binomial and gpla_e.                         ']);
+%           'example, lik_binomial and gp_optim.                         ']);
 %  end
   
   yy = y(i1);
@@ -311,7 +311,7 @@ function [lpy, Ey, Vary] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
     error(['lik_binomial -> lik_binomial_predy: missing z!'... 
            'Binomial likelihood needs the expected number of       '...
            'occurrences as an extra input z. See, for             '...
-           'example, lik_binomial and gpla_e.                 ']);
+           'example, lik_binomial and gp_optim.                 ']);
   end
   
   if nargout > 1
@@ -369,7 +369,7 @@ function prctys = lik_binomial_predprcty(lik, Ef, Varf, zt, prcty)
     error(['lik_binomial -> lik_binomial_predprcty: missing z!'... 
            'Binomial likelihood needs the expected number of       '...
            'occurrences as an extra input z. See, for             '...
-           'example, lik_binomial and gpla_e.                 ']);
+           'example, lik_binomial and gp_optim.                 ']);
   end
   
   opt=optimset('TolX',.5,'Display','off');

@@ -32,6 +32,17 @@
 %    Note that the log-logistic model in DEMO_SURVIVAL_AFT works
 %    better for this data.
 %
+%  Reference
+%
+%    Heikki Joensuu, Aki Vehtari, Jaakko Riihimäki, Toshirou Nishida,
+%    Sonja E Steigen, Peter Brabec, Lukas Plank, Bengt Nilsson,
+%    Claudia Cirilli, Chiara Braconi, Andrea Bordoni, Magnus K
+%    Magnusson, Zdenek Linke, Jozef Sufliarsky, Federico Massimo, Jon
+%    G Jonasson, Angelo Paolo Dei Tos and Piotr Rutkowski (2012). Risk
+%    of gastrointestinal stromal tumour recurrence after surgery: an
+%    analysis of pooled population-based cohorts. In The Lancet
+%    Oncology, 13(3):265-274.
+%
 %  See also  DEMO_SURVIVAL_AFT
 %
 
@@ -103,6 +114,9 @@ gp = gp_set(gp, 'latent_method', 'Laplace');
 
 opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter');
 gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
+[~,~,lp]=gp_pred(gp,x,y,'z',ye);sum(lp)-log(500)*sum(~ye)
+% -5.9202e+03
+[crit,cvpreds]=gp_kfcv(gp,x,y,'z',ye,'inf_method','MAP','display','iter');crit.mlpd_cv*n
 
 figure
 set(gcf,'units','centimeters');

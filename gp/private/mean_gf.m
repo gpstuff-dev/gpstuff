@@ -79,8 +79,14 @@ if isequal(latent_method,'gaussian')
     % help arguments with gaussian latent method
     M = H'*b_m-y;
     
-    LB = chol(B_m);
-    LA = chol(LB\(LB'\eye(size(B_m))) + HinvC*H');
+    [LB, notpositivedefinite1] = chol(B_m);
+    [LA, notpositivedefinite2] = chol(LB\(LB'\eye(size(B_m))) + HinvC*H');
+    if notpositivedefinite1 || notpositivedefinite2
+      dMNM=NaN;
+      trA=NaN;
+      HinvC=NaN;
+      return
+    end
     invAt=LA\(LA'\eye(size(LA)));
     
     if issparse(Ky)
@@ -134,7 +140,7 @@ end
 %
 %                 for i2 = 1:length(DKff)
 %                     % help arguments that depend on DKff; vague p
-%                     dyKy{i2} = b'*(DKff{i2}*b);            % d y'*Kyâ?»*y / d th
+%                     dyKy{i2} = b'*(DKff{i2}*b);            % d y'*Kyï¿½?ï¿½*y / d th
 %                     dA  = -1*HinvC*DKff{i2}*HinvC';        % d A / d th
 %                     trAv{i2} = sum(invAt(:).*dA(:));       % d log(|A|)/dth = trace(inv(A) * dA/dth)
 %                     P   = invKy*DKff{i2}*invKy;

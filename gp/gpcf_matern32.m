@@ -34,6 +34,7 @@ function gpcf = gpcf_matern32(varargin)
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -77,9 +78,10 @@ function gpcf = gpcf_matern32(varargin)
     gpcf.fh.cfg = @gpcf_matern32_cfg;
     gpcf.fh.ginput = @gpcf_matern32_ginput;
     gpcf.fh.cov = @gpcf_matern32_cov;
-    gpcf.fh.trcov  = @gpcf_matern32_trcov;
-    gpcf.fh.trvar  = @gpcf_matern32_trvar;
+    gpcf.fh.trcov = @gpcf_matern32_trcov;
+    gpcf.fh.trvar = @gpcf_matern32_trvar;
     gpcf.fh.recappend = @gpcf_matern32_recappend;
+    gpcf.fh.cf2ss = @gpcf_matern32_cf2ss;
   end
   
   % Initialize parameters
@@ -283,8 +285,8 @@ function lp = gpcf_matern32_lp(gpcf)
 % are sampled are transformed, e.g., W = log(w) where w is all
 % the "real" samples. On the other hand errors are evaluated in
 % the W-space so we need take into account also the Jacobian of
-% transformation, e.g., W -> w = exp(W). See Gelman et.al., 2004,
-% Bayesian data Analysis, second edition, p24.
+% transformation, e.g., W -> w = exp(W). See Gelman et al. (2013),
+% Bayesian Data Analysis, third edition, p. 21.
   lp = 0;
   gpp=gpcf.p;
   
@@ -872,4 +874,36 @@ function reccf = gpcf_matern32_recappend(reccf, ri, gpcf)
   end
 end
 
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_matern32_cf2ss(gpcf)
+%GPCF_MATERN32_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the covariance function to state space form such that
+%    the process can be described by the stochastic differential equation
+%    of the form: 
+%      df(t)/dt = F f(t) + L w(t),
+%    where w(t) is a white noise process. The observation model now 
+%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
+%
+%  References:
+%    Simo Sarkka, Arno Solin, Jouni Hartikainen (2013).
+%    Spatiotemporal learning via infinite-dimensional Bayesian
+%    filtering and smoothing. IEEE Signal Processing Magazine,
+%    30(4):51-61.
+%
+
+  % Return model matrices, derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
+      cf_matern32_to_ss(gpcf.magnSigma2, gpcf.lengthScale);
+  
+  % Check which parameters are optimized
+  if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
+  if isempty(gpcf.p.lengthScale), ind(2) = false; else ind(2) = true; end
+  
+  % Return only those derivatives that are needed
+  dF    = dF(:,:,ind);
+  dQc   = dQc(:,:,ind);
+  dPinf = dPinf(:,:,ind);
+  
+end
 

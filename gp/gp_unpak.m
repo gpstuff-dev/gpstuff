@@ -72,7 +72,13 @@ end
 % Unpack the parameters of likelihood function
 if ~isempty(strfind(param, 'likelihood'))
   [gp.lik w] = gp.lik.fh.unpak(gp.lik, w);
+  
+  % Unpack the parameters of the second likelihood function (monotonicity)
+  if isfield(gp, 'lik_mono')
+    [gp.lik_mono w] = gp.lik_mono.fh.unpak(gp.lik_mono, w);
+  end
 end
+
 
 % Unpack the inducing inputs
 if ~isempty(strfind(param, 'inducing'))
