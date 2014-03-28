@@ -513,7 +513,13 @@ function [g_i] = lik_loggaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   td = @deriv;
   
   % Integrate with quadgk
-  [m_0, fhncnt] = quadgk(tf, minf, maxf);
+  if yc==1
+    m_0=1/yy.*norm_pdf(myy_i, log(yy), sqrt(s2+sigm2_i));
+  else
+    zi=(myy_i-log(yy))./sqrt(s2+sigm2_i);
+    m_0=norm_cdf(zi);
+%     [m_0, fhncnt] = quadgk(tf, minf, maxf);
+  end
   [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*s2;
 
