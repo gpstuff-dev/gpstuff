@@ -416,37 +416,64 @@ function [logM_0, m_1, sigm2hati1] = lik_loggaussian_tiltedMoments(lik, y, i1, s
   m_1=zeros(size(yy));
   sigm2hati1=zeros(size(yy));  
   
-  for i=1:length(i1)
-    % get a function handle of an unnormalized tilted distribution
-    % (likelihood * cavity = Negative-binomial * Gaussian)
-    % and useful integration limits
-    [tf,minf,maxf]=init_loggaussian_norm(yy(i),myy_i(i),sigm2_i(i),yc(i),s2);
-    
-    % Integrate with quadrature
-    RTOL = 1.e-6;
-    ATOL = 1.e-10;
-    [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-    if isnan(m_0)
-      logM_0=NaN;
-      return
-    end
-    sigm2hati1(i) = m_2 - m_1(i).^2;
-    
-    % If the second central moment is less than cavity variance
-    % integrate more precisely. Theoretically for log-concave
-    % likelihood should be sigm2hati1 < sigm2_i.
-    if sigm2hati1(i) >= sigm2_i(i)
-      ATOL = ATOL.^2;
-      RTOL = RTOL.^2;
-      [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-      sigm2hati1(i) = m_2 - m_1(i).^2;
-      if sigm2hati1(i) >= sigm2_i(i)
-         sigm2hati1(i)=sigm2_i(i)-eps;
-         %error('lik_loggaussian_tilted_moments: sigm2hati1 >= sigm2_i');
-      end
-    end
-    logM_0(i) = log(m_0);
+  ind1=yc==1;
+  ind2=yc==0;
+  
+  if sum(ind1)>0
+    logM_0(ind1)=-log(yy(ind1))+norm_lpdf(myy_i(ind1), log(yy(ind1)), sqrt(s2+sigm2_i(ind1)));
+    sigm2hati1(ind1)=1./(1./s2+1./sigm2_i(ind1));
+    m_1(ind1)=sigm2hati1(ind1).*(myy_i(ind1)./sigm2_i(ind1) + log(yy(ind1))/s2);
   end
+  if sum(ind2)>0
+    zi=(myy_i(ind2)-log(yy(ind2)))./sqrt(s2+sigm2_i(ind2));
+    logM_0(ind2)=log(norm_cdf(zi));
+    m_1(ind2)=myy_i(ind2)+sigm2_i(ind2).*norm_pdf(zi)./(norm_cdf(zi).*sqrt(s2+sigm2_i(ind2)));
+    m_2=2*myy_i(ind2).*m_1(ind2) - myy_i(ind2).^2 + sigm2_i(ind2) - ...
+      sigm2_i(ind2).^2.*norm_pdf(zi).*zi./(norm_cdf(zi).*(s2+sigm2_i(ind2)));
+    sigm2hati1(ind2) = m_2 - m_1(ind2).^2;        
+  end
+  if any(sigm2hati1 >= sigm2_i)
+    sigm2hati1(sigm2hati1 >= sigm2_i)=sigm2_i(sigm2hati1 >= sigm2_i)-eps;
+    %error('lik_loggaussian_tilted_moments: sigm2hati1 >= sigm2_i');
+  end
+%   sigm2hati12=sigm2hati1;
+%   m_12=m_1;
+%   logM_02=logM_0;
+  
+%   for i=1:length(i1)
+%     % get a function handle of an unnormalized tilted distribution
+%     % (likelihood * cavity = Negative-binomial * Gaussian)
+%     % and useful integration limits
+%     [tf,minf,maxf]=init_loggaussian_norm(yy(i),myy_i(i),sigm2_i(i),yc(i),s2);
+%     
+%     % Integrate with quadrature
+%     RTOL = 1.e-6;
+%     ATOL = 1.e-10;
+%     [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+% %     ll(~z) = -1/2*log(2*pi*s2) - log(y(~z)) - 1./(2*s2).*(log(y(~z))-f(~z)).^2;
+% %     ll(z) = log(1-norm_cdf((log(y(z))-f(z))./sqrt(s2)));
+%     if isnan(m_0)
+%       logM_0=NaN;
+%       return
+%     end
+%     sigm2hati1(i) = m_2 - m_1(i).^2;
+%     
+%     % If the second central moment is less than cavity variance
+%     % integrate more precisely. Theoretically for log-concave
+%     % likelihood should be sigm2hati1 < sigm2_i.
+%     if sigm2hati1(i) >= sigm2_i(i)
+%       ATOL = ATOL.^2;
+%       RTOL = RTOL.^2;
+%       [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+%       sigm2hati1(i) = m_2 - m_1(i).^2;
+%       if sigm2hati1(i) >= sigm2_i(i)
+%          sigm2hati1(i)=sigm2_i(i)-eps;
+%          %error('lik_loggaussian_tilted_moments: sigm2hati1 >= sigm2_i');
+%       end
+%     end
+%     logM_0(i) = log(m_0);
+%   end
+%   1;
 end
 
 function [g_i] = lik_loggaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
@@ -546,18 +573,34 @@ function [lpy, Ey, Vary] = lik_loggaussian_predy(lik, Ef, Varf, yt, zt)
       lpy(i1) = log(sum(py.*pf));
     end
   else
-    for i1=1:length(yt)
-      if abs(Ef(i1))>700
-        lpy(i1) = NaN;
-      else
-        % get a function handle of the likelihood times posterior
-        % (likelihood * posterior = Negative-binomial * Gaussian)
-        % and useful integration limits
-        [pdf,minf,maxf]=init_loggaussian_norm(...
-          yt(i1),Ef(i1),Varf(i1),yc(i1),s2);
-        % integrate over the f to get posterior predictive distribution
-        lpy(i1) = log(quadgk(pdf, minf, maxf));
-      end
+%     for i1=1:length(yt)
+%       if abs(Ef(i1))>700
+%         lpy(i1) = NaN;
+%       else
+%         % get a function handle of the likelihood times posterior
+%         % (likelihood * posterior = Negative-binomial * Gaussian)
+%         % and useful integration limits
+%         [pdf,minf,maxf]=init_loggaussian_norm(...
+%           yt(i1),Ef(i1),Varf(i1),yc(i1),s2);
+%         % integrate over the f to get posterior predictive distribution
+%         lpy(i1) = log(quadgk(pdf, minf, maxf));
+%       end
+%       
+%     end
+    ind1=yc==1;
+    ind2=yc==0;
+    
+    if sum(ind1)>0
+      lpy(ind1,:)=-log(yt(ind1))+norm_lpdf(Ef(ind1), log(yt(ind1)), sqrt(s2+Varf(ind1)));
+      Ey(ind1,:) = exp(Ef(ind1)+Varf(ind1)/2);
+      Vary(ind1,:) = (exp(Varf(ind1))-1).*exp(2*Ef(ind1)+Varf(ind1));
+    end
+    if sum(ind2)>0
+      zi=(Ef(ind2)-log(yt(ind2)))./sqrt(s2+Varf(ind2));
+      lpy(ind2,:)=log(norm_cdf(zi));
+      py1 = norm_cdf(Ef(ind2)./sqrt(1+Varf(ind2)));
+      Ey(ind2,:) = 2*py1 - 1;      
+      Vary(ind2,:) = 1-Ey(ind2).^2;
     end
   end
 end
