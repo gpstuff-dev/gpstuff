@@ -357,19 +357,25 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 gdata(i1)=0.5.*(Cdl - Bdl);
               end
             else
-              i1=0;
               Stildesqroot=diag(sqrt(tautilde));
               invKs=eye(size(C))-Stildesqroot*(L'\(L\(Stildesqroot*C)));
-              [dMNM trA]=mean_gf(gp,x,C,invKs,DKff,Stildesqroot,nutilde,'EP');
+              if ~savememory
+                [dMNMc trAc]=mean_gf(gp,x,C,invKs,DKffc,Stildesqroot,nutilde,'EP');
+              end
               for i2 = 1:np
                 i1=i1+1;
                 if savememory
                   DKff=gpcf.fh.cfg(gpcf,x,[],[],i2);
+                  [dMNM trA]=mean_gf(gp,x,C,invKs,{DKff},Stildesqroot,nutilde,'EP');
+                  trA=trA{1};
+                  dMNM=dMNM{1};
                 else
                   DKff=DKffc{i2};
+                  trA=trAc{i2};
+                  dMNM=dMNMc{i2};
                 end
                 trK=sum(sum(invC.*DKff));
-                gdata(i2)=0.5*(-1*dMNM + trK + trA{i2});
+                gdata(i1)=0.5*(-1*dMNM + trK + trA);
               end
             end
 

@@ -17,7 +17,7 @@ function gp = gp_set(varargin)
 %                     covariance function structures created by
 %                     gpcf_* functions. The default is [],
 %                     except if neither cf or meanf is given then the
-%                     the default is gpcf_sexp(). 
+%                     the default is {gpcf_constant() gpcf_linear() gpcf_sexp()}. 
 %      meanf        - Single mean function structure or cell array of 
 %                     mean function function structures created by
 %                     gpmf_* functions. The default is [].
@@ -261,7 +261,7 @@ function gp = gp_set(varargin)
     end
   end
   if isempty(gp.cf) && (~isfield(gp,'meanf') || isempty(gp.meanf))
-    gp.cf={gpcf_sexp()};
+    gp.cf={gpcf_constant() gpcf_linear() gpcf_sexp()};
   end
   % Inference for which parameters 
   if init || ~ismember('infer_params',ip.UsingDefaults)
