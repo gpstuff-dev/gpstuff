@@ -154,7 +154,7 @@ switch m
       Stdf=Stdf*nd.ystd;
       Ey=denormdata(Ey,nd.ymean,nd.ystd);
       Stdy=Stdy*nd.ystd;
-      h=plot(xt, Ef, '-b', xt, Ef-1.64*Stdf, '--b', xt, Ef+1.64*Stdf, '--b',xt, Ey-1.64*Stdy, ':b', xt, Ey+1.64*Stdy, ':b');
+      hh=plot(xt, Ef, '-b', xt, Ef-1.64*Stdf, '--b', xt, Ef+1.64*Stdf, '--b',xt, Ey-1.64*Stdy, ':b', xt, Ey+1.64*Stdy, ':b');
     else
       switch target
         case 'f'
@@ -163,25 +163,28 @@ switch m
           xt=denormdata(xt,nd.xmean,nd.xstd);
           Ef=denormdata(Ef,nd.ymean,nd.ystd);
           Stdf=Stdf*nd.ystd;
-          h=plot(xt, Ef, '-b', xt, Ef-1.64*Stdf, '--b', xt, Ef+1.64*Stdf, '--b');
+          hh=plot(xt, Ef, '-b', xt, Ef-1.64*Stdf, '--b', xt, Ef+1.64*Stdf, '--b');
         case 'mu'
           prctmu = gp_predprctmu(gp, x, y, xt, options);
           xt=denormdata(xt,nd.xmean,nd.xstd);
           prctmu=denormdata(prctmu,nd.ymean,nd.ystd);
           Ef = prctmu; Varf = [];
-          h=plot(xt, prctmu(:,2), '-b', xt, prctmu(:,1), '--b', xt, prctmu(:,3), '--b');
+          hh=plot(xt, prctmu(:,2), '-b', xt, prctmu(:,1), '--b', xt, prctmu(:,3), '--b');
       end
     end
   case 2
     gp_cpred(gp,x,y,xt,[1 2],'z',z,'zt',zt,'target',target,'plot','on','tr',1e9);
     view(3)
     shading faceted
-    hh=get(gca,'children');
-    h=hh(1);
+    hhh=get(gca,'children');
+    hh=hhh(1);
   otherwise
     for xi=1:m
       gp_cpred(gp,x,y,xt,xi,'z',z,'zt',zt,'target',target,'plot','on');
       hh=get(gca,'children');
-      h(xi)=hh(1);
+      hh(xi)=hhh(1);
     end
+end
+if nargout>0
+  h=hh;
 end
