@@ -337,7 +337,9 @@ elseif length(ind)==2
     if isequal(plot_results, 'on')
       xtnn1=denormdata(xtnn1,nd.xmean(ind(1)),nd.xstd(ind(1)));
       xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
-      pcolor(reshape(XT1,numel(xtnn2),numel(xtnn1)), reshape(XT2,numel(xtnn2),numel(xtnn1)), reshape(Ef,numel(xtnn2),numel(xtnn1)))
+      surf(reshape(XT1,numel(xtnn2),numel(xtnn1)), reshape(XT2,numel(xtnn2),numel(xtnn1)), reshape(Ef,numel(xtnn2),numel(xtnn1)))
+      view(2)
+      axis tight
       shading flat
       colormap(mapcolor(Ef,repmat(nanmedian(Ef(:)),[1 2])))
       colorbar
