@@ -7,12 +7,18 @@ function h = gp_plot(gp, x, y, varargin)
 %    inputs and vector Y of training targets and plots predictions
 %    evaluated at test inputs XT.
 %
-%    Form of the plot depends on the dimensionality of X and options.
+%    The form of the plot depends on the dimensionality of X and options.
+%      - 1D with Gaussian: mean and 5% and 95% quantiles of f and y
+%      - 1D with non-Gaussian: median and 5% and 95% quantiles of mu or f
+%      - 2D: pcolor plot of mu or f
+%      - ND with N>2: Conditional predictions, see GP_CPRED
 %
-%    [EF, VARF, LPY, EY, VARY] = GP_PRED(GP, X, Y, OPTIONS)
+%    [EF, VARF, LPY, EY, VARY] = GP_PLOT(GP, X, Y, OPTIONS)
 %    plots predictions evaluated at training inputs X.
 %
 %    OPTIONS is optional parameter-value pair
+%      target - option for choosing what is computed 'mu' (default)
+%               or 'f'
 %      predcf - an index vector telling which covariance functions are 
 %               used for prediction. Default is all (1:gpcfn). 
 %               See additional information below.
@@ -44,9 +50,9 @@ function h = gp_plot(gp, x, y, varargin)
 %    anymore.
 %
 %    For example, if you use covariance such as K = K1 + K2 your
-%    predictions Ef1 = gp_pred(GP, X, Y, X, 'predcf', 1) and Ef2 =
-%    gp_pred(gp, x, y, x, 'predcf', 2) should sum up to Ef =
-%    gp_pred(gp, x, y, x). That is Ef = Ef1 + Ef2. With FULL model
+%    predictions Ef1 = gp_plot(GP, X, Y, X, 'predcf', 1) and Ef2 =
+%    gp_plot(gp, x, y, x, 'predcf', 2) should sum up to Ef =
+%    gp_plot(gp, x, y, x). That is Ef = Ef1 + Ef2. With FULL model
 %    this is true but with FIC and PIC this is true only
 %    approximately. That is Ef \approx Ef1 + Ef2.
 %
@@ -65,7 +71,7 @@ function h = gp_plot(gp, x, y, varargin)
 %
 
 ip=inputParser;
-ip.FunctionName = 'GP_PRED';
+ip.FunctionName = 'GP_PLOT';
 ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
@@ -78,7 +84,7 @@ ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
 ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('target', 'f', @(x) ismember(x,{'f','mu','cdf'}))
+ip.addParamValue('target', 'mu', @(x) ismember(x,{'f','mu'}))
 ip.addParamValue('normdata', struct(), @(x) isempty(x) || isstruct(x))
 if numel(varargin)==0 || isnumeric(varargin{1})
   % inputParser should handle this, but it doesn't
@@ -102,8 +108,17 @@ if isempty(zt)
   options.zt=z;
 end
 if isempty(xt)
-  xt=x;
-  zt=z;
+  if size(x,2)==1
+    [xt,xi]=sort(x);
+    if ~isempty(z)
+      zt=z(xi);
+    else
+      zt=[];
+    end
+  else
+    xt=x;
+    zt=z;
+  end
 end
 target = ip.Results.target;
 tr = ip.Results.tr;
@@ -128,34 +143,45 @@ end
 
 [n,m]=size(x);
 
-if m==1
-  if isequal(liktype, 'Gaussian')
-    [Ef, Varf,~,Ey,Vary] = gp_pred(gp, x, y, xt, options);
-    Stdf=sqrt(Varf);
-    Stdy=sqrt(Vary);
-    xt=denormdata(xt,nd.xmean,nd.xstd);
-    Ef=denormdata(Ef,nd.ymean,nd.ystd);
-    Stdf=Stdf*nd.ystd;
-    Ey=denormdata(Ey,nd.ymean,nd.ystd);
-    Stdy=Stdy*nd.ystd;
-    plot(xt, Ef, '-b', xt, Ef-1.64*Stdf, '--b', xt, Ef+1.64*Stdf, '--b',xt, Ey-1.64*Stdy, ':b', xt, Ey+1.64*Stdy, ':b')
-  else
-    switch target
-      case 'f'
-        [Ef, Varf] = gp_pred(gp, x, y, xt, options);
-        Stdf=sqrt(Varf);
-        xt=denormdata(xt,nd.xmean,nd.xstd);
-        Ef=denormdata(Ef,nd.ymean,nd.ystd);
-        Stdf=Stdf*nd.ystd;
-        plot(xt, Ef, '-b', xt, Ef-1.64*Stdf, '--b', xt, Ef+1.64*Stdf, '--b')
-      case 'mu'
-        prctmu = gp_predprctmu(gp, x, y, xt, options);
-        xt=denormdata(xt,nd.xmean,nd.xstd);
-        prctmu=denormdata(prctmu,nd.ymean,nd.ystd);
-        Ef = prctmu; Varf = [];
-        plot(xt, prctmu(:,2), '-b', xt, prctmu(:,1), '--b', xt, prctmu(:,3), '--b')
+switch m
+  case 1
+    if isequal(liktype, 'Gaussian')
+      [Ef, Varf,~,Ey,Vary] = gp_pred(gp, x, y, xt, options);
+      Stdf=sqrt(Varf);
+      Stdy=sqrt(Vary);
+      xt=denormdata(xt,nd.xmean,nd.xstd);
+      Ef=denormdata(Ef,nd.ymean,nd.ystd);
+      Stdf=Stdf*nd.ystd;
+      Ey=denormdata(Ey,nd.ymean,nd.ystd);
+      Stdy=Stdy*nd.ystd;
+      h=plot(xt, Ef, '-b', xt, Ef-1.64*Stdf, '--b', xt, Ef+1.64*Stdf, '--b',xt, Ey-1.64*Stdy, ':b', xt, Ey+1.64*Stdy, ':b');
+    else
+      switch target
+        case 'f'
+          [Ef, Varf] = gp_pred(gp, x, y, xt, options);
+          Stdf=sqrt(Varf);
+          xt=denormdata(xt,nd.xmean,nd.xstd);
+          Ef=denormdata(Ef,nd.ymean,nd.ystd);
+          Stdf=Stdf*nd.ystd;
+          h=plot(xt, Ef, '-b', xt, Ef-1.64*Stdf, '--b', xt, Ef+1.64*Stdf, '--b');
+        case 'mu'
+          prctmu = gp_predprctmu(gp, x, y, xt, options);
+          xt=denormdata(xt,nd.xmean,nd.xstd);
+          prctmu=denormdata(prctmu,nd.ymean,nd.ystd);
+          Ef = prctmu; Varf = [];
+          h=plot(xt, prctmu(:,2), '-b', xt, prctmu(:,1), '--b', xt, prctmu(:,3), '--b');
+      end
     end
-  end
-else
-  error('Not yet implemented for size(x,2)>1')
+  case 2
+    gp_cpred(gp,x,y,xt,[1 2],'z',z,'zt',zt,'target',target,'plot','on','tr',1e9);
+    view(3)
+    shading faceted
+    hh=get(gca,'children');
+    h=hh(1);
+  otherwise
+    for xi=1:m
+      gp_cpred(gp,x,y,xt,xi,'z',z,'zt',zt,'target',target,'plot','on');
+      hh=get(gca,'children');
+      h(xi)=hh(1);
+    end
 end
