@@ -1,4 +1,4 @@
-function [p,pq,xx,gp,ess,eig,q,r,pjr] = lgpdens(x,varargin)
+function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
 %LGPDENS Logistic-Gaussian Process density estimate for 1D and 2D data
 % 
 %  Description  
