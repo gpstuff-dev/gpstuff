@@ -3,9 +3,9 @@ function gpcf = gpcf_constant(varargin)
 %
 %  Description
 %    GPCF = GPCF_CONSTANT('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
-%    creates a squared exponential covariance function structure in
-%    which the named parameters have the specified values. Any
-%    unspecified parameters are set to default values.
+%    creates a constant covariance function structure in which the
+%    named parameters have the specified values. Any unspecified
+%    parameters are set to default values.
 %
 %    GPCF = GPCF_CONSTANT(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %    modify a covariance function structure with the named
