@@ -179,9 +179,12 @@ switch m
     hhh=get(gca,'children');
     hh=hhh(1);
   otherwise
+    sn=ceil(sqrt(m));
     for xi=1:m
+      subplot(sn,sn,xi);
       gp_cpred(gp,x,y,xt,xi,'z',z,'zt',zt,'target',target,'plot','on');
-      hh=get(gca,'children');
+      drawnow
+      hhh=get(gca,'children');
       hh(xi)=hhh(1);
     end
 end
