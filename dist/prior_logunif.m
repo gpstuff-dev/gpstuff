@@ -42,9 +42,10 @@ function p = prior_logunif(varargin)
   end
 end
 
-function [w, s] = prior_logunif_pak(p)
+function [w, s,h] = prior_logunif_pak(p)
   w=[];
   s={};
+  h=[];
 end
 
 function [p, w] = prior_logunif_unpak(p, w)

@@ -57,10 +57,6 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_loopred(gp_array, x, y, varargin)
   z=ip.Results.z;
   is=ip.Results.is;
 
-  if isfield(gp_array{1},'meanf') && ~isempty(gp_array{1}.meanf)
-    error('GPIA_LOOPRED: Mean functions not yet supported');
-  end
-
   nGP = numel(gp_array);
   n=size(x,1);
 

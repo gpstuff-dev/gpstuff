@@ -34,6 +34,7 @@ function gpcf = gpcf_matern52(varargin)
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -80,6 +81,7 @@ function gpcf = gpcf_matern52(varargin)
     gpcf.fh.trcov  = @gpcf_matern52_trcov;
     gpcf.fh.trvar  = @gpcf_matern52_trvar;
     gpcf.fh.recappend = @gpcf_matern52_recappend;
+    gpcf.fh.cf2ss = @gpcf_matern52_cf2ss;
   end
   
   % Initialize parameters
@@ -157,7 +159,7 @@ function gpcf = gpcf_matern52(varargin)
 
 end
 
-function [w,s] = gpcf_matern52_pak(gpcf, w)
+function [w,s,h] = gpcf_matern52_pak(gpcf, w)
 %GPCF_MATERN52_PAK  Combine GP covariance function hyper-parameters
 %                   into one vector.
 %
@@ -176,21 +178,25 @@ function [w,s] = gpcf_matern52_pak(gpcf, w)
 %  See also
 %    GPCF_MATERN52_UNPAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
   
   if ~isempty(gpcf.p.magnSigma2)
     w = [w log(gpcf.magnSigma2)];
     s = [s; 'log(matern52.magnSigma2)'];
+    h = [h 1];
     % Hyperparameters of magnSigma2
-    [wh sh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    [wh sh hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end        
   
   if isfield(gpcf,'metric')
-    [wm sm] = gpcf.metric.fh.pak(gpcf.metric);
+    [wm sm hm] = gpcf.metric.fh.pak(gpcf.metric);
     w = [w wm];
     s = [s; sm];
+    h = [h hm];
   else
     if ~isempty(gpcf.p.lengthScale)
       w = [w log(gpcf.lengthScale)];
@@ -199,10 +205,13 @@ function [w,s] = gpcf_matern52_pak(gpcf, w)
       else
         s = [s; 'log(matern52.lengthScale)'];
       end
+      h = [h ones(1,numel(gpcf.lengthScale))];
       % Hyperparameters of lengthScale
-      [wh sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      [wh, sh, hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
   end
   
@@ -276,8 +285,8 @@ function lp = gpcf_matern52_lp(gpcf)
 % are sampled are transformed, e.g., W = log(w) where w is all
 % the "real" samples. On the other hand errors are evaluated in
 % the W-space so we need take into account also the Jacobian of
-% transformation, e.g., W -> w = exp(W). See Gelman et.al., 2004,
-% Bayesian data Analysis, second edition, p24.
+% transformation, e.g., W -> w = exp(W). See Gelman et al. (2013),
+% Bayesian Data Analysis, third edition, p. 21.
   lp = 0;
   gpp=gpcf.p;
   
@@ -631,8 +640,8 @@ function DKff = gpcf_matern52_ginput(gpcf, x, x2, i1)
       if ~savememory
         i1=1:m;
       end
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           D1 = zeros(n,n);
           D1(j,:) = sqrt(s(i)).*bsxfun(@minus,x(j,i),x(:,i)');
           D1 = D1 + D1';
@@ -670,8 +679,8 @@ function DKff = gpcf_matern52_ginput(gpcf, x, x2, i1)
       if ~savememory
         i1=1:m;
       end
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           D1 = zeros(n,n2);
           D1(j,:) = sqrt(s(i)).*bsxfun(@minus,x(j,i),x2(:,i)');
           DK = ma2.*(10/3 - 5 - 5.*sqrt(5).*dist./3).*exp(-sqrt(5).*dist).*D1;                    
@@ -876,6 +885,39 @@ function reccf = gpcf_matern52_recappend(reccf, ri, gpcf)
       reccf.p.magnSigma2 = gpp.magnSigma2.fh.recappend(reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
     end
   end
+end
+
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_matern52_cf2ss(gpcf)
+%GPCF_MATERN52_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the covariance function to state space form such that
+%    the process can be described by the stochastic differential equation
+%    of the form: 
+%      df(t)/dt = F f(t) + L w(t),
+%    where w(t) is a white noise process. The observation model now 
+%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
+%
+%  References:
+%    Simo Sarkka, Arno Solin, Jouni Hartikainen (2013).
+%    Spatiotemporal learning via infinite-dimensional Bayesian
+%    filtering and smoothing. IEEE Signal Processing Magazine,
+%    30(4):51-61.
+%
+
+  % Return model matrices, derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
+      cf_matern52_to_ss(gpcf.magnSigma2, gpcf.lengthScale);
+  
+  % Check which parameters are optimized
+  if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
+  if isempty(gpcf.p.lengthScale), ind(2) = false; else ind(2) = true; end
+  
+  % Return only those derivatives that are needed
+  dF    = dF(:,:,ind);
+  dQc   = dQc(:,:,ind);
+  dPinf = dPinf(:,:,ind);
+  
 end
 
 

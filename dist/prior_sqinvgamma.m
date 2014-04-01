@@ -11,8 +11,8 @@ function p = prior_sqinvgamma(varargin)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
 %  
-%    Parametrisation is done by Bayesian Data Analysis,  
-%    second edition, Gelman et.al. 2004.
+%    The parameterization is as in Gelman, Carlin, Stern, Dunson, Vehtari,
+%    and Rubin (2013). Bayesian Data Analysis, third edition.
 %
 %    Parameters for inverse-Gamma prior [default]
 %      sh       - shape [4]
@@ -79,17 +79,20 @@ function p = prior_sqinvgamma(varargin)
 
 end
 
-function [w, s] = prior_sqinvgamma_pak(p)
+function [w, s, h] = prior_sqinvgamma_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.sh)
     w = log(p.sh);
     s=[s; 'log(SqInv-Gamma.sh)'];
+    h = 1;
   end
   if ~isempty(p.p.is)
     w = [w log(p.is)];
     s=[s; 'log(SqInv-Gamma.is)'];
+    h = [h 1];
   end
 end
 

@@ -227,7 +227,7 @@ function metric = metric_distancematrix(varargin)
         % are sampled are from space W = log(w) where w is all the "real" samples.
         % On the other hand errors are evaluated in the W-space so we need take
         % into account also the  Jakobian of transformation W -> w = exp(W).
-        % See Gelman et al., 2004, Bayesian data Analysis, second edition, p24.
+        % See Gelman et al. (2013), Bayesian Data Analysis, third edition, p. 21.
 
         eprior = -metric.p.lengthScales.fh.lp(metric.lengthScales, metric.p.lengthScales) + sum(log(metric.lengthScales));
         

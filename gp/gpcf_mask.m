@@ -70,7 +70,7 @@ function gpcf = gpcf_mask(varargin)
   
 end
 
-function [w,s] = gpcf_mask_pak(gpcf, w)
+function [w,s,h] = gpcf_mask_pak(gpcf, w)
 %GPCF_MASK_PAK  Combine GP covariance function parameters into
 %              one vector.
 %
@@ -86,7 +86,7 @@ function [w,s] = gpcf_mask_pak(gpcf, w)
 %  See also
 %    GPCF_MASK_UNPAK
   
-  w = []; s = {};
+  w = []; s = {}; h = [];
 end
 
 function [gpcf, w] = gpcf_mask_unpak(gpcf, w)

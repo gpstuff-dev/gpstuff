@@ -88,21 +88,25 @@ function p = prior_sqrtt(varargin)
 
 end
 
-function [w, s] = prior_sqrtt_pak(p)
+function [w, s, h] = prior_sqrtt_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.mu)
     w = p.mu;
     s=[s; 'Sqrt-Student-t.mu'];
+    h = 1;
   end        
   if ~isempty(p.p.s2)
     w = [w log(p.s2)];
     s=[s; 'log(Sqrt-Student-t.s2)'];
+    h = [h 1];
   end
   if ~isempty(p.p.nu)
     w = [w log(p.nu)];
     s=[s; 'log(Sqrt-Student-t.nu)'];
+    h = [h 1];
   end
 end
 

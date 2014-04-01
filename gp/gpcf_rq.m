@@ -169,7 +169,7 @@ function gpcf = gpcf_rq(varargin)
 
 end
 
-function [w, s] = gpcf_rq_pak(gpcf)
+function [w, s, h] = gpcf_rq_pak(gpcf)
 %GPCF_RQ_PAK  Combine GP covariance function parameters into
 %             one vector
 %
@@ -190,21 +190,25 @@ function [w, s] = gpcf_rq_pak(gpcf)
 %  See also
 %    GPCF_RQ_UNPAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
   
   if ~isempty(gpcf.p.magnSigma2)
     w = [w log(gpcf.magnSigma2)];
     s = [s; 'log(rq.magnSigma2)'];
+    h = [h 1];
     % Hyperparameters of magnSigma2
-    [wh sh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    [wh sh hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end        
 
   if isfield(gpcf,'metric')
-    [wm sm] = gpcf.metric.fh.pak(gpcf.metric);
+    [wm, sm, hm] = gpcf.metric.fh.pak(gpcf.metric);
     w = [w wm];
     s = [s; sm];
+    h = [h hm];
   else
     if ~isempty(gpcf.p.lengthScale)
       w = [w log(gpcf.lengthScale)];
@@ -213,20 +217,26 @@ function [w, s] = gpcf_rq_pak(gpcf)
       else
         s = [s; 'log(rq.lengthScale)'];
       end
+      h = [h ones(1, numel(gpcf.lengthScale))];
       % Hyperparameters of lengthScale
-      [wh sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      [wh, sh, hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
   end
   
   if ~isempty(gpcf.p.alpha)
     w= [w log(log(gpcf.alpha))];
     s = [s; 'log(log(rq.alpha))'];
+    h = [h 1];
     % Hyperparameters of alpha
-    [wh sh] = gpcf.p.alpha.fh.pak(gpcf.p.alpha);
+    [wh, sh, hh] = gpcf.p.alpha.fh.pak(gpcf.p.alpha);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end
 
 end
@@ -305,8 +315,8 @@ function lp =gpcf_rq_lp(gpcf, x, t)
 % are sampled are transformed, e.g., W = log(w) where w is all
 % the "real" samples. On the other hand errors are evaluated in
 % the W-space so we need take into account also the Jacobian of
-% transformation, e.g., W -> w = exp(W). See Gelman et.al., 2004,
-% Bayesian data Analysis, second edition, p24.
+% transformation, e.g., W -> w = exp(W). See Gelman et al. (2013),
+% Bayesian Data Analysis, third edition, p. 21.
   lp = 0;
   gpp=gpcf.p;
   
@@ -697,8 +707,8 @@ function DKff = gpcf_rq_ginput(gpcf, x, x2, i1)
       else
         s = 1./gpcf.lengthScale.^2;
       end
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           DK = zeros(size(K));
           DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x(:,i)');
           DK = DK + DK';    
@@ -733,8 +743,8 @@ function DKff = gpcf_rq_ginput(gpcf, x, x2, i1)
       end
       
       ii1 = 0;
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           DK= zeros(size(K));
           DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x2(:,i)');
           
@@ -948,7 +958,7 @@ function reccf = gpcf_rq_recappend(reccf, ri, gpcf)
     end
 
     reccf.alpha(ri,:)=gpcf.alpha;
-    if isfield(gpp,'alpha') && ~isempty(ri.p.alpha)
+    if isfield(gpp,'alpha') && ~isempty(gpp.alpha)
       reccf.p.alpha = gpp.alpha.fh.recappend(reccf.p.alpha, ri, gpcf.p.alpha);
     end
     

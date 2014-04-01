@@ -89,7 +89,7 @@ function lik = lik_inputdependentnoise(varargin)
   end
 end
 
-  function [w,s] = lik_inputdependentnoise_pak(lik)
+  function [w,s,h] = lik_inputdependentnoise_pak(lik)
   %LIK_INPUTDEPENDENTNOISE_PAK  Combine likelihood parameters into one vector.
   %
   %  Description 
@@ -102,14 +102,16 @@ end
   %   See also
   %   LIK_INPUTDEPENDENTNOISE_UNPAK, GP_PAK
     
-  w = []; s = {};
+  w = []; s = {}; h=[];
   if isfield(lik.p, 'sigma2') && ~isempty(lik.p.sigma2)
     w = [w log(lik.sigma2)];
     s = [s 'log(gaussian.sigma2)'];
+    h = [h 0];
     % Hyperparameters of sigma2
-    [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
+    [wh, sh, hh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
     w = [w wh];
     s = [s sh];
+    h = [h hh];
   end    
   end
 

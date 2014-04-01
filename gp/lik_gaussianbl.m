@@ -92,7 +92,8 @@ function lik = lik_gaussianbl(varargin)
     lik.fh.recappend = @lik_gaussianbl_recappend;
   end
 end
-  function [w s] = lik_gaussianbl_pak(lik)
+  
+  function [w s,h] = lik_gaussianbl_pak(lik)
   %LIK_GAUSSIANBL_PAK  Combine likelihood parameters into one vector.
   %
   %  Description
@@ -107,7 +108,7 @@ end
   %  See also
   %    LIK_GAUSSIANBL_UNPAK
 
-    w = []; s = {};
+    w = []; s = {}; h=[];
     if ~isempty(lik.p.sigma2)
       w = log(lik.sigma2);
       if numel(lik.sigma2)>1
@@ -115,10 +116,12 @@ end
         else
           s = [s; 'log(gaussian.sigma2)'];
       end
+      h = [h zeros(1,numel(lik.sigma))];
       % Hyperparameters of noiseSigma2
-      [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
+      [wh, sh,hh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
       w = [w wh];
       s = [s sh];
+      h = [h hh];
     end    
   end
 

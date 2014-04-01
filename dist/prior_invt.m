@@ -12,8 +12,8 @@ function p = prior_invt(varargin)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
 %
-%    Parameterisation is done as in Bayesian Data Analysis,  
-%    second edition, Gelman et.al 2004.
+%    The parameterization is as in Gelman, Carlin, Stern, Dunson, Vehtari,
+%    and Rubin (2013). Bayesian Data Analysis, third edition.
 %    
 %    Parameters for Student-t prior [default]
 %      mu       - location [0]
@@ -91,21 +91,25 @@ function p = prior_invt(varargin)
 
 end
 
-function [w, s] = prior_invt_pak(p)
+function [w, s, h] = prior_invt_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.mu)
     w = p.mu;
     s=[s; 'Inv-t.mu'];
+    h = 1;
   end        
   if ~isempty(p.p.s2)
     w = [w log(p.s2)];
     s=[s; 'log(Inv-t.s2)'];
+    h = [h 1];
   end
   if ~isempty(p.p.nu)
     w = [w log(p.nu)];
     s=[s; 'log(Inv-t.nu)'];
+    h = [h 1];
   end
 end
 

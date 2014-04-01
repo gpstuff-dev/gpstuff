@@ -99,7 +99,7 @@ function gpcf = gpcf_neuralnetwork(varargin)
 
 end
 
-function [w, s] = gpcf_neuralnetwork_pak(gpcf, w)
+function [w, s, h] = gpcf_neuralnetwork_pak(gpcf, w)
 %GPCF_NEURALNETWORK_PAK  Combine GP covariance function parameters
 %                        into one vector
 %
@@ -120,16 +120,18 @@ function [w, s] = gpcf_neuralnetwork_pak(gpcf, w)
 %   GPCF_NEURALNETWORK_UNPAK
 
   i1=0;i2=1;
-  w = []; s = {};
+  w = []; s = {}; h=[];
   
   if ~isempty(gpcf.p.biasSigma2)
     w = [w log(gpcf.biasSigma2)];
     s = [s; 'log(neuralnetwork.biasSigma2)'];
-    
+    h = [h 1];
     % Hyperparameters of magnSigma2
-    [wh sh] = gpcf.p.biasSigma2.fh.pak(gpcf.p.biasSigma2);
+    [wh sh hh] = gpcf.p.biasSigma2.fh.pak(gpcf.p.biasSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end        
   
   if ~isempty(gpcf.p.weightSigma2)
@@ -139,11 +141,14 @@ function [w, s] = gpcf_neuralnetwork_pak(gpcf, w)
     else
       s = [s; 'log(neuralnetwork.weightSigma2)'];
     end
+    h = [h ones(1,numel(gpcf.weightSigma2))];
     
     % Hyperparameters of lengthScale
-    [wh sh] = gpcf.p.weightSigma2.fh.pak(gpcf.p.weightSigma2);
+    [wh, sh, hh] = gpcf.p.weightSigma2.fh.pak(gpcf.p.weightSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end
 
 end
@@ -175,6 +180,9 @@ function [gpcf, w] = gpcf_neuralnetwork_unpak(gpcf, w)
     i1=1;
     gpcf.biasSigma2 = exp(w(i1));
     w = w(i1+1:end);
+    % Hyperparameters of magnSigma2
+    [p, w] = gpcf.p.biasSigma2.fh.unpak(gpcf.p.biasSigma2, w);
+    gpcf.p.biasSigma2 = p;
   end
 
   if ~isempty(gpp.weightSigma2)
@@ -188,11 +196,6 @@ function [gpcf, w] = gpcf_neuralnetwork_unpak(gpcf, w)
     gpcf.p.weightSigma2 = p;
   end
   
-  if ~isempty(gpp.biasSigma2)
-    % Hyperparameters of magnSigma2
-    [p, w] = gpcf.p.biasSigma2.fh.unpak(gpcf.p.biasSigma2, w);
-    gpcf.p.biasSigma2 = p;
-  end
 end
 
 function lp = gpcf_neuralnetwork_lp(gpcf)
@@ -590,8 +593,8 @@ function DKff = gpcf_neuralnetwork_ginput(gpcf, x, x2, i1)
     C_tmp = (C_tmp+C_tmp')./2;
     
     ii1=0;
-    for d1=i1
-      for j=1:n
+    for j=1:n
+      for d1=i1
         
         DK = zeros(n);
         DK(j,:)=s(d1)*x(:,d1)';
@@ -635,8 +638,8 @@ function DKff = gpcf_neuralnetwork_ginput(gpcf, x, x2, i1)
     % C(abs(C)<=eps) = 0;
     
     ii1 = 0;
-    for d1=i1
-      for j = 1:n
+    for j = 1:n
+      for d1=i1
         
         DK = zeros(n, n2);
         DK(j,:)=s(d1)*x2(:,d1)';

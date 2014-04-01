@@ -76,17 +76,20 @@ function p = prior_loggaussian(varargin)
 
 end
 
-function [w, s] = prior_loggaussian_pak(p)
+function [w, s, h] = prior_loggaussian_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.mu)
     w = p.mu;
     s=[s; 'Log-Gaussian.mu'];
+    h = 1;
   end
   if ~isempty(p.p.s2)
     w = [w log(p.s2)];
     s=[s; 'log(Log-Gaussian.s2)'];
+    h = [h 1];
   end
 end
 
@@ -108,7 +111,7 @@ function lp = prior_loggaussian_lp(x, p)
   
   lJ = -log(x);    % =log(1/x)=log(|J|) of transformation
   xt  = log(x);    % transformed x
-  lp = 0.5*sum(-log(2*pi) -log(p.s2)- 1./p.s2 .* sum((xt-p.mu).^2,1)) +lJ;
+  lp = 0.5*sum(-log(2*pi) -log(p.s2)- 1./p.s2 .* sum((xt-p.mu).^2,1)) +sum(lJ);
     
   if ~isempty(p.p.mu)
     lp = lp + p.p.mu.fh.lp(p.mu, p.p.mu);

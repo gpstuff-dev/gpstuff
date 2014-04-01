@@ -506,6 +506,7 @@ function [record,ri,lrej,indrej,hmcrej,lik_hmcrej] = recappend(record, gp, x, y,
   ncf = length(gp.cf);
   
   if isempty(record)   % Initialize record structure
+    record=gp;
     record.type = gp.type;
     record.lik = gp.lik;
     if isfield(gp,'latent_method')

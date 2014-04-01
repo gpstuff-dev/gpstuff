@@ -33,6 +33,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
 % Copyright (c) 2010 Heikki Peura
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -479,6 +480,103 @@ switch gp.type
     %0.5*trace(K_ff-K_fu*inv(K_uu)*K_fu')
     %0.5*trace(K_ff-B'*B)
     
+  case {'KALMAN'}  
+    % ============================================================
+    % Kalman filtering and smoothing
+    % ============================================================
+    %
+    % The implementation below is primarily based on the methods 
+    % presented in the following publication. If you find this 
+    % useful as a part of your own research, please cite the papers.
+    %
+    %  [1] Simo Sarkka, Arno Solin, Jouni Hartikainen (2013).
+    %      Spatiotemporal learning via infinite-dimensional Bayesian
+    %      filtering and smoothing. IEEE Signal Processing Magazine,
+    %      30(4):51-61.
+    %
+    %  [2] Simo Sarkka (2013). Bayesian filtering and smoothing. 
+    %      Cambridge University Press.
+    %
+    %  [3] Simo Sarkka (2006). Recursive Bayesian inference on stochastic
+    %      differential equations. Doctoral dissertation, Helsinki 
+    %      University of Technology, Filand.
+    %
+    
+    % Ensure that this is a purely temporal problem
+    if size(x,2) > 1,
+      error('The ''KALMAN'' option only supports one-dimensional data.')  
+    end
+    
+    % Extract the noise magnitude from the GP likelihood model
+    R = gp.lik.sigma2;
+    
+    % Initialize model matrices
+    F    = [];
+    L    = [];
+    Qc   = [];
+    H    = [];
+    Pinf = [];
+    
+    % For each covariance function
+    for j=1:length(gp.cf)
+ 
+      % Form state-space model from the gp.cf{j}
+      try
+        [jF,jL,jQc,jH,jPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
+      catch
+        [edata, eprior, e] = set_output_for_notpositivedefinite;
+        return 
+      end
+        
+      % Stack model
+      F    = blkdiag(F,jF);
+      L    = blkdiag(L,jL);
+      Qc   = blkdiag(Qc,jQc);
+      H    = [H jH];    
+      Pinf = blkdiag(Pinf,jPinf);
+      
+    end
+    
+    % Sort values
+    [x,ind] = sort(x);
+    y = y(ind);
+    
+    % Set initial state
+    m = zeros(size(F,1),1);
+    P = Pinf;
+
+    % Initialize likelihood
+    edata = 0;
+    
+    % Run filter for evaluating the marginal likelihood
+    for k=1:size(y,1)
+        
+      % Solve A using the method by Davison
+      if (k>1)
+            
+        % Discrete-time solution (only for stable systems)
+        dt = x(k)-x(k-1);
+        A  = expm(F*dt);
+        Q  = Pinf - A*Pinf*A';
+        
+        % Prediction step
+        m = A * m;
+        P = A * P * A' + Q;
+        
+      end
+      
+      % Update step
+      S = H*P*H'+R;
+      K = P*H'/S;
+      v = y(k)-H*m;
+      m = m + K*v;
+      P = P - K*H*P;
+      
+      % Update log likelihood
+      edata = edata + 1/2*log(det(2*pi*S)) + 1/2*v'/S*v;
+      
+    end
+    
   otherwise
     error('Unknown type of Gaussian process!')
 end
@@ -508,13 +606,13 @@ end
 % ============================================================
 if ~isempty(strfind(gp.infer_params, 'inducing'))
   if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
-    for i = 1:size(gp.X_u,1)
-      if iscell(gp.p.X_u) % Own prior for each inducing input
+    if iscell(gp.p.X_u) % Own prior for each inducing input
+      for i = 1:size(gp.X_u,1)        
         pr = gp.p.X_u{i};
-        eprior = eprior - pr.fh.lp(gp.X_u(i,:), pr);
-      else
-        eprior = eprior - gp.p.X_u.fh.lp(gp.X_u(i,:), gp.p.X_u);
+        eprior = eprior - pr.fh.lp(gp.X_u(i,:), pr);        
       end
+    else
+      eprior = eprior - gp.p.X_u.fh.lp(gp.X_u(:), gp.p.X_u);
     end
   end
 end

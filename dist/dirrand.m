@@ -5,8 +5,8 @@ function r = dirrand(m,n)
 %    Dirichlet(1,...,1) distribution.
 %    R = DIRRAND(M,N) returns N such vectors in MxN matrix.
 %
-%   References: Gelman, Carlin, Stern, & Rubin (2003), Bayesian Data Analysis,
-%               Chapman & Hall, pp. 582.
+%   References: Gelman, Carlin, Stern, Dunson, Vehtari & Rubin (2013),
+%               Bayesian Data Analysis, third edition, p. 583.
 
 % Copyright (c) 1998-2004 Aki Vehtari
 

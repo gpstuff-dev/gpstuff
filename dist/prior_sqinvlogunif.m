@@ -9,7 +9,7 @@ function p = prior_sqinvlogunif(varargin)
 %    PRIOR_*
 
 % Copyright (c) 2009 Jarno Vanhatalo
-% Copyright (c) 2010 Jaakko Riihimäki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki
 % Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -42,9 +42,10 @@ function p = prior_sqinvlogunif(varargin)
   end
 end
 
-function [w, s] = prior_sqinvlogunif_pak(p)
+function [w, s, h] = prior_sqinvlogunif_pak(p)
   w=[];
   s={};
+  h=[];
 end
 
 function [p, w] = prior_sqinvlogunif_unpak(p, w)

@@ -76,17 +76,20 @@ function p = prior_laplace(varargin)
 
 end
 
-function [w, s] = prior_laplace_pak(p)
+function [w, s, h] = prior_laplace_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.mu)
     w = p.mu;
     s=[s; 'Laplace.mu'];
+    h = 1;
   end
   if ~isempty(p.p.s)
     w = [w log(p.s)];
     s=[s; 'log(Laplace.s)'];
+    h = [h 1];
   end
 end
 

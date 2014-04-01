@@ -29,30 +29,33 @@ function waic = gp_waic(gp, x, y, varargin)
 %    GP can be a Gaussian process structure, a record structure
 %    from GP_MC or an array of GPs from GP_IA.
 %
-%   OPTIONS is optional parameter-value pair
-%      method - method to evaluate waic, 'V' = Variance method, 'G' = Gibbs
-%               training utility method (default = 'V')
-%      form   - return form: 'mean' returns the mean value, 'sum' returns the 
-%               sum value, 'dic' return the -2*sum value (deviance)
-%               and 'all' returns the values for all data points
-%               (default = 'mean')
-%      z      - optional observed quantity in triplet (x_i,y_i,z_i)
-%               Some likelihoods may use this. For example, in case of 
-%               Poisson likelihood we have z_i=E_i, that is, expected value 
-%               for ith case. 
+%  OPTIONS is optional parameter-value pair
+%    method - method to evaluate waic, 'V' = Variance method, 'G' = Gibbs
+%             training utility method (default = 'V')
+%    form   - return form: 'mean' returns the mean value, 'sum' returns the 
+%             sum value, 'dic' return the -2*sum value (deviance)
+%             and 'all' returns the values for all data points
+%             (default = 'mean')
+%    z      - optional observed quantity in triplet (x_i,y_i,z_i)
+%             Some likelihoods may use this. For example, in case of 
+%             Poisson likelihood we have z_i=E_i, that is, expected value 
+%             for ith case. 
 %
-%   See also
-%     GP_DIC, DEMO_MODELASSESMENT1, DEMO_MODELASSESMENT2
+%  See also
+%    GP_DIC, DEMO_MODELASSESMENT1, DEMO_MODELASSESMENT2
 %
-%   References
+%  References
 %     
-%     Watanabe(2010). Equations of states in singular statistical
-%     estimation. Neural Networks 23 (2010), 20-34
+%    Watanabe(2010). Equations of states in singular statistical
+%    estimation. Neural Networks 23 (2010), 20-34
 %
-%     Watanabe(2010). Asymptotic Equivalance of Bayes Cross Validation and
-%     Widely applicable Information Criterion in Singular Learning Theory.
-%     Journal of Machine Learning Research 11 (2010), 3571-3594.
+%    Watanabe(2010). Asymptotic Equivalance of Bayes Cross Validation and
+%    Widely applicable Information Criterion in Singular Learning Theory.
+%    Journal of Machine Learning Research 11 (2010), 3571-3594.
 %     
+%    Andrew Gelman, Jessica Hwang and Aki Vehtari (2013). 
+%    Understanding predictive information criteria for Bayesian
+%    models. Statistics and Computing, in press
 %
 
 % Copyright (c) 2011-2013 Ville Tolvanen
@@ -384,15 +387,19 @@ function waic = gp_waic(gp, x, y, varargin)
       
       if isfield(gp{1}.lik.fh,'trcov')
         % Gaussian likelihood
+
         for i=1:tn
-          fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
-          fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
-          Elog(i) = quadgk(@(f) reshape(sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-                                .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f(:)'),nsamples,1)).^2,(2.*sigma2(i,:))'), ...
-                                0.5*log(2*pi*sigma2(i,:))').^2),size(f,1),size(f,2)), fmin, fmax);
-          Elog2(i) = quadgk(@(f) reshape(sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-                                .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f(:)'),nsamples,1)).^2,(2.*sigma2(i,:))'), ...
-                                0.5*log(2*pi*sigma2(i,:))')),size(f,1),size(f,2)), fmin, fmax);
+%           fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
+%           fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
+          Elog(i) = sum((Ef(i,:).^4 + 3.*Varf(i,:).^2 - 4.*Ef(i,:).^3.*y(i) + 6.*Varf(i,:).*y(i).^2 + y(i).^4 + 6.*Ef(i,:).^2.*(Varf(i,:) + y(i).^2) ...
+            -4.*Ef(i,:).*(3.*Varf(i,:).*y(i) + y(i).^3) + 2.*sigma2(i,:).*(Ef(i,:).^2 + Varf(i,:) - 2.*Ef(i,:).*y(i) + y(i).^2) ...
+            .*log(2.*pi.*sigma2(i,:)) + sigma2(i,:).^2.*log(2.*pi.*sigma2(i,:)).^2)./(4.*sigma2(i,:).^2).*weight);
+          Elog2(i) = sum(((-Ef(i,:).^2-Varf(i,:)+2.*Ef(i,:).*y(i)-y(i).^2-sigma2(i,:).*log(2*pi*sigma2(i,:))) ...
+            ./(2.*sigma2(i,:))).*weight);
+%           Elog(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+%                                     .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))').^2), fmin, fmax);
+%           Elog2(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+%                                      .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
         end
         Elog2 = Elog2.^2;
         Vn = (Elog-Elog2);
@@ -424,10 +431,12 @@ function waic = gp_waic(gp, x, y, varargin)
       if isfield(gp{1}.lik.fh,'trcov')
         % Gaussian likelihood
         for i=1:tn
-          fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
-          fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
-          GUt(i) = quadgk(@(f) reshape(sum(bsxfun(@times, multi_npdf(f(:)',Ef(i,:),(Varf(i,:))),weight') ...
-                                   .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f(:)'),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')),size(f,1),size(f,2)), fmin, fmax);
+%           fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
+%           fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
+          GUt(i) = sum(((-Ef(i,:).^2-Varf(i,:)+2.*Ef(i,:).*y(i)-y(i).^2-sigma2(i,:).*log(2*pi*sigma2(i,:))) ...
+            ./(2.*sigma2(i,:))).*weight);
+%           GUt(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+%                                    .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
         end
         waic = BUt-2*(BUt-GUt);
 

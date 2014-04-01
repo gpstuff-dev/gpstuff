@@ -25,6 +25,21 @@ function [e, edata, eprior, param] = gpep_e(w, gp, varargin)
 %          Poisson likelihood we have z_i=E_i, that is, expected
 %          value for ith case.
 %
+%  References
+%
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
+%
+%    van Gerven, M., Cseke, B., Oostenveld, R., and Heskes, T. (2009). 
+%    Bayesian source localization with the multivariate Laplace prior. 
+%    In Advances in Neural Information Processing Systems 22, ed.\
+%    Y. Bengio, D. Schuurmans, J. Lafferty, C. K. I. Williams, and
+%    A. Culotta, 1901--1909.
+%
+%    Pasi Jylänki, Jarno Vanhatalo and Aki Vehtari (2011). Robust
+%    Gaussian process regression with a Student-t likelihood. Journal
+%    of Machine Learning Research, 12(Nov):3227-3257.
+%
 %  See also
 %    GP_SET, GP_E, GPEP_G, GPEP_PRED
 
@@ -99,7 +114,7 @@ end
 
   function [e, edata, eprior, param] = ep_algorithm(w, gp, x, y, z)    
     
-    if isfield(gp.lik,'nondiagW')
+    if isfield(gp.lik,'nondiagW') % non-diagonal W
       
       if 0%~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
 %         % The covariance function parameters or data haven't changed
@@ -432,6 +447,8 @@ end
               disp(['Number of EP iterations: ' num2str(iter-1) ', Maximum of EP iterations:' num2str(maxiter)])
             end
             edata = logZep;
+
+            % *** Sparse methods not implemented for non-diagonal W ***
             
             % ============================================================
             % FIC
@@ -502,7 +519,7 @@ end
 %         ch.datahash=datahash;
       end
       
-    else
+    else % diagonal W
       
       if 0%~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
 %         % The covariance function parameters or data haven't changed
@@ -522,7 +539,18 @@ end
       else
         
         switch gp.latent_opt.optim_method
-          case 'basic-EP'
+          case 'basic-EP'            
+            
+            % Monotonicity, get the virtual observations
+            if isfield(gp, 'lik_mono')
+              x2=x;
+              y2=y;
+              x=gp.xv;
+              %y=gp.yv.*ones(size(x,1).*length(gp.nvd),1);
+              yv=round(gp.nvd./abs(gp.nvd));
+              y=bsxfun(@times, yv, ones(size(gp.xv,1),length(gp.nvd)));
+              y=y(:);
+            end
             
             % The parameters or data have changed since
             % the last call for gpep_e. In this case we need to
@@ -550,7 +578,7 @@ end
             
             logM0 = zeros(n,1);
             muhat = zeros(n,1);
-            sigm2hat = zeros(n,1);
+            sigm2hat = zeros(n,1);                        
             
             % =================================================
             % First Evaluate the data contribution to the error
@@ -559,7 +587,28 @@ end
               % FULL
               % ============================================================
               case 'FULL'   % A full GP
-                [K,C] = gp_trcov(gp, x);
+                if ~isfield(gp, 'lik_mono')
+                  [K,C] = gp_trcov(gp, x);
+                else
+                  % Compute the prior covariance of f_joint (f
+                  % and df/dx)
+                  [K,C] = gp_dtrcov(gp, x2, x);
+                  if isequal(gp.lik.type, 'Gaussian')
+                    Cp=K;
+                    C=K(size(x2,1)+1:end, size(x2,1)+1:end);
+                  end
+                  n1=length(y);
+                  n2=length(y2);
+                  n=size(C,1);
+                  nutilde = zeros(size(C,1),1);
+                  tautilde = zeros(size(C,1),1);
+                  muvec_i=zeros(size(C,1),1);
+                  sigm2vec_i=zeros(size(C,1),1);
+                  mf=zeros(size(C,1),1);
+                  logM0 = zeros(size(C,1),1);
+                  muhat = zeros(size(C,1),1);
+                  sigm2hat = zeros(size(C,1),1);
+                end
                 if ~issparse(C)
                   % The EP algorithm for full support covariance function
                   if ~isfield(gp,'meanf')
@@ -575,6 +624,17 @@ end
                   while iter<=maxiter && ~convergence
                     logZep_old=logZep;
                     logM0_old=logM0;
+                                        
+                    if isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian') ...
+                        && iter > 1
+                      mf_old=mf(1:n2);
+                      sigm_old=Sigm(1:n2,1:n2);
+                      mf=mf(size(x2,1)+1:end);
+                      Sigm=Sigm(size(x2,1)+1:end,size(x2,1)+1:end);
+                      tautilde=tautilde(size(x2,1)+1:end);
+                      nutilde=nutilde(size(x2,1)+1:end);
+                      C=C(size(x2,1)+1:end,size(x2,1)+1:end);
+                    end
                     
                     if 0%isequal(gp.latent_opt.init_prev, 'on') && iter==1 && ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1) && isequal(datahash,ch.datahash)
 %                       tautilde=ch.tautilde;
@@ -590,12 +650,27 @@ end
                         sigm2vec_i=1./tau;
                         
                         % compute moments of tilted distributions
-                        [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
+                        
+                        if isfield(gp, 'lik_mono')
+                          % Now we have 2 likelihoods, do atleast one EP
+                          % approximation and check whether the "main"
+                          % likelihood is Gaussian or not
+                          if ~isequal(gp.lik.type, 'Gaussian')
+                            [logM0, muhat, sigm2hat] = gp.lik_mono.fh.tiltedMoments(gp.lik_mono, y, 1:n1, sigm2vec_i(n2+1:end), muvec_i(n2+1:end), z);
+                            [logM02, muhat2, sigm2hat2] = gp.lik.fh.tiltedMoments(gp.lik, y2, 1:n2, sigm2vec_i(1:n2), muvec_i(1:n2), z);                            
+                            logM0=[logM02;logM0];
+                            muhat=[muhat2;muhat];
+                            sigm2hat=[sigm2hat2;sigm2hat];
+                          else                            
+                            [logM0, muhat, sigm2hat] = gp.lik_mono.fh.tiltedMoments(gp.lik_mono, y, 1:n1, sigm2vec_i, muvec_i, z);
+                          end
+                        else
+                          [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
+                        end
                         if any(isnan(logM0))
                           [e, edata, eprior, param] = set_output_for_notpositivedefinite();
                           return
                         end
-                        
                         % update site parameters
                         deltatautilde=1./sigm2hat-tau-tautilde;
                         tautilde=tautilde+df.*deltatautilde;
@@ -603,7 +678,6 @@ end
                         nutilde=nutilde+df.*deltanutilde;
                       else
                         % sequential-EP
-                        muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
                         for i1=1:n
                           % Algorithm utilizing Cholesky updates
                           % This is numerically more stable but slower
@@ -613,7 +687,7 @@ end
                           % $$$                             tau_i=S11^-1-tautilde(i1);
                           % $$$                             nu_i=S11^-1*mf(i1)-nutilde(i1);
                           % $$$
-                          % $$$                             mu_i=nu_i/tau_i;
+                          % $$$                             mu_icovg=nu_i/tau_i;
                           % $$$                             sigm2_i=tau_i^-1;
                           % $$$
                           % $$$                             if sigm2_i < 0
@@ -687,6 +761,11 @@ end
                     
                     % Recompute the approximate posterior parameters
                     % parallel- and sequential-EP
+                    if isfield(gp, 'lik_mono') && isequal(gp.lik.type,'Gaussian')
+                      tautilde=[1./gp.lik.sigma2.*ones(size(x2,1),1); tautilde];
+                      nutilde=[y2./gp.lik.sigma2;nutilde];
+                      C=Cp;
+                    end
                     Stilde=tautilde;
                     Stildesqr=sqrt(Stilde);
                     
@@ -696,7 +775,7 @@ end
                       
                       %B=eye(n)+Stildesqr*C*Stildesqr;
                       B=bsxfun(@times,bsxfun(@times,Stildesqr,C),Stildesqr');
-                      B(1:n+1:end)=B(1:n+1:end)+1;
+                      B(1:size(B,1)+1:end)=B(1:size(B,1)+1:end)+1;
                       [L,notpositivedefinite] = chol(B,'lower');
                       if notpositivedefinite
                         [e, edata, eprior, param] = set_output_for_notpositivedefinite();
@@ -717,23 +796,35 @@ end
                       %         0.5*sum(log(sigm2vec_i+1./tautilde))+
                       %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
                       
-                      % 4. term & 1. term
-                      term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
-                      
-                      % 5. term (1/2 element) & 2. term
-                      T=1./sigm2vec_i;
-                      Cnutilde = C*nutilde;
-                      L2 = V*nutilde;
-                      term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
-                      term52 = term52.*0.5;
-                      
-                      % 5. term (2/2 element)
-                      term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-                      
-                      % 3. term
-                      term3 = sum(logM0);
-                      
-                      logZep = -(term41+term52+term5+term3);
+                      if isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian')
+                        mutilde=nutilde./tautilde;
+                        mustilde=nutilde./sqrt(tautilde);
+                        
+                        logZep = -0.5.*mustilde'*(L'\(L\mustilde)) ...
+                          - sum(log(diag(L))) + 0.5.*sum(log(tautilde(1:n2))) ...
+                          + sum((muvec_i-mutilde(n2+1:end)).^2./(2.*(sigm2vec_i+1./tautilde(n2+1:end)))) ...
+                          + sum(logM0) + 0.5.*sum(log(sigm2vec_i.*tautilde(n2+1:end)+1));
+                        
+                        logZep = -logZep;
+                      else
+                        % 4. term & 1. term
+                        term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
+                        
+                        % 5. term (1/2 element) & 2. term
+                        T=1./sigm2vec_i;
+                        Cnutilde = C*nutilde;
+                        L2 = V*nutilde;
+                        term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
+                        term52 = term52.*0.5;
+                        
+                        % 5. term (2/2 element)
+                        term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                        
+                        % 3. term
+                        term3 = sum(logM0);                        
+
+                        logZep = -(term41+term52+term5+term3);
+                      end
                       iter=iter+1;
                       
                     else
@@ -950,9 +1041,17 @@ end
                   end
                   
                 end
+                La2 = B;
+                if isfield(gp, 'lik_mono')
+                  [La2,notpositivedefinite]=chol(Sigm);
+                  if notpositivedefinite
+                    [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
+%                   iter
+                end
                 edata = logZep;
                 % Set something into La2
-                La2 = B;
                 b = 0;
                 
                 % ============================================================
@@ -1823,6 +1922,20 @@ end
               eprior = eprior - lik.fh.lp(lik);
             end
             
+            % Evaluate the prior contribution to the error from the inducing inputs
+            if ~isempty(strfind(gp.infer_params, 'inducing'))
+              if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+                if iscell(gp.p.X_u) % Own prior for each inducing input
+                  for i = 1:size(gp.X_u,1)
+                    pr = gp.p.X_u{i};
+                    eprior = eprior - pr.fh.lp(gp.X_u(i,:), pr);
+                  end
+                else
+                  eprior = eprior - gp.p.X_u.fh.lp(gp.X_u(:), gp.p.X_u);
+                end
+              end
+            end
+            
             % The last things to do
             if isfield(gp.latent_opt, 'display') && ismember(gp.latent_opt.display,{'final','iter'})
               fprintf('GPEP_E: Number of iterations in EP: %d \n', iter-1)
@@ -1869,7 +1982,7 @@ end
                 K = gp_trcov(gp, x);
                 
               case 'FIC'
-                % Sparse
+                % Sparse (only FIC implemented)
                 u = gp.X_u;
                 m = size(u,1);
                 K_uu = gp_trcov(gp,u);
@@ -1913,7 +2026,7 @@ end
             % initial energy (lnZ_ep)
             e = lnZ_q + lnZ_r -lnZ_s;
             
-            if ismember(display,{'final','iter'})
+            if ismember(display,{'iter'})
               fprintf('\nInitial energy: e=%.4f, hyperparameters:\n',e)
               fprintf('Cov:%s \n',sprintf(' %.2g,',gp_pak(gp,'covariance')))
               fprintf('Lik:%s \n',sprintf(' %.2g,',gp_pak(gp,'likelihood')))
@@ -2505,6 +2618,20 @@ end
               eprior = eprior - likelih.fh.lp(likelih);
             end
             
+            % Evaluate the prior contribution to the error from the inducing inputs
+            if ~isempty(strfind(gp.infer_params, 'inducing'))
+              if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+                if iscell(gp.p.X_u) % Own prior for each inducing input
+                  for i = 1:size(gp.X_u,1)
+                    pr = gp.p.X_u{i};
+                    eprior = eprior - pr.fh.lp(gp.X_u(i,:), pr);
+                  end
+                else
+                  eprior = eprior - gp.p.X_u.fh.lp(gp.X_u(:), gp.p.X_u);
+                end
+              end
+            end
+            
             % the total energy
             e = edata + eprior;
             
@@ -2546,6 +2673,12 @@ end
         param.logZ_i = logZ_i;
         param.sigm2vec_i = sigm2vec_i;
         param.muvec_i = muvec_i;
+        if exist('Sigm','var')
+          param.Sigma=Sigm;
+        else
+          param.Sigma=[];
+        end
+        param.mf=mf;
         
 %         % store values to the cache
 %         ch=param;

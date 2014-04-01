@@ -58,7 +58,7 @@ function lik = lik_multinom(varargin)
 
 end  
 
-function [w,s] = lik_multinom_pak(lik)
+function [w,s,h] = lik_multinom_pak(lik)
 %LIK_MULTINOM_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -72,7 +72,7 @@ function [w,s] = lik_multinom_pak(lik)
 %  See also
 %    LIK_MULTINOM_UNPAK, GP_PAK
   
-  w = []; s = {};
+  w = []; s = {};h=[];
 end
 
 

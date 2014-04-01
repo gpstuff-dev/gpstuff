@@ -52,7 +52,7 @@ function lik = lik_multinomprobit(varargin)
   
 end
 
-  function [w,s] = lik_multinomprobit_pak(lik)
+  function [w,s,h] = lik_multinomprobit_pak(lik)
   %LIK_MULTINOMPROBIT_PAK  Combine likelihood parameters into one vector.
   %
   %  Description 
@@ -65,7 +65,7 @@ end
   %  See also
   %    LIK_MULTINOMPROBIT_UNPAK, GP_PAK
     
-    w = []; s = {};
+    w = []; s = {}; h=[];
   end
 
 

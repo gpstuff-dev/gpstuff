@@ -40,6 +40,7 @@
 \def\WAIC{\mathrm{WAIC}}
 
 \DeclareMathOperator{\Poisson}{Poisson}
+\DeclareMathOperator{\NegBin}{NegBin}
 \DeclareMathOperator{\Chi}{Chi}
 \DeclareMathOperator{\GP}{\mathcal{GP}}
 \DeclareMathOperator{\N}{N}
@@ -200,17 +201,17 @@ models with multiple latent processes and likelihoods where each
 factor depens on multiple latent values. These are discussed in
 Section \ref{sec:multilatent-models}.
 
-Many GP models such as general dynamic linear models and multi-output
-models, do not fulfill the assumptions
-\eqref{likelihood}-\eqref{hyper_prior}.  However, the current
-implementation of \pkg{GPstuff} relies on them and as will be seen,
-the class of models fulfilling these assumptions is rather rich. Even
-though the observations are assumed to be conditionally independent
-given the latent variables, the dependencies between the observations
-are incorporated into the model via the GP prior. At the moment, only
-independent priors on $\theta$ and $\phi$ are provided, as highlighted
-by equation \eqref{hyper_prior}, but general form $p(\theta,\phi)$
-could be used as well.
+% Many GP models such as general dynamic linear models and multi-output
+% models, do not fulfill the assumptions
+% \eqref{likelihood}-\eqref{hyper_prior}.  However, the current
+% implementation of \pkg{GPstuff} relies on them and as will be seen,
+% the class of models fulfilling these assumptions is rather rich. Even
+% though the observations are assumed to be conditionally independent
+% given the latent variables, the dependencies between the observations
+% are incorporated into the model via the GP prior. At the moment, only
+% independent priors on $\theta$ and $\phi$ are provided, as highlighted
+% by equation \eqref{hyper_prior}, but general form $p(\theta,\phi)$
+% could be used as well.
 %\pkg{GPstuff} contains one model not fulfilling the general model
 %definition, the multi-class model (see \code{demo_multiclass} in the
 %package), which has special implementation discussed in
@@ -233,18 +234,19 @@ machine learning perspective is comprehensively summarized by
 Nowadays, GPs are used, for example, in weather forecasting
 \citep{Fuentes+Raftery:2005,Berrocal+Raftery+Gneiting+Steed:2009},
 spatial statistics
-\citep{Best+Richardson+Thomson:2005,Kaufman+Schervish+Nychka:2008,Banerjee+Gelfand+Finley+Sang:2008},
+\citep{Best+Richardson+Thomson:2005,Kaufman+Schervish+Nychka:2008,Banerjee+Gelfand+Finley+Sang:2008,Myllymaki+Sarkka+Vehtari:2014},
 computational biology
 \citep{Honkela+Gao+Ropponen+Rattray+Lawrence:2011}, reinforcement
 learning
 \citep{Deisenroth+Rasmussen+Peters:2009,Deisenroth+Rasmussen+Fox:2011},
 healthcare applications
-\citep{Stegle+Fallert+MacKay+Brage:2008,Vanhatalo+Pietilainen+Vehtari:2010},
+\citep{Stegle+Fallert+MacKay+Brage:2008,Vanhatalo+Pietilainen+Vehtari:2010,Rantonen+Vehtari+etal:2012,Rantonen+Vehtari+etal:2014},
+survival analysis \citep{Joensuu+etal:2012a,Joensuu+Reichardt+Eriksson+Hall+Vehtari:2014}
 industrial applications \citep{Kalliomaki+Vehtari+Lampinen:2005},
 computer model calibration and emulation
 \citep{Kennedy+OHagan:2001,Conti+Gosling+Oakley+OHagan:2009}, prior
 elicitation \citep{Moala+OHagan:2010} and density estimation
-\citep{Tokdar+Ghosh:2007,Tokdar+Zhu+Ghosh:2010} to name a few.
+\citep{Tokdar+Ghosh:2007,Tokdar+Zhu+Ghosh:2010,Riihimaki+Vehtari:2014} to name a few.
 Despite their attractive theoretical properties and wide range of
 applications, GPs provide practical challenges in implementation.
 
@@ -266,7 +268,7 @@ in Section \ref{sec_cond_post_of_latent}), follow the pseudocode from
 \citep{Rasmussen+Williams:2006}. However, these are later generalized
 and improved as described in
 \citep{Vanhatalo+Jylanki+Vehtari:2009,Vanhatalo+Pietilainen+Vehtari:2010,
-  Vanhatalo+Vehtari:2010,Jylanki+Vanhatalo+Vehtari:2011}.
+  Vanhatalo+Vehtari:2010,Jylanki+Vanhatalo+Vehtari:2011,Riihimaki+Jylanki+Vehtari:2013,Riihimaki+Vehtari:2014}.
 
 There are also many other toolboxes for GP modelling than
 \pkg{GPstuff} freely available. Perhaps the best known packages are
@@ -317,11 +319,11 @@ implementations of \pkg{GPstuff} rely on the sparse matrix toolbox
 % \pkg{GPstuff} can be used to build elaborate hierarchical models and
 % prior structures requiring often several lines of code. 
 
-This work concentrates on discussing the essential theory behind the
-implementation of \pkg{GPstuff}. We explain important parts of the
-code, but the full code demonstrating the important features of the
-package (including also data creation and such), are included in the
-demonstration files \code{demo\_*} to which we refer in the text.
+This work concentrates on discussing the essential theory and methods
+behind the implementation of \pkg{GPstuff}. We explain important parts
+of the code, but the full code demonstrating the important features of
+the package (including also data creation and such), are included in
+the demonstration files \code{demo\_*} to which we refer in the text.
 
 \section{Gaussian process models}
 
@@ -1385,16 +1387,16 @@ and $\alpha\tau$ corresponds to $\sigma_t$.
 
 \begin{figure}
   \begin{center}
-    \subfigure[Gaussian likelihood.]{
+    \subfigure[Gaussian model.]{
       \includegraphics[width=5cm]{neal_data_pic1}\label{neal_data_pic1}
     }    
     ~
-    \subfigure[Student-$t$ likelihood.]{ 
+    \subfigure[Student-$t$ model.]{ 
       \includegraphics[width=5cm]{neal_data_pic2}\label{neal_data_pic2}
     }
   \end{center}\caption{An example of regression with outliers from
     \citep{Neal:1997}. On the left Gaussian and on the right the
-    Student-$t$ likelihood.  The real function is plotted with
+    Student-$t$ model.  The real function is plotted with
     black line.}
   \label{single_obs_figure} 
 \end{figure}
@@ -1402,7 +1404,7 @@ and $\alpha\tau$ corresponds to $\sigma_t$.
 In \pkg{GPstuff} both of the representations are implemented. The
 scale mixture representation is implemented in
 \code{lik\_gaussiansmt} and can be inferred only with MCMC \citep[as
-described by][]{Neal:1998}. The Student-$t$ likelihood is
+described by][]{Neal:1998}. The Student-$t$ model is
 implemented in \code{lik\_t} and can be inferred with Laplace and EP
 approximation and MCMC \citep[as described
 by][]{Vanhatalo+Jylanki+Vehtari:2009,Jylanki+Vanhatalo+Vehtari:2011}.
@@ -1430,9 +1432,9 @@ whose logarithm is given a GP prior. The aim is to infer the relative
 risk. The implementation of these models in \pkg{GPstuff} is discussed
 in \citep{Vanhatalo+Vehtari:2007,Vanhatalo+Pietilainen+Vehtari:2010}.
 
-\subsubsection{Poisson likelihood}
+\subsubsection{Poisson}
 
-The Poisson likelihood is implemented in \code{likelih\_poisson} and
+The Poisson model is implemented in \code{likelih\_poisson} and
 it is
 %
 \begin{equation}
@@ -1499,7 +1501,7 @@ Figure~\ref{demo_spatial1_fig1}.
   \end{center}
 \end{figure}
 
-\subsubsection{Negative binomial likelihood}\label{sec_spatial_demo2}
+\subsubsection{Negative binomial}\label{sec_spatial_demo2}
 
 The negative binomial distribution is a robust version of the Poisson
 distribution similarly as Student-$t$ distribution can be considered
@@ -1517,7 +1519,7 @@ where $\mu_i = e_i\exp(f(\x_i))$ and $r$ is the dispersion parameter
 governing the variance. The model is demonstrated in
 \code{demo\_spatial2}.
 
-\subsubsection{Binomial likelihood}
+\subsubsection{Binomial}
 
 In disease mapping, the Poisson distribution is used to approximate
 the true binomial distribution. This approximation works well if the
@@ -1556,6 +1558,10 @@ parameter value. Construction of a hurdle model is demonstrated in
 binomial hurdle model implemented using \pkg{GPstuff} was used in
 reference \citep{Rantonen+etal:2011} to model sick absence days due
 to low back symptoms.
+
+Alternative way to model excess number of zeros is to couple the zero
+and count processes as in zero-inflated negative binomial model
+described in section~\ref{sec_zinegbin}.
 
 %
 \subsection{Log-Gaussian Cox process}
@@ -1623,7 +1629,8 @@ shown in Figure \ref{fig_demo_lgcp}.
 \subsection{Accelerated failure time survival models}
 
 The accelerated failure time survival models are demonstrated in
-\code{demo\_survival\_aft}.
+\code{demo\_survival\_aft}. These models can be used to model also
+other positive continuous data with or without censoring.
 
 \subsubsection{Weibull}
 \label{sec_weibull_demo}
@@ -1806,6 +1813,8 @@ observations is demonstrated in \code{demo\_derivativeobs}.
 % %  observations, the underlying process and the 95\,\% confidence
 % %  intervals for both GP model with and GP model without derivative
 % %  observations.
+
+Derivative process can be also used to construct a monotonicity constraint as described in section~\ref{sec_monotonic}.
 
 \subsection{Quantile Regression}
 
@@ -2095,6 +2104,7 @@ tumour recurrence after surgery.
 %    x, y, 'z', z)
 
 \subsection{Zero-inflated negative binomial}
+\label{sec_zinegbin}
 
 Zero-inflated negative binomial model is suitable for modelling count
 variables with excessive number of zero observations compared to usual
@@ -2266,6 +2276,22 @@ where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
 observation $i$. Latent variable $f_2$ is used for modeling the shape parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness. Input-dependent Weibull is demonstrated in \code{demo\_inputdependentweibull}.
 
+\subsection{Monotonicity constraint}
+\label{sec_monotonic}.
+
+\citet{Riihimaki+Vehtari:2010} presented how a monotonicity constraint
+for GP can be introduced with virtual derivative observations, and
+the resulting posterior can be approximated with expectation
+propagation.
+
+Currently GPstuff supports monotonicity constraint for models which
+have Gaussian likelihood or fully factoring likelihoods with EP
+inference and which use covariance functions \code{gpcf\_constant},
+\code{gpcf\_linear} and \code{gpcf\_sexp}.
+
+GP model with monotonicity constraint can be easily constructed with
+the function \code{gp_monotonic}. Monotonicity constraint is
+demonstrated in \code{demo\_monotonic} and \code{demo\_monotonic2}.
 
 \section{Mean functions}
 \label{cha:mean-functions}
@@ -3473,7 +3499,7 @@ prepared.
 The package contains pieces of code written by other people than the
 authors. In the Department of Biomedical Engineering and Computational
 Science at Aalto University these persons are (in alphabetical order):
-Toni Auranen, Pasi Jyl{\"a}nki, Tuomas Nikoskinen, Tomi Peltola, Eero
+Toni Auranen, Pasi Jyl{\"a}nki, Enrique Lelo de Larrea Andrade, Tuomas Nikoskinen, Tomi Peltola, Eero
 Pennala, Heikki Peura, Ville Pietil{\"a}inen, Markus Siivola, Simo S{\"a}rkk{\"a}
 and Ernesto Ulloa. People outside Aalto University are (in
 alphabetical order): Christopher M.  Bishop, Timothy A. Davis, Matthew
@@ -3530,6 +3556,7 @@ GPML and FBM}\label{appendix:comparison}
     zero-inflated negative binomial  & MCMC/LA &  &  \\
     multinomial logit (softmax) & MCMC/LA & & MCMC \\
     multinomial probit & EP & & MCMC \\
+    monotonicity & EP & & \\
     \multicolumn{4}{l}{\textbf{Priors for parameters ($\vartheta$)}}  \\
     \hline
     several priors, hierarchical priors & x & & x \\
@@ -3565,7 +3592,7 @@ GPML and FBM}\label{appendix:comparison}
     average predictive comparison & x &  & 
   \end{tabular}
   \normalsize
-  \caption{The comparison of features in GPstuff (v4.1), GPML (v3.2) and FBM (2004-11-10)
+  \caption{The comparison of features in GPstuff (v4.3), GPML (v3.2) and FBM (2004-11-10)
     toolboxes. In case of model blocks the notation x means that it
     can be inferred with any inference method (EP, LA (Laplace), MCMC and
     in case of GPML also with VB). In case of sparse approximations,

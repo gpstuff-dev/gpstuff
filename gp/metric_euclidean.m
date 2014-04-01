@@ -194,7 +194,7 @@ function lp = metric_euclidean_lp(metric)
 % are sampled are from space W = log(w) where w is all the "real" samples.
 % On the other hand errors are evaluated in the W-space so we need take
 % into account also the  Jakobian of transformation W -> w = exp(W).
-% See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
+% See Gelman et al. (2013), Bayesian Data Analysis, third edition, p. 21.
   if ~isempty(metric.p.lengthScale)
     lp = metric.p.lengthScale.fh.lp(metric.lengthScale, metric.p.lengthScale) + sum(log(metric.lengthScale));
   else

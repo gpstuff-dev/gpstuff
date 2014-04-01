@@ -32,8 +32,8 @@ function lik = lik_coxph(varargin)
 %
 %    When using the Coxph likelihood you need to give the vector z
 %    as an extra parameter to each function that requires also y. 
-%    For example, you should call gpla_e as follows: gpla_e(w, gp,
-%    x, y, 'z', z)
+%    For example, you should call gp_optim as follows:
+%     gp_optim(gp, x, y, 'z', z)
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
@@ -101,7 +101,8 @@ function lik = lik_coxph(varargin)
     lik.fh.predcdf= @lik_coxph_predcdf;
   end
 end
-  function [w,s] = lik_coxph_pak(lik)
+
+  function [w,s,h] = lik_coxph_pak(lik)
   %LIK_COXPH_PAK  Combine likelihood parameters into one vector.
   %
   %  Description 
@@ -115,7 +116,7 @@ end
   %   See also
   %   LIK_COXPH_UNPAK, GP_PAK
     
-    w=[];s={};
+    w=[];s={};h=[];
   end
 
 
@@ -158,7 +159,7 @@ end
       error(['lik_coxph -> lik_coxph_ll: missing z!    '... 
              'Coxph likelihood needs the expected number of    '...
              'occurrences as an extra input z. See, for         '...
-             'example, lik_coxph and gpla_e.               ']);
+             'example, lik_coxph and gp_optim.               ']);
     end
     
     [n,ny]=size(y);    
@@ -233,7 +234,7 @@ end
       error(['lik_coxph -> lik_coxph_llg: missing z!    '... 
              'Coxph likelihood needs the expected number of    '...
              'occurrences as an extra input z. See, for         '...
-             'example, lik_coxph and gpla_e.               ']);
+             'example, lik_coxph and gp_optim.               ']);
     end
     
     ntime=size(lik.xtime,1);    
@@ -369,7 +370,7 @@ end
       error(['lik_coxph -> lik_coxph_llg2: missing z!   '... 
              'Coxph likelihood needs the expected number of    '...
              'occurrences as an extra input z. See, for         '...
-             'example, lik_coxph and gpla_e.               ']);
+             'example, lik_coxph and gp_optim.               ']);
     end
     
     [n,ny]=size(y);
@@ -574,7 +575,7 @@ end
       error(['lik_coxph -> lik_coxph_llg3: missing z!   '... 
              'Coxph likelihood needs the expected number of    '...
              'occurrences as an extra input z. See, for         '...
-             'example, lik_coxph and gpla_e.               ']);
+             'example, lik_coxph and gp_optim.               ']);
     end
     
     ntime=size(lik.xtime,1);
@@ -1011,7 +1012,7 @@ function [logM_0, m_1, sigm2hati1] = lik_coxph_tiltedMoments(lik, y, i1, S2_i, M
       error(['lik_coxph -> lik_coxph_predy: missing zt!'... 
              'Coxph likelihood needs the expected number of    '...
              'occurrences as an extra input zt. See, for         '...
-             'example, lik_coxph and gpla_e.               ']);
+             'example, lik_coxph and gp_optim.               ']);
     end
     ntime=size(lik.xtime,1);
     
