@@ -24,7 +24,7 @@ function gpcf = gpcf_sexp(varargin)
 %      selectedVariables - vector defining which inputs are used [all]
 %                          selectedVariables is shorthand for using
 %                          metric_euclidean with corresponding components
-%      N                 - Degree of approximation in type 'KALMAN' [6]
+%      kalman_deg        - Degree of approximation in type 'KALMAN' [6]
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in
@@ -47,7 +47,7 @@ function gpcf = gpcf_sexp(varargin)
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('magnSigma2',0.1, @(x) isscalar(x) && x>0);
   ip.addParamValue('lengthScale',1, @(x) isvector(x) && all(x>0));
-  ip.addParamValue('N',6, @(x) isscalar(x) && mod(x,1)==0);
+  ip.addParamValue('kalman_deg',[], @(x) isscalar(x) && mod(x,1)==0);
   ip.addParamValue('metric',[], @isstruct);
   ip.addParamValue('magnSigma2_prior', prior_logunif(), ...
                    @(x) isstruct(x) || isempty(x));
@@ -75,8 +75,10 @@ function gpcf = gpcf_sexp(varargin)
   if init || ~ismember('magnSigma2',ip.UsingDefaults)
     gpcf.magnSigma2 = ip.Results.magnSigma2;
   end
-  if init || ~ismember('N',ip.UsingDefaults)
-    gpcf.N = ip.Results.N;
+  if init || ~ismember('kalman_deg',ip.UsingDefaults)
+      if ~isempty(ip.Results.kalman_deg)
+          gpcf.kalman_deg = ip.Results.kalman_deg;
+      end
   end
 
   % Initialize prior structure
@@ -1366,9 +1368,16 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_sexp_cf2ss(gpcf)
 %    30(4):51-61.
 %
 
+  % Check if approximation degree is given
+  if isfield(gpcf,'kalman_deg')
+      kalman_deg = gpcf.kalman_deg;
+  else
+      kalman_deg = [];
+  end
+
   % Return model matrices, derivatives and parameter information
   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
-      cf_se_to_ss(gpcf.magnSigma2,gpcf.lengthScale,gpcf.N);
+      cf_se_to_ss(gpcf.magnSigma2,gpcf.lengthScale,kalman_deg);
   
   % Balance matrices for numerical stability
   [F,L,Qc,H,Pinf,dF,dQc,dPinf] = ...

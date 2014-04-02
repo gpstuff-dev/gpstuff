@@ -29,10 +29,10 @@ function gpcf = gpcf_periodic(varargin)
 %      decay                  - determines whether the squared exponential 
 %                               decay term is used (1) or not (0). 
 %                               Not a hyperparameter for the function.
-%      N                      - degree of approximation in type 'KALMAN' [6]
-%      N_sexp                 - degree of sexp approximation in type 
+%      kalman_deg             - degree of approximation in type 'KALMAN' [6]
+%      kalman_deg_sexp        - degree of sexp approximation in type 
 %                               'KALMAN' [6]
-%      valid                  - determines whether Bessel function is 
+%      kalman_valid           - determines whether Bessel function is 
 %                               used (1) or not (0) in type 'KALMAN' [0]
 %      magnSigma2_prior       - prior structure for magnSigma2 [prior_logunif]
 %      lengthScale_prior      - prior structure for lengthScale [prior_t]
@@ -63,9 +63,9 @@ function gpcf = gpcf_periodic(varargin)
   ip.addParamValue('period',1, @(x) isscalar(x) && x>0);
   ip.addParamValue('lengthScale_sexp',10, @(x) isvector(x) && all(x>0));
   ip.addParamValue('decay',0, @(x) isscalar(x) && (x==0||x==1));
-  ip.addParamValue('N',6, @(x) isscalar(x) && mod(x,1)==0);
-  ip.addParamValue('N_sexp',6, @(x) isscalar(x) && mod(x,1)==0);
-  ip.addParamValue('valid',0, @(x) isscalar(x) && (x==0||x==1));
+  ip.addParamValue('kalman_deg',[], @(x) isscalar(x) && mod(x,1)==0);
+  ip.addParamValue('kalman_deg_sexp',[], @(x) isscalar(x) && mod(x,1)==0);
+  ip.addParamValue('kalman_valid',[], @(x) isscalar(x) && (x==0||x==1));
   ip.addParamValue('magnSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lengthScale_prior',prior_t, @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lengthScale_sexp_prior',[], @(x) isstruct(x) || isempty(x));
@@ -101,14 +101,20 @@ function gpcf = gpcf_periodic(varargin)
   if init || ~ismember('decay',ip.UsingDefaults)
     gpcf.decay = ip.Results.decay;
   end
-  if init || ~ismember('N',ip.UsingDefaults)
-    gpcf.N = ip.Results.N;
+  if init || ~ismember('kalman_deg',ip.UsingDefaults)
+      if ~isempty(ip.Results.kalman_deg)
+          gpcf.kalman_deg = ip.Results.kalman_deg;
+      end
   end
-  if init || ~ismember('N_sexp',ip.UsingDefaults)
-    gpcf.N_sexp = ip.Results.N_sexp;
+  if init || ~ismember('kalman_deg_sexp',ip.UsingDefaults)
+      if ~isempty(ip.Results.kalman_deg_sexp)
+          gpcf.kalman_deg_sexp = ip.Results.kalman_deg_sexp;
+      end
   end
-  if init || ~ismember('valid',ip.UsingDefaults)
-    gpcf.valid = ip.Results.valid;
+  if init || ~ismember('kalman_valid',ip.UsingDefaults)
+      if ~isempty(ip.Results.kalman_valid)
+          gpcf.kalman_valid = ip.Results.kalman_valid;
+      end
   end
   if init || ~ismember('magnSigma2_prior',ip.UsingDefaults)
     gpcf.p.magnSigma2 = ip.Results.magnSigma2_prior;
@@ -1127,14 +1133,37 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_periodic_cf2ss(gpcf)
 %    Conference on Artifcial Intelligence and Statistics (AISTATS 2014).
 %
 
+  % Apply default kalman parameters 
+  
+  % Check if kalman_deg is given
+  if isfield(gpcf,'kalman_deg')
+      kalman_deg = gpcf.kalman_deg;
+  else
+      kalman_deg = [];
+  end
+  
+  % Check if kalman_deg_sexp is given
+  if isfield(gpcf,'kalman_deg_sexp')
+      kalman_deg_sexp = gpcf.kalman_deg_sexp;
+  else
+      kalman_deg_sexp = [];
+  end
+  
+  % Check if kalman_valid is given
+  if isfield(gpcf,'kalman_valid')
+      kalman_valid = gpcf.kalman_valid;
+  else
+      kalman_valid = [];
+  end
+
   % Case squared exponential (i.e. quasi-periodic)
   if gpcf.decay
       
       % Return model matrices, derivatives and parameter information
       [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
           cf_quasiperiodic_to_ss(gpcf.magnSigma2,gpcf.lengthScale, ...
-          gpcf.period,gpcf.lengthScale_sexp,gpcf.N, ...
-          inf,gpcf.N_sexp,gpcf.valid);
+          gpcf.period,gpcf.lengthScale_sexp,kalman_deg, ...
+          inf,kalman_deg_sexp,kalman_valid);
       
       % Balance matrices for numerical stability
       [F,L,Qc,H,Pinf,dF,dQc,dPinf] = ...
@@ -1158,7 +1187,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_periodic_cf2ss(gpcf)
       % Return model matrices, derivatives and parameter information
       [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
           cf_periodic_to_ss(gpcf.magnSigma2,gpcf.lengthScale, ...
-            gpcf.period,gpcf.N,gpcf.valid); 
+            gpcf.period,kalman_deg,kalman_valid); 
       
       % Check optimization parameters
       if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
