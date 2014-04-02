@@ -36,54 +36,60 @@ function prevstream = setrandstream(seed, stream)
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
   
-if nargin>=1 && ~isnumeric(seed) 
-  % First argument is random stream object
-  stream=seed;
-  if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-    prevstream = RandStream.setDefaultStream(stream);
-  else
-    prevstream=rng(stream);
-  end
-else
-  if nargin<2
-    if nargin<1
-      % Get current random stream
-      if exist('OCTAVE_VERSION', 'builtin')
-        prevstream(1) = randn('seed');        
-        prevstream(2) = rand('seed');
-      elseif str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-        prevstream = RandStream.getDefaultStream();
-      else
-        prevstream = rng;
-      end
-      return
-    else
-      % If stream is not provided, use Mersenne Twister
-      stream='mt19937ar';
-    end
-  end
-  if isempty(seed)
-    % Default seed
-    seed=0;
-  end
-  if exist('OCTAVE_VERSION', 'builtin')
-    prevstream(1) = randn('seed');
-    prevstream(2) = rand('seed');
-    if length(seed)==1
-      seed(2)=seed(1);
-    end
-    randn('seed', seed(1));
-    rand('seed', seed(2));
-  elseif str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-    if ischar(stream)
-      stream = RandStream(stream,'Seed',seed);
-    end
-    prevstream = RandStream.setDefaultStream(stream);
-  else
-    if ischar(stream)
-      prevstream = rng(seed,stream);
+p=which('randn');
+p=strfind(p, 'RcppOctave');
+% Check if RcppOctave is active as the seed initialization does not work
+% in RcppOctave
+if isempty(p)
+  if nargin>=1 && ~isnumeric(seed)
+    % First argument is random stream object
+    stream=seed;
+    if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+      prevstream = RandStream.setDefaultStream(stream);
     else
       prevstream=rng(stream);
+    end
+  else
+    if nargin<2
+      if nargin<1
+        % Get current random stream
+        if exist('OCTAVE_VERSION', 'builtin')
+          prevstream(1) = randn('seed');
+          prevstream(2) = rand('seed');
+        elseif str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+          prevstream = RandStream.getDefaultStream();
+        else
+          prevstream = rng;
+        end
+        return
+      else
+        % If stream is not provided, use Mersenne Twister
+        stream='mt19937ar';
+      end
+    end
+    if isempty(seed)
+      % Default seed
+      seed=0;
+    end
+    if exist('OCTAVE_VERSION', 'builtin')
+      prevstream(1) = randn('seed');
+      prevstream(2) = rand('seed');
+      if length(seed)==1
+        seed(2)=seed(1);
+      end
+      randn('seed', seed(1));
+      rand('seed', seed(2));
+    elseif str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+      if ischar(stream)
+        stream = RandStream(stream,'Seed',seed);
+      end
+      prevstream = RandStream.setDefaultStream(stream);
+    else
+      if ischar(stream)
+        prevstream = rng(seed,stream);
+      else
+        prevstream=rng(stream);
+      end
     end
   end
 end
