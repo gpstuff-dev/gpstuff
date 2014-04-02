@@ -342,7 +342,7 @@ elseif length(ind)==2
       axis tight
       shading flat
       colormap(mapcolor(Ef,repmat(nanmedian(Ef(:)),[1 2])))
-      colorbar
+      colorbar('EastOutside')
     end
     
     %xtnn = [XT1(indd==1), XT2(indd==1)]; Ef = Ef(indd==1); Varf = Varf(indd==1);
