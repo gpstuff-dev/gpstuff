@@ -92,6 +92,8 @@ if isempty(p)
       end
     end
   end
+else
+  prevstream=[];
 end
 
 end
