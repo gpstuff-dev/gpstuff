@@ -3059,10 +3059,22 @@ illustrated in \code{demo\_regression\_hier}.
 % ==========================
 
 \section{State space inference}\label{sec:kalman}
+%
+{\hfill \footnotesize By \textsc{Arno Solin}, \textsc{Jukka Koskenranta}, and \textsc{Simo S{\"a}rkk{\"a}}.}
 
-For one-dimensional Gaussian processes, instead of directly working with the usual kernel formalism,$f \sim \mathcal{GP}(0,k(t,t'))$, of the Gaussian process, certain classes of covariance functions allow to work with the mathematical dual \citep{Sarkka+Solin+Hartikainen:2013}, where the Gaussian process is though of as a solution to a $m$th order linear stochastic differential equation (SDE). The corresponding inference problem can then solved with Kalman filtering type of methods \citep{Grewal+Andrews:2001,Sarkka:2013}, where the computational complexity is $\mathcal{O}(m^3n)$ making this formulation beneficial for long (often temporal) data sets.
+\noindent
+For one-dimensional Gaussian processes, instead of directly working with the
+usual kernel formalism,$f \sim \mathcal{GP}(0,k(t,t'))$, of the Gaussian
+process, certain classes of covariance functions allow to work with the
+mathematical dual \citep{Sarkka+Solin+Hartikainen:2013}, where the Gaussian
+process is though of as a solution to a $m$th order linear stochastic
+differential equation (SDE). The corresponding inference problem can then solved
+with Kalman filtering type of methods \citep{Grewal+Andrews:2001,Sarkka:2013},
+where the computational complexity is $\mathcal{O}(m^3n)$ making this
+formulation beneficial for long (often temporal) data sets.
 
-The state space model corresponding to the GP regression problem can be given as a linear time-invariant stochastic differential equation of the following form:
+The state space model corresponding to the GP regression problem can be given as
+a linear time-invariant stochastic differential equation of the following form:
 %
 \begin{align} \label{eq:SDE}
   \begin{split}
@@ -3074,17 +3086,24 @@ The state space model corresponding to the GP regression problem can be given as
   \end{split}
 \end{align}
 %
-where $\mathbf{f}(t) = \begin{pmatrix} f_1(t), f_2(t), \ldots, f_m(t) \end{pmatrix}^\mathrm{T}$ 
-holds the $m$ stochastic processes, and $\mathbf{w}(t)$ is a multi-dimensional white noise process with spectral density $\mathbf{Q}_\mathrm{c}$. The model is defined by the feedback matrix $\mathbf{F}$ and the noise effect matrix $\mathbf{L}$.
+where $\mathbf{f}(t) = \begin{pmatrix} f_1(t), f_2(t), \ldots, f_m(t)
+\end{pmatrix}^\mathrm{T}$ holds the $m$ stochastic processes, and
+$\mathbf{w}(t)$ is a multi-dimensional white noise process with spectral density
+$\mathbf{Q}_\mathrm{c}$. The model is defined by the feedback matrix
+$\mathbf{F}$ and the noise effect matrix $\mathbf{L}$.
 
-The continuous-time linear time-invariant model \eqref{eq:SDE} can be solved for discrete points. This is the closed-form solution to the SDE at the specified time points, and it is given as
+The continuous-time linear time-invariant model \eqref{eq:SDE} can be solved for
+discrete points. This is the closed-form solution to the SDE at the specified
+time points, and it is given as
 %
 \begin{equation} \label{eq:state-space}
   \mathbf{f}_{k+1} = \mathbf{A}_k \mathbf{f}_k + \mathbf{q}_k, 
   \quad \mathbf{q}_k \sim \mathrm{N}(\mathbf{0}, \mathbf{Q}_k),
 \end{equation}
 %
-where $\mathbf{f}(t_k) = \mathbf{f}_k$, and the state transition and process noise covariance matrices can be solved analytically (see, e.g., \cite{Sarkka+Solin+Hartikainen:2013}). They are given as:
+where $\mathbf{f}(t_k) = \mathbf{f}_k$, and the state transition and process
+noise covariance matrices can be solved analytically \citep[see,
+e.g.,][]{Sarkka+Solin+Hartikainen:2013}. They are given as:
 %
 \begin{align}
   \mathbf{A}_k &= \mathbf{\Phi}(\Delta t_k), \\
@@ -3094,11 +3113,25 @@ where $\mathbf{f}(t_k) = \mathbf{f}_k$, and the state transition and process noi
     \mathbf{\Phi}(\Delta t_k-\tau)^ \mathrm{d} \tau,
 \end{align}
 %
-where $\Delta t_k = t_{k+1}-t_k$. The iteration is started form the stationary state $\mathbf{f}_0 \sim \mathrm{N}(\mathbf{0},\mathbf{P}_\infty)$, where $\mathbf{P}_\infty$ is a solution to the Lyapunov equation: $\mathbf{F} \mathbf{P}_\infty + \mathbf{P}_\infty \mathbf{F}^\mathrm{T} + \mathbf{L} \mathbf{Q}_\mathrm{c} \mathbf{L}^\mathrm{T} = \mathbf{0}$. For more details on the connection between state space models and Gaussian processes, see, e.g., \citet{Sarkka+Solin+Hartikainen:2013}.
+where $\Delta t_k = t_{k+1}-t_k$. The iteration is started form the stationary
+state $\mathbf{f}_0 \sim \mathrm{N}(\mathbf{0},\mathbf{P}_\infty)$, where
+$\mathbf{P}_\infty$ is a solution to the Lyapunov equation: $\mathbf{F}
+\mathbf{P}_\infty + \mathbf{P}_\infty \mathbf{F}^\mathrm{T} + \mathbf{L}
+\mathbf{Q}_\mathrm{c} \mathbf{L}^\mathrm{T} = \mathbf{0}$. For more details on
+the connection between state space models and Gaussian processes, see, e.g.,
+\citet{Sarkka+Solin+Hartikainen:2013}.
 
-The inference problem is now directly solvable using Kalman filtering and Rauch-Tung-Striebel smoothing methods \citep{Grewal+Andrews:2001, Sarkka:2013}. The marginal likelihood and analytic gradients for conjugate gradient optimization can be calculated in closed form. The sequential nature of the state space solution is not well handled by Matlab/Octave, and thus this formulation becomes appealing when the number of data points becomes very large (in thousands).
+The inference problem is now directly solvable using Kalman filtering and
+Rauch-Tung-Striebel smoothing methods \citep{Grewal+Andrews:2001, Sarkka:2013}.
+The marginal likelihood and analytic gradients for conjugate gradient
+optimization can be calculated in closed form. The sequential nature of the
+state space solution is not well handled by Matlab/Octave, and thus this
+formulation becomes appealing when the number of data points becomes very large
+(in thousands).
 
-In \textbf{GPstuff}, the following covariance functions are currently supported (details on how the conversion is done are given in the accompanying references):
+In \pkg{GPstuff}, the following covariance functions are currently supported
+(details on how the conversion is done are given in the accompanying
+references):
 %
 \begin{description}[labelindent=\parindent]
   \item[Constant] 
@@ -3116,13 +3149,19 @@ In \textbf{GPstuff}, the following covariance functions are currently supported 
     of covariance functions \citep[as given in][]{Solin+Sarkka:2014}.
 \end{description}
 %
-These methods can be accessed by specifying the model type to `\textsc{kalman}', that is
+These methods can be accessed by specifying the model type to 
+`\textsc{kalman}', that is
 %
 \begin{verbatim}
 gp = gp_set(gp,'type','KALMAN');
 \end{verbatim}
 %
-Currently the `\textsc{kalman}' option is only supported for one-dimensional GP regression, which can be performed by the usual workflow in \textbf{GPstuff} after specifying the model type. For a more practical introduction, see the demos `\code{demo\_kalman1}' (a simple one-dimensional regression problem) and `\code{demo\_kalman2}' \citep[periodic modeling of the Mauna Loa $\text{CO}_2$ data, following][]{Solin+Sarkka:2014}.
+Currently the `\textsc{kalman}' option is only supported for one-dimensional GP
+regression, which can be performed by the usual workflow in \pkg{GPstuff}
+after specifying the model type. For a more practical introduction, see the
+demos `\code{demo\_kalman1}' (a simple one-dimensional regression problem) and
+`\code{demo\_kalman2}' \citep[periodic modeling of the Mauna Loa $\text{CO}_2$
+data, following][]{Solin+Sarkka:2014}.
 
 
 
@@ -3600,13 +3639,14 @@ prepared.
 The package contains pieces of code written by other people than the
 authors. In the Department of Biomedical Engineering and Computational
 Science at Aalto University these persons are (in alphabetical order):
-Toni Auranen, Pasi Jyl{\"a}nki, Enrique Lelo de Larrea Andrade, Tuomas Nikoskinen, Tomi Peltola, Eero
-Pennala, Heikki Peura, Ville Pietil{\"a}inen, Markus Siivola, Simo S{\"a}rkk{\"a}
-and Ernesto Ulloa. People outside Aalto University are (in
-alphabetical order): Christopher M.  Bishop, Timothy A. Davis, Matthew
-D. Hoffman, Kurt Hornik, Dirk-Jan Kroon, Iain Murray, Ian T. Nabney,
-Radford M. Neal and Carl E. Rasmussen. We want to thank them all for
-sharing their code under a free software license.
+Toni Auranen, Pasi Jyl{\"a}nki, Jukka Koskenranta, Enrique Lelo de
+Larrea Andrade, Tuomas Nikoskinen, Tomi Peltola, Eero Pennala, Heikki
+Peura, Ville Pietil{\"a}inen, Markus Siivola, Arno Solin, Simo
+S{\"a}rkk{\"a} and Ernesto Ulloa. People outside Aalto University are
+(in alphabetical order): Christopher M. Bishop, Timothy A. Davis,
+Matthew D. Hoffman, Kurt Hornik, Dirk-Jan Kroon, Iain Murray, Ian T.
+Nabney, Radford M. Neal and Carl E. Rasmussen. We want to thank them all
+for sharing their code under a free software license.
 
 \bibliography{GPstuff-nodoi}
 
