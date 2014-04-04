@@ -34,7 +34,14 @@
 % y is the number of insured who died
 S = which('demo_monotonic2');
 L = strrep(S,'demo_monotonic2.m','demodata/broffit.txt');
-d=readtable(L,'Delimiter',';');
+if ~exist('OCTAVE_VERSION','builtin')
+  d=readtable(L,'Delimiter',';');
+else
+  dd=importdata(L);
+  d.age=dd.data(:,1);
+  d.N=dd.data(:,2);
+  d.y=dd.data(:,3);
+end
 x=d.age;
 y=d.y;
 z=d.N.*(sum(d.y)./sum(d.N));

@@ -76,8 +76,8 @@ cfs = gpcf_sexp('lengthScale', ones(1,m),'lengthScale_prior',prior_t('s2',1^2,'n
 
 % Create the likelihood structure
 % log-logistic works best for this data
-lik = lik_loglogistic();
-%lik = lik_loggaussian();
+% lik = lik_loglogistic();
+lik = lik_loggaussian();
 %lik = lik_weibull();
 
 % Create the GP structure

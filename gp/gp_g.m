@@ -1441,7 +1441,7 @@ switch gp.type
       P = P - K*S*K';
       
     end
-    
+    gdata=real(gdata);
     % Take all priors into account in the gradient
     gprior = [];
     if ~isempty(strfind(gp.infer_params, 'covariance'))

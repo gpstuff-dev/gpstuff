@@ -141,8 +141,12 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss (magnSigma2, lengthSc
     
     % Solve the corresponding Lyapunov problem
     %   F*Pinf + Pinf*F' + L*Qc*L' = 0
-    Pinf = lyap2(F,L*Qc*L');
-
+    if ~exist('OCTAVE_VERSION', 'builtin')
+      Pinf = lyap(F,L*Qc*L');
+    else
+      F=real(F);
+      Pinf = lyap(F',L*Qc*L');
+    end
     % The same thing can be solved as a solution to the
     % algebraic Riccati equation (less stable) 
     %Pinf = are(F',zeros(size(F)),L*Qc*L');

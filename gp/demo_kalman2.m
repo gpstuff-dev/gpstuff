@@ -89,7 +89,7 @@
                         'lengthScale_prior',pl,'magnSigma2_prior',pl);
   
   % Finally create the GP structure
-  gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3});
+  gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3}, 'jitterSigma2',1e-6);
   
   % Set type to KALMAN
   gp = gp_set(gp,'type','KALMAN');
@@ -101,13 +101,13 @@
   opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
 
   % Find hyperparameters by optimization (BFGS)
-  gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
+  gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminscg);
   
   % Set the test points
   xt = (x(end):1/12:x(end)+10)';
   
   % Predict values
-  [Eft,Varft] =  gp_pred(gp, x, y,'xt',xt);
+  [Eft,Varft] =  gp_pred(gp, x, y,xt);
   
   % Also predict the latent components separately
   [Eft1, Varft1] = gp_pred(gp, x, y, x, 'predcf', [1 3]);

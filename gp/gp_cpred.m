@@ -311,6 +311,7 @@ elseif length(ind)==2
         case 'f'
           [Ef, Varf] = gp_pred(gp, x, y, xt, options);
         case 'mu'
+          options
           prctmu = gp_predprctmu(gp, x, y, xt, options, 'prct', 50);
           Ef = prctmu; Varf = [];
         case 'cdf'

@@ -56,16 +56,16 @@ function gp = gp_monotonic(gp, varargin)
 % parse inputs
 ip=inputParser;
 ip.FunctionName = 'GP_MONOTONIC';
-ip.addRequired('gp',@isstruct);
-ip.addOptional('x', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-ip.addOptional('y', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('nv', [], @(x) isreal(x) && isscalar(x))
-ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
-ip.addParamValue('opt', [], @isstruct)
-ip.addParamValue('optimize', 'off', @(x) ismember(x, {'on', 'off'}));
-ip.addParamValue('nvd', [], @(x) isreal(x));
-ip.parse(gp, varargin{:});
+ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addOptional','x', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addOptional','y', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','nv', [], @(x) isreal(x) && isscalar(x));
+ip=iparser(ip,'addParamValue','optimf', @fminscg, @(x) isa(x,'function_handle'));
+ip=iparser(ip,'addParamValue','opt', [], @isstruct);
+ip=iparser(ip,'addParamValue','optimize', 'off', @(x) ismember(x, {'on', 'off'}));
+ip=iparser(ip,'addParamValue','nvd', [], @(x) isreal(x));
+ip=iparser(ip,'parse',gp, varargin{:});
 x=ip.Results.x;
 y=ip.Results.y;
 z=ip.Results.z;
@@ -98,10 +98,16 @@ else
 end
 nvd=length(gp.nvd);
 if ~isfield(gp, 'xv')
-  S=warning('off','stats:kmeans:EmptyCluster');
-  [tmp,xv]=kmeans(x, nv, 'Start','uniform', ...
-    'EmptyAction', 'singleton');
-  warning(S);
+  if ~isempty(which('kmeans'))
+    S=warning('off','stats:kmeans:EmptyCluster');
+    [tmp,xv]=kmeans(x, nv, 'Start','uniform', ...
+      'EmptyAction', 'singleton');
+    warning(S);
+  else
+    % If no kmeans, take random subset of inputs
+    rri=randperm(size(x,1));
+    xv=x(rri(1:nv),:);
+  end
   gp.xv=xv;
 end
 xv=gp.xv;
@@ -112,7 +118,9 @@ end
 gp=gp_set(gp,'latent_method','EP');
 gp.latent_opt.init_prev='off';
 gp.latent_opt.maxiter=100;
-gpep_e('clearcache',gp);
+if ~exist('OCTAVE_VERSION','builtin')
+  gpep_e('clearcache',gp);
+end
 if isequal(optimize, 'on')
   % Optimize the parameters
   gp=gp_optim(gp,x,y,'opt',opt, 'z', z, 'optimf', optimf);
@@ -141,7 +149,9 @@ while any(any(bsxfun(@times,Ef, yv)<0))
   fprintf('Added %d virtual observations.\n', length(inds));
   xv=[xv;x(inds,:)];
   gp.xv=xv;
-  gpep_e('clearcache',gp);
+  if ~exist('OCTAVE_VERSION','builtin')
+    gpep_e('clearcache',gp);
+  end
   if isequal(optimize, 'on')
     gp=gp_optim(gp,x,y,'opt',opt,'z',z, 'optimf', optimf);
   end

@@ -72,25 +72,25 @@ function h = gp_plot(gp, x, y, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_PLOT';
-ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addOptional('xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))))
-ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('predcf', [], @(x) isempty(x) || ...
-                 isvector(x) && isreal(x) && all(isfinite(x)&x>=0))
-ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
-                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
-ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('target', 'mu', @(x) ismember(x,{'f','mu'}))
-ip.addParamValue('normdata', struct(), @(x) isempty(x) || isstruct(x))
+ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || iscell(x));
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addOptional','xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ip=iparser(ip,'addParamValue','zt', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','predcf', [], @(x) isempty(x) || ...
+                 isvector(x) && isreal(x) && all(isfinite(x)&x>=0));
+ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
+                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
+ip=iparser(ip,'addParamValue','fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
+ip=iparser(ip,'addParamValue','tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','target', 'mu', @(x) ismember(x,{'f','mu'}));
+ip=iparser(ip,'addParamValue','normdata', struct(), @(x) isempty(x) || isstruct(x));
 if numel(varargin)==0 || isnumeric(varargin{1})
   % inputParser should handle this, but it doesn't
-  ip.parse(gp, x, y, varargin{:});
+  ip=iparser(ip,'parse',gp, x, y, varargin{:});
 else
-  ip.parse(gp, x, y, [], varargin{:});
+  ip=iparser(ip,'parse',gp, x, y, [], varargin{:});
 end
 xt=ip.Results.xt;
 zt=ip.Results.zt;
@@ -126,13 +126,13 @@ tr = ip.Results.tr;
 nd=ip.Results.normdata;
 ipnd=inputParser;
 ipnd.FunctionName = 'normdata';
-ipnd.addParamValue('xmean',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
-ipnd.addParamValue('xstd',1,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
-ipnd.addParamValue('xlog',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
-ipnd.addParamValue('ymean',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
-ipnd.addParamValue('ystd',1,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
-ipnd.addParamValue('ylog',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
-ipnd.parse(nd);
+ipnd=iparser(ipnd,'addParamValue','xmean',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd=iparser(ipnd,'addParamValue','xstd',1,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd=iparser(ipnd,'addParamValue','xlog',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd=iparser(ipnd,'addParamValue','ymean',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd=iparser(ipnd,'addParamValue','ystd',1,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd=iparser(ipnd,'addParamValue','ylog',0,@(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ipnd=iparser(ipnd,'parse',nd);
 nd=ipnd.Results;
 
 if iscell(gp)

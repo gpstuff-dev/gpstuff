@@ -77,7 +77,7 @@
   gp = gp_optim(gp, x, y);
   
   % Predict values at test inputs xt
-  [Eft,Varft] = gp_pred(gp, x, y, 'xt', xt);
+  [Eft,Varft] = gp_pred(gp, x, y, xt);
   
   
 %% Compare against full GP solution (table)

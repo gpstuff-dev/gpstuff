@@ -499,7 +499,7 @@ switch gp.type
     %
     %  [3] Simo Sarkka (2006). Recursive Bayesian inference on stochastic
     %      differential equations. Doctoral dissertation, Helsinki 
-    %      University of Technology, Filand.
+    %      University of Technology, Finland.
     %
     
     % Ensure that this is a purely temporal problem
