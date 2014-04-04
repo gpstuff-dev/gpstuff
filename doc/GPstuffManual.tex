@@ -12,6 +12,7 @@
 \usepackage{url}
 \usepackage{natbib}
 \usepackage{longtable}
+\usepackage{enumitem}
 \usepackage[width=.9\textwidth]{caption}
 %\bibliographystyle{plainnat}
 
@@ -83,6 +84,18 @@
 %  \@startauthor \@author \@endauthor}
 
 %}}
+
+% Link coloring
+\usepackage{hyperref}
+\hypersetup{
+    bookmarks=true,         % show bookmarks bar?
+    pdfstartview={FitH},    % fits the width of the page to the window
+    colorlinks=true,        % false: boxed links; true: colored links
+    linkcolor=black,        % color of internal links
+    citecolor=black,        % color of links to bibliography
+    filecolor=black,        % color of file links
+    urlcolor=black          % color of external links
+}
 
 \begin{document}
 
@@ -3041,6 +3054,78 @@ illustrated in \code{demo\_regression\_hier}.
 
 % ==========================
 
+\section{State space inference}\label{sec:kalman}
+
+For one-dimensional Gaussian processes, instead of directly working with the usual kernel formalism,$f \sim \mathcal{GP}(0,k(t,t'))$, of the Gaussian process, certain classes of covariance functions allow to work with the mathematical dual \citep{Sarkka+Solin+Hartikainen:2013}, where the Gaussian process is though of as a solution to a $m$th order linear stochastic differential equation (SDE). The corresponding inference problem can then solved with Kalman filtering type of methods \citep{Grewal+Andrews:2001,Sarkka:2013}, where the computational complexity is $\mathcal{O}(m^3n)$ making this formulation beneficial for long (often temporal) data sets.
+
+The state space model corresponding to the GP regression problem can be given as a linear time-invariant stochastic differential equation of the following form:
+%
+\begin{align} \label{eq:SDE}
+  \begin{split}
+  {\mathrm{d} \mathbf{f}(t) \over \mathrm{d} t} 
+    &= \mathbf{F} \mathbf{f}(t) + \mathbf{L} \mathbf{w}(t) \\
+  y_k 
+    &= \mathbf{H} \mathbf{f}(t_k) + \varepsilon_k, 
+    \quad \varepsilon_k \sim \mathrm{N}(0,\sigma_\mathrm{n}^2),
+  \end{split}
+\end{align}
+%
+where $\mathbf{f}(t) = \begin{pmatrix} f_1(t), f_2(t), \ldots, f_m(t) \end{pmatrix}^\mathrm{T}$ 
+holds the $m$ stochastic processes, and $\mathbf{w}(t)$ is a multi-dimensional white noise process with spectral density $\mathbf{Q}_\mathrm{c}$. The model is defined by the feedback matrix $\mathbf{F}$ and the noise effect matrix $\mathbf{L}$.
+
+The continuous-time linear time-invariant model \eqref{eq:SDE} can be solved for discrete points. This is the closed-form solution to the SDE at the specified time points, and it is given as
+%
+\begin{equation} \label{eq:state-space}
+  \mathbf{f}_{k+1} = \mathbf{A}_k \mathbf{f}_k + \mathbf{q}_k, 
+  \quad \mathbf{q}_k \sim \mathrm{N}(\mathbf{0}, \mathbf{Q}_k),
+\end{equation}
+%
+where $\mathbf{f}(t_k) = \mathbf{f}_k$, and the state transition and process noise covariance matrices can be solved analytically (see, e.g., \cite{Sarkka+Solin+Hartikainen:2013}). They are given as:
+%
+\begin{align}
+  \mathbf{A}_k &= \mathbf{\Phi}(\Delta t_k), \\
+  \mathbf{Q}_k &= \int_{0}^{\Delta t_k} 
+    \mathbf{\Phi}(\Delta t_k-\tau)
+    \mathbf{L} \mathbf{Q}_\mathrm{c} \mathbf{L}^\mathrm{T} 
+    \mathbf{\Phi}(\Delta t_k-\tau)^ \mathrm{d} \tau,
+\end{align}
+%
+where $\Delta t_k = t_{k+1}-t_k$. The iteration is started form the stationary state $\mathbf{f}_0 \sim \mathrm{N}(\mathbf{0},\mathbf{P}_\infty)$, where $\mathbf{P}_\infty$ is a solution to the Lyapunov equation: $\mathbf{F} \mathbf{P}_\infty + \mathbf{P}_\infty \mathbf{F}^\mathrm{T} + \mathbf{L} \mathbf{Q}_\mathrm{c} \mathbf{L}^\mathrm{T} = \mathbf{0}$. For more details on the connection between state space models and Gaussian processes, see, e.g., \citet{Sarkka+Solin+Hartikainen:2013}.
+
+The inference problem is now directly solvable using Kalman filtering and Rauch-Tung-Striebel smoothing methods \citep{Grewal+Andrews:2001, Sarkka:2013}. The marginal likelihood and analytic gradients for conjugate gradient optimization can be calculated in closed form. The sequential nature of the state space solution is not well handled by Matlab/Octave, and thus this formulation becomes appealing when the number of data points becomes very large (in thousands).
+
+In \textbf{GPstuff}, the following covariance functions are currently supported (details on how the conversion is done are given in the accompanying references):
+%
+\begin{description}[labelindent=\parindent]
+  \item[Constant] 
+    covariance function.
+  \item[Exponential] 
+    (Ornstein-Uhlenbeck) covariance function.
+  \item[Mat\'ern] 
+    covariance function (for $\nu=3/2$ and $\nu=5/2$).
+  \item[Squared exponential] 
+    covariance function \citep[as presented in][]{Hartikainen+Sarkka:2010}.
+  \item[Periodic covariance] 
+    function both with and without decay (quasi-periodicity) 
+    \citep[as presented in][]{Solin+Sarkka:2014}.
+  \item[Sums and products] 
+    of covariance functions \citep[as given in][]{Solin+Sarkka:2014}.
+\end{description}
+%
+These methods can be accessed by specifying the model type to `\textsc{kalman}', that is
+%
+\begin{verbatim}
+gp = gp_set(gp,'type','KALMAN');
+\end{verbatim}
+%
+Currently the `\textsc{kalman}' option is only supported for one-dimensional GP regression, which can be performed by the usual workflow in \textbf{GPstuff} after specifying the model type. For a more practical introduction, see the demos `\code{demo\_kalman1}' (a simple one-dimensional regression problem) and `\code{demo\_kalman2}' \citep[periodic modeling of the Mauna Loa $\text{CO}_2$ data, following][]{Solin+Sarkka:2014}.
+
+
+
+
+
+
+
 \section{Model assessment and comparison}\label{sec:model_assessment}
 
 There are various means to assess the goodness of the model and its
@@ -3103,7 +3188,7 @@ log-score and root mean squared error (RMSE). The function
 \code{gp\_kfcv} provides also basic variance estimates for the
 predictive performance estimates.  Variance is computed from the
 estimates for each fold ~\citep[see, e.g.,][]{Dietterich:1998}.  See
-\citep{Vehtari+Lampinen:2002} for more details on estimating the
+\citet{Vehtari+Lampinen:2002} for more details on estimating the
 uncertainty in performance estimates.
 
 \subsection{DIC}
