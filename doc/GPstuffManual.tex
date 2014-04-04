@@ -2290,8 +2290,20 @@ inference and which use covariance functions \code{gpcf\_constant},
 \code{gpcf\_linear} and \code{gpcf\_sexp}.
 
 GP model with monotonicity constraint can be easily constructed with
-the function \code{gp_monotonic}. Monotonicity constraint is
+the function \code{gp\_monotonic}. Monotonicity constraint is
 demonstrated in \code{demo\_monotonic} and \code{demo\_monotonic2}.
+
+Figure~\ref{monotonicity} displays the predictions with models with and without
+monotonicity constraint. We see that the monotonicity constraints helps 
+with extrapolation of the function while lowering the uncertainty in predictions.
+
+\begin{figure}
+  \begin{center}       
+      \includegraphics[width=8cm]{demo_monotonic2_fig1.pdf}  
+  \end{center}\caption{Illustration how the monotonicity constraint
+     of the latent function affects the predictions.}
+  \label{monotonicity} 
+\end{figure}
 
 \section{Mean functions}
 \label{cha:mean-functions}
