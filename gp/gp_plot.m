@@ -173,7 +173,17 @@ switch m
       end
     end
   case 2
+    subplot(2,2,1);
+    gp_cpred(gp,x,y,xt,1,'z',z,'zt',zt,'target',target,'plot','on');
+    xlabel('x1')
+    subplot(2,2,2);
+    gp_cpred(gp,x,y,xt,2,'z',z,'zt',zt,'target',target,'plot','on');
+    xlabel('x2')
+    subplot(2,1,2);
     gp_cpred(gp,x,y,xt,[1 2],'z',z,'zt',zt,'target',target,'plot','on','tr',1e9);
+    axis square
+    xlabel('x1')
+    ylabel('x2')
     view(3)
     shading faceted
     hhh=get(gca,'children');
