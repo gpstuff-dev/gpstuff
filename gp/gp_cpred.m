@@ -12,8 +12,8 @@ function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt,ind,varargin)
 %      predcf - an index vector telling which covariance functions are 
 %               used for prediction. Default is all (1:gpcfn). 
 %               See additional information below.
-%      method - which value to fix the not used covariates, 'mean'
-%               (default), 'median' or 'mode'
+%      method - which value to fix the not used covariates, 'median'
+%               (default), 'mean' or 'mode'
 %      var    - vector specifying optional values for not used covariates,
 %               elements corresponding to mean/median values should 
 %               be set to NaN. 
@@ -26,8 +26,8 @@ function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt,ind,varargin)
 %               Poisson likelihood we have z_i=E_i, that is, the expected 
 %               value for the ith case. 
 %      plot   - option for plotting, 'off' (default) or 'on'
-%      target - option for choosing what is computed 'f' (default),
-%               'mu' or 'cdf'
+%      target - option for choosing what is computed 'mu' (default),
+%               'f' or 'cdf'
 %      tr     - Euclidean distance treshold for not using grid points when
 %               doing predictions with 2 covariates, default 0.25
 
@@ -47,10 +47,10 @@ ip.addParamValue('predcf', [], @(x) isempty(x) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)&x>0))
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-ip.addParamValue('method', 'mean', @(x)  ismember(x, {'median', 'mean' 'mode'}))
+ip.addParamValue('method', 'median', @(x)  ismember(x, {'median', 'mean' 'mode'}))
 ip.addParamValue('plot', 'off', @(x)  ismember(x, {'on', 'off'}))
 ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('target', 'f', @(x) ismember(x,{'f','mu','cdf'}))
+ip.addParamValue('target', 'mu', @(x) ismember(x,{'f','mu','cdf'}))
 ip.addParamValue('normdata', struct(), @(x) isempty(x) || isstruct(x))
 ip.parse(gp, x, y, xt, ind, varargin{:});
 zt=ip.Results.zt;
