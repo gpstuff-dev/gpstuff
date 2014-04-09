@@ -252,7 +252,7 @@ function [lpy, Ey, Vary] = lik_lgpc_predy(lik, Ef, Varf, yt, zt)
   error('Not implemented')
 end  
 
-function mu = lik_lpgpc_invlink(lik, f, z)
+function mu = lik_lgpc_invlink(lik, f, z)
 %LIK_LPGPC_INVLINK  Returns values of inverse link function
 %             
 %  Description 
