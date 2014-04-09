@@ -1271,8 +1271,13 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
               end
               for i2 = 1:length(DKuu)
-                i1 = i1+1;
-              
+                if savememory
+                  i1 = st + (i2-1)*np+i3;
+                  %i1 = st + 2*i2 - (i3==1);
+                else
+                  i1 = i1+1;
+                end
+                
                 % 0.5* a'*dK*a, where a = K\f
                 KfuiKuuKuu = iKuuKuf'*DKuu{i2};
                 gdata(i1) = gdata(i1) -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) + ...
@@ -1522,7 +1527,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
               end
               for i2 = 1:length(DKuu)
-                i1 = i1+1;
+                if savememory
+                  i1 = st + (i2-1)*np+i3;
+                  %i1 = st + 2*i2 - (i3==1);
+                else
+                  i1 = i1+1;
+                end
               
               
                 KfuiKuuKuu = iKuuKuf'*DKuu{i2};
@@ -1826,7 +1836,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                   DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
                 end
                 for i2 = 1:length(DKuu)
-                  i1=i1+1;
+                  if savememory
+                    i1 = st + (i2-1)*np+i3;
+                    %i1 = st + 2*i2 - (i3==1);
+                  else
+                    i1 = i1+1;
+                  end
                 
                   % 0.5* a'*dK*a, where a = K\f
                   KfuiKuuKuu = iKuuKuf'*DKuu{i2};
@@ -2072,7 +2087,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
               end
               
               for i2 = 1:length(DKuu)
-                i1 = i1+1;
+                if savememory
+                  i1 = st + (i2-1)*np+i3;
+                  %i1 = st + 2*i2 - (i3==1);
+                else
+                  i1 = i1+1;
+                end
                 
                 % 0.5* a'*dK*a, where a = K\f
                 KfuiKuuDKuu = iKuuKuf'*DKuu{i2};
