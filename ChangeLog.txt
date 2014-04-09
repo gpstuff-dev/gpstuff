@@ -1,3 +1,4 @@
+<<<<<<< .merge_file_a5eegv
 2014-4-3 Version 4.4
 
 New features
@@ -46,6 +47,8 @@ Big fixes
  - Changed nested functions to subfunctions for compatibility with Octave 3.8.0
  - Fixed compilation of C source files with Octave.
 
+=======
+>>>>>>> .merge_file_0AHvYo
 2013-11-26 Version 4.3.1
 
 Improvements:
