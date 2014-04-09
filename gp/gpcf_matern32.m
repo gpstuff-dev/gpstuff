@@ -382,6 +382,7 @@ function DKff = gpcf_matern32_cfg(gpcf, x, x2, mask,i1)
     % Use memory save option
     savememory=1;
     if i1==0
+      i=0;
       % Return number of hyperparameters
       if ~isempty(gpcf.p.magnSigma2)
         i=1;
@@ -424,7 +425,7 @@ function DKff = gpcf_matern32_cfg(gpcf, x, x2, mask,i1)
       end
       [n, m] =size(x);
       if savememory
-        if i1==1
+        if i1==1 && ~isempty(gpcf.p.magnSigma2)
           DKff=DKff{ii1};
           return
         else

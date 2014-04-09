@@ -546,7 +546,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                     DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
                   end
                   for i2 = 1:length(DKuu)
-                    i1 = i1+1;
+                    if savememory
+                      i1 = st + (i2-1)*np+i3;
+                      %i1 = st + 2*i2 - (i3==1);
+                    else
+                      i1 = i1+1;
+                    end
 
                     KfuiKuuKuu = iKuuKuf'*DKuu{i2};
 
@@ -565,7 +570,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                   end
                   % Robust-EP
                   for i2 = 1:length(DKuu)
-                    i1 = i1+1;
+                    if savememory
+                      i1 = st + (i2-1)*np+i3;
+                      %i1 = st + 2*i2 - (i3==1);
+                    else
+                      i1 = i1+1;
+                    end
                     Dd = -2.*sum(DKuf{i2}.*iKuuKuf)' - sum((-iKuuKuf'*DKuu{i2})'.*iKuuKuf)';
                     DS = Dd.*tautilde;
                     gdata_inducing(i1) = -0.5.*sum(DS./S);
@@ -708,7 +718,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                   DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
                 end
                 for i2 = 1:length(DKuu)
-                  i1 = i1+1;
+                  if savememory
+                    i1 = st + (i2-1)*np+i3;
+                    %i1 = st + 2*i2 - (i3==1);
+                  else
+                    i1 = i1+1;
+                  end
                   KfuiKuuDKuu_u = iKuuKuf'*DKuu{i2};
 
                   gdata_inducing(i1) = gdata_inducing(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
@@ -893,7 +908,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                     DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
                   end
                   for i2 = 1:length(DKuu)
-                    i1 = i1 + 1;
+                    if savememory
+                      i1 = st + (i2-1)*np+i3;
+                      %i1 = st + 2*i2 - (i3==1);
+                    else
+                      i1 = i1+1;
+                    end
                     KfuiKuuKuu = iKuuKuf'*DKuu{i2};
 
                     gdata_inducing(i1) = gdata_inducing(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
@@ -1015,7 +1035,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                   DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
                 end
                 for i2 = 1:length(DKuu)
-                  i1 = i1+1;
+                  if savememory
+                    i1 = st + (i2-1)*np+i3;
+                    %i1 = st + 2*i2 - (i3==1);
+                  else
+                    i1 = i1+1;
+                  end
 
                   KfuiKuuKuu = iKuuKuf'*DKuu{i2};
                   gdata_inducing(i1) = gdata_inducing(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b'));

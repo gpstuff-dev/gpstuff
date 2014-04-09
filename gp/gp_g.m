@@ -576,6 +576,7 @@ switch gp.type
           gprior_ind = -gp.p.X_u.fh.lpg(gp.X_u(:)', gp.p.X_u);
         end
         gprior = [gprior gprior_ind];
+%         gdata=[gdata zeros(1,length(gprior) - length(gdata))];
         
         % Loop over the covariance functions
         for i=1:ncf
@@ -598,13 +599,12 @@ switch gp.type
             end
             for i2 = 1:length(DKuu)
               if savememory
-                % Sort the gradients in correct order
-                i1=st + i2*2-1 + (i3-1);
+                i1 = st + (i2-1)*np+i3;
+                %i1 = st + 2*i2 - (i3==1);
               else
-                i1=i1+1;
+                i1 = i1+1;
               end
               KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-            
               gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
                                           2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
               gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
@@ -792,7 +792,12 @@ switch gp.type
               DKuf=gpcf.fh.ginput(gpcf, u, x, i3);
             end
             for i2 = 1:length(DKuu)
-              i1 = i1+1;
+              if savememory
+                i1 = st + (i2-1)*np+i3;
+                %i1 = st + 2*i2 - (i3==1);
+              else
+                i1 = i1+1;
+              end
               KfuiKuuDKuu_u = iKuuKuf'*DKuu{i2};
               gdata(i1) = gdata(i1) -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
                                          sum(sum(L'.*((L'*KfuiKuuDKuu_u)*iKuuKuf))));
@@ -1025,7 +1030,12 @@ switch gp.type
                 DKuf = gpcf.fh.ginput(gpcf,u,x,i3);
               end
               for i2 = 1:length(DKuu)
-                i1 = i1+1;
+                if savememory
+                  i1 = st + (i2-1)*np+i3;
+                  %i1 = st + 2*i2 - (i3==1);
+                else
+                  i1 = i1+1;
+                end
                 KfuiKuuKuu = iKuuKuf'*DKuu{i2};
               
                 gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
@@ -1205,7 +1215,12 @@ switch gp.type
               DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
             end
             for i2 = 1:length(DKuu)
-              i1=i1+1;
+              if savememory
+                i1 = st + (i2-1)*np+i3;
+                %i1 = st + 2*i2 - (i3==1);
+              else
+                i1 = i1+1;
+              end
               KfuiKuuKuu = iKuuKuf'*DKuu{i2};
               gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b'));
               gdata(i1) = gdata(i1) + 0.5.*(2.*(sum(iLav'*sum(DKuf{i2}'.*iKuuKuf',2))-sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))))...
