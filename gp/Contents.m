@@ -101,14 +101,6 @@
 %   ESLS          Markov chain update for a distribution with a Gaussian "prior" factored out
 %   GP_INSTALL    Matlab function to compile all the c-files to mex in the 
 %                 GPstuff/gp folder.
-%   cf_exp_to_ss
-%   cf_matern32_to_ss
-%   cf_matern52_to_ss
-%   cf_periodic_to_ss
-%   cf_prod_to_ss
-%   cf_quasiperiodic_to_ss
-%   cf_se_to_ss
-%   cf_sum_to_ss
 %
 %  Demonstration programs:
 %   DEMO_BINOMIAL1          Demonstration of Gaussian process model with binomial
