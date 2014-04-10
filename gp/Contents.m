@@ -1,14 +1,20 @@
 % THE GP TOOLS (in the gp-folder):
 % 
 %  Gaussian process utilities:
-%   GP_SET    Create and modify a Gaussian Process structure. 
-%   GP_OPTIM  Optimize paramaters of a Gaussian process 
-%   GP_PAK    Combine GP parameters into one vector.
-%   GP_UNPAK  Set GP parameters from vector to structure
-%   GP_COV    Evaluate covariance matrix between two input vectors. 
-%   GP_TRCOV  Evaluate training covariance matrix (gp_cov + noise covariance). 
-%   GP_TRVAR  Evaluate training variance vector. 
-%   GP_RND    Random draws from the postrior Gaussian process
+%   GP_SET   	 Create and modify a Gaussian Process structure. 
+%   GP_OPTIM 	 Optimize paramaters of a Gaussian process 
+%   GP_PAK    	 Combine GP parameters into one vector.
+%   GP_UNPAK  	 Set GP parameters from vector to structure
+%   GP_COV   	 Evaluate covariance matrix between two input vectors. 
+%   GP_DCOV  	 Evaluate covariance matrix between function values and its gradient 
+%            	 at differing inputs.
+%   GP_DTRCOV 	 Evaluate covariance matrix between function values and its gradient
+%             	 at the same inputs.
+%   GP_MONOTONIC Create monotonic Gaussian Process model
+%   GP_PLOT      Plot the predictions of the Gaussian Process model
+%   GP_TRCOV     Evaluate training covariance matrix (gp_cov + noise covariance). 
+%   GP_TRVAR  	 Evaluate training variance vector. 
+%   GP_RND    	 Random draws from the postrior Gaussian process
 %
 %  Covariance functions:
 %   GPCF_CAT          Create a categorigal covariance function
@@ -60,6 +66,7 @@
 %   GP_PREPRCTY   Percentiles of the predictive distribution at test points
 %   GP_PREDCM     Corrections for latent marginal posterior
 %   GP_MC         Markov chain sampling for Gaussian process models
+%   GPEP_PREDGRAD Predict the values of the latent function gradient with EP
 %   GPMC_PREDS    Conditional predictions with Gaussian Process MCMC
 %                 approximation.
 %   GP_IA         Integration approximation with grid, Monte Carlo or
@@ -94,6 +101,14 @@
 %   ESLS          Markov chain update for a distribution with a Gaussian "prior" factored out
 %   GP_INSTALL    Matlab function to compile all the c-files to mex in the 
 %                 GPstuff/gp folder.
+%   cf_exp_to_ss
+%   cf_matern32_to_ss
+%   cf_matern52_to_ss
+%   cf_periodic_to_ss
+%   cf_prod_to_ss
+%   cf_quasiperiodic_to_ss
+%   cf_se_to_ss
+%   cf_sum_to_ss
 %
 %  Demonstration programs:
 %   DEMO_BINOMIAL1          Demonstration of Gaussian process model with binomial
@@ -107,24 +122,33 @@
 %                           observations
 %   DEMO_HURDLE             Demonstration of Logit Negative-binomial hurdle model
 %                           using Gaussian process prior
+%   DEMO_HIERARCHIAL        Demonstration of Gaussian process model with hierarchial (hyperhyper)
+%                           parameters.
 %   DEMO_IMPROVEMARGINALS   Demonstration of marginal posterior improvements 
 %                           in Laplace and EP algorithms.
 %   DEMO_IMPROVEMARGINALS2  Demonstration of joint marginal posterior improvements 
 %                           in Laplace and EP algorithms.
 %   DEMO_INPUTDEPENDENTNOISE  Demonstration of input dependent-noise
 %                           model using Gaussian process prior
+%   DEMO_KALMAN1            Demonstration of state space inference using Kalman filtering
+%   DEMO_KALMAN2            Demonstration of state space inference using Kalman filtering
 %   DEMO_LGCP               Demonstration for a log Gaussian Cox process
 %                           with inference via EP or Laplace approximation
 %   DEMO_LGPDENS            Demonstration of Logistic-Gaussian Process density estimate
 %                           for 1D and 2D data and density regression
 %   DEMO_LOOPRED            Leave-one-out prediction demonstration for 2 classes
 %   DEMO_MEMORYSAVE         Demonstration of memory save option in GPstuff
+%   DEMO_MINIMAL 	    Minimal demo for GPstuff
 %   DEMO_MCMC               Demonstration of Markov Chain Monte Carlo sampling methods
 %                           in GPstuff
 %   DEMO_MODELASSESMENT1    Demonstration for model assesment with DIC, number 
 %                           of effective parameters and ten-fold cross validation
 %   DEMO_MODELASSESMENT2    Demonstration for model assesment when the observation 
 %                           model is non-Gaussian
+%   DEMO_MONOTONIC	    Demonstration of monotonic Gaussian Process model with 
+%                           Gaussian likelihood
+%   DEMO_MONOTONIC2         Demonstration of monotonic Gaussian Process model with 
+%                           Poisson likelihood
 %   DEMO_MULTICLASS         Classification problem demonstration for 3 classes
 %                           using Gaussian process prior
 %   DEMO_MULTICLASS_NESTED_EP  Demonstrate the fully-coupled nested EP for
