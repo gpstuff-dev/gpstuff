@@ -1045,7 +1045,7 @@ end
                 if isfield(gp, 'lik_mono')
                   [La2,notpositivedefinite]=chol(Sigm);
                   if notpositivedefinite
-                    [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                    [e, edata, eprior, param] = set_output_for_notpositivedefinite();
                     return
                   end
 %                   iter

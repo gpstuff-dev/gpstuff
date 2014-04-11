@@ -118,9 +118,6 @@ end
 gp=gp_set(gp,'latent_method','EP');
 gp.latent_opt.init_prev='off';
 gp.latent_opt.maxiter=100;
-if ~exist('OCTAVE_VERSION','builtin')
-  gpep_e('clearcache',gp);
-end
 if isequal(optimize, 'on')
   % Optimize the parameters
   gp=gp_optim(gp,x,y,'opt',opt, 'z', z, 'optimf', optimf);
@@ -149,9 +146,6 @@ while any(any(bsxfun(@times,Ef, yv)<0))
   fprintf('Added %d virtual observations.\n', length(inds));
   xv=[xv;x(inds,:)];
   gp.xv=xv;
-  if ~exist('OCTAVE_VERSION','builtin')
-    gpep_e('clearcache',gp);
-  end
   if isequal(optimize, 'on')
     gp=gp_optim(gp,x,y,'opt',opt,'z',z, 'optimf', optimf);
   end

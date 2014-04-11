@@ -100,7 +100,7 @@ function lik = lik_qgp(varargin)
 
 end
 
-function [w s] = lik_qgp_pak(lik)
+function [w s h] = lik_qgp_pak(lik)
 %LIK_QGP_PAK  Combine likelihood parameters into one vector.
 %
 %  Description

@@ -163,9 +163,9 @@ plot(x(y(:,1)==1,1),x(y(:,1)==1,2),'ro', 'linewidth', 2);
 plot(x(y(:,2)==1,1),x(y(:,2)==1,2),'x', 'linewidth', 2);
 plot(x(y(:,3)==1,1),x(y(:,3)==1,2),'kd', 'linewidth', 2);
 axis([-0.4 1.4 -0.4 1.4])
-contour(xtg1, xtg2, reshape(pg_mc(:,1),30,30),'r', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(pg_mc(:,2),30,30),'b', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(pg_mc(:,3),30,30),'k', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(pg_mc(:,1),30,30),10,'r', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(pg_mc(:,2),30,30),10,'b', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(pg_mc(:,3),30,30),10,'k', 'linewidth', 2)
 
 
 
@@ -198,7 +198,7 @@ hmc2('state', sum(100*clock))
 
 % re-set some of the sampling options
 hmc_opt.repeat=1;
-hmc_opt.steps=4;
+hmc_opt.steps=4;i_d
 hmc_opt.stepadj=0.02;
 latent_opt.repeat = 20;
 hmc2('state', sum(100*clock));
@@ -219,8 +219,8 @@ plot(x(y(:,1)==1,1),x(y(:,1)==1,2),'ro', 'linewidth', 2);
 plot(x(y(:,2)==1,1),x(y(:,2)==1,2),'x', 'linewidth', 2);
 plot(x(y(:,3)==1,1),x(y(:,3)==1,2),'kd', 'linewidth', 2);
 axis([-0.4 1.4 -0.4 1.4])
-contour(xtg1, xtg2, reshape(pg_mc2(:,1),30,30),'r', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(pg_mc2(:,2),30,30),'b', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(pg_mc2(:,3),30,30),'k', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(pg_mc2(:,1),30,30),10,'r', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(pg_mc2(:,2),30,30),10,'b', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(pg_mc2(:,3),30,30),10,'k', 'linewidth', 2)
 
 

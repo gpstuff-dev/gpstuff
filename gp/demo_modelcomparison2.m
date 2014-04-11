@@ -263,11 +263,11 @@ fprintf(['\n Harrells C at end of study for log-logistic:   ', num2str(clg)]);
 [cll,bblg]=hcs(critlg(:,size(tt,2)),y,D(:,size(tt,2)),tt(size(tt,2)),'rsubstream',1);
 title('Estimated density of CLG-CLL')
 hold on 
-lgpdens(bblg-bbll)
+lgpdens(bblg'-bbll')
 hold off 
 
 % We integrate the (CLG-CLL) estimated density in the (0,inf) interval
-zc=lgpdens_cum(bblg-bbll,0,inf);
+zc=lgpdens_cum(bblg'-bbll',0,inf);
 fprintf(['Estimated c statistics for Log Gaussian and Log Logistic respectively:   ', num2str(clg) '  ' num2str(cll)]);
 fprintf(['Cumulative probability in the (0,inf) interval:   ', num2str(zc)]);
 
@@ -277,11 +277,11 @@ fprintf(['Cumulative probability in the (0,inf) interval:   ', num2str(zc)]);
 [ccph,bbcph]=hcs(critcph(:,size(tt,2)),y,D(:,size(tt,2)),tt(size(tt,2)),'rsubstream',1);
 title('Estimated density of CCW-CCPH')
 hold on 
-lgpdens(bbw-bbcph)
+lgpdens(bbw'-bbcph')
 hold off 
 
 % We integrate the (CW-CCPH) estimated density in the (0,inf) interval
-zc=lgpdens_cum(bbw-bbcph,0,inf);
+zc=lgpdens_cum(bbw'-bbcph',0,inf);
 fprintf(['Estimated C-statistics for Weibull and Cox-ph respectively:   ', num2str(cw) '  ' num2str(ccph)]);
 fprintf(['Cumulative probability in the (0,inf) interval:   ', num2str(zc)]);
 
@@ -293,7 +293,7 @@ fprintf(['Cumulative probability in the (0,inf) interval:   ', num2str(zc)]);
 % (0,inf) interval at time 1
 
 [idi1,bbid1,rll,rlg] = idis(critll(:,size(tt,2)),critlg(:,size(tt,2)),'rsubstream',1);
-zidi1=lgpdens_cum(bbid1,0,inf);
+zidi1=lgpdens_cum(bbid1',0,inf);
 
 fprintf(['\n R^2 statistic for log-logistic model:', num2str(rll)]);
 fprintf(['\n R^2 statistic for log-Gaussian model:', num2str(rlg)]);
@@ -307,11 +307,11 @@ display(st2)
 
 title('IDI estimated density between log-logistic and log-Gaussian')
 hold on 
-lgpdens(bbid1)
+lgpdens(bbid1')
 hold off 
 
 [idi2,bbid2,rw,rcph] = idis(critw(:,size(tt,2)),critcph(:,size(tt,2)),'rsubstream',1);
-zidi2=lgpdens_cum(bbid2,0,inf);
+zidi2=lgpdens_cum(bbid2',0,inf);
 
 
 fprintf(['\n R^2 statistic for Weibull model:', num2str(rw)]);
@@ -326,7 +326,7 @@ display(st2)
 
 title('IDI estimated density between Weibull and Cox-ph')
 hold on 
-lgpdens(bbid2)
+lgpdens(bbid2')
 hold off 
 
 %% Ext AUC

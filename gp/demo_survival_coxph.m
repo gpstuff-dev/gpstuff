@@ -123,7 +123,7 @@ set(gcf,'units','centimeters');
 set(gcf,'pos',[29 6 24 6])
 subplot('position',[0.07 0.21 0.20 0.77]);
 i1=2;i2=1;
-[Ef,Varf,xtc]=gp_cpred(gp, x, y, x, [i1 i2], 'z', ye);
+[Ef,Varf,xtc]=gp_cpred(gp, x, y, x, [i1 i2], 'z', ye, 'target', 'f');
 xtc{1}=denormdata(xtc{1},xmean(i2),xstd(i2));
 xtc{2}=denormdata(xtc{2},xmean(i2),xstd(i2));
 h1=plot(xtc{1},Ef{1},'k--',xtc{1},Ef{1}-1.64*sqrt(Varf{1}),'k--',xtc{1},Ef{1}+1.64*sqrt(Varf{1}),'k--');
@@ -139,7 +139,7 @@ ylabel('Log-hazard')
 
 subplot('position',[0.31 0.21 0.20 0.77]);
 i1=2;i2=3;
-[Ef,Varf,xtc]=gp_cpred(gp, x, y, x, [i1 i2], 'z', ye);
+[Ef,Varf,xtc]=gp_cpred(gp, x, y, x, [i1 i2], 'z', ye, 'target', 'f');
 xtc{1}=denormdata(xtc{1},xmean(i2),xstd(i2));
 xtc{2}=denormdata(xtc{2},xmean(i2),xstd(i2));
 h1=plot(xtc{1},Ef{1},'k--',xtc{1},Ef{1}-1.64*sqrt(Varf{1}),'k--',xtc{1},Ef{1}+1.64*sqrt(Varf{1}),'k--');
@@ -157,7 +157,7 @@ xlabel('WBC (log_{10}(50\times10^9/L))')
 
 subplot('position',[0.55 0.21 0.20 0.77]);
 i1=2;i2=4;
-[Ef,Varf,xtc]=gp_cpred(gp, x, y, x, [i1 i2], 'z', ye);
+[Ef,Varf,xtc]=gp_cpred(gp, x, y, x, [i1 i2], 'z', ye, 'target', 'f');
 xtc{1}=denormdata(xtc{1},xmean(i2),xstd(i2));
 xtc{2}=denormdata(xtc{2},xmean(i2),xstd(i2));
 h1=plot(xtc{1},Ef{1},'k--',xtc{1},Ef{1}-1.64*sqrt(Varf{1}),'k--',xtc{1},Ef{1}+1.64*sqrt(Varf{1}),'k--');
@@ -175,7 +175,7 @@ xlabel('Townsend deprivation index')
 
 subplot('position',[0.79 0.21 0.20 0.77]);
 i2=0;cla
-[Ef,Varf,xtc]=gp_cpred(gp, x, y, x, i2, 'z', ye);
+[Ef,Varf,xtc]=gp_cpred(gp, x, y, x, i2, 'z', ye, 'target', 'f');
 %gp_cpred(gp, x, y, x, i2, 'z', ye);
 xtc=xtc*500/365;
 h1=plot(xtc,Ef,'k-',xtc,Ef-1.64*sqrt(Varf),'k-',xtc,Ef+1.64*sqrt(Varf),'k-');

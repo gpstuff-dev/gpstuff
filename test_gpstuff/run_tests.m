@@ -56,4 +56,4 @@ for ii=1:length(demos)
   close all;
 end
 invalid_demos
-fprintf('Failed %d of %d tests. Checko struct invalid_demos for further details.\n',failed, iter);
+fprintf('Failed %d of %d tests. Check struct invalid_demos for further details.\n',failed, iter);
