@@ -7,9 +7,9 @@ function p = prior_sqrtunif(varargin)
 %    
 %  See also
 %    PRIOR_*
-  
+%
 % Copyright (c) 2009 Jarno Vanhatalo
-% Copyright (c) 2010 Jaakko Riihim�ki
+% Copyright (c) 2010 Jaakko Riihimäki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public

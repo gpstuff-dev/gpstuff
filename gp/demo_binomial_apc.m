@@ -40,8 +40,8 @@
 %    test points Xt must be set additionally in the likelihood
 %    structure when E(Yt), Var(Yt) or predictive densities p(Yt)
 %    are computed.
-
-% Copyright (c) 2010 Jaakko Riihim�ki, Jouni Hartikainen, Aki Vehtari
+%
+% Copyright (c) 2010 Jaakko Riihimäki, Jouni Hartikainen, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 

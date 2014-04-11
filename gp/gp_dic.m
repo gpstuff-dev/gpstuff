@@ -76,7 +76,7 @@ function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
 %    Understanding predictive information criteria for Bayesian
 %    models. Statistics and Computing, in press
 %   
-
+%
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2013 Aki Vehtari
 

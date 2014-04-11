@@ -13,11 +13,11 @@ function x = batchmc(x,nburn,batchsize,nlast,fun)
 %
 %   See also
 %     THIN
-
+%
 % Copyright (c) 1999 Simo Särkkä
 % Copyright (c) 2000 Aki Vehtari
 % Copyright (c) 2004 Jarno Vanhatalo
-%
+
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.

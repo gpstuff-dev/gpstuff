@@ -24,7 +24,7 @@
 %
 %  See also  DEMO_MODELCOMPARISON, DEMO_SURVIVAL_COXPH
 %
-
+%
 % Copyright (c) 2012 Ernesto Ulloa
 % Copyright (c) 2012 Aki Vehtari
 

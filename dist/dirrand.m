@@ -7,7 +7,7 @@ function r = dirrand(m,n)
 %
 %   References: Gelman, Carlin, Stern, Dunson, Vehtari & Rubin (2013),
 %               Bayesian Data Analysis, third edition, p. 583.
-
+%
 % Copyright (c) 1998-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

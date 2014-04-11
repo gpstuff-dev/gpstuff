@@ -4,7 +4,7 @@ function c=addlogs(a,b)
 %  Description
 %    C=ADDLOGS(A,B) computes C=log(exp(A)+exp(B)) in such a fashion
 %    that it works even when A and B have large magnitude.
-
+%
 % Copyright (c) 2003 Aki Vehtari
 
 % This software is distributed under the GNU General Public

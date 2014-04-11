@@ -17,7 +17,7 @@ function y = negbin_lpdf(x,l,r)
 %   Note that the density function is zero unless X is an integer.
 %
 %   See also NEGBIN_PDF
-
+%
 % Copyright (c) 2010 Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
 

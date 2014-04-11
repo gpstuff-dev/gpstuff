@@ -1,5 +1,5 @@
-% DEMO_LGPDENS  Demonstration of Logistic-Gaussian Process density estimate
-%               for 1D and 2D data and density regression
+%DEMO_LGPDENS  Demonstration of Logistic-Gaussian Process density estimate
+%              for 1D and 2D data and density regression
 %
 %  Description 
 %
@@ -27,8 +27,6 @@
 %    for logistic Gaussian process density estimation and
 %    regression. Bayesian analysis, in press.
 %
-
-
 % Copyright (c) 2011 Jaakko Riihimäki and Aki Vehtari
 
 % This software is distributed under the GNU General Public 

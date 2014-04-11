@@ -15,7 +15,7 @@
 %    methods for Gaussian processes. Neurocomputing 80 (2012), 10-18.
 %
 %  See also PASSGP
-
+%
 % Copyright (c) 2013 Ville Tolvanen
 
 % This software is distributed under the GNU General Public 

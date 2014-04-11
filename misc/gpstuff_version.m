@@ -7,7 +7,7 @@ function version = gpstuff_version(str)
 % gpstuff_version('date') returns the release date (string)
 %
 % gpstuff_version('release') returns the release number (double)
-
+%
 % Copyright (c) 2013 Ville Tolvanen
 
 

@@ -46,7 +46,6 @@ function gp = gp_monotonic(gp, varargin)
 %    monotonicity information.  Journal of Machine Learning Research:
 %    Workshop and Conference Proceedings, 9:645-652.
 %
-  
 % Copyright (c) 2014 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

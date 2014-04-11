@@ -34,10 +34,10 @@ function [R,neff,Vh,W,B,tau,thin] = psrf(varargin)
 %
 %   See also
 %     CPSRF, MPSRF, IPSRF
-
+%
 % Copyright (C) 1999 Simo Särkkä
 % Copyright (C) 2003-2004,2013 Aki Vehtari
-%
+
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.

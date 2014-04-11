@@ -44,7 +44,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
 %  See also
 %    GP_DIC, DEMO_MODELASSESMENT1
 %   
-
+%
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 

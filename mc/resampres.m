@@ -22,7 +22,7 @@ function s = resampres(p,m,n);
 %   p. 72.
 %
 %   See also RESAMPSIM, RESAMPSTR, RESAMPDET
-
+%
 % Copyright (c) 2003-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

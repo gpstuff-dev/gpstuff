@@ -16,8 +16,8 @@ function lik = lik_multinom(varargin)
 %
 %  See also
 %    GP_SET, LIK_*
-
-% Copyright (c) 2010 Jaakko Riihim�ki, Pasi Jyl�nki
+%
+% Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2010 Jarno Vanhatalo
 

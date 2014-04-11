@@ -20,7 +20,6 @@ function delta  = derivativecheck(w, fun, epsilon)
 %    DELTA=DERIVATIVECHECK(X, FUN) returns the delta between the
 %    user-supllied and finite difference derivatives.
 %
-
 % Copyright (c) Christopher M Bishop, Ian T Nabney (1996, 1997)
 % Copyright (c) 2010-2011 Aki Vehtari
 

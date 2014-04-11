@@ -31,7 +31,7 @@ function gpcf = gpcf_exp(varargin)
 %
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*, METRIC_*
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2014 Arno Solin and Jukka Koskenranta

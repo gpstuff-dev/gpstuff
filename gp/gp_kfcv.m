@@ -189,7 +189,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                    'LOO'      parameters optimized using leave-one-out
 %                    'KFCV'     parameters optimized using k-fold-CV
 %                    'WAIC'     parameters optimized using WAIC
-  
+%
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
 % Copyright (c) 2012 Ernesto Ulloa

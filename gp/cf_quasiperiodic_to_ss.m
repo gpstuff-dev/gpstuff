@@ -1,5 +1,5 @@
 function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_quasiperiodic_to_ss(magnSigma2, lengthScale, period, mlengthScale, N, nu, mN, valid)
-%% CF_QUASIPERIODIC_TO_SS - Convert quasi-periodic covariance functions to continuous state space
+%CF_QUASIPERIODIC_TO_SS - Convert quasi-periodic covariance functions to continuous state space
 %
 % Syntax:
 %   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = 
@@ -61,7 +61,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_quasiperiodic_to_ss(magnSigma2
 %
 % Copyright:
 %   2012-2014 Arno Solin
-%
+
 %  This software is distributed under the GNU General Public
 %  License (version 3 or later); please refer to the file
 %  License.txt, included with the software, for details.

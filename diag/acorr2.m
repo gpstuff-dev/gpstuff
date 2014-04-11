@@ -4,7 +4,6 @@ function c = acorr2(x,maxlag)
 %   C = ACORR(X,MAXLAG) returns normalized autocorrelation
 %   sequences for each column of X computing correlation via FFT
 %
-
 % Copyright (C) 2000-2008 Aki Vehtari
 %
 % This software is distributed under the GNU General Public

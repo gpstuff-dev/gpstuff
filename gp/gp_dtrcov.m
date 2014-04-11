@@ -14,7 +14,7 @@ function [K, C] = gp_dtrcov(gp, x1, x2,predcf)
 %
 %  See also
 %    GP_SET, GPCF_*
-
+%
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen
 % Copyright (c) 2014 Ville Tolvanen

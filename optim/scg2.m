@@ -12,7 +12,7 @@ function [x, fs, ps] = scg2(f, x, opt, gradf, varargin)
 %    See SCG2_OPT for the optional parameters in the OPT structure.
 %
 %  See also SCG2_OPT, SCGES
-
+%
 % Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 2005 Aki Vehtari
 

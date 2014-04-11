@@ -36,7 +36,7 @@ function metric = metric_euclidean(varargin)
 %
 %  See also
 %    GP_SET, GPCF_SEXP
-  
+%
 % Copyright (c) 2008 Jouni Hartikainen 
 % Copyright (c) 2008 Jarno Vanhatalo     
 % Copyright (c) 2010 Aki Vehtari

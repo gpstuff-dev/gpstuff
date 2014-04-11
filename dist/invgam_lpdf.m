@@ -7,7 +7,7 @@ function y = invgam_lpdf(x,a,b)
 %   Note: Parameterization as in (Neal, 1996).
 %      A is mean of the distribution
 %      B is degrees of freedom
-
+%
 % Copyright (c) 2000 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

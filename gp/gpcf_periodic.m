@@ -46,7 +46,7 @@ function gpcf = gpcf_periodic(varargin)
 %
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*
-  
+%
 % Copyright (c) 2009-2010 Heikki Peura
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2014 Arno Solin and Jukka Koskenranta

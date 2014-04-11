@@ -13,7 +13,6 @@ function [itr, itst] = cvit(n, k, rsubstream)
 %    same permutation is obtained when called again with same RS. 
 %    Function restores the previous random stream before exiting.
 %
-
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public

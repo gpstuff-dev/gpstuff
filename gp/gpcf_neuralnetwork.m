@@ -28,7 +28,7 @@ function gpcf = gpcf_neuralnetwork(varargin)
 %
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*
-  
+%
 % Copyright (c) 2007-2009 Jarno Vanhatalo
 % Copyright (c) 2009 Jaakko Riihimaki
 % Copyright (c) 2010 Aki Vehtari

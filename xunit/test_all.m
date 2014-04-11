@@ -9,8 +9,12 @@
 %
 %  See also
 %    Readme.txt
-
+%
 % Copyright (c) 2011-2012 Ville Tolvanen
+
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
 
 % Remove previous test values and create empty folder for new test values.
 path = which('test_all.m');

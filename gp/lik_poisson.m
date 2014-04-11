@@ -21,7 +21,6 @@ function lik = lik_poisson(varargin)
 %  See also
 %    GP_SET, LIK_*
 %
-  
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

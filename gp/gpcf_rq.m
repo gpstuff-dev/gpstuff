@@ -33,7 +33,7 @@ function gpcf = gpcf_rq(varargin)
 %
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*, METRIC_*
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen, Aki Vehtari
 

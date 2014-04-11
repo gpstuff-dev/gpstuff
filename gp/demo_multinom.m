@@ -25,13 +25,13 @@
 %
 %    In this demo we approximate the posterior distribution with
 %    Laplace approximation and MCMC.
-
-% Reference:
-% Teppo Juntunen, Jarno Vanhatalo, Heikki Peltonen and Samu Mäntyniemi
-% (2012). Bayesian spatial multispecies modelling to assess pelagic fish
-% stocks from acoustic- and trawl-survey data. ICES Journal of Marine
-% Science, 69: 95-104.
-
+%
+%  Reference:
+%    Teppo Juntunen, Jarno Vanhatalo, Heikki Peltonen and Samu Mäntyniemi
+%    (2012). Bayesian spatial multispecies modelling to assess pelagic fish
+%    stocks from acoustic- and trawl-survey data. ICES Journal of Marine
+%    Science, 69: 95-104.
+%
 % Copyright (c) 2010-2013 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 

@@ -30,7 +30,6 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
 %     Vehtari & Ojanen (2011). Bayesian preditive methods for model
 %     assesment and selection. In preparation.
 %
-
 % Copyright (c) 2011-2012 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

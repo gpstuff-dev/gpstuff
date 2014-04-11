@@ -1,4 +1,4 @@
-%% Kalman Demo 2 (Mauna Loa Periodic CO2 Readings)
+%Kalman Demo 2 (Mauna Loa Periodic CO2 Readings)
 %
 %  In this demo we apply the state space inference methods to the 
 %  well-known time series data consisting of atmospheric CO2 
@@ -26,7 +26,7 @@
 %      Conference on Artifcial Intelligence and Statistics (AISTATS 2014).
 %
 % Copyright (c) 2014 Arno Solin and Jukka Koskenranta
-%
+
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.

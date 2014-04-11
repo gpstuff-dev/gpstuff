@@ -67,7 +67,7 @@
 %    Titsias, M. K. (2009). Variational Model Selection for Sparse
 %    Gaussian Process Regression. Technical Report, University of
 %    Manchester.
-
+%
 % Copyright (c) 2010 Heikki Peura, Aki Vehtari
 
 % This software is distributed under the GNU General Public 

@@ -16,8 +16,8 @@ function lik = lik_softmax(varargin)
 %
 %  See also
 %    GP_SET, LIK_*
-
-% Copyright (c) 2010 Jaakko Riihim�ki, Pasi Jyl�nki
+%
+% Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public

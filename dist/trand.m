@@ -5,7 +5,7 @@ function r = trand(nu,m,n)
 %    from the T distribution with V degrees of freedom.
 %    The size of R is the size of V.
 %    Alternatively, R = TRAND(V,M,N) returns an M by N matrix. 
-
+%
 % Copyright (c) 1999 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

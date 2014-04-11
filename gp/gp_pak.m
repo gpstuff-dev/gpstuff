@@ -43,7 +43,6 @@ function [w, s, h] = gp_pak(gp, param)
 %  See also
 %    GP_UNPAK, GP_SET
 %
-
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public

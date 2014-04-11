@@ -21,7 +21,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 %  
 %  See also
 %    GP_SET, GP_G, GPLA_E, GPLA_PRED
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

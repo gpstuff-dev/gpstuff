@@ -38,7 +38,6 @@ function lik = lik_coxph(varargin)
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
 %
-
 % Copyright (c) 2007-2010 Jarno Vanhatalo & Jouni Hartikainen
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2011 Jaakko Riihimäki

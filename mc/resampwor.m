@@ -12,7 +12,7 @@ function s = resampwor(p,m,n)
 %   S = RESAMWOR(P,M) returns M by M matrix.
 %
 %   See also RESAMPSIM, RESAMPRES, RESAMPSTR, RESAMPDET
-
+%
 % Copyright (c) 2003-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

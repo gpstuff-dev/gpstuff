@@ -29,7 +29,7 @@ function  [blocks, Xu, tstblocks] = set_PIC(x, dims, blocksize, indtype, visuali
 %    - The function works only if the data is distributed in the upper right quadrant
 %      The reason for this is that the function was written for spatial data where this 
 %      is the case. 
-
+%
 % Copyright (c) 2007-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public

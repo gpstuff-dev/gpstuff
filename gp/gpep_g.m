@@ -20,7 +20,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 %
 %  See also
 %    GP_SET, GP_G, GPEP_E, GPEP_PRED
-
+%
 % Copyright (c) 2007-2010  Jarno Vanhatalo
 % Copyright (c) 2010       Heikki Peura
 % Copyright (c) 2010,2013  Aki Vehtari

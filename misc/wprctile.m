@@ -12,7 +12,7 @@ function y = wprctile(x, p, w)
 %      y = prctile(x,50,w); % the median of x given sample weights w
 %
 %  See also wmean, prctile
-
+%
 % Copyright (c) 2000-2013 Aki Vehtari
 
 % This software is distributed under the GNU General Public

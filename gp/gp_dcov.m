@@ -10,7 +10,7 @@ function [C, Cinv] = gp_dcov(gp, x1, x2, predcf)
 %    df/dx_1 df/dx_2, ... df/dx_d], evaluated at X1 for f and XV for df/dx
 %    respectively, and [f df/dx_1 df/dx_2, ... df/dx_d] evaluated at X2 
 %    for both the f and its gradient.
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen
 % Copyright (c) 2014 Ville Tolvanen

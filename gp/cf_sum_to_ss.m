@@ -33,7 +33,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_sum_to_ss(cf2ss)
 % Copyright:
 %   2012-2014   Arno Solin
 %   2013-2014   Jukka Koskenranta
-%
+
 %   This software is distributed under the GNU General Public
 %   License (version 3 or later); please refer to the file
 %   License.txt, included with the software, for details.

@@ -13,7 +13,7 @@ function lik = lik_multinomprobit(varargin)
 %
 %  See also
 %    GP_SET, LIK_*
-
+%
 % Copyright (c) 2011-2013 Jaakko Riihimäki, Pasi Jylänki, Aki Vehtari
 
 % This software is distributed under the GNU General Public

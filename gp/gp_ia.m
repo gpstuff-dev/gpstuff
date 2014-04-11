@@ -72,7 +72,6 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %    Approximate inference for disease mapping with sparse Gaussian
 %    processes. Statistics in Medicine, 29(15):1580-1607.
 %
-  
 % Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
 

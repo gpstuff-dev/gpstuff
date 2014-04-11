@@ -18,7 +18,6 @@ function gloo = gp_loog(w, gp, x, y, varargin)
 %  See also
 %    GP_LOOE, GP_SET, GP_PAK, GP_UNPAK
 %
-
 % Copyright (c) 2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public

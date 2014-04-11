@@ -28,7 +28,6 @@
 %  See also 
 %    GP_SET
 %
-
 % Copyright (c) 2012 Ville Tolvanen
 
 % This software is distributed under the GNU General Public 

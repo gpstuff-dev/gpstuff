@@ -14,7 +14,7 @@ function p1 = gibbs(p1, x)
 %           parameters also. So function takes care of the whole
 %           hierarchical structure of ARD if called for the lowest
 %           level parameters. 
-
+%
 % Copyright (c) 1999-2003 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

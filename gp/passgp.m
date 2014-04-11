@@ -40,7 +40,7 @@ function [gp, indA] = passgp(gp, x, y, varargin)
 %  Reference:
 %    Ricardo Henao & Ole Winther (2012). Predictive active set selection
 %    methods for Gaussian processes. Neurocomputing 80 (2012), 10-18.
-
+%
 % Copyright (c) 2013 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

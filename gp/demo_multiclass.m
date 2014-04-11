@@ -33,8 +33,7 @@
 %    In this demo we approximate the posterior distribution with
 %    Laplace approximation.
 %
-
-% Copyright (c) 2010 Jaakko Riihim�ki, Jarno Vanhatalo, Aki Vehtari
+% Copyright (c) 2010 Jaakko Riihimäki, Jarno Vanhatalo, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 

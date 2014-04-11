@@ -30,7 +30,6 @@ function ekfcv = gp_kfcve(w, gp, x, y, varargin)
 %  See also
 %    GP_KFCV, GP_OPTIM
 %
-
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public

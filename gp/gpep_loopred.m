@@ -31,7 +31,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
 %
 %  See also
 %    GP_LOOPRED, GP_PRED
-  
+%
 % Copyright (c) 2010-2012  Aki Vehtari, Ville Tolvanen
 % Copyright (c) 2011-2012  Ville Tolvanen
 

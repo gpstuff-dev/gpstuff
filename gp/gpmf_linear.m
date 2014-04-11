@@ -27,7 +27,7 @@ function gpmf = gpmf_linear(varargin)
 % 
 %  See also
 %    GP_SET, GPMF_CONSTANT, GPMF_SQUARED, 
-
+%
 % Copyright (c) 2010 Tuomas Nikoskinen
 % Copyright (c) 2011 Jarno Vanhatalo
 

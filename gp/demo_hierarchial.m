@@ -11,7 +11,7 @@
 %
 %
 %  See also DEMO_REGRESSION_ROBUST, DEMO_SPATIAL1, DEMO_*
-
+%
 % Copyright (c) 2014 Ville Tolvanen
 
 % This software is distributed under the GNU General Public 

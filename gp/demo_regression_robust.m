@@ -68,7 +68,6 @@
 %    Gelman, Carlin, Stern, Dunson, Vehtari, and Rubin (2013). 
 %    Bayesian data Analysis, third edition.
 %
-
 % Copyright (c) 2010 Jarno Vanhatalo, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
