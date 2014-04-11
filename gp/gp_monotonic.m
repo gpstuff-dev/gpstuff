@@ -33,7 +33,7 @@ function gp = gp_monotonic(gp, varargin)
 %                 as usual fmin*-functions. Default is @fminscg.
 %      optimize - Option whether to optimize GP parameters. Default = 'off'. 
 %      nvd      - Dimensions for which the latent functions is assumed to
-%                 be monotonic. Uase negative elements for monotonically
+%                 be monotonic. Use negative elements for monotonically
 %                 decreasing and positive elements for monotonically
 %                 increasing dimensions. Default 1:size(X,2), i.e.
 %                 monotonically for all covariate dimensions.
