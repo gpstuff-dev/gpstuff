@@ -6,7 +6,7 @@ function r = normtzrand(mu,s,lr)
 %    mean MU, std S, and whether truncation is to left or right by
 %    LR, where left=1 and right=0. The size of R is the common size
 %    of MU, S and LR.
-
+%
 % Copyright (c) 2003 Aki Vehtari
 
 % Implementation based on code by Jim Albert, see

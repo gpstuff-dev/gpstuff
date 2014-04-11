@@ -13,7 +13,7 @@ function lik = lik_multinomprobit(varargin)
 %
 %  See also
 %    GP_SET, LIK_*
-
+%
 % Copyright (c) 2011-2013 Jaakko Riihimäki, Pasi Jylänki, Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -51,7 +51,7 @@ function lik = lik_multinomprobit(varargin)
   end
   
 
-  function [w,s] = lik_multinomprobit_pak(lik)
+  function [w,s,h] = lik_multinomprobit_pak(lik)
   %LIK_MULTINOMPROBIT_PAK  Combine likelihood parameters into one vector.
   %
   %  Description 
@@ -64,7 +64,7 @@ function lik = lik_multinomprobit(varargin)
   %  See also
   %    LIK_MULTINOMPROBIT_UNPAK, GP_PAK
     
-    w = []; s = {};
+    w = []; s = {}; h=[];
   end
 
 

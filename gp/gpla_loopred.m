@@ -27,7 +27,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
 %
 %  See also
 %    GP_LOOPRED, GP_PRED
-  
+%
 % Copyright (c) 2011-2012  Aki Vehtari, Ville Tolvanen
 
 % This software is distributed under the GNU General Public 
@@ -59,6 +59,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
 
       % latent posterior
       [f, sigm2ii] = gpla_pred(gp, x, y, 'z', z, 'tstind', [], 'fcorr', fcorr);
+      if isnan(f)
+        Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+        return
+      end
   
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       La = 1./-gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);

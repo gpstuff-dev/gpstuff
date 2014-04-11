@@ -6,7 +6,7 @@ function y = mnorm_pdf(x,mu,S)
 %   pdf with mean, MU, and covariance matrix, SIGMA, at the values in X.
 %
 %   Default values for MU and SIGMA are 0 and 1 respectively.
-
+%
 % Copyright (c) 1998-2005 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

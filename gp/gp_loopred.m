@@ -50,7 +50,6 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_loopred(gp, x, y, varargin)
 %  See also
 %   GP_PRED, GPMC_LOOPRED, GPLA_LOOPRED, GPEP_LOOPRED, GPIA_LOOPRED
 %
-
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
 

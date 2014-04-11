@@ -27,7 +27,7 @@ function gpmf = gpmf_linear(varargin)
 % 
 %  See also
 %    GP_SET, GPMF_CONSTANT, GPMF_SQUARED, 
-
+%
 % Copyright (c) 2010 Tuomas Nikoskinen
 % Copyright (c) 2011 Jarno Vanhatalo
 
@@ -106,7 +106,7 @@ function h = gpmf_geth(gpmf, x)
   
 end
 
-function [w, s] = gpmf_pak(gpmf, w)
+function [w, s, h] = gpmf_pak(gpmf, w)
 %GPMF_PAK  Combine GP mean function parameters into one vector
 %
 %  Description
@@ -123,7 +123,7 @@ function [w, s] = gpmf_pak(gpmf, w)
 %  See also
 %    GPMF_UNPAK
   
-  w = []; s = {};
+  w = []; s = {}; h = [];
   if ~isempty(gpmf.p.b)
     w = gpmf.b;
     if numel(gpmf.b)>1
@@ -131,10 +131,12 @@ function [w, s] = gpmf_pak(gpmf, w)
     else
       s = [s; 'gpmf_linear.b'];
     end
+    h = [h -1.*ones(1,numel(gpmf.b))];
     % Hyperparameters of b
-    [wh sh] = gpmf.p.b.fh.pak(gpmf.p.b);
+    [wh, sh, hh] = gpmf.p.b.fh.pak(gpmf.p.b);
     w = [w wh];
     s = [s; sh];
+    h = [h -1-hh];
   end
   
   if ~isempty(gpmf.p.B)
@@ -144,10 +146,12 @@ function [w, s] = gpmf_pak(gpmf, w)
     else
       s = [s; 'log(gpmf_linear.B)'];
     end
+    h = [h -1.*ones(1,numel(gpmf.B))];
     % Hyperparameters of B
-    [wh sh] = gpmf.p.B.fh.pak(gpmf.p.B);
+    [wh, sh, hh] = gpmf.p.B.fh.pak(gpmf.p.B);
     w = [w wh];
     s = [s; sh];
+    h = [h -1-hh];
   end
   
 end
@@ -209,8 +213,8 @@ function lp = gpmf_lp(gpmf)
 % are sampled are transformed, e.g., W = log(w) where w is all
 % the "real" samples. On the other hand errors are evaluated in
 % the W-space so we need take into account also the Jacobian of
-% transformation, e.g., W -> w = exp(W). See Gelman et.al., 2004,
-% Bayesian data Analysis, second edition, p24.
+% transformation, e.g., W -> w = exp(W). See Gelman et al. (2013),
+% Bayesian Data Analysis, third edition, p. 21.
   lp = 0;
   gpp=gpmf.p;
   

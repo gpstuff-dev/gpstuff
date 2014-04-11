@@ -8,7 +8,6 @@ function v = logit(u)
 %  
 %  See also LOGITINV
 %
-  
 % Copyright (c) 2011 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

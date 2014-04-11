@@ -25,9 +25,9 @@ function [DA,DS] = hair(W,n0)
 %
 %   See also
 %     CUSUM
-
-% Copyright (C) 1999 Simo Särkkä
 %
+% Copyright (C) 1999 Simo Särkkä
+
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.

@@ -9,7 +9,7 @@ function [C, Cinv] = gp_cov(gp, x1, x2, predcf)
 %    optional array specifying the indexes of covariance functions,
 %    which are used for forming the matrix. If empty or not given,
 %    the matrix is formed with all functions.
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen
 

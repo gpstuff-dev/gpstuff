@@ -66,7 +66,7 @@
 %    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and global
 %    phenomena with sparse Gaussian processes. Proceedings of the 24th
 %    Conference on Uncertainty in Artificial Intelligence,
-
+%
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

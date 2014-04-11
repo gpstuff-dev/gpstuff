@@ -33,15 +33,15 @@ function lik = lik_negbinztr(varargin)
 %    The last term (1-(r/(r+mu_i))^r) normalizes the truncated
 %    distribution.
 %
-%    When using the zero-truncated Negbin likelihood you need to
-%    give the vector z as an extra parameter to each function that
-%    requires also y. For example, you should call gpla_e as
-%    follows: gpla_e(w, gp, x, y, 'z', z)
+%    When using the zero-truncated Negbin likelihood you can give the
+%    vector z as an extra parameter to each function that requires
+%    also y. For example, you can call gp_optim as follows:
+%      gp_optim(gp, x, y, 'z', z)
+%    If z is not given or it is empty, then z_i=1 is used.
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
 %
-
 % Copyright (c) 2007-2010 Jarno Vanhatalo & Jouni Hartikainen
 % Copyright (c) 2010-2011 Aki Vehtari
 
@@ -102,7 +102,7 @@ function lik = lik_negbinztr(varargin)
 
 end
 
-function [w,s] = lik_negbinztr_pak(lik)
+function [w,s,h] = lik_negbinztr_pak(lik)
 %LIK_NEGBINZTR_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -116,13 +116,15 @@ function [w,s] = lik_negbinztr_pak(lik)
 %   See also
 %   LIK_NEGBINZTR_UNPAK, GP_PAK
   
-  w=[];s={};
+  w=[];s={};h=[];
   if ~isempty(lik.p.disper)
     w = log(lik.disper);
     s = [s; 'log(negbinztr.disper)'];
-    [wh sh] = lik.p.disper.fh.pak(lik.p.disper);
+    h = [h 0];
+    [wh,sh,hh] = lik.p.disper.fh.pak(lik.p.disper);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end
 end
 
@@ -210,11 +212,8 @@ function ll = lik_negbinztr_ll(lik, y, f, z)
 %  See also
 %    LIK_NEGBINZTR_LLG, LIK_NEGBINZTR_LLG3, LIK_NEGBINZTR_LLG2, GPLA_E
   
-  if isempty(z)
-    error(['lik_negbinztr -> lik_negbinztr_ll: missing z!    '... 
-           'Negbinztr likelihood needs the expected number of    '...
-           'occurrences as an extra input z. See, for         '...
-           'example, lik_negbinztr and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
 
   r = lik.disper;
@@ -237,11 +236,8 @@ function llg = lik_negbinztr_llg(lik, y, f, param, z)
 %  See also
 %    LIK_NEGBINZTR_LL, LIK_NEGBINZTR_LLG2, LIK_NEGBINZTR_LLG3, GPLA_E
 
-  if isempty(z)
-    error(['lik_negbinztr -> lik_negbinztr_llg: missing z!    '... 
-           'Negbinztr likelihood needs the expected number of    '...
-           'occurrences as an extra input z. See, for         '...
-           'example, lik_negbinztr and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
 
   
@@ -291,13 +287,9 @@ function llg2 = lik_negbinztr_llg2(lik, y, f, param, z)
 %  See also
 %    LIK_NEGBINZTR_LL, LIK_NEGBINZTR_LLG, LIK_NEGBINZTR_LLG3, GPLA_E
 
-  if isempty(z)
-    error(['lik_negbinztr -> lik_negbinztr_llg2: missing z!   '... 
-           'Negbinztr likelihood needs the expected number of    '...
-           'occurrences as an extra input z. See, for         '...
-           'example, lik_negbinztr and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
-
   
   mu = exp(f).*z;
   r = lik.disper;
@@ -337,13 +329,9 @@ function llg3 = lik_negbinztr_llg3(lik, y, f, param, z)
 %  See also
 %    LIK_NEGBINZTR_LL, LIK_NEGBINZTR_LLG, LIK_NEGBINZTR_LLG2, GPLA_E, GPLA_G
 
-  if isempty(z)
-    error(['lik_negbinztr -> lik_negbinztr_llg3: missing z!   '... 
-           'Negbinztr likelihood needs the expected number of    '...
-           'occurrences as an extra input z. See, for         '...
-           'example, lik_negbinztr and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
-
   
   mu = exp(f).*z;
   r = lik.disper;
@@ -384,15 +372,13 @@ function [logM_0, m_1, sigm2hati1] = lik_negbinztr_tiltedMoments(lik, y, i1, sig
 %  See also
 %    GPEP_E
   
-%  if isempty(z)
-%    error(['lik_negbinztr -> lik_negbinztr_tiltedMoments: missing z!'... 
-%           'Negbinztr likelihood needs the expected number of            '...
-%           'occurrences as an extra input z. See, for                 '...
-%           'example, lik_negbinztr and gpep_e.                       ']);
-%  end
+  if numel(z)==0
+    avgE = ones(size(i1));
+  else
+    avgE = z(i1);
+  end
   
   yy = y(i1);
-  avgE = z(i1);
   r = lik.disper;
   logM_0=zeros(size(yy));
   m_1=zeros(size(yy));
@@ -447,15 +433,13 @@ function [logM_0, m_1, sigm2hati1] = lik_negbinztr_tiltedMoments2(lik, y, i1, si
 %  See also
 %    GPEP_E
   
-%  if isempty(z)
-%    error(['lik_negbinztr -> lik_negbinztr_tiltedMoments: missing z!'... 
-%           'Negbinztr likelihood needs the expected number of            '...
-%           'occurrences as an extra input z. See, for                 '...
-%           'example, lik_negbinztr and gpep_e.                       ']);
-%  end
+  if numel(z)==0
+    avgE = ones(size(i1));
+  else
+    avgE = z(i1);
+  end
   
   yy = y(i1);
-  avgE = z(i1);
   r = lik.disper;
   logM_0=zeros(size(yy));
   m_1=zeros(size(yy));
@@ -511,15 +495,13 @@ function [g_i] = lik_negbinztr_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %  See also
 %    GPEP_G
 
-  if isempty(z)
-    error(['lik_negbinztr -> lik_negbinztr_siteDeriv: missing z!'... 
-           'Negbinztr likelihood needs the expected number of        '...
-           'occurrences as an extra input z. See, for             '...
-           'example, lik_negbinztr and gpla_e.                   ']);
+  if numel(z)==0
+    avgE = ones(size(i1));
+  else
+    avgE = z(i1);
   end
 
   yy = y(i1);
-  avgE = z(i1);
   r = lik.disper;
   
   % get a function handle of an unnormalized tilted distribution 
@@ -564,15 +546,13 @@ function [g_i] = lik_negbinztr_siteDeriv2(lik, y, i1, sigm2_i, myy_i, z, eta, ln
 %  See also
 %    GPEP_G
 
-  if isempty(z)
-    error(['lik_negbinztr -> lik_negbinztr_siteDeriv: missing z!'... 
-           'Negbinztr likelihood needs the expected number of        '...
-           'occurrences as an extra input z. See, for             '...
-           'example, lik_negbinztr and gpla_e.                   ']);
+  if numel(z)==0
+    avgE = ones(size(i1));
+  else
+    avgE = z(i1);
   end
 
   yy = y(i1);
-  avgE = z(i1);
   r = lik.disper;
   
   % get a function handle of an unnormalized tilted distribution 
@@ -638,11 +618,8 @@ function [lpy, Ey, Vary] = lik_negbinztr_predy(lik, Ef, Varf, yt, zt)
 %  See also
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-  if isempty(zt)
-    error(['lik_negbinztr -> lik_negbinztr_predy: missing zt!'... 
-           'Negbinztr likelihood needs the expected number of    '...
-           'occurrences as an extra input zt. See, for         '...
-           'example, lik_negbinztr and gpla_e.               ']);
+  if numel(zt)==0
+    zt=ones(size(Ef));
   end
 
   avgE = zt;
@@ -880,11 +857,8 @@ function prctys = lik_negbinztr_predprcty(lik, Ef, Varf, zt, prcty)
 %  See also 
 %    GP_PREDPCTY
 
-  if isempty(zt)
-    error(['lik_negbin -> lik_negbinztr_predprcty: missing zt!'... 
-           'Negbinztr likelihood needs the expected number of    '...
-           'occurrences as an extra input zt. See, for         '...
-           'example, lik_negbin and gpla_e.               ']);
+  if numel(zt)==0
+    zt=ones(size(Ef));
   end
   
   opt=optimset('TolX',1e-7,'Display','off');
@@ -954,7 +928,10 @@ function mu = lik_negbinztr_invlink(lik, f, z)
 %     See also
 %     LIK_NEGBINZTR_LL, LIK_NEGBINZTR_PREDY
   
-  mu = z.*exp(f);
+  if numel(z)==0
+    z=1;
+  end
+  mu = bsxfun(@times,z,exp(f));
 end
 
 function reclik = lik_negbinztr_recappend(reclik, ri, lik)

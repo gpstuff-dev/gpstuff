@@ -9,13 +9,13 @@ function [CA,CS] = score(X,gradF,n0,varargin)
 %   its opposite) and X's are the sampled values. n0 is length
 %   of "burn-in" and defaults to 0.
 %
-%   The idea is from:
+%   Reference:
 %     Anne Philippe and Christian P. Robert (Oct, 1998)
 %     Riemann Sums for MCMC Estimation and
 %     Convergence Monitoring. EP CNRS
-
-% Copyright (C) 1999 Simo Särkkä
 %
+% Copyright (C) 1999 Simo Särkkä
+
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.

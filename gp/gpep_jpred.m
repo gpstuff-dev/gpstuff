@@ -72,7 +72,7 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
 %  
 %  See also
 %    GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010      Heikki Peura
 % Copyright (c) 2011-2012 Ville Tolvanen
@@ -95,6 +95,7 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+  ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}))
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
     ip.parse(gp, x, y, varargin{:});
@@ -107,6 +108,7 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
   zt=ip.Results.zt;
   predcf=ip.Results.predcf;
   tstind=ip.Results.tstind;
+  fcorr=ip.Results.fcorr;
   if isempty(xt)
     xt=x;
     if isempty(yt)
@@ -116,7 +118,11 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
       zt=z;
     end
   end
-  
+
+  if ~isequal(fcorr, 'off')
+    warning('Marginal corrections not available for joint predictions');
+    fcorr='off';
+  end
   [tn, tnin] = size(x);
   
   switch gp.type
@@ -491,7 +497,7 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
     [sampft] = gp_rnd(gp,x,y, xt, 'z', z, 'zt', zt, 'nsamp', 500);
     lpyt = zeros(500,1);
     for i=1:size(sampft,2)
-      lpyt(i) = gp.lik.fh.ll(gp.lik, y, sampft(:,i), z);
+      lpyt(i) = gp.lik.fh.ll(gp.lik, yt, sampft(:,i), z);
     end
     ljpyt = sumlogs(lpyt);
   end

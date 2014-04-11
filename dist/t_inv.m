@@ -6,7 +6,7 @@ function tinv = t_inv (x, v, mu, sigma)
 %
 %    The size of X is the common size of P and V. A scalar input
 %    functions as a constant matrix of the same size as the other input.
-
+%
 % Copyright (c) 1995-1997, 2005-2007 Kurt Hornik
 
 % This software is distributed under the GNU General Public

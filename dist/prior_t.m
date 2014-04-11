@@ -11,8 +11,8 @@ function p = prior_t(varargin)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
 %
-%    Parameterisation is done as in Bayesian Data Analysis,  
-%    second edition, Gelman et.al 2004.
+%    The parameterization is as in Gelman, Carlin, Stern, Dunson, Vehtari,
+%    and Rubin (2013). Bayesian Data Analysis, third edition.
 %    
 %    Parameters for Student-t prior [default]
 %      mu       - location [0]
@@ -24,10 +24,10 @@ function p = prior_t(varargin)
 %
 %  See also
 %    PRIOR_*
-
+%
 % Copyright (c) 2000-2001,2010 Aki Vehtari
 % Copyright (c) 2009 Jarno Vanhatalo
-% Copyright (c) 2010 Jaakko Riihim�ki
+% Copyright (c) 2010 Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -90,24 +90,28 @@ function p = prior_t(varargin)
 
 end
 
-function [w, s] = prior_t_pak(p)
+function [w, s, h] = prior_t_pak(p)
 % This is a mandatory subfunction used for example 
 % in energy and gradient computations.
 
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.mu)
     w = p.mu;
     s=[s; 't.mu'];
+    h = 1;
   end        
   if ~isempty(p.p.s2)
     w = [w log(p.s2)];
     s=[s; 'log(t.s2)'];
+    h = [h 1];
   end
   if ~isempty(p.p.nu)
     w = [w log(p.nu)];
     s=[s; 'log(t.nu)'];
+    h = [h 1];
   end
 end
 

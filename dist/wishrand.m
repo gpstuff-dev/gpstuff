@@ -8,15 +8,15 @@ function R = wishrand(S,nu);
 %
 %   Note: E[R]=S
 %
-%   References: Gelman, Carlin, Stern, & Rubin (1995), Bayesian Data Analysis,
-%                 Chapman & Hall, pp. 474, 478, 480-481.
+%   References: Gelman, Carlin, Stern, Dunson, Vehtari, and Rubin (2013).
+%                 Bayesian Data Analysis, third edition.
 %               Gentle (2003), Random Number Generation and Monte Carlo
 %                 Methods, 2nd ed, Springer, p. 199, Algorithm 5.8. 
 %               Smith & Hocking (1972), Algorithm AS 53: Wishard Variate
 %                 Generator, Applied Statistics, 21(3), pp. 341-345.
 %
 %	See also INVWISHRAND
-
+%
 % Copyright (c) 1999-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
@@ -42,7 +42,7 @@ if (nu >= d) && (nu == round(nu))
   % distribution is proper and degrees of freedom is integer
   % brute-force may be used, which is surprisingly faster in Matlab
   % at least up to d>10, nu>1000
-  % Algorithm described e.g. in (Gelman et al., 1995)
+  % Algorithm described e.g. in (Gelman et al., 2013)
   Y = T'*randn(d,nu);
   R = Y*Y'./nu;
 else

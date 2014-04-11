@@ -15,9 +15,9 @@ function r = join(rs, joinall)
 %
 %   See also
 %     THIN
-
-% Copyright (C) 2000-2006  Aki Vehtari
 %
+% Copyright (C) 2000-2006  Aki Vehtari
+
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.

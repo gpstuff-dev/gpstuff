@@ -8,7 +8,7 @@ function u = logitinv(v)
 %      U = 1./(1 + EXP(V))
 %  
 %  See also LOGIT
-
+%
 % Copyright (c) 2011 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

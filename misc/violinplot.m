@@ -23,7 +23,6 @@ function hh = violinplot(x,varargin)
 %      cutoff - cutoff for not plotting thin tails. Default is
 %               0.01, that is, 1% of the mass in both tails is not plotted
 %
-  
 % Copyright (c) 2011 Aki Vehtari
 
 % This software is distributed under the GNU General Public

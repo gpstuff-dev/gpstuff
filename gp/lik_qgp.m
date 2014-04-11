@@ -41,7 +41,7 @@ function lik = lik_qgp(varargin)
 %     29th International Conference on Machine Learning, Edinburgh,
 %     Scotland, UK, 2012.
 %     
-  
+%
 % Copyright (c) 2012 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
@@ -100,7 +100,7 @@ function lik = lik_qgp(varargin)
 
 end
 
-function [w s] = lik_qgp_pak(lik)
+function [w s h] = lik_qgp_pak(lik)
 %LIK_QGP_PAK  Combine likelihood parameters into one vector.
 %
 %  Description
@@ -115,14 +115,16 @@ function [w s] = lik_qgp_pak(lik)
 %  See also
 %    LIK_QGP_UNPAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
   if ~isempty(lik.p.sigma2)
     w = [w log(lik.sigma2)];
     s = [s; 'log(qgp.sigma2)'];
+    h = [h 0];
     % Hyperparameters of sigma2
-    [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
+    [wh, sh, hh] = lik.p.sigma2.fh.pak(lik.p.sigma2);    
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end    
 
 end

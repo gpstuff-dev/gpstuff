@@ -5,10 +5,11 @@ function y = sinvchi2_lpdf(x,nu,s2)
 %   Y = SINVCHI2_LPDF(X,NU,S2) returns the scaled log inverse-chi2 probability
 %   density function with parameters NU and S2, at the values in X.
 %
-%   Note: Parameterization as in (Gelman et al, 1996).
+%   The parameterization is as in Gelman, Carlin, Stern, Dunson, Vehtari,
+%   and Rubin (2013). Bayesian Data Analysis, third edition.
 %      NU is degrees of freedom
 %      S2 is scale
-
+%
 % Copyright (c) 2003 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

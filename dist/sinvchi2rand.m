@@ -6,8 +6,11 @@ function r = sinvchi2rand(nu, s2, M, N)
 %
 %  Returns a randon number/matrix R from scaled inverse-chi square 
 %  distribution. Nu is the degrees of freedom and S2 is the scale 
-%  squared. Parametrisation is according to Gelman et. al. (2004).
-
+%  squared. 
+%
+%  The parameterization is as in Gelman, Carlin, Stern, Dunson, Vehtari,
+%  and Rubin (2013). Bayesian Data Analysis, third edition.
+%
 % Copyright (c) 1998-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

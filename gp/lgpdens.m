@@ -1,4 +1,4 @@
-function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
+function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
 %LGPDENS Logistic-Gaussian Process density estimate for 1D and 2D data
 % 
 %  Description  
@@ -52,7 +52,13 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
 %      bounded   - in 1D case tells if the density is bounded from left
 %                  or right (default is [0 0]). In unbounded case,
 %                  decreasing tails are assumed.
-
+%
+%  Reference
+%
+%    Jaakko Riihimäki and Aki Vehtari (2014). Laplace approximation
+%    for logistic Gaussian process density estimation and
+%    regression. Bayesian analysis, in press.
+%
 % Copyright (c) 2011-2013 Jaakko Riihimäki and Aki Vehtari
 % Copyright (c) 2013 Enrique Lelo de Larrea Andrade
 
@@ -245,7 +251,7 @@ function [p,pq,xx,gp,ess,eig,q,r] = lgpdens(x,varargin)
             e = 0.5*MNM + Econst;
             
             lps(:,i1)=-e+ll;
-            lpq(:,i1) = mnorm_lpdf2(qr,Ef(i1,:),1.0*Covf(:,:,i1));
+            lpq(:,i1) = mnorm_lpdf(qr,Ef(i1,:),1.0*Covf(:,:,i1));
           end
           lps2=lps-max(lps(:));
           lqs=sumlogs(bsxfun(@plus,lps2,log(P_TH)),2);
@@ -963,7 +969,7 @@ function gp = gpsmooth(xx,yy,gpcf,latent_method,int_method,display,speedup,gridn
   %exp(gp_pak(gp));
   
   if strcmpi(latent_method,'MCMC')
-    % gpia coule be used to get integartion limits for slice sampling
+    % gpia could be used to get integartion limits for slice sampling
     % gpia=gp_ia(gp, xx, yy, 'int_method', 'CCD', 'display', displ);
     % for i1=1:numel(gpia)
     %   ws(i1,:)=gp_pak(gpia{i1});

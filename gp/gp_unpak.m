@@ -38,7 +38,6 @@ function gp = gp_unpak(gp, w, param)
 %  See also
 %    GP_PAK, GP_SET
 %
-
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
@@ -72,15 +71,33 @@ end
 % Unpack the parameters of likelihood function
 if ~isempty(strfind(param, 'likelihood'))
   [gp.lik w] = gp.lik.fh.unpak(gp.lik, w);
+  
+  % Unpack the parameters of the second likelihood function (monotonicity)
+  if isfield(gp, 'lik_mono')
+    [gp.lik_mono w] = gp.lik_mono.fh.unpak(gp.lik_mono, w);
+  end
 end
+
 
 % Unpack the inducing inputs
 if ~isempty(strfind(param, 'inducing'))
   if isfield(gp,'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
-    lu = length(gp.X_u(:));
-    gp.X_u = reshape(w(1:lu), size(gp.X_u));
-    if lu < length(w)
-      w = w(lu+1:end);
+    if ~iscell(gp.p.X_u)
+      % One prior for all inducing inputs
+      lu = length(gp.X_u(:));
+      gp.X_u = reshape(w(1:lu), size(gp.X_u'))';
+      if lu < length(w)
+        w = w(lu+1:end);
+      end
+      [gp.p.X_u, w]=gp.p.X_u.fh.unpak(gp.p.X_u, w);
+    else
+      % Own prior for each inducing input
+      d=numel(gp.X_u(1,:));
+      for i=1:size(gp.X_u)
+        gp.X_u(i,:) = reshape(w(1:d), size(gp.X_u(1,:)));
+        w(1:d)=[];
+        [gp.p.X_u{i}, w] = gp.p.X_u{i}.fh.unpak(gp.p.X_u{i}, w);
+      end
     end
   end
 end

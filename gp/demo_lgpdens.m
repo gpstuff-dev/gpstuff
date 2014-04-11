@@ -1,5 +1,5 @@
-% DEMO_LGPDENS  Demonstration of Logistic-Gaussian Process density estimate
-%               for 1D and 2D data and density regression
+%DEMO_LGPDENS  Demonstration of Logistic-Gaussian Process density estimate
+%              for 1D and 2D data and density regression
 %
 %  Description 
 %
@@ -21,7 +21,12 @@
 %    The inference is conducted via Laplace and the last example
 %    compares the results of Laplace approximation to MCMC.
 %
-
+%  Reference
+%
+%    Jaakko Riihimäki and Aki Vehtari (2014). Laplace approximation
+%    for logistic Gaussian process density estimation and
+%    regression. Bayesian analysis, in press.
+%
 % Copyright (c) 2011 Jaakko Riihimäki and Aki Vehtari
 
 % This software is distributed under the GNU General Public 
@@ -194,7 +199,7 @@ subplot(2,1,1)
 setrandstream(0,'mrg32k3a');
 x=[trnd(4,1,100)]';
 xt=linspace(-6,6,200)';
-[p,pq]=lgpdens(x,xt);
+[p,pq]=lgpdens(x,xt,'int_method','grid');
 pla=p;
 line(xt,p,'color','r','marker','none','linewidth',2)
 line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')

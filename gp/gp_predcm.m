@@ -36,7 +36,6 @@ function [pc, fvecm2, p, c] = gp_predcm(gp,x,y,varargin)
 %   See also
 %     DEMO_IMPROVEDMARGINALS
 %
-  
 % Copyright (c) 2011,2013 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

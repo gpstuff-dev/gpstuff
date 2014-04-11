@@ -5,7 +5,7 @@ function lp=dir_lpdf(x,a)
 %       Description:
 %       LP = DIR_LPDF(X, A) returns the lpdf of Dirichlet distribution 
 %       with A at X
-
+%
 % Copyright (c) 2000 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

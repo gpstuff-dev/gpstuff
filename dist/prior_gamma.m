@@ -11,20 +11,20 @@ function p = prior_gamma(varargin)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
 %  
-%    Parametrisation is done by Bayesian Data Analysis,  
-%    second edition, Gelman et.al. 2004.
+%    The parameterization is as in Gelman, Carlin, Stern, Dunson, Vehtari,
+%    and Rubin (2013). Bayesian Data Analysis, third edition.
 %
 %    Parameters for Gamma prior [default]
-%      sh       - shape [4]
-%      is       - inverse scale [1]
+%      sh       - shape (alpha) [4]
+%      is       - inverse scale (beta) [1]
 %      sh_prior - prior for sh [prior_fixed]
 %      is_prior - prior for is [prior_fixed]
 %
 %  See also
 %    PRIOR_*
-
+%
 % Copyright (c) 2000-2001,2010 Aki Vehtari
-% Copyright (c) 2010 Jaakko Riihim�ki
+% Copyright (c) 2010 Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -79,17 +79,20 @@ function p = prior_gamma(varargin)
 
 end
 
-function [w, s] = prior_gamma_pak(p)
+function [w, s, h] = prior_gamma_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.sh)
     w = log(p.sh);
     s=[s; 'log(Gamma.sh)'];
+    h = 1;
   end
   if ~isempty(p.p.is)
     w = [w log(p.is)];
     s=[s; 'log(Gamma.is)'];
+    h = [h 1];
   end
 end
 

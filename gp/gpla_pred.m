@@ -73,7 +73,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 %
 %  See also
 %    GPLA_E, GPLA_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2012 Aki Vehtari
 
@@ -591,6 +591,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 
       %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
       [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      if isnan(e)
+        Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+        return
+      end
       [f, La2] = deal(p.f, p.La2);
 
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
@@ -626,7 +630,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 
         % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
         B2 = repmat(Lahat,1,m).\B;
-        A2 = Kuu_tr + B'*B2; A2=(A2+A2)/2;
+        A2 = Kuu_tr + B'*B2; A2=(A2+A2')/2;
         L2 = B2/chol(A2);
 
         % Set params for K_nf
@@ -689,7 +693,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
         for i=1:length(ind)
           B2(ind{i},:) = Lahat{i}\B(ind{i},:);
         end
-        A2 = K_uu + B'*B2; A2=(A2+A2)/2;
+        A2 = K_uu + B'*B2; A2=(A2+A2')/2;
         L2 = B2/chol(A2);
 
         iKuuB = K_uu\B';
@@ -820,7 +824,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 
         % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
         B2 = Lahat\B;
-        A2 = K_uu + B'*B2; A2=(A2+A2)/2;
+        A2 = K_uu + B'*B2; A2=(A2+A2')/2;
         L2 = B2/chol(A2);
 
         % Set params for K_nf

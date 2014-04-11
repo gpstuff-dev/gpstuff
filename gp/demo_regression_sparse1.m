@@ -66,19 +66,19 @@
 %    4) data analysis with VAR sparse approximation
 %    5) data analysis with DTC sparse approximation
 %
-%
 %    (We could integrate also over the parameters with, for
 %    example, grid integration or MCMC. This is not demonstrated
 %    here but it is done exactly the similar way as in
 %    demo_regression1.)
 %
-%  References:
-%    Qui�onero-Candela, J. and Rasmussen, C. E. (2005). A unifying
+%  References
+%
+%    Quiñonero-Candela, J. and Rasmussen, C. E. (2005). A unifying
 %    view of sparse approximate Gaussian process regression. 
-%    Journal of Machine Learning Re- search, 6(3):1939-1959.
+%    Journal of Machine Learning Research, 6(3):1939-1959.
 %
 %    Snelson, E. and Ghahramani, Z. (2006). Sparse Gaussian process
-%    using pseudo- inputs. Advances in Neural Information
+%    using pseudo-inputs. Advances in Neural Information
 %    Processing Systems 18.
 %
 %    Titsias, M. K. (2009). Variational Model Selection for Sparse
@@ -90,9 +90,13 @@
 %    of the 24th Conference on Uncertainty in Artificial
 %    Intelligence, pp. 571-578, AUAI Press.
 %
+%    Vanhatalo, J., Pietiläinen, V. and Vehtari, A. (2010). 
+%    Approximate inference for disease mapping with sparse Gaussian
+%    processes. Statistics in Medicine, 29(15):1580-1607.
+%
 %  See also  
 %    DEMO_REGRESSION1, DEMO_REGRESSION2, DEMO_REGRESSION_SPARSE2
-
+%
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

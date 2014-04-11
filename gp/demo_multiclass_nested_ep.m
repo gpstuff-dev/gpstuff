@@ -24,7 +24,7 @@
 %    standard deviation of 0.1 has been added to every component of
 %    the vector. Because there are two irrelevant components in the
 %    input vector a prior with ARD should be of help.
-
+%
 % Copyright (c) 2011-2013 Jaakko Riihimäki, Pasi Jylänki, Aki Vehtari
 
 %- load the data

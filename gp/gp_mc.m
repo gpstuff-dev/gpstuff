@@ -67,7 +67,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %
 %  See also:
 %    DEMO_CLASSIFIC1, DEMO_ROBUSTREGRESSION
-
+%
 % Copyright (c) 1998-2000,2010 Aki Vehtari
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 
@@ -505,6 +505,7 @@ function record = recappend(record)
   ncf = length(gp.cf);
   
   if nargin == 0   % Initialize record structure
+    record=gp;
     record.type = gp.type;
     record.lik = gp.lik;
     if isfield(gp,'latent_method')

@@ -4,8 +4,12 @@ function test_suite = test_binomial_apc
 %
 %   See also
 %     TEST_ALL, DEMO_BINOMIAL_APC
-
+%
 % Copyright (c) 2011-2012 Ville Tolvanen
+
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
 
 initTestSuite;
 

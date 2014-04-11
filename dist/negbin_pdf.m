@@ -18,7 +18,7 @@ function y = negbin_pdf(x,l,r)
 %
 %    See also 
 %      NEGBIN_LPDF, POISS_PDF, POISS_PDF
-
+%
 % Copyright (c) 2010 Jarno Vanhatalo, Aki Vehtari
 
 % This software is distributed under the GNU General Public 

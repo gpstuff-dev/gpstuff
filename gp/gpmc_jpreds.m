@@ -91,7 +91,7 @@ function [Ef, Covf, ljpy, Ey, Covy] = gpmc_jpreds(gp, x, y, varargin)
 %
 %  See also
 %    GPMC_JPRED, GP_JPRED, GP_SET, GP_MC
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2011-2012 Ville Tolvanen
 % Copyright (c) 2012 Aki Vehtari

@@ -29,7 +29,6 @@ function prevstream = setrandstream(seed, stream)
 %  See also
 %    RANDSTREAM, RNG
 %   
-
 % Copyright (c) 2012, Ville Tolvanen
 
 % This software is distributed under the GNU General Public

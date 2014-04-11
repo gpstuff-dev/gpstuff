@@ -15,12 +15,12 @@ function gp = gp_set(varargin)
 %    Parameters for Gaussian process
 %      cf           - Single covariance structure or cell array of 
 %                     covariance function structures created by
-%                     gpcf_* functions. The default is [].
-%                     This or meanf has to be defined as non-empty. 
+%                     gpcf_* functions. The default is [],
+%                     except if neither cf or meanf is given then the
+%                     the default is {gpcf_constant() gpcf_sexp()}. 
 %      meanf        - Single mean function structure or cell array of 
 %                     mean function function structures created by
 %                     gpmf_* functions. The default is [].
-%                     This or cf has to be defined as non-empty. 
 %                     Mean functions work only with GP type 'FULL'
 %      type         - Type of Gaussian process
 %                      'FULL'   full GP (default)
@@ -158,7 +158,7 @@ function gp = gp_set(varargin)
 %    GP_PRED, GP_MC, GP_IA, ...
 %
 %  References:
-%    Qui�onero-Candela, J. and Rasmussen, C. E. (2005). A unifying
+%    Quinonero-Candela, J. and Rasmussen, C. E. (2005). A unifying
 %    view of sparse approximate Gaussian process regression. 
 %    Journal of Machine Learning Research, 6(3):1939-1959.
 %
@@ -177,10 +177,16 @@ function gp = gp_set(varargin)
 %    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and
 %    global phenomena with sparse Gaussian processes. Proceedings
 %    of the 24th Conference on Uncertainty in Artificial
-%    Intelligence,
-
+%    Intelligence.
+%
+%    Sarkka, S., Solin, A., Hartikainen, J. (2013). 
+%    Spatiotemporal learning via infinite-dimensional Bayesian 
+%    filtering and smoothing. IEEE Signal Processing Magazine, 
+%    30(4):51-61.
+%
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
   
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -193,14 +199,15 @@ function gp = gp_set(varargin)
   ip.addParamValue('meanf',[], @(x) isempty(x) || isstruct(x) || iscell(x));
   ip.addParamValue('type','FULL', ...
                    @(x) ismember(x,{'FULL' 'FIC' 'PIC' 'PIC_BLOCK' 'VAR' ...
-                      'DTC' 'SOR' 'CS+FIC'}));
+                      'DTC' 'SOR' 'CS+FIC','KALMAN'}));
   ip.addParamValue('lik',lik_gaussian(), @(x) isstruct(x));
   ip.addParamValue('jitterSigma2',0, @(x) isscalar(x) && x>=0);
   ip.addParamValue('infer_params','covariance+likelihood', @(x) ischar(x));
   ip.addParamValue('latent_method','Laplace', @(x) ischar(x) || iscell(x));
   ip.addParamValue('latent_opt',struct(), @isstruct);
   ip.addParamValue('X_u',[],  @(x) isreal(x) && all(isfinite(x(:))));
-  ip.addParamValue('Xu_prior',prior_unif,  @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('Xu_prior',prior_unif,  @(x) isstruct(x) || isempty(x) || ...
+                   iscell(x));
   ip.addParamValue('tr_index', [], @(x) ~isempty(x) || iscell(x))    
   ip.addParamValue('comp_cf', [], @(x) iscell(x))    
   ip.addParamValue('derivobs','off', @(x) islogical(x) || isscalar(x) || ...
@@ -253,8 +260,8 @@ function gp = gp_set(varargin)
       end
     end
   end
-  if isempty(gp.cf) && isempty(gp.meanf)
-    error('At least one covariance or mean function has to defined')
+  if isempty(gp.cf) && (~isfield(gp,'meanf') || isempty(gp.meanf))
+    gp.cf={gpcf_constant() gpcf_sexp()};
   end
   % Inference for which parameters 
   if init || ~ismember('infer_params',ip.UsingDefaults)
@@ -342,8 +349,24 @@ function gp = gp_set(varargin)
       error('With CS+FIC need to define at least one cs and one non-cs covariance function')
     end
   end
+  if ismember(gp.type,{'KALMAN'})
+      
+    % Check likelihood function
+    if ~strcmpi(gp.lik.type,'Gaussian')
+      error('The ''KALMAN'' option only supports Gaussian likelihoods.')
+    end
+    
+    % Check covariance functions
+    for j=1:length(gp.cf)
+      if ~isfield(gp.cf{j}.fh,'cf2ss'),
+         error('State space conversion not implemented for ''%s''.', ...
+             gp.cf{j}.type) 
+      end
+    end
+    
+  end
   % Latent method
-  if isfield(gp.lik.fh,'trcov')
+  if isfield(gp.lik.fh,'trcov') && ~isfield(gp, 'lik_mono')
     % Gaussian likelihood
     if ~ismember('latent_method',ip.UsingDefaults)
       error('No latent method needed with a Gaussian likelihood')

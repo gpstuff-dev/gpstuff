@@ -6,7 +6,7 @@ function brnd = betarand(a,b,r,c)
 %     the size of R is the size of the other parameter.
 %
 %     R = BETARAND(A,B,M,N) returns an M-by-N matrix.
-
+%
 % Copyright (c) 1995-1997, 2005-2007 Kurt Hornik
 
 % This software is distributed under the GNU General Public

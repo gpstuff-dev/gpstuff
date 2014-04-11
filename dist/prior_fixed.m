@@ -8,7 +8,7 @@ function p = prior_fixed(varargin)
 %    
 %  See also
 %    PRIOR_*, GPCF_*, LIKELIH_*
-
+%
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public

@@ -28,9 +28,9 @@ function t = acorrtime(x,maxlag)
 %          for spatio-temporally misaligned data using DIC
 %          criterion. Technical report, Division of Biostatistics,
 %          University of Minnesota, 1999. p. 9.
-
-% Copyright (C) 2000-2001 Aki Vehtari
 %
+% Copyright (C) 2000-2001 Aki Vehtari
+
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.

@@ -37,7 +37,6 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_loopred(gp_array, x, y, varargin)
 %  See also
 %   GP_LOOPRED, GP_IA, GP_PRED
 %
-
 % Copyright (c) 2009 Ville Pietil�inen
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
@@ -56,10 +55,6 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_loopred(gp_array, x, y, varargin)
   ip.parse(gp_array, x, y, varargin{:});
   z=ip.Results.z;
   is=ip.Results.is;
-
-  if isfield(gp_array{1},'meanf') & ~isempty(gp_array{1}.meanf)
-    error('GPIA_LOOPRED: Mean functions not yet supported');
-  end
 
   nGP = numel(gp_array);
   n=size(x,1);

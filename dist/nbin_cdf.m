@@ -7,7 +7,7 @@ function cdf = nbin_cdf (x, r, p)
 %   The size of Y is the common size of the input arguments. A scalar input
 %   functions as a constant matrix of the same size as the other inputs.
 %
-
+%
 % Copyright (c) 1995-1997, 2007 Kurt Hornik
 
 % This software is distributed under the GNU General Public

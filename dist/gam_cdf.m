@@ -8,9 +8,9 @@ function p = gam_cdf(x,a,b)
 %   scalar input functions as a constant matrix of the same size as
 %   the other inputs.
 %
-%   The parameterization is as in Gelman et al. (2004). Bayesian Data
-%   Analysis (second edition)
-
+%   The parameterization is as in Gelman, Carlin, Stern, Dunson, Vehtari,
+%   and Rubin (2013). Bayesian Data Analysis, third edition.
+%
 % Copyright (c) 1998-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

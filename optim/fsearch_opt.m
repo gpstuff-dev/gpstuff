@@ -19,7 +19,7 @@ function opt = fsearch_opt(opt)
 %     stop if the value does not increase
 %   stopvalue (-Inf)
 %     stop if the current best value smaller than stopvalue
-
+%
 % Copyright (c) Aki Vehtari (2004-2007)
 
 % This software is distributed under the GNU General Public 

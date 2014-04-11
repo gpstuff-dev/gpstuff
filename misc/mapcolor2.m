@@ -17,7 +17,6 @@ function map = mapcolor2(A, breaks)
 %            pcolor(A), shading flat
 %            colormap(map), colorbar
 %
-
 % Copyright (c) 2006 Markus Siivola
 
 % This software is distributed under the GNU General Public 

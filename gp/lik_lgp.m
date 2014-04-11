@@ -10,10 +10,15 @@ function lik = lik_lgp(varargin)
 %
 %      where f contains latent values.
 %
+%  Reference
+%
+%    Jaakko Riihimäki and Aki Vehtari (2014). Laplace approximation
+%    for logistic Gaussian process density estimation and
+%    regression. Bayesian analysis, in press.
+%
 %  See also
 %    LGPDENS, GP_SET, LIK_*
 %
-  
 % Copyright (c) 2011 Jaakko Riihimäki and Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -53,7 +58,7 @@ function lik = lik_lgp(varargin)
 
 end
 
-function [w,s] = lik_lgp_pak(lik)
+function [w,s,h] = lik_lgp_pak(lik)
 %LIK_LGP_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -66,7 +71,7 @@ function [w,s] = lik_lgp_pak(lik)
 %  See also
 %    LIK_LGP_UNPAK, GP_PAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
 end
 
 
@@ -216,7 +221,7 @@ function [logM_0, m_1, sigm2hati1] = lik_lgp_tiltedMoments(lik, y, i1, sigm2_i, 
 %  See also
 %    GPEP_E
 
-% Not applicable
+  error('Not implemented')
   
 end
 
@@ -245,7 +250,7 @@ function [lpy, Ey, Vary] = lik_lgp_predy(lik, Ef, Varf, yt, zt)
 %  See also 
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-% Not applicable
+  error('Not implemented')
   
 end
 

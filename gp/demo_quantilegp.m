@@ -13,7 +13,6 @@
 %
 %  See also  LIK_QGP, DEMO_*
 %
-
 % Copyright (c) 2013 Ville Tolvanen
 
 % This software is distributed under the GNU General Public 

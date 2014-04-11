@@ -10,7 +10,7 @@ function R = gamrand1(A, B)
 %      B is degrees of freedom
 %
 %	See also INVGAMRAND
-
+%
 % Copyright (c) 1999 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

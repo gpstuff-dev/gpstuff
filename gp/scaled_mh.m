@@ -33,7 +33,7 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
 %  
 %  See also
 %    GP_MC
-  
+%
 % Copyright (c) 1999,2011 Aki Vehtari
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 

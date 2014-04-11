@@ -14,7 +14,6 @@
 %    Models Using Gibbs Sampling. Journal of the American
 %    Statistical Association 85(412):972-985.
 %
-
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

@@ -24,7 +24,7 @@ function [l,lq,xt,gp] = lgcp(x,varargin)
 %        unit range or unit square, additional field 'scale' is
 %        included which includes the range for the grid in the
 %        original x space.
-  
+%
 % Copyright (c) 2009-2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public

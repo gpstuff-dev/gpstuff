@@ -1,4 +1,4 @@
-function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
+function [sampft, sampyt] = gp_rnd(gp, x, y, varargin)
 %GP_RND  Random draws from the posterior Gaussian process
 %
 %  Description
@@ -37,7 +37,7 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
 %    - sampling with FIC, PIC and CS+FIC forms full nxn matrix and
 %       works only when sampling for the training inputs
 %    - The code is not optimized
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2008      Jouni Hartikainen
 % Copyright (c) 2011      Aki Vehtari
@@ -51,7 +51,7 @@ ip.FunctionName = 'GP_RND';
 ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addOptional('xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('predcf', [], @(x) isempty(x) || ...
@@ -60,9 +60,21 @@ ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.addParamValue('nsamp', 1, @(x) isreal(x) && isscalar(x))
 ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'fact','cm2','off','on'}))
-ip.parse(gp, x, y, xt, varargin{:});
+if numel(varargin)==0 || isnumeric(varargin{1})
+  % inputParser should handle this, but it doesn't
+  ip.parse(gp, x, y, varargin{:});
+else
+  ip.parse(gp, x, y, [], varargin{:});
+end
+xt=ip.Results.xt;
 z=ip.Results.z;
 zt=ip.Results.zt;
+if isempty(xt)
+  xt=x;
+  if isempty(zt)
+    zt=z;
+  end
+end
 predcf=ip.Results.predcf;
 tstind=ip.Results.tstind;
 nsamp=ip.Results.nsamp;
@@ -73,7 +85,7 @@ tn = size(x,1);
 sampyt=[];
 if isstruct(gp) && numel(gp.jitterSigma2)==1
   % Single GP
-  if isfield(gp.lik.fh,'trcov') || isfield(gp, 'latentValues')
+  if (isfield(gp.lik.fh,'trcov') && ~isfield(gp,'lik_mono')) || isfield(gp, 'latentValues')
     % ===================================
     % Gaussian likelihood or MCMC with latent values
     % ===================================
@@ -610,17 +622,32 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
             %[e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
             [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            if isnan(e)
+              error('EP-algorithm returned NaN');
+            end
             [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
             
-            [K, C]=gp_trcov(gp,x);
-            K = gp_trcov(gp, xt, predcf);
-            ntest=size(xt,1);
-            K_nf=gp_cov(gp,xt,x,predcf);
-            [n,nin] = size(x);
+            if ~isfield(gp, 'lik_mono')
+              [K, C]=gp_trcov(gp,x);
+              K = gp_trcov(gp, xt, predcf);
+              ntest=size(xt,1);
+              K_nf=gp_cov(gp,xt,x,predcf);
+              [n,nin] = size(x);
+            else
+              x2=x;
+              y2=y;
+              x=gp.xv;
+              [K,C]=gp_dtrcov(gp,x2,x);
+              K = gp_trcov(rmfield(gp,{'derivobs' 'lik_mono'}), xt, predcf);
+              ntest=size(xt,1);
+              K_nf=gp_dcov(gp,x2,xt,predcf)';
+              K_nf(ntest+1:end,:)=[];
+            end
             
             if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
               sqrttautilde = sqrt(tautilde);
-              Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
+              nstt=length(sqrttautilde);
+              Stildesqroot = sparse(1:nstt, 1:nstt, sqrttautilde, nstt, nstt);
               
               if issparse(L)
                 zz=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
@@ -629,7 +656,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               end
               Ef=K_nf*(nutilde-zz);
 
-              % Compute variance
+              % Compute covariance
               if issparse(L)
                 V = ldlsolve(L, Stildesqroot*K_nf');
                 Covf = K - K_nf*(Stildesqroot*V);

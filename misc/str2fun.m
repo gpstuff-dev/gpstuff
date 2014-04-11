@@ -7,7 +7,7 @@ function f = str2fun(f)
 %           if exist('str2func')
 %             f=str2func(f);
 %           end
-
+%
 % Copyright (c) 1998-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

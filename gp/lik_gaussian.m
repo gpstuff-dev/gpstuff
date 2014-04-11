@@ -38,7 +38,7 @@ function lik = lik_gaussian(varargin)
 % Internal note: Because Gaussian noise can be combined
 % analytically to the covariance matrix, lik_gaussian is internally
 % little between lik_* and gpcf_* functions.
-  
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 
@@ -49,7 +49,7 @@ function lik = lik_gaussian(varargin)
   ip=inputParser;
   ip.FunctionName = 'LIK_GAUSSIAN';
   ip.addOptional('lik', [], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('sigma2',0.1, @(x) isscalar(x) && x>0);
+  ip.addParamValue('sigma2',0.1, @(x) isscalar(x) && x>=0);
   ip.addParamValue('sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
   ip.addParamValue('n',[], @(x) isreal(x) && all(x>0));
   ip.parse(varargin{:});
@@ -86,6 +86,7 @@ function lik = lik_gaussian(varargin)
     lik.fh.lp = @lik_gaussian_lp;
     lik.fh.lpg = @lik_gaussian_lpg;
     lik.fh.cfg = @lik_gaussian_cfg;
+    lik.fh.tiltedMoments = @lik_gaussian_tiltedMoments;
     lik.fh.trcov  = @lik_gaussian_trcov;
     lik.fh.trvar  = @lik_gaussian_trvar;
     lik.fh.recappend = @lik_gaussian_recappend;
@@ -93,7 +94,7 @@ function lik = lik_gaussian(varargin)
 
 end
 
-function [w s] = lik_gaussian_pak(lik)
+function [w s, h] = lik_gaussian_pak(lik)
 %LIK_GAUSSIAN_PAK  Combine likelihood parameters into one vector.
 %
 %  Description
@@ -108,14 +109,16 @@ function [w s] = lik_gaussian_pak(lik)
 %  See also
 %    LIK_GAUSSIAN_UNPAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
   if ~isempty(lik.p.sigma2)
     w = [w log(lik.sigma2)];
     s = [s; 'log(gaussian.sigma2)'];
+    h = [h 0];
     % Hyperparameters of sigma2
-    [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
+    [wh sh, hh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end    
 
 end
@@ -190,6 +193,28 @@ function lpg = lik_gaussian_lpg(lik)
       lpg = [lpg lpgs(2:end)];
     end            
   end
+end
+
+function [logM_0, m_1, sigm2hati1] = lik_gaussian_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+%LIK_PROBIT_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+%
+%  Description
+%    [M_0, M_1, M2] = LIK_PROBIT_TILTEDMOMENTS(LIK, Y, I, S2,
+%    MYY) takes a likelihood structure LIK, class labels Y, index
+%    I and cavity variance S2 and mean MYY. Returns the zeroth
+%    moment M_0, mean M_1 and variance M_2 of the posterior
+%    marginal (see Rasmussen and Williams (2006): Gaussian
+%    processes for Machine Learning, page 55). This subfunction 
+%    is needed when using EP for inference with non-Gaussian 
+%    likelihoods.
+%
+%  See also
+%    GPEP_E
+
+  m_1=myy_i;
+  sigm2hati1=sigm2_i;
+  logM_0=zeros(size(y));
+  
 end
 
 function DKff = lik_gaussian_cfg(lik, x, x2)

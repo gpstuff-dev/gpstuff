@@ -30,7 +30,7 @@ function lik = lik_gaussiansmt(varargin)
 %      gibbs     - Whether Gibbs sampling is 'on' (default) or 'off'.
 %
 %    Parametrisation and non-informative priors for alpha and tau
-%    are same as in Gelman et. al. (2004) page 304-305:
+%    are same as in Gelman et. al. (2013) page 293-295:
 %      y-E[y] ~ N(0, alpha^2 * U), 
 %      where U = diag(u_1, u_2, ..., u_n)
 %          u_i ~ Inv-Chi^2(nu, tau^2)
@@ -42,9 +42,13 @@ function lik = lik_gaussiansmt(varargin)
 %    prior_fixed), it is sampled using slice sampling within Gibbs
 %    sampling with limits [0,128].
 %
+%  Reference
+%    Gelman, Carlin, Stern, Dunson, Vehtari, and Rubin (2013). 
+%    Bayesian data Analysis, third edition.
+%  
 %  See also
 %    GP_SET, PRIOR_*, LIK_*
-
+%
 % Copyright (c) 1998,1999,2010 Aki Vehtari
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 
@@ -166,8 +170,8 @@ function lik = lik_gaussiansmt(varargin)
 
 end
 
-function [w,s] = lik_gaussiansmt_pak(lik)
-  w = []; s = {};
+function [w,s,h] = lik_gaussiansmt_pak(lik)
+  w = []; s = {};h=[];
 end
 
 function [lik, w] = lik_gaussiansmt_unpak(lik, w)
@@ -262,8 +266,8 @@ function [lik, y] = lik_gaussiansmt_gibbs(gp, lik, x, y)
   nu = lik.nu;
   rss2=alpha.^2.*U;
   
-  % Perform the gibbs sampling (Gelman et.al. (2004) page 304-305)
-  % Notice that 'sinvchi2rand' is parameterized as in Gelman et. al.
+  % Perform the gibbs sampling (Gelman et.al. (2013) page 393-295)
+  % Notice that 'sinvchi2rand' is parameterized as in Gelman et. al. (2013)
   U=sinvchi2rand(nu+1, (nu.*t2+(r./alpha).^2)./(nu+1));        
   shape = n*nu./2;                               % These are parameters...
   invscale = nu.*sum(1./U)./2;                   % used in Gelman et al

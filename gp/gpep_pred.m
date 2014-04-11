@@ -71,10 +71,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
 %
 %  See also
 %    GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010      Heikki Peura
-% Copyright (c) 2011      Pasi Jyl�nki
+% Copyright (c) 2011      Pasi Jylänki
 % Copyright (c) 2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -245,18 +245,30 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
         
+        if ~isfield(gp, 'lik_mono')
+          [K, C]=gp_trcov(gp,x);
+          kstarstar = gp_trvar(gp, xt, predcf);
+          ntest=size(xt,1);
+          K_nf=gp_cov(gp,xt,x,predcf);
+          [n,nin] = size(x);
+        else
+          x2=x;
+          y2=y;
+          x=gp.xv;
+          [K,C]=gp_dtrcov(gp,x2,x);
+          kstarstar=gp_trvar(rmfield(gp,'derivobs'),xt);
+          ntest=size(xt,1);
+          K_nf=gp_dcov(gp,x2,xt,predcf)';
+          K_nf(ntest+1:end,:)=[];
+        end
         
-        [K, C]=gp_trcov(gp,x);
-        kstarstar = gp_trvar(gp, xt, predcf);
-        ntest=size(xt,1);
-        K_nf=gp_cov(gp,xt,x,predcf);
-        [n,nin] = size(x);
-        
-        if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
+        if all(tautilde > 0) && ~(isequal(gp.latent_opt.optim_method, 'robust-EP') ...
+            || isfield(gp, 'lik_mono'))
           % This is the usual case where likelihood is log concave
           % for example, Poisson and probit
           sqrttautilde = sqrt(tautilde);
-          Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
+          nstt=length(sqrttautilde);
+          Stildesqroot = sparse(1:nstt, 1:nstt, sqrttautilde, nstt,  nstt);
           
           if ~isfield(gp,'meanf')
             if issparse(L)          % If compact support covariance functions are used
@@ -309,6 +321,19 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
           % An alternative implementation for avoiding negative variances
           [Eft,V]=pred_var(tautilde,K,K_nf,nutilde);
           Varft=kstarstar-V;
+          
+          if nargout > 3 && isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian')
+            % Gaussian likelihood with monotonicity -> analytical
+            % predictions for f, see e.g. gp_monotonic, gpep_predgrad
+            Eyt=Eft;
+            Varyt=Varft+gp.lik.sigma2;
+            if ~isempty(yt)
+              lpyt=norm_lpdf(yt, Eyt, sqrt(Varyt));
+            else
+              lpyt=[];
+            end
+            return
+          end
           
         end
         % ============================================================
@@ -645,7 +670,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
   
   % ============================================================
   % Evaluate also the predictive mean and variance of new observation(s)
-  % ============================================================  
+  % ============================================================    
   if ~isequal(fcorr, 'off')
     if nargout == 3
       if isempty(yt)

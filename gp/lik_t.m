@@ -32,10 +32,9 @@ function lik = lik_t(varargin)
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
 %
-  
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
-% Copyright (c) 2011 Pasi Jyl�nki
+% Copyright (c) 2011 Pasi Jylänki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -103,7 +102,7 @@ function lik = lik_t(varargin)
 
 end
 
-function [w, s] = lik_t_pak(lik)
+function [w, s, h] = lik_t_pak(lik)
 %LIK_T_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -120,20 +119,24 @@ function [w, s] = lik_t_pak(lik)
 %  See also
 %    LIK_T_UNPAK, GP_PAK
   
-  w = []; s = {};
+  w = []; s = {}; h=[];
   if ~isempty(lik.p.sigma2)
     w = [w log(lik.sigma2)];
     s = [s; 'log(lik.sigma2)'];
-    [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
+    h = [h 0];
+    [wh, sh, hh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end
   if ~isempty(lik.p.nu)
     w = [w log(log(lik.nu))];
     s = [s; 'loglog(lik.nu)'];
-    [wh sh] = lik.p.nu.fh.pak(lik.p.nu);
+    h = [h 0];
+    [wh, sh,hh] = lik.p.nu.fh.pak(lik.p.nu);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end        
 end
 
@@ -901,7 +904,7 @@ function [f, a] = lik_t_optimizef(gp, y, K, Lav, K_fu)
 %    matrix K. Solves the posterior mode of F using EM algorithm
 %    and evaluates A = (K + W)\Y as a sideproduct. Lav and K_fu
 %    are needed for sparse approximations. For details, see
-%    Vanhatalo, Jyl�nki and Vehtari (2009): Gaussian process
+%    Vanhatalo, Jylänki and Vehtari (2009): Gaussian process
 %    regression with Student-t likelihood. This subfunction is 
 %    needed when using lik_specific optimization method for mode 
 %    finding in Laplace algorithm.

@@ -22,10 +22,10 @@ function p = prior_sqrtinvt(varargin)
 %
 %  See also
 %    PRIOR_*
-
+%
 % Copyright (c) 2000-2001,2010 Aki Vehtari
 % Copyright (c) 2009 Jarno Vanhatalo
-% Copyright (c) 2010 Jaakko Riihim�ki
+% Copyright (c) 2010 Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -88,21 +88,25 @@ function p = prior_sqrtinvt(varargin)
 
 end
 
-function [w, s] = prior_sqrtinvt_pak(p)
+function [w, s, h] = prior_sqrtinvt_pak(p)
   
   w=[];
   s={};
+  h=[];
   if ~isempty(p.p.mu)
     w = p.mu;
     s=[s; 'SqrtInv-Student-t.mu'];
+    h = 1;
   end        
   if ~isempty(p.p.s2)
     w = [w log(p.s2)];
     s=[s; 'log(SqrtInv-Student-t.s2)'];
+    h = [h 1];
   end
   if ~isempty(p.p.nu)
     w = [w log(p.nu)];
     s=[s; 'log(SqrtInv-Student-t.nu)'];
+    h = [h 1];
   end
 end
 
