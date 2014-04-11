@@ -68,7 +68,6 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, varargin)
 %  See also
 %    GP_SET, GP_OPTIM, DEMO_REGRESSION*
 %
-
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2008 Jouni Hartikainen
 % Copyright (c) 2011-2012 Ville Tolvanen

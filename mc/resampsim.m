@@ -19,7 +19,7 @@ function s = resampsim(p,m,n)
 %   Strategies in Scientific Computing, Springer, 2001, p. 72.
 %
 %   See also RESAMPRES, RESAMPSTR, RESAMPDET
-
+%
 % Copyright (c) 2003-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

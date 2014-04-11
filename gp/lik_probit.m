@@ -14,8 +14,7 @@ function lik = lik_probit(varargin)
 %  See also
 %    GP_SET, LIK_*
 %
-
-% Copyright (c) 2007      Jaakko Riihim�ki
+% Copyright (c) 2007      Jaakko Riihimäki
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

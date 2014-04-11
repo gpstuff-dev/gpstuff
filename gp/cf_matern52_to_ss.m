@@ -1,5 +1,5 @@
 function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_matern52_to_ss(magnSigma2, lengthScale)
-% CF_MATERN52_TO_SS - Matern covariance functions, nu=5/2, to state space
+%CF_MATERN52_TO_SS - Matern covariance functions, nu=5/2, to state space
 %
 % Syntax:
 %   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_matern52_to_ss(magnSigma2, lengthScale)
@@ -74,7 +74,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_matern52_to_ss(magnSigma2, len
 % Copyright:
 %   2012-2014   Arno Solin
 %   2013-2014   Jukka Koskenranta
-%
+
 %  This software is distributed under the GNU General Public
 %  License (version 3 or later); please refer to the file
 %  License.txt, included with the software, for details.

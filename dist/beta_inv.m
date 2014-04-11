@@ -2,7 +2,7 @@ function binv = beta_inv (x, a, b)
 %  BETA_INV Inverse of the beta cumulative distribution function (cdf).
 %     X = BETA_INV(P,A,B) returns the inverse of the beta cdf with
 %     parameters A and B at the values in P.
-
+%
 % Copyright (c) 1995-1997, 2005-2007 Kurt Hornik
 
 % This software is distributed under the GNU General Public

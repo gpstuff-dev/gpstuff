@@ -1,17 +1,17 @@
-%DEMO_HIERARCHIAL  Demonstration of hierarchial prior structures for 
+%DEMO_HIERPRIOR  Demonstration of hierarchical prior structures for 
 %                  Gaussian processes
 %
 %  Description
-%    This demonstration shows how to set hierarchial prior structures for
+%    This demonstration shows how to set hierarchical prior structures for
 %    parameters of covariance function and/or likelihood function. This
-%    demo is inteded for showing how to set hierarchial prior structures
+%    demo is intended for showing how to set hierarchical prior structures
 %    and for other testing purposes, not as a demonstration of model 
-%    selection procedures or comparisons. We test the hierarchial priors 
+%    selection procedures or comparisons. We test the hierarchical priors 
 %    for both regression and classification with Laplace and EP.
 %
 %
 %  See also DEMO_REGRESSION_ROBUST, DEMO_SPATIAL1, DEMO_*
-
+%
 % Copyright (c) 2014 Ville Tolvanen
 
 % This software is distributed under the GNU General Public 
@@ -22,8 +22,8 @@
 % load the data. First 100 variables are for training
 % and last 100 for test
 
-S = which('demo_regression_robust');
-L = strrep(S,'demo_regression_robust.m','demodata/odata.txt');
+S = which('demo_hierprior');
+L = strrep(S,'demo_hierprior.m','demodata/odata.txt');
 x = load(L);
 y = x(1:100,2);
 x = x(1:100,1);

@@ -19,7 +19,7 @@
 %  See also
 %    GP_PREDCM, GP_RND, DEMO_BINOMIAL2, DEMO_IMPROVEMARGINALS
 %
-
+%
 % Copyright (c) 2013 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

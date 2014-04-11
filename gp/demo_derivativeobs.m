@@ -34,7 +34,6 @@
 %
 %  See also  DEMO_REGRESSION1
 %
-
 % Copyright (c) 2010 Tuomas Nikoskinen
 
 % This software is distributed under the GNU General Public 

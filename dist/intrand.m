@@ -6,7 +6,7 @@ function r = intrand(p, m, n);
 %   minimum and maximum output integer numbers are P(1) and P(2). 
 %   R = INTRAND(P,M,N) returns an M by N matrix.
 %
-
+%
 % Copyright (c) 2000 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

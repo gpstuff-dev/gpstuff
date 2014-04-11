@@ -72,7 +72,7 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
 %  
 %  See also
 %    GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010      Heikki Peura
 % Copyright (c) 2011-2012 Ville Tolvanen

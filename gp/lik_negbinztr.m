@@ -42,7 +42,6 @@ function lik = lik_negbinztr(varargin)
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
 %
-
 % Copyright (c) 2007-2010 Jarno Vanhatalo & Jouni Hartikainen
 % Copyright (c) 2010-2011 Aki Vehtari
 

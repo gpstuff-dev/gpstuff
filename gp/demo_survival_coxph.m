@@ -45,7 +45,6 @@
 %
 %  See also  DEMO_SURVIVAL_AFT
 %
-
 % Copyright (c) 2011 Jaakko Riihimäki
 % Copyright (c) 2013 Aki Vehtari
 

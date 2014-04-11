@@ -55,10 +55,10 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
 %
 %    The stabilized Newton's method is implemented as suggested by
 %    Hannes Nickisch (personal communication).
-  
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
-% Copyright (c) 2010 Pasi Jyl�nki
+% Copyright (c) 2010 Pasi Jylänki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file

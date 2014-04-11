@@ -40,7 +40,6 @@ function lik = lik_loglogistic(varargin)
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
 %
-
 % Copyright (c) 2012 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

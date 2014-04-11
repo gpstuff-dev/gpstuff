@@ -22,7 +22,7 @@
 %    http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/leuk.dat
 %
 %  See also  DEMO_SURVIVAL_COMPARISON2, DEMO_SURVIVAL_COXPH
-
+%
 % Copyright (C) 2012 Ernesto Ulloa, Aki Vehtari
 
 % This software is distributed under the GNU General Public 

@@ -39,7 +39,6 @@ function lik = lik_weibull(varargin)
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
 %
-
 % Copyright (c) 2011 Jaakko Riihimäki
 % Copyright (c) 2011 Aki Vehtari
 

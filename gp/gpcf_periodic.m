@@ -47,11 +47,6 @@ function gpcf = gpcf_periodic(varargin)
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*
 %
-%  References:
-%    Arno Solin and Simo Sarkka (2014). Explicit link between periodic 
-%    covariance functions and state space models. Accepted for 
-%    publication in Proceedings of the Seventeenth International 
-%    Conference on Artifcial Intelligence and Statistics (AISTATS 2014).
   
 % Copyright (c) 2009-2010 Heikki Peura
 % Copyright (c) 2010 Aki Vehtari

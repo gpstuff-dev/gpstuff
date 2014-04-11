@@ -51,9 +51,9 @@ function [snks, snkss] = ksstat(varargin)
 %
 %   See also
 %     PSRF, GEYER_IMSE, THIN
-
-% Copyright (C) 2001-2005 Aki Vehtari
 %
+% Copyright (C) 2001-2005 Aki Vehtari
+
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.

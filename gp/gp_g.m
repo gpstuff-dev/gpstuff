@@ -21,7 +21,6 @@ function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
 %  See also
 %    GP_E, GP_PAK, GP_UNPAK, GPCF_*
 %
-
 % Copyright (c) 2007-2011 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2010 Heikki Peura

@@ -38,7 +38,7 @@
 %    et al (editors) Bayesian Statistics 6, Oxford University
 %    Press, pp. 475-501:
 %
-
+%
 % Copyright (c) 2013 Ville Tolvanen
 
 % This software is distributed under the GNU General Public 

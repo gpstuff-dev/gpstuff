@@ -19,7 +19,7 @@ function gpcf = gpcf_scaled(varargin)
 %
 %  See also
 %    GP_SET, GPCF_*
-
+%
 % Copyright (c) 2009-2012 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

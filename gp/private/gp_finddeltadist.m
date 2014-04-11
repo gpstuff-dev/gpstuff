@@ -1,7 +1,11 @@
 function deltadist = gp_finddeltadist(cf)
 % FINDDELTADIST - Find which covariates are using delta distance
-   
+%   
 % Copyright (c) 2011      Aki Vehtari
+
+ % This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
 
 deltadist=[];
 if ~iscell(cf) && isfield(cf,'cf')

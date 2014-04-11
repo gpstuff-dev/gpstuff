@@ -20,8 +20,7 @@ function lik = lik_binomial(varargin)
 %  See also
 %    GP_SET, LIK_*
 %
-
-% Copyright (c) 2009-2010 Jaakko Riihim�ki & Jarno Vanhatalo
+% Copyright (c) 2009-2010 Jaakko Riihimäki & Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
 
 % This software is distributed under the GNU General Public

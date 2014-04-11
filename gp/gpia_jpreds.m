@@ -57,7 +57,6 @@ function [Eft, Covft] = gpia_jpreds(gp_array, x, y, varargin)
 %  See also
 %    GP_PRED, GP_SET, GP_IA
 %
-  
 % Copyright (c) 2009 Ville Pietil�inen
 % Copyright (c) 2009-2010 Jarno Vanhatalo    
 % Copyright (c) 2011-2012 Ville Tolvanen

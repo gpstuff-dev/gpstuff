@@ -3,7 +3,7 @@ function y = hmean(x)
 %
 %   Description:
 %   Y = HMEAN(X) evaluates y=1./mean(1./x)
-
+%
 % Copyright (c) 1998 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

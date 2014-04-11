@@ -43,8 +43,8 @@
 %    Bayesian data Analysis, third edition.
 %
 %  See also DEMO_BINOMIAL1, DEMO_BINOMIAL_APC, DEMO_IMPROVEMARGINALS2
-
-% Copyright (c) 2010-2011 Jaakko Riihim�ki, Aki Vehtari
+%
+% Copyright (c) 2010-2011 Jaakko Riihimäki, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 

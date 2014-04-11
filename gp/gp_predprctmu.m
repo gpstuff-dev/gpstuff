@@ -33,7 +33,6 @@ function prctmus = gp_predprctmu(gp, x, y, varargin)
 %  See also
 %    GP_PRED, GP_PAK, GP_UNPAK
 %
-
 % Copyright (c) 2011 Ville Tolvanen
 % Copyright (c) 2011-2012 Aki Vehtari
 

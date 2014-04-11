@@ -6,7 +6,7 @@ function p = prior_unif(varargin)
 %    
 %  See also
 %    PRIOR_*
-
+%
 % Copyright (c) 2009 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

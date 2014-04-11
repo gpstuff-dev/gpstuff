@@ -28,7 +28,7 @@
 %    maximum a posterior (MAP) estimate for the parameters.
 %
 %  See also  LGCP, DEMO_SPATIAL2
-
+%
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

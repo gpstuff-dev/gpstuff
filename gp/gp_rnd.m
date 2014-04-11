@@ -37,7 +37,7 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, varargin)
 %    - sampling with FIC, PIC and CS+FIC forms full nxn matrix and
 %       works only when sampling for the training inputs
 %    - The code is not optimized
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2008      Jouni Hartikainen
 % Copyright (c) 2011      Aki Vehtari

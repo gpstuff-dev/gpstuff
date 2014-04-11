@@ -19,7 +19,6 @@ function eloo = gp_looe(w, gp, x, y)
 %  See also
 %   GP_LOOG, GP_SET, GP_PAK, GP_UNPAK
 %
-
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public

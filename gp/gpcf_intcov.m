@@ -49,7 +49,7 @@ function gpcf = gpcf_intcov(varargin)
 %   
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*, METRIC_*
-  
+%
 % Copyright (c) 2007-2011 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

@@ -63,7 +63,7 @@ function [x, fval, exitflag, output, grad] = fminscg(fun, x, opt)
 %      Limit for the scale paramer. The defualt value is 1e101.
 %
 %  See also OPTIMSET
-
+%
 % Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 2005,2010,2012 Aki Vehtari
 

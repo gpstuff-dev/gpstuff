@@ -19,7 +19,7 @@ function [K, C] = gp_trvar(gp, x1, predcf)
 %
 %  See also
 %    GP_SET, GPCF_*
-
+%
 % Copyright (c) 2006 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen
 

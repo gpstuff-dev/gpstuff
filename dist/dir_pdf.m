@@ -5,7 +5,7 @@ function p=dir_pdf(x,a)
 %       Description:
 %       P = DIR_PDF(X, A) returns the pdf of Dirichlet distribution 
 %       with A at X
-
+%
 % Copyright (c) 2000 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

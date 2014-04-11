@@ -5,7 +5,7 @@ function r = exprand(mu,m,n)
 %    from the exponential distribution with parameter MU.
 %    The size of R is the size of MU.
 %    Alternatively, R = EXPRAND(MU,M,N) returns an M by N matrix. 
-
+%
 % Copyright (c) 1998-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

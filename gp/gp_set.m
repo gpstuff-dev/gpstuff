@@ -183,7 +183,7 @@ function gp = gp_set(varargin)
 %    Spatiotemporal learning via infinite-dimensional Bayesian 
 %    filtering and smoothing. IEEE Signal Processing Magazine, 
 %    30(4):51-61.
-
+%
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
 % Copyright (c) 2014 Arno Solin and Jukka Koskenranta

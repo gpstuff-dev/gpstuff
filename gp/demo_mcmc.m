@@ -22,7 +22,7 @@
 %  See also 
 %    DEMO_PERIODIC, GP_MC, HMC2, HMC_NUTS, SLS, SURROGATE_SLS
 %
-
+%
 % Copyright (c) 2012 Ville Tolvanen
 
 % This software is distributed under the GNU General Public 

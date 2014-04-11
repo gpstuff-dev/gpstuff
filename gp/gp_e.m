@@ -29,7 +29,6 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 %  See also
 %    GP_G, GPCF_*, GP_SET, GP_PAK, GP_UNPAK
 %
-
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
 % Copyright (c) 2010 Heikki Peura

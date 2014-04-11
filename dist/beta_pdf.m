@@ -9,7 +9,7 @@ function y = beta_pdf(x,a,b)
 %   the other inputs.
 %
 %   Default value for A and B is 1.
-
+%
 % Copyright (c) 2005 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

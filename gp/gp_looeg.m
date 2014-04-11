@@ -28,7 +28,6 @@ function [e, g] = gp_looeg(w, gp, x, y, varargin)
 %  See also
 %    GP_LOOE, GP_LOOG, GPEP_LOOE
 %
-
 % Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public

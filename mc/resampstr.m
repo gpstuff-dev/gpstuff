@@ -28,7 +28,7 @@ function s = resampstr(p,m,n)
 %
 %  See also 
 %    RESAMPSIM, RESAMPRES, RESAMPDET
-
+%
 % Copyright (c) 2003-2004,2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

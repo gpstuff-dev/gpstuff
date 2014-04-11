@@ -1,4 +1,4 @@
-%% Kalman Demo 1 (Sinc Regression)
+%Kalman Demo 1 (Sinc Regression)
 %
 %  The benefit from the state space formulation is that the 
 %  computational complexity is linear with respect to the number
@@ -29,7 +29,7 @@
 %      University Press.
 %
 %  Copyright (c) 2014 Arno Solin and Jukka Koskenranta
-%
+
 %  This software is distributed under the GNU General Public
 %  License (version 3 or later); please refer to the file
 %  License.txt, included with the software, for details.

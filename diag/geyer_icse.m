@@ -9,9 +9,9 @@ function [t,t1] = geyer_icse(x,maxlag)
 %   References:
 %      [1] C. J. Geyer, (1992). "Practical Markov Chain Monte Carlo",
 %          Statistical Science, 7(4):473-511
-
-% Copyright (C) 2002 Aki Vehtari
 %
+% Copyright (C) 2002 Aki Vehtari
+
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.

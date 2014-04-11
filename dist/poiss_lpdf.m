@@ -11,7 +11,7 @@ function y = poiss_lpdf(x,l)
 %   Note that the density function is zero unless X is an integer.
 %
 %   See also POISS_PDF
-
+%
 % Copyright (c) 1998-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

@@ -19,7 +19,6 @@ function lik = lik_lgp(varargin)
 %  See also
 %    LGPDENS, GP_SET, LIK_*
 %
-  
 % Copyright (c) 2011 Jaakko Riihimäki and Aki Vehtari
 
 % This software is distributed under the GNU General Public

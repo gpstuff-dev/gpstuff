@@ -15,7 +15,6 @@ function p = pred_coxphp(gp, x, y, xt, yt, varargin)
 %    YT(:,2). YT is matrix of size Mx2, indicating starting time and
 %    end time for every test point.
 %
-
 % Copyright (c) 2012-2013 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

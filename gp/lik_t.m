@@ -32,10 +32,9 @@ function lik = lik_t(varargin)
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
 %
-  
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
-% Copyright (c) 2011 Pasi Jyl�nki
+% Copyright (c) 2011 Pasi Jylänki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -853,7 +852,7 @@ function [f, a] = lik_t_optimizef(gp, y, K, Lav, K_fu)
 %    matrix K. Solves the posterior mode of F using EM algorithm
 %    and evaluates A = (K + W)\Y as a sideproduct. Lav and K_fu
 %    are needed for sparse approximations. For details, see
-%    Vanhatalo, Jyl�nki and Vehtari (2009): Gaussian process
+%    Vanhatalo, Jylänki and Vehtari (2009): Gaussian process
 %    regression with Student-t likelihood. This subfunction is 
 %    needed when using lik_specific optimization method for mode 
 %    finding in Laplace algorithm.

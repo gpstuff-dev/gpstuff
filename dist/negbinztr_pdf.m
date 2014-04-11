@@ -21,7 +21,7 @@ function y = negbinztr_pdf(x,l,r)
 %
 %  See also 
 %    NEGBINZTR_LPDF, NEGBIN_PDF, NEGBIN_LPDF
-
+%
 % Copyright (c) 2010 Jarno Vanhatalo, Aki Vehtari
 
 % This software is distributed under the GNU General Public 

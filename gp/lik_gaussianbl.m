@@ -35,7 +35,7 @@ function lik = lik_gaussianbl(varargin)
 % Internal note: Because Gaussian noise can be combined
 % analytically to the covariance matrix, lik_gaussian is internally
 % little between lik_* and gpcf_* functions.
-  
+%
 % Copyright (c) 2007-2011 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

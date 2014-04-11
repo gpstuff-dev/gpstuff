@@ -6,7 +6,7 @@ function x = take_nth(x,nth)
 %
 %   See also
 %     THIN, JOIN
-  
+%
 % Copyright (c) 1999 Simo Särkkä
 % Copyright (c) 2000,2010 Aki Vehtari
 % Copyright (c) 2006 Jarno Vanhatalo

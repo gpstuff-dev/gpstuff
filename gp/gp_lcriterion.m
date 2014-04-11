@@ -27,7 +27,7 @@ function L2 = gp_lcriterion(gp, x, y, varargin)
 %  See also
 %    GP_CVLCRITERION
 %     
-
+%
 % Copyright (c) 2011 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

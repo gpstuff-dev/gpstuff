@@ -7,7 +7,7 @@ function p = prior_sqinvunif(varargin)
 %    
 %  See also
 %    PRIOR_*
-
+%
 % Copyright (c) 2009 Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
 

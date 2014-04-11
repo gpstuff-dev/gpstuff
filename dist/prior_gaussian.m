@@ -19,9 +19,9 @@ function p = prior_gaussian(varargin)
 %
 %  See also
 %    PRIOR_*
-
+%
 % Copyright (c) 2000-2001,2010 Aki Vehtari
-% Copyright (c) 2010 Jaakko Riihim�ki
+% Copyright (c) 2010 Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file

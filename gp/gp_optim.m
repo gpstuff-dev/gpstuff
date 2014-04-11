@@ -30,7 +30,6 @@ function [gp, varargout] = gp_optim(gp, x, y, varargin)
 %  See also
 %    GP_SET, GP_E, GP_G, GP_EG, FMINSCG, FMINLBFGS, OPTIMSET, DEMO_REGRESSION*
 %
-
 % Copyright (c) 2010-2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public

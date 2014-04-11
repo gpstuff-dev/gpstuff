@@ -10,7 +10,6 @@
 %    Default values for covariance functions, priors and optimisation
 %    are used for a quick data analysis.
 %
-
 % Copyright (c) 2014 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

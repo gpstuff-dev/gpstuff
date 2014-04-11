@@ -3205,6 +3205,8 @@ $(\x_i,y_i)$.
 By repeating this for every point in the training data, we get a
 collection of leave-one-out cross-validation (LOO-CV) predictive
 densities.
+%
+For discussion of Bayeasian cross-validation see \citet{Vehtari+Lampinen:2002,Vehtari+Ojanen:2012,Gelman+Hwang+Vehtari:2013}.
 
 For GP with given hyperparameters the LOO-CV predictions can be
 computed in case of Gaussian likelihood using an analytical
@@ -3214,25 +3216,46 @@ non-Gaussian likelihood using EP approximation
 approximation using linear response approach (in preparation),
 which have been implemented in \code{gp\_loopred}.
 %
+% where $\bar{c}_i$ denotes the $i$th diagonal entry of $C^{-1}$,
+% $q_i$ denotes the $i$th element of $q=C^{-1} y$ and $C$ is computed
+% using the parameters $\dot{\theta}_j$.
+
 If set of hyperparameters have been obtained using \code{gp\_mc} or
 \code{gp\_ia} LOO-posterior can be approximated using importance
-sampling \citep{Gelfand+Dey+Chang:1992,Vehtari+Lampinen:2002},
-which is also implemented in \code{gp\_loopred}.
+sampling or weighting
+\citep{Gelfand+Dey+Chang:1992,Vehtari+Lampinen:2002}, which is also
+implemented in \code{gp\_loopred}. We use an integrated approach
+proposed by \citet[][p. 40]{Vehtari:2001} where leave-one-out
+predictive densities given hyperparameters
+\begin{equation}
+p(y_i|x_i,D_{-i},\vartheta)=\int
+p(y_i|f_i,\vartheta)p(f_i|x_i,D_{-i},\vartheta)df_i 
+\end{equation}
+are obtained using the analytic solution, or the Laplace or EP
+approximation as mentioned above. Thus the importance weighting is
+made only for the hyperparameters. This reduces the variance of
+importance sampling estimate significantly making it useful in
+practice. With these approximations LOO-CV is very fast to compute in
+GPstuff.
 
-To reduce computation time, in $k$-fold-CV, $1/k$ part of the training
-data is left out, and then the predictive distribution is computed
-with a model that is fitted to all of the observations except that
-part.  Since the $k$-fold-CV predictive densities are based on smaller
-training data sets than the full data set, the estimate is slightly
-biased. In \pkg{GPstuff} first order bias correction proposed by
-\citet{Burman:1989} is used.  \pkg{GPstuff} provides \code{gp\_kfcv},
-which computes $k$-fold-CV and bias-corrected $k$-fold-CV with
-log-score and root mean squared error (RMSE). The function
-\code{gp\_kfcv} provides also basic variance estimates for the
-predictive performance estimates.  Variance is computed from the
-estimates for each fold ~\citep[see, e.g.,][]{Dietterich:1998}.  See
-\citet{Vehtari+Lampinen:2002} for more details on estimating the
-uncertainty in performance estimates.
+LOO-CV in GPstuff does not currently work for some multilatent
+models. In such case or if there is reason to doubt the reliability of
+importance sampling, it is best to compute the non-approximated
+cross-validation predictive densities.  To reduce computation time, in
+$k$-fold-CV, $1/k$ part of the training data is left out, and then the
+predictive distribution is computed with a model that is fitted to all
+of the observations except that part.  Since the $k$-fold-CV
+predictive densities are based on smaller training data sets than the
+full data set, the estimate is slightly biased. In \pkg{GPstuff} first
+order bias correction proposed by \citet{Burman:1989} is used.
+\pkg{GPstuff} provides \code{gp\_kfcv}, which computes $k$-fold-CV and
+bias-corrected $k$-fold-CV with log-score and root mean squared error
+(RMSE). The function \code{gp\_kfcv} provides also basic variance
+estimates for the predictive performance estimates.  Variance is
+computed from the estimates for each fold ~\citep[see,
+e.g.,][]{Dietterich:1998}.  See
+\citet{Vehtari+Lampinen:2002,Vehtari+Ojanen:2012} for more details on
+estimating the uncertainty in performance estimates.
 
 \subsection{DIC}
 

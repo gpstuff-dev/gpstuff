@@ -63,9 +63,8 @@ function [apcs,apcss]=gp_avpredcomp(gp, x, y, varargin)
 % 
 %  See also
 %    GP_PRED
-
-% Copyright (c) 2011      Jaakko Riihimäki
-% Copyright (c) 2011      Aki Vehtari
+%
+% Copyright (c) 2011 Jaakko Riihimäki, Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file

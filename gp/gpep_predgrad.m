@@ -55,10 +55,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_predgrad(gp, x, y, varargin)
 %
 %  See also
 %    GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010      Heikki Peura
-% Copyright (c) 2011      Pasi Jyl�nki
+% Copyright (c) 2011      Pasi Jylänki
 % Copyright (c) 2012 Aki Vehtari
 % Copyright (c) 2014 Ville Tolvanen
 

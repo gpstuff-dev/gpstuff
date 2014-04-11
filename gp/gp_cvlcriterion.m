@@ -24,7 +24,6 @@ function PE2 = gp_cvlcriterion(gp, x, y, varargin)
 %  See also
 %    GP_LCRITERION
 %
-
 % Copyright (c) 2011 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

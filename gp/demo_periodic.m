@@ -56,12 +56,12 @@
 %    the standard regression and GPEP_E, GPEP_G AND GPEP_PRED for
 %    the expectation propagation.
 %
-%  See also  DEMO_REGRESSION2, DEMO_SPATIAL1
-%
-%  References:
+%  Reference:
 %    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
 %    Processes for Machine Learning. The MIT Press.
-
+%
+%  See also  DEMO_REGRESSION2, DEMO_SPATIAL1
+%
 % Copyright (c) 2009 Heikki Peura
 % Copyright (c) 2010 Aki Vehtari
 

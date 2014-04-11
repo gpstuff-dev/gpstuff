@@ -7,7 +7,6 @@ function [x] = denormdata(xn,xmean,xstd)
 %
 %  See also NORMDATA
 %
-  
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

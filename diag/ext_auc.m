@@ -13,7 +13,6 @@ function ea = ext_auc(P,tt,t)
 %    Extension to survival analysis. Statistics in Medicine
 %    30(1):22-38.
 %
-  
 % Copyright (C) 2012 Ernesto Ulloa, Aki Vehtari
 
 % This software is distributed under the GNU General Public

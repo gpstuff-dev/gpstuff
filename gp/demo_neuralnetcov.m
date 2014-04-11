@@ -30,10 +30,9 @@
 %      In Advances in Neural Information Processing Systems 9. MIT
 %      Press, Cambridge, MA.
 %
-%
 %  See also DEMO_REGRESSION1
-
-% Copyright (c) 2010 Jaakko Riihim�ki, Aki Vehtari
+%
+% Copyright (c) 2010 Jaakko Riihimäki, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 

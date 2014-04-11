@@ -26,7 +26,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
 %
 %  See also
 %    GP_MC, HMC2, HMC2_OPT
-  
+%
 % Copyright (c) 2006 Aki Vehtari
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 

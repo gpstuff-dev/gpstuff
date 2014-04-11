@@ -29,7 +29,7 @@
 %    from http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/leuk.dat
 %
 %  See also  DEMO_SURVIVAL_COXPH
-
+%
 % Copyright (c) 2011 Jaakko Riihimäki
 % Copyright (c) 2013 Aki Vehtari
 

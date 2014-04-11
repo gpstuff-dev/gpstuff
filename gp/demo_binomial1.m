@@ -34,8 +34,8 @@
 %    are computed.
 %
 %  See also DEMO_BINOMIAL_APC
-
-% Copyright (c) 2010 Jaakko Riihim�ki, Aki Vehtari
+%
+% Copyright (c) 2010 Jaakko Riihimäki, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 

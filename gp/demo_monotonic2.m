@@ -16,9 +16,9 @@
 %    Broffitt, J. D. (1988). Increasing and increasing convex Bayesian
 %    graduation. Transactions of the Society of Actuaries, 40(1), 115-48.
 %
-
-%  See also DEMO_*, GP_MONOTONIC, DEMO_MONOTONIC1
-
+%  See also
+%    DEMO_*, GP_MONOTONIC, DEMO_MONOTONIC1
+%
 % Copyright (c) 2014 Ville Tolvanen, Aki Vehtari
 
 % This software is distributed under the GNU General Public 

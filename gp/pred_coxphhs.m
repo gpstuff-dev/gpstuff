@@ -7,7 +7,6 @@ function [mh,mS] = pred_coxphhs(gp, x, y, xt, varargin)
 %    Gaussian process structure, X and Y are the training inputs and
 %    outputs.
 %
-
 % Copyright (c) 2012-2013 Ville Tolvanen, Aki Vehtari
 
 % This software is distributed under the GNU General Public

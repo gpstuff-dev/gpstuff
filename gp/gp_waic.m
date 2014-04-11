@@ -57,7 +57,6 @@ function waic = gp_waic(gp, x, y, varargin)
 %    Understanding predictive information criteria for Bayesian
 %    models. Statistics and Computing, in press
 %
-
 % Copyright (c) 2011-2013 Ville Tolvanen
 
   ip=inputParser;

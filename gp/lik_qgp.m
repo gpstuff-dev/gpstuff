@@ -41,7 +41,7 @@ function lik = lik_qgp(varargin)
 %     29th International Conference on Machine Learning, Edinburgh,
 %     Scotland, UK, 2012.
 %     
-  
+%
 % Copyright (c) 2012 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

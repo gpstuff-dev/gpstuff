@@ -79,7 +79,6 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, varargin)
 %  See also
 %    GP_SET, GP_OPTIM, DEMO_REGRESSION*
 %
-
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2008 Jouni Hartikainen
 % Copyright (c) 2010,2012 Aki Vehtari

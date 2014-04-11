@@ -48,7 +48,7 @@ function lik = lik_gaussiansmt(varargin)
 %  
 %  See also
 %    GP_SET, PRIOR_*, LIK_*
-
+%
 % Copyright (c) 1998,1999,2010 Aki Vehtari
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 

@@ -40,9 +40,8 @@
 %    Neal, R. M. (1998) Regression and classification using
 %    Gaussian process priors (with discussion), in J. M. Bernardo,
 %    et al (editors) Bayesian Statistics 6, Oxford University
-%    Press, pp. 475-501:
+%    Press, pp. 475-501.
 %
-
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
 

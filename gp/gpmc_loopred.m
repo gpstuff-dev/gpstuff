@@ -38,7 +38,6 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpmc_loopred(gp, x, y, varargin)
 %  See also
 %   GP_LOOPRED, GP_MC, GP_PRED
 %
-
 % Copyright (c) 2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public

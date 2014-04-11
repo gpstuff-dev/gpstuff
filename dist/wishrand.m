@@ -16,7 +16,7 @@ function R = wishrand(S,nu);
 %                 Generator, Applied Statistics, 21(3), pp. 341-345.
 %
 %	See also INVWISHRAND
-
+%
 % Copyright (c) 1999-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

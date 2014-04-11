@@ -30,7 +30,6 @@ function metric = metric_distancematrix(varargin)
 %	METRIC = METRIC_distancematrix(METRIC, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in METRIC.
 %
-    
 % Copyright (c) 2009-2010 Heikki Peura
 
 % This software is distributed under the GNU General Public

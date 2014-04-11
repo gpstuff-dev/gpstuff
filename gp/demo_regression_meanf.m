@@ -28,7 +28,7 @@
 %    References:
 %    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
 %    Processes for Machine Learning. The MIT Press.
-
+%
 % Copyright (c) 2010 Tuomas Nikoskinen
 
 % This software is distributed under the GNU General Public

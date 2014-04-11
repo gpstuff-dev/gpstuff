@@ -1,7 +1,12 @@
-<<<<<<< .merge_file_a5eegv
-2014-4-3 Version 4.4
+2014-04-11 Version 4.4
 
 New features
+ - Monotonicity constraint for the latent function. 
+
+   Riihimäki and Vehtari (2010). Gaussian processes with monotonicity
+     information.  Journal of Machine Learning Research: Workshop and
+     Conference Proceedings, 9:645-652.
+
  - State space implementation for GP inference (1D) using Kalman filtering.
    For the following covariance functions
      - Squared-Exponential 
@@ -18,14 +23,9 @@ New features
    Solin, A. and Särkkä, S. (2014). Explicit link between periodic 
      covariance functions and state space models. AISTATS 2014. 
 
- - Monotonicity constraint for the latent function. Riihimäki and 
-   Vehtari (2010). Gaussian processes with monotonicity information.  
-   Journal of Machine Learning Research: Workshop and Conference 
-   Proceedings, 9:645-652.
-
 Improvements
  - GP_PLOT function for quick plotting of GP predictions
- - GP-IA now warns if it detects multimodal posterior distributions
+ - GP_IA now warns if it detects multimodal posterior distributions
  - much faster EP with log-Gaussian likelihood (numerical integrals -> 
    analytical results)
  - faster WAIC with GP_IA array (numerical integrals -> analytical results)
@@ -36,10 +36,10 @@ Improvements
 
 Bug fixes
  - Periodic covariance function works with selectedVariables
- - Survival likelihoods (log-Gaussian, log-Logistic and weibull) work now with
+ - Survival likelihoods (log-Gaussian, log-Logistic and Weibull) work now with
    empty z for uncensored data
  - Return parameters in correct order from gp_pak if using hyperhyperpriors
- - other bug fixes
+ - Other bug fixes
 
 2014-01-01 Version 4.3.2
 

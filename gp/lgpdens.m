@@ -59,7 +59,6 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
 %    for logistic Gaussian process density estimation and
 %    regression. Bayesian analysis, in press.
 %
-  
 % Copyright (c) 2011-2013 Jaakko Riihimäki and Aki Vehtari
 % Copyright (c) 2013 Enrique Lelo de Larrea Andrade
 

@@ -92,7 +92,7 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
 %
 %  See also
 %    MC_PRED, GP_PRED, GP_SET, GP_MC
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
   
 % This software is distributed under the GNU General Public

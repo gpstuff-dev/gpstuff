@@ -96,7 +96,7 @@
 %
 %  See also  
 %    DEMO_REGRESSION1, DEMO_REGRESSION2, DEMO_REGRESSION_SPARSE2
-
+%
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

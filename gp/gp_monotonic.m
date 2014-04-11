@@ -5,17 +5,18 @@ function gp = gp_monotonic(gp, varargin)
 %  Description
 %    GP = GP_MONOTONIC(GP, X, Y, OPTIONS) takes a GP structure GP
 %    together with a matrix X of input vectors and a matrix Y of
-%    target vectors and converts the GP structure to monotonic GP, where
-%    the latent function is assumed to be monotonic w.r.t input-dimensions.
-%    In addition, this function can optimize the hyperparameters of the
-%    GP (optimize='on'). Monotonicity is forced by GP prior by adding virtual observations 
-%    XV and YV where the function derivative is assumed to be either
-%    positive (YV=1, default) or negative (YV=-1). This function adds
-%    virtual observations from the true observations two at a time until the
-%    monotonicity is satisfied in every observation point. If GP doesn't
-%    have field XV, the virtual observations are initialized randomly to
-%    25% of the true observed inputs. Return monotonic GP structure GP with
-%    optimized hyperparameters.
+%    target vectors and converts the GP structure to monotonic GP,
+%    where the latent function is assumed to be monotonic w.r.t
+%    input-dimensions.  In addition, this function can optimize the
+%    hyperparameters of the GP (optimize='on'). Monotonicity is forced
+%    by GP prior by adding virtual observations XV and YV where the
+%    function derivative is assumed to be either positive (YV=1,
+%    default) or negative (YV=-1). This function adds virtual
+%    observations from the true observations two at a time until the
+%    monotonicity is satisfied in every observation point. If GP
+%    doesn't have field XV, the virtual observations are initialized
+%    randomly to 25% of the true observed inputs. Return monotonic GP
+%    structure GP with optimized hyperparameters.
 %
 %    OPTIONS is optional parameter-value pair
 %      z        - optional observed quantity in triplet (x_i,y_i,z_i)
@@ -32,7 +33,7 @@ function gp = gp_monotonic(gp, varargin)
 %                 as usual fmin*-functions. Default is @fminscg.
 %      optimize - Option whether to optimize GP parameters. Default = 'off'. 
 %      nvd      - Dimensions for which the latent functions is assumed to
-%                 be monotonic. Uase negative elements for monotonically
+%                 be monotonic. Use negative elements for monotonically
 %                 decreasing and positive elements for monotonically
 %                 increasing dimensions. Default 1:size(X,2), i.e.
 %                 monotonically for all covariate dimensions.
@@ -41,12 +42,10 @@ function gp = gp_monotonic(gp, varargin)
 %    GP_SET
 %
 %  Reference
-%     
 %    Riihimäki and Vehtari (2010). Gaussian processes with
 %    monotonicity information.  Journal of Machine Learning Research:
 %    Workshop and Conference Proceedings, 9:645-652.
 %
-  
 % Copyright (c) 2014 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

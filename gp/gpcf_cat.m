@@ -19,9 +19,9 @@ function gpcf = gpcf_cat(varargin)
 %
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*, MEAN_*
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
-% Copyright (c) 2008-2010 Jaakko Riihim�ki
+% Copyright (c) 2008-2010 Jaakko Riihimäki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public

@@ -17,7 +17,7 @@
 %    approximation.
 %
 %    See also  DEMO_SPATIAL2, DEMO_CLASSIFIC1
-
+%
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
 % Copyright (c) 2011 Jaakko Riihimäki

@@ -19,7 +19,7 @@
 %
 %  See also  
 %    DEMO_CLASSIFIC1, DEMO_MODELASSESMENT1
-
+%
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 
