@@ -22,6 +22,7 @@ function [K, C] = gp_dtrcov(gp, x1, x2,predcf)
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
+
 if (isfield(gp,'derivobs') && gp.derivobs)
   ncf=length(gp.cf);
   [n,m]=size(x2);

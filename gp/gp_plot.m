@@ -1,5 +1,5 @@
 function h = gp_plot(gp, x, y, varargin)
-%GP_PLOT  Make plot with Gaussian process 
+%GP_PLOT  Make a plot with Gaussian process 
 %
 %  Description
 %    GP_PLOT(GP, X, Y, XT, OPTIONS)
@@ -7,14 +7,14 @@ function h = gp_plot(gp, x, y, varargin)
 %    inputs and vector Y of training targets and plots predictions
 %    evaluated at test inputs XT.
 %
+%    [EF, VARF, LPY, EY, VARY] = GP_PLOT(GP, X, Y, OPTIONS)
+%    plots predictions evaluated at training inputs X.
+%
 %    The form of the plot depends on the dimensionality of X and options.
 %      - 1D with Gaussian: mean and 5% and 95% quantiles of f and y
 %      - 1D with non-Gaussian: median and 5% and 95% quantiles of mu or f
-%      - 2D: pcolor plot of mu or f
+%      - 2D: Conditional predictions, see GP_CPRED + 2D plot of mu or f
 %      - ND with N>2: Conditional predictions, see GP_CPRED
-%
-%    [EF, VARF, LPY, EY, VARY] = GP_PLOT(GP, X, Y, OPTIONS)
-%    plots predictions evaluated at training inputs X.
 %
 %    OPTIONS is optional parameter-value pair
 %      target - option for choosing what is computed 'mu' (default)
@@ -69,6 +69,11 @@ function h = gp_plot(gp, x, y, varargin)
 %  See also
 %    GP_SET, GP_OPTIM, DEMO_REGRESSION*
 %
+% Copyright (c) 2014 Aki Vehtari
+
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
 
 ip=inputParser;
 ip.FunctionName = 'GP_PLOT';

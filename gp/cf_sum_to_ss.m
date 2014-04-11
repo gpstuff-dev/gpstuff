@@ -1,5 +1,5 @@
 function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_sum_to_ss(cf2ss)  
-%% CF_SUM_TO_SS - Sum of several state space models
+%CF_SUM_TO_SS - Sum of several state space models
 %
 % Syntax:
 %   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_sum_to_ss(cf2ss)
