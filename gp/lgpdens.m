@@ -556,6 +556,8 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
         end
       else
         xx=xt;
+        zz1=unique(xx(:,1));
+        zz2=unique(xx(:,2));
         gridn=[length(unique(xx(:,1))) length(unique(xx(:,2)))];
         z1=reshape(xx(:,1),gridn(2),gridn(1));
         z2=reshape(xx(:,2),gridn(2),gridn(1));
@@ -834,6 +836,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
             end,
             ql(:,i1)=unx2(qi);
           end
+          newplot
           hold on
           h1=plot(zz1,ql(4,:)','-', 'color', [.6 .6 .6],'linewidth',2);
           h2=plot(zz1,ql([3 5],:)','--', 'color', [.4 .4 .4],'linewidth',1);
