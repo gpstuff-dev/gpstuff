@@ -2307,7 +2307,11 @@ propagation.
 Currently GPstuff supports monotonicity constraint for models which
 have Gaussian likelihood or fully factoring likelihoods with EP
 inference and which use covariance functions \code{gpcf\_constant},
-\code{gpcf\_linear} and \code{gpcf\_sexp}.
+\code{gpcf\_linear} and
+\code{gpcf\_sexp}. \citet{Riihimaki+Vehtari:2010} used type II MAP
+estimate for the hyperparameters, but GPstuff allows easy integration
+over the hyperparameters with any method described in
+Section~\ref{sec_marginalization_over_hyperparam}.
 
 GP model with monotonicity constraint can be easily constructed with
 the function \code{gp\_monotonic}. Monotonicity constraint is
