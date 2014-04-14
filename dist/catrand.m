@@ -9,7 +9,7 @@ function r = catrand(p, m, n);
 %      is the size of P.
 %
 %    R = CATRAND(P,M,N) returns an M by N matrix.
-
+%
 % Copyright (c) 1999-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

@@ -23,8 +23,7 @@ function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
 %        GP_IA:
 %        By default the focus will be in the latent variables and
 %        the hyperparameters. The DIC and the effective number of
-%        parameters are evaluated as described in equation (6.10) of
-%        Bayesian Data Analysis, second edition (Gelman et al):
+%        parameters are evaluated as
 %               p_eff = E[D(y, f, th)|y] - D(y, E[f, th|y])
 %               DIC   = E[D(y, f, th)|y] + p_eff
 %        where all the expectations are taken over p(f,th|y).
@@ -33,10 +32,8 @@ function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
 %        from GP_IA and focus is in the hyperparameters only.
 %               [DIC, P_EFF] = GP_DIC(GP, X, Y, 'focus', 'param'):
 %        In this case the focus is in the hyperparameters (the
-%        parameters of the covariance function and the likelihood, The
+%        parameters of the covariance function and the likelihood. The
 %        DIC and the effective number of parameters are evaluated as
-%        described in equation (6.10) of Bayesian Data Analysis,
-%        second edition (Gelman et al):
 %          p_eff = E[D(y, th)|y] - D(y, E[th|y])
 %          DIC   = E[D(y, th)|y] + p_eff
 %        where all the expectations are taken over p(th|y) and 
@@ -72,10 +69,14 @@ function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
 %    measures of model complexity and fit. J. R. Statist. Soc. B,
 %    64, 583-639.
 %         
-%    Gelman, Carlin, Stern and Rubin (2004) Bayesian Data Analysis,
-%    second edition. Chapman & Hall / CRC.
+%    Gelman, Carlin, Stern, Dunson, Vehtari, and Rubin (2013). 
+%    Bayesian data Analysis, third edition,
+%
+%    Andrew Gelman, Jessica Hwang and Aki Vehtari (2013). 
+%    Understanding predictive information criteria for Bayesian
+%    models. Statistics and Computing, in press
 %   
-
+%
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2013 Aki Vehtari
 

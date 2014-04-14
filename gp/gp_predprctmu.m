@@ -33,7 +33,6 @@ function prctmus = gp_predprctmu(gp, x, y, varargin)
 %  See also
 %    GP_PRED, GP_PAK, GP_UNPAK
 %
-
 % Copyright (c) 2011 Ville Tolvanen
 % Copyright (c) 2011-2012 Aki Vehtari
 
@@ -47,8 +46,8 @@ function prctmus = gp_predprctmu(gp, x, y, varargin)
   ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
   ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
   ip=iparser(ip,'addOptional','xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
-  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
-  ip=iparser(ip,'addParamValue','zt', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+  ip=iparser(ip,'addParamValue','zt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
   ip=iparser(ip,'addParamValue','prct', [5 50 95], @(x) isreal(x) && all(isfinite(x(:))));
   ip=iparser(ip,'addParamValue','nsamp', 5000, @(x) isreal(x) && all(isfinite(x(:))));
   ip=iparser(ip,'addParamValue','predcf', [], @(x) isempty(x) || ...

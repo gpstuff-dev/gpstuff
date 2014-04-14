@@ -24,7 +24,6 @@ function eloo = gpla_looe(w, gp, x, y, varargin)
 %  See also
 %    GP_LOOE, GPLA_LOOPRED, GPLA_E
 %
-
 % Copyright (c) 2011 Aki Vehtari
 
 % This software is distributed under the GNU General Public

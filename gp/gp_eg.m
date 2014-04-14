@@ -25,7 +25,6 @@ function [e, g] = gp_eg(w, gp, x, y, varargin)
 %  See also
 %    GP_E, GP_G
 %
-
 % Copyright (c) 2010 Aki Vehtari
   
 % This software is distributed under the GNU General Public

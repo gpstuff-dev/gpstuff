@@ -8,9 +8,9 @@ function hpdi = hpdi(x, p)
 %   References:
 %      [1] Chen, M.-H., Shao, Q.-M., and Ibrahim, J. Q., (2000).
 %          Monte Carlo Methods in Bayesian Computation. Springer-Verlag.
-
-% Copyright (C) 2001 Aki Vehtari
 %
+% Copyright (C) 2001 Aki Vehtari
+
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.

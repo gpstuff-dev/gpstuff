@@ -37,7 +37,7 @@
 %
 %  See also  
 %    DEMO_REGRESSION1, DEMO_CLASSIFIC1, DEMO_SPATIAL1
-
+%
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 

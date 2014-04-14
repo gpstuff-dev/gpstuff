@@ -8,7 +8,7 @@ function y = beta_lpdf(x,a,b)
 %   functions as a constant matrix of the same size as the other inputs.     
 %
 %   Default value for A and B is 1.
-
+%
 % Copyright (c) 2005 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

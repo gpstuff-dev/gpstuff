@@ -62,8 +62,17 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %       repeat    - number of subiterations in HMC.
 %                   Default is 10.
 %       
-
-% Copyright (c) 2009-2010 Ville Pietil�inen, Jarno Vanhatalo
+%  References
+%
+%    Rue, H., Martino, S., and Chopin, N. (2009). Approximate Bayesian
+%    inference for latent Gaussian models by using integrated nested
+%    Laplace approximations.
+%
+%    Jarno Vanhatalo, Ville Pietiläinen and Aki Vehtari (2010). 
+%    Approximate inference for disease mapping with sparse Gaussian
+%    processes. Statistics in Medicine, 29(15):1580-1607.
+%
+% Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -72,7 +81,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GP_IA';
-  ip=iparser(ip,'addRequired','gp', @isstruct);
+  ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || isempty(x));
   ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
   ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
   ip=iparser(ip,'addOptional','xt',[], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
@@ -112,6 +121,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     ip=iparser(ip,'parse',gp, x, y, varargin{:});
   else
     ip=iparser(ip,'parse',gp, x, y, [], varargin{:});
+  end
+  if isempty(gp)
+    gp=gp_set();
   end
   xt=ip.Results.xt;
   % integration parameters
@@ -460,18 +472,18 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 ind = ceil(j/2);
                 temp(ind)=dir;
                 
-                % Find the scaling parameter so that when we move 2 std
-                % from the mode, the log density drops (approximately) by 2
+                % Find the scaling parameter so that when we move sqrt(2) std
+                % from the mode, the log density drops (approximately) by 1
                 
                 % First order approximation (as in gmrflib/approx-inference.c)
-                lt=-fh_e(w+2*temp*z,gp,x,y,options);
+                lt=-fh_e(w+sqrt(2)*temp*z,gp,x,y,options);
                 if l0>lt
-                  t=sqrt(2/(l0-lt));
+                  t=sqrt(1/(l0-lt));
                 else
                   t=1;
                 end
                 ts(j)=t;
-                sd(points(:,ind)*dir>0, ind) = max(min(t,3),1/3);
+                sd(points(:,ind)*dir>0, ind) = max(min(t,10),1/10);
 
 %              % Alternative more accurate but slower optimization based
 %              % approach. No gradient and single-variable, so use
@@ -562,6 +574,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           et = toc;
           if ismember(opt.display,{'on','iter'}) && et>1
             fprintf('    Elapsed time %.2f seconds\n',et);
+          end
+          % Check for multimodality
+          if any(p_th(2:end)>p_th(1))
+            warning(['Found better local optim during CCD expansion. Model parameters ' ...
+              'should be reoptimized with different initial values.']);
           end
           
           % Remove points with NaN density
@@ -891,7 +908,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         ri=ri+1;
         
         % Display some statistics  THIS COULD BE DONE IN NICER WAY ALSO (V.P.)
-        if ismember(display,{'on','iter'})
+        if ismember(opt.display,{'on','iter'})
           fprintf(' %4d  %.3f  ',ri, etr);
           fprintf(' %.1e  ',hmcrej);
           fprintf('\n');

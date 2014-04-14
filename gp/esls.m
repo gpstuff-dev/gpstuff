@@ -23,7 +23,7 @@ function [f, energ, diagn] = esls(f, opt, gp, x, y, z, angle_range)
 %
 %  See also
 %    GP_MC
-
+%
 % Copyright (c) Iain Murray, September 2009
 % Tweak to interface and documentation, September 2010
 % Ville Tolvanen, October 2011 - Changed inputs and outputs for the function to

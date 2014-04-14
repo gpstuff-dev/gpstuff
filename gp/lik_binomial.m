@@ -14,14 +14,13 @@ function lik = lik_binomial(varargin)
 %
 %    When using Binomial likelihood you need to give the vector z
 %    as an extra parameter to each function that requires y also. 
-%    For example, you should call gpla_e as follows
-%      gpla_e(w, gp, x, y, 'z', z)
+%    For example, you should call gp_optim as follows
+%      gp_optim(gp, x, y, 'z', z)
 %
 %  See also
 %    GP_SET, LIK_*
 %
-
-% Copyright (c) 2009-2010 Jaakko Riihim�ki & Jarno Vanhatalo
+% Copyright (c) 2009-2010 Jaakko Riihimäki & Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -61,7 +60,7 @@ function lik = lik_binomial(varargin)
 
 end
 
-function [w,s] = lik_binomial_pak(lik)
+function [w,s,h] = lik_binomial_pak(lik)
 %LIK_BINOMIAL_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -74,7 +73,7 @@ function [w,s] = lik_binomial_pak(lik)
 %  See also
 %    LIK_NEGBIN_UNPAK, GP_PAK
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
 end
 
 
@@ -118,7 +117,7 @@ function ll = lik_binomial_ll(lik, y, f, z)
     error(['lik_binomial -> lik_binomial_ll: missing z!'... 
            'Binomial likelihood needs the expected number of   '...
            'occurrences as an extra input z. See, for         '...
-           'example, lik_binomial and gpla_e.             ']);
+           'example, lik_binomial and gp_optim.             ']);
   end
   
   expf = exp(f);
@@ -147,7 +146,7 @@ function llg = lik_binomial_llg(lik, y, f, param, z)
     error(['lik_binomial -> lik_binomial_llg: missing z!'... 
            'Binomial likelihood needs the expected number of   '...
            'occurrences as an extra input z. See, for         '...
-           'example, lik_binomial and gpla_e.             ']);
+           'example, lik_binomial and gp_optim.             ']);
   end
   
   switch param
@@ -180,7 +179,7 @@ function llg2 = lik_binomial_llg2(lik, y, f, param, z)
     error(['lik_binomial -> lik_binomial_llg2: missing z!'... 
            'Binomial likelihood needs the expected number of    '...
            'occurrences as an extra input z. See, for          '...
-           'example, lik_binomial and gpla_e.              ']);
+           'example, lik_binomial and gp_optim.              ']);
   end
   
   switch param
@@ -212,7 +211,7 @@ function llg3 = lik_binomial_llg3(lik, y, f, param, z)
     error(['lik_binomial -> lik_binomial_llg3: missing z!'... 
            'Binomial likelihood needs the expected number of    '...
            'occurrences as an extra input z. See, for          '...
-           'example, lik_binomial and gpla_e.              ']);
+           'example, lik_binomial and gp_optim.              ']);
   end
   
   switch param
@@ -245,42 +244,42 @@ function [logM_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm
           'occurrences as an extra input z. See, for                     '...
           'example, lik_binomial and gpla_e.                         ']);
  end
-  
-  yy = y(i1);
-  N = z(i1);
-  logM_0=zeros(size(yy));
-  m_1=zeros(size(yy));
-  sigm2hati1=zeros(size(yy));  
-  
-  for i=1:length(i1)
-    % Create function handle for the function to be integrated
-    % (likelihood * cavity) and useful integration limits
-    [tf,minf,maxf]=init_binomial_norm(yy(i),myy_i(i),sigm2_i(i),N(i));
-    
-    % Integrate with quadrature
-    RTOL = 1.e-6;
-    ATOL = 1.e-10;
-    [m_0, m_1(i), m_2] = quad_moments(tf,minf, maxf, RTOL, ATOL);
-    if isnan(m_0)
-      logM_0=NaN;
-      return
-    end
-    sigm2hati1(i) = m_2 - m_1(i).^2;
-    
-    % If the second central moment is less than cavity variance
-    % integrate more precisely. Theoretically for log-concave
-    % likelihood should be sigm2hati1 < sigm2_i.
-    if sigm2hati1(i) >= sigm2_i(i)
-      ATOL = ATOL.^2;
-      RTOL = RTOL.^2;
-      [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-      sigm2hati1 = m_2 - m_1(i).^2;
-      %    if sigm2hati1 >= sigm2_i
-      %      error('lik_binomial_tilted_moments: sigm2hati1 >= sigm2_i');
-      %    end
-    end
-    logM_0(i) = log(m_0);
-  end
+ 
+ yy = y(i1);
+ N = z(i1);
+ logM_0=zeros(size(yy));
+ m_1=zeros(size(yy));
+ sigm2hati1=zeros(size(yy));
+ 
+ for i=1:length(i1)
+   % Create function handle for the function to be integrated
+   % (likelihood * cavity) and useful integration limits
+   [tf,minf,maxf]=init_binomial_norm(yy(i),myy_i(i),sigm2_i(i),N(i));
+   
+   % Integrate with quadrature
+   RTOL = 1.e-6;
+   ATOL = 1.e-10;
+   [m_0, m_1(i), m_2] = quad_moments(tf,minf, maxf, RTOL, ATOL);
+   if isnan(m_0)
+     logM_0=NaN;
+     return
+   end
+   sigm2hati1(i) = m_2 - m_1(i).^2;
+   
+   % If the second central moment is less than cavity variance
+   % integrate more precisely. Theoretically for log-concave
+   % likelihood should be sigm2hati1 < sigm2_i.
+   if sigm2hati1(i) >= sigm2_i(i)
+     ATOL = ATOL.^2;
+     RTOL = RTOL.^2;
+     [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+     sigm2hati1 = m_2 - m_1(i).^2;
+     %    if sigm2hati1 >= sigm2_i
+     %      error('lik_binomial_tilted_moments: sigm2hati1 >= sigm2_i');
+     %    end
+   end
+   logM_0(i) = log(m_0);
+ end
 end
 
 
@@ -311,7 +310,7 @@ function [lpy, Ey, Vary] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
     error(['lik_binomial -> lik_binomial_predy: missing z!'... 
            'Binomial likelihood needs the expected number of       '...
            'occurrences as an extra input z. See, for             '...
-           'example, lik_binomial and gpla_e.                 ']);
+           'example, lik_binomial and gp_optim.                 ']);
   end
   
   if nargout > 1
@@ -369,7 +368,7 @@ function prctys = lik_binomial_predprcty(lik, Ef, Varf, zt, prcty)
     error(['lik_binomial -> lik_binomial_predprcty: missing z!'... 
            'Binomial likelihood needs the expected number of       '...
            'occurrences as an extra input z. See, for             '...
-           'example, lik_binomial and gpla_e.                 ']);
+           'example, lik_binomial and gp_optim.                 ']);
   end
   
   opt=optimset('TolX',.5,'Display','off');

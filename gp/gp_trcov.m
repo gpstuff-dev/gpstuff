@@ -18,7 +18,7 @@ function [K, C] = gp_trcov(gp, x1, predcf)
 %
 %  See also
 %    GP_SET, GPCF_*
-
+%
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen
 
@@ -27,7 +27,8 @@ function [K, C] = gp_trcov(gp, x1, predcf)
 % License.txt, included with the software, for details.
 
 % no covariance functions?
-if length(gp.cf)==0 || (nargin>2 && ~isempty(predcf) && predcf(1)==0)
+if length(gp.cf)==0 || (nargin>2 && ~isempty(predcf) && predcf(1)==0) ...
+    || isfield(gp, 'lik_mono')
   K=[];
   C=[];
   if nargout>1 && isfield(gp.lik.fh,'trcov')

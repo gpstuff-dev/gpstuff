@@ -7,7 +7,7 @@
  *         between inputs i and j in TX.
  *
  *
- * Last modified: 2011-09-07 10:22:23 EEST
+ * Last modified: 2014-01-17 13:22:43 EET
  *
  */
 
@@ -46,7 +46,7 @@ void mexFunction(const int nlhs, mxArray *plhs[],
     const mwSize *dims;
     const mxArray *selectedVariables;
     char *type;
-    mwIndex i, j, k, ind, *I, *J, *It, *Jt, *Jc, *w2, *w;
+    mwIndex i, j, k, ci, ind, *I, *J, *It, *Jt, *Jc, *w2, *w;
     mwSize m, n, nnz, lr, pr;
     mxArray *field;
     
@@ -80,7 +80,7 @@ void mexFunction(const int nlhs, mxArray *plhs[],
       mexErrMsgTxt( "gpcf.lengthScale must be a scalar or a vector." );
     lr=max(dims[0], dims[1]);
     if (lr!=1 && lr!=n            )
-      mexErrMsgTxt( "gpcf.lengthScale must be a scalar or its lenght must be the same as the number of columns in X." );
+      mexErrMsgTxt( "gpcf.lengthScale must be a scalar or its length must be the same as the number of columns in X." );
     l = mxGetPr(field);
     
     if((field=mxGetField(*prhs, 0, "type"))==NULL)
@@ -102,7 +102,8 @@ void mexFunction(const int nlhs, mxArray *plhs[],
         for (j=0;j<m;j++) {
           for (k=0;k<j;k++) {
             if(cc!=NULL) {
-              d=x[j+m*((mwIndex)cc[i]-1)]-x[k+m*((mwIndex)cc[i]-1)];
+	      ci=((mwIndex)cc[i]-1);
+              d=x[j+m*ci]-x[k+m*ci];
             }else{
               d=x[j]-x[k];
             }
@@ -135,7 +136,8 @@ void mexFunction(const int nlhs, mxArray *plhs[],
         for (j=0;j<m;j++) {
           for (k=0;k<j;k++) {
             if(cc!=NULL) {
-              d=x[j+m*((mwIndex)cc[i]-1)]-x[k+m*((mwIndex)cc[i]-1)];
+	      ci=((mwIndex)cc[i]-1);
+              d=x[j+m*ci]-x[k+m*ci];
             }else{
               d=x[j]-x[k];
             }
@@ -169,7 +171,8 @@ void mexFunction(const int nlhs, mxArray *plhs[],
         for (j=0;j<m;j++) {
           for (k=0;k<j;k++) {
             if(cc!=NULL) {
-              d=x[j+m*((mwIndex)cc[i]-1)]-x[k+m*((mwIndex)cc[i]-1)];
+	      ci=((mwIndex)cc[i]-1);
+              d=x[j+m*ci]-x[k+m*ci];
             }else{
               d=x[j]-x[k];
             }
@@ -203,7 +206,8 @@ void mexFunction(const int nlhs, mxArray *plhs[],
         for (j=0;j<m;j++) {
           for (k=0;k<j;k++) {
             if(cc!=NULL) {
-              d=x[j+m*((mwIndex)cc[i]-1)]-x[k+m*((mwIndex)cc[i]-1)];
+	      ci=((mwIndex)cc[i]-1);
+              d=x[j+m*ci]-x[k+m*ci];
             }else{
               d=x[j]-x[k];
             }
@@ -257,7 +261,8 @@ void mexFunction(const int nlhs, mxArray *plhs[],
           c = 0.0;
           for (i=0;i<n;i++) {
             if(cc!=NULL) {
-              d=x[j+m*((mwIndex)cc[i]-1)]-x[k+m*((mwIndex)cc[i]-1)];
+	      ci=((mwIndex)cc[i]-1);
+              d=x[j+m*ci]-x[k+m*ci];
             }else{
               d=x[j+i*m]-x[k+i*m];
             }
@@ -362,7 +367,8 @@ void mexFunction(const int nlhs, mxArray *plhs[],
           c = 0.0;
           for (i=0;i<n;i++) {
             if(cc!=NULL) {
-              d=x[j+m*((mwIndex)cc[i]-1)]-x[k+m*((mwIndex)cc[i]-1)];
+	      ci=((mwIndex)cc[i]-1);
+              d=x[j+m*ci]-x[k+m*ci];
             }else{
               d=x[j+i*m]-x[k+i*m];
             }
@@ -469,7 +475,8 @@ void mexFunction(const int nlhs, mxArray *plhs[],
           c = 0.0;
           for (i=0;i<n;i++) {
             if(cc!=NULL) {
-              d=x[j+m*((mwIndex)cc[i]-1)]-x[k+m*((mwIndex)cc[i]-1)];
+	      ci=((mwIndex)cc[i]-1);
+              d=x[j+m*ci]-x[k+m*ci];
             }else{
               d=x[j+i*m]-x[k+i*m];
             }
@@ -577,7 +584,8 @@ void mexFunction(const int nlhs, mxArray *plhs[],
           c = 0.0;
           for (i=0;i<n;i++) {
             if(cc!=NULL) {
-              d=x[j+m*((mwIndex)cc[i]-1)]-x[k+m*((mwIndex)cc[i]-1)];
+	      ci=((mwIndex)cc[i]-1);
+              d=x[j+m*ci]-x[k+m*ci];
             }else{
               d=x[j+i*m]-x[k+i*m];
             }
@@ -665,7 +673,8 @@ void mexFunction(const int nlhs, mxArray *plhs[],
         for (j=0;j<m;j++) {
           for (k=0;k<j;k++) {
             if(cc!=NULL) {
-              d=x[j+m*((mwIndex)cc[i]-1)]-x[k+m*((mwIndex)cc[i]-1)];
+	      ci=((mwIndex)cc[i]-1);
+              d=x[j+m*ci]-x[k+m*ci];
             }else{
             d=x[j]-x[k];
             }
@@ -715,21 +724,34 @@ void mexFunction(const int nlhs, mxArray *plhs[],
       plhs[0]=mxCreateDoubleMatrix(m, m, mxREAL);
       C = mxGetPr(plhs[0]);
       eps=mxGetEps();
-      for (i=0;i<n;i++, x+=m) {
+      for (i=0;i<n;i++) {
         rr=(lr>1)?(l[i]*l[i]):(l[0]*l[0]);
         pp=(pr>1)?(period[i]):(period[0]);
         for (j=0;j<m;j++) {
           for (k=0;k<j;k++) {
-            d=sin(PI*(x[j]-x[k])/pp);
-            d=2*d*d/rr;
-            if(decay==1 && max(dims[0], dims[1])>1) {
-              d+=s_sexp2[j]/2*((x[j]-x[k])*(x[j]-x[k]));
-            } else if(decay==1 && max(dims[0], dims[1]) == 1) {
-              d+=s_sexp2[0]*pow((x[j]-x[k]),2)/2;
-            }
-            C[j*m+k]+=d;
+            if(cc!=NULL) {
+	      ci=(mwIndex)cc[i]-1;
+	      d=sin(PI*(x[j+m*ci]-x[k+m*ci])/pp);
+	      d=2*d*d/rr;
+	      if(decay==1 && max(dims[0], dims[1])>1) {
+		d+=s_sexp2[j]/2*((x[j+m*ci]-x[k+m*ci])*(x[j+m*ci]-x[k+m*ci]));
+	      } else if(decay==1 && max(dims[0], dims[1]) == 1) {
+		d+=s_sexp2[0]*pow((x[j+m*ci]-x[k+m*ci]),2)/2;
+	      }
+	    } else {
+	      d=sin(PI*(x[j]-x[k])/pp);
+	      d=2*d*d/rr;
+	      if(decay==1 && max(dims[0], dims[1])>1) {
+		d+=s_sexp2[j]/2*((x[j]-x[k])*(x[j]-x[k]));
+	      } else if(decay==1 && max(dims[0], dims[1]) == 1) {
+		d+=s_sexp2[0]*pow((x[j]-x[k]),2)/2;
+	      }
+	    }
+	    C[j*m+k]+=d;
           }
         } 
+	if(cc==NULL)
+	  x+=m;
       }
       if(decay==1)
         mxFree(s_sexp2);

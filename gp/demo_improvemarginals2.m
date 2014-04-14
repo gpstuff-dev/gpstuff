@@ -9,21 +9,24 @@
 %    corrected posterior distributions are compared to true posterior
 %    evaluated in grid and to MCMC samples.
 %
-%   Reference
-%     Cseke & Heskes (2011). Approximate Marginals in Latent Gaussian
-%     Models. Journal of Machine Learning Research 12 (2011), 417-454
+%  References
+%    Cseke & Heskes (2011). Approximate Marginals in Latent Gaussian
+%    Models. Journal of Machine Learning Research 12 (2011), 417-454
+%
+%    Gelman, Carlin, Stern, Dunson, Vehtari, and Rubin (2013). 
+%    Bayesian data Analysis, third edition.
 %
 %  See also
 %    GP_PREDCM, GP_RND, DEMO_BINOMIAL2, DEMO_IMPROVEMARGINALS
 %
-
+%
 % Copyright (c) 2013 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-% Bioassay data from Gelman et al (p. 89, 2004)
+% Bioassay data from Gelman et al (p. 74, 2013)
 x=[-0.86 -0.3 -0.05 .73]';
 % number of trials
 N=[5 5 5 5]';
@@ -38,13 +41,13 @@ xt2=linspace(-5,25,40);
 xt=[XT1(:) XT2(:)];
 
 % Use plotting code to make a model with fixed prior (as in Gelman et
-% al (2004) and a model with prior with hyperparameters
+% al (2013) and a model with prior with hyperparameters
 for i1=1:2
 
   % Create parts of the covariance function
   switch i1
     case 1
-      % fixed prior is used to follow Gelman et al (2004)
+      % fixed prior is used to follow Gelman et al (2013)
       fprintf('Binomial model with fixed vague prior\n')
       cfc = gpcf_constant('constSigma2',20^2,'constSigma2_prior',[]);
       cfl = gpcf_linear('coeffSigma2',20^2,'coeffSigma2_prior',[]);
@@ -78,11 +81,11 @@ for i1=1:2
 
   % Get samples from the joint distribution of the latent values at 0 and 1
   % to compute the corresponding linear model parameters alpha and beta
-  % in Gelman et al (2004)
+  % in Gelman et al (2013)
   fprintf('Sampling from the posterior of alpha and beta\n')
   fs = gp_rnd(rgp, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000);
   a=fs(1,:);b=fs(2,:)-fs(1,:);
-  % compute samples from the LD50 given b>0 (see, Gelman et al (2004))
+  % compute samples from the LD50 given b>0 (see, Gelman et al (2013))
   ld50s=-a(b>0)./b(b>0);
 
   rmc.fs=fs;
@@ -133,8 +136,7 @@ for i1=1:2
   fprintf('Sampling from the posterior of alpha and beta\n')
   fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'nsamp', 10000);
   a=fs(1,:);b=fs(2,:)-fs(1,:);
-  % compute samples from the LD50 given b>0 (see, Gelman et al (2004))
-  indn=b>0;
+  % compute samples from the LD50 given b>0 (see, Gelman et al (2013))
   ld50s=-a(b>0)./b(b>0);
 
   rla.fs=fs;
@@ -177,13 +179,13 @@ for i1=1:2
   fprintf('Laplace+cm2%s approximation\n',grids)
   % Get samples from the joint distribution of the latent values at 0 and 1
   % to compute the corresponding linear model parameters alpha and beta
-  % in Gelman et al (2004)
+  % in Gelman et al (2013)
   fprintf('Sampling from the posterior of alpha and beta\n')
   fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'nsamp', 10000, 'fcorr', 'cm2');
   indn=isnan(fs(1,:));
   fs(:,indn)=[];
   a=fs(1,:);b=fs(2,:)-fs(1,:);
-  % compute samples from the LD50 given b>0 (see, Gelman et al (2004))
+  % compute samples from the LD50 given b>0 (see, Gelman et al (2013))
   ld50s=-a(b>0)./b(b>0);
 
   rlac.fs=fs;
@@ -238,11 +240,11 @@ for i1=1:2
 
   % Get samples from the joint distribution of the latent values at 0 and 1
   % to compute the corresponding linear model parameters alpha and beta
-  % in Gelman et al (2004)
+  % in Gelman et al (2013)
   fprintf('Sampling from the posterior of alpha and beta\n')
   fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000);
   a=fs(1,:);b=fs(2,:)-fs(1,:);
-  % compute samples from the LD50 given b>0 (see, Gelman et al (2004))
+  % compute samples from the LD50 given b>0 (see, Gelman et al (2013))
   ld50s=-a(b>0)./b(b>0);
 
   rep.fs=fs;
@@ -286,13 +288,13 @@ for i1=1:2
   fprintf('EP+fact%s approximation\n',grids)
   % Get samples from the joint distribution of the latent values at 0 and 1
   % to compute the corresponding linear model parameters alpha and beta
-  % in Gelman et al (2004)
+  % in Gelman et al (2013)
   fprintf('Sampling from the posterior of alpha and beta\n')
   fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000, 'fcorr', 'fact');
   indn=isnan(fs(1,:));
   fs(:,indn)=[];
   a=fs(1,:);b=fs(2,:)-fs(1,:);
-  % compute samples from the LD50 given b>0 (see, Gelman et al (2004))
+  % compute samples from the LD50 given b>0 (see, Gelman et al (2013))
   ld50s=-a(b>0)./b(b>0);
 
   repc.fs=fs;

@@ -12,10 +12,10 @@ function R = cipsrf(varargin)
 %
 %   See also
 %     IPSRF
-
+%
 % Copyright (C) 1999 Simo Särkkä
 % Copyright (C) 2004 Aki Vehtari
-%
+
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.

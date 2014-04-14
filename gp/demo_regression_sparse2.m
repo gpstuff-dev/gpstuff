@@ -29,6 +29,29 @@
 %    We use a simple one dimensional data set to present the three
 %    methods.
 % 
+%  References
+%
+%    Quiñonero-Candela, J. and Rasmussen, C. E. (2005). A unifying
+%    view of sparse approximate Gaussian process regression. 
+%    Journal of Machine Learning Research, 6(3):1939-1959.
+%
+%    Snelson, E. and Ghahramani, Z. (2006). Sparse Gaussian process
+%    using pseudo-inputs. Advances in Neural Information
+%    Processing Systems 18.
+%
+%    Titsias, M. K. (2009). Variational Model Selection for Sparse
+%    Gaussian Process Regression. Technical Report, University of
+%    Manchester.
+%
+%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and
+%    global phenomena with sparse Gaussian processes. Proceedings
+%    of the 24th Conference on Uncertainty in Artificial
+%    Intelligence, pp. 571-578, AUAI Press.
+%
+%    Vanhatalo, J., Pietiläinen, V. and Vehtari, A. (2010). 
+%    Approximate inference for disease mapping with sparse Gaussian
+%    processes. Statistics in Medicine, 29(15):1580-1607.
+%
 %  See also DEMO_REGRESSION1, DEMO_REGRESSION2, DEMO_REGRESSION_SPARSE1
 %
 %
@@ -44,7 +67,7 @@
 %    Titsias, M. K. (2009). Variational Model Selection for Sparse
 %    Gaussian Process Regression. Technical Report, University of
 %    Manchester.
-
+%
 % Copyright (c) 2010 Heikki Peura, Aki Vehtari
 
 % This software is distributed under the GNU General Public 

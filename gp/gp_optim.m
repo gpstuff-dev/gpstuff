@@ -30,7 +30,6 @@ function [gp, varargout] = gp_optim(gp, x, y, varargin)
 %  See also
 %    GP_SET, GP_E, GP_G, GP_EG, FMINSCG, FMINLBFGS, OPTIMSET, DEMO_REGRESSION*
 %
-
 % Copyright (c) 2010-2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -39,7 +38,7 @@ function [gp, varargout] = gp_optim(gp, x, y, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_OPTIM';
-ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || isempty(x));
 ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
@@ -48,16 +47,19 @@ ip=iparser(ip,'addParamValue','opt', [], @isstruct);
 ip=iparser(ip,'addParamValue','loss', 'e', @(x) ismember(lower(x),{'e', 'loo', 'kfcv', 'waic' 'waic' 'waicv' 'waicg'}));
 ip=iparser(ip,'addParamValue','k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
 ip=iparser(ip,'parse',gp, x, y, varargin{:});
+if isempty(gp)
+  gp=gp_set();
+end
+if isempty(gp_pak(gp))
+  % nothing to optimize
+  return
+end
 z=ip.Results.z;
 optimf=ip.Results.optimf;
 opt=ip.Results.opt;
 loss=ip.Results.loss;
 k=ip.Results.k;
 
-if isempty(gp_pak(gp))
-  % nothing to optimize
-  return
-end
 
 switch lower(loss)
   case 'e'

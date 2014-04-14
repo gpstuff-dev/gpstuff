@@ -6,7 +6,7 @@ function p = prior_unif(varargin)
 %    
 %  See also
 %    PRIOR_*
-
+%
 % Copyright (c) 2009 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 
@@ -41,9 +41,10 @@ function p = prior_unif(varargin)
   
 end
 
-function [w, s] = prior_unif_pak(p, w)
+function [w, s, h] = prior_unif_pak(p, w)
   w=[];
   s={};
+  h=[];
 end
 
 function [p, w] = prior_unif_unpak(p, w)

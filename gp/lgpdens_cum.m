@@ -4,7 +4,7 @@ function [cum] = lgpdens_cum(bb,x1,x2)
 % Description
 %   Given Bayesian Bootstrap estimated density, integrates it from point x1
 %   to point x2
-
+%
 % Copyright (c) 2012 Ernesto Ulloa
 % Copyright (c) 2012 Aki Vehtari
 

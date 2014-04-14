@@ -8,10 +8,10 @@ function x = thin(x,nburn,nthin,nlast)
 %
 %  See also
 %    JOIN
-
+%
 % Copyright (c) 1999 Simo Särkkä
 % Copyright (c) 2000,2010 Aki Vehtari
-%
+
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
@@ -41,8 +41,9 @@ if isstruct(x)
     % single structure
     names = fieldnames(x);
     for i=1:size(names,1)
-      if isequal(names{i},'xtime')
+      if ismember(names{i},{'xtime' 'xv'})
         % Coxph model has ntime x 1 vector, which should be passed as is
+        % Monotonic GP has nv x 1 vector, which should be passed as is
         continue
       end
       value = getfield(x,names{i});

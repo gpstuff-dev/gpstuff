@@ -1,8 +1,8 @@
-function [R,neff,Vh,W,B,tau] = psrf(varargin)
+function [R,neff,Vh,W,B,tau,thin] = psrf(varargin)
 %PSRF Potential Scale Reduction Factor
 %
-%   [R,NEFF,V,W,B] = PSRF(X) or
-%   [R,NEFF,V,W,B] = PSRF(x1,x2,...,xs)
+%   [R,NEFF,V,W,B,TAU,THIN] = PSRF(X) or
+%   [R,NEFF,V,W,B,TAU,THIN] = PSRF(x1,x2,...,xs)
 %   returns "Potential Scale Reduction Factor" (PSRF) for collection
 %   of MCMC-simulations. X is a NxDxM matrix which contains M MCMC
 %   simulations of length N, each with dimension D. MCMC-simulations
@@ -15,6 +15,8 @@ function [R,neff,Vh,W,B,tau] = psrf(varargin)
 %     V     estimated mixture-of-sequences variances
 %     W     estimated within sequence variances
 %     B     estimated between sequence variances
+%     TAU   estimated autocorrelation time
+%     THIN  Geyer's initial positive sequence lag (useful for thinning)
 %
 %   The idea of the PSRF is that if R is not close to 1 (below 1.1 for
 %   example) one may conclude that the tested samples were not from
@@ -32,10 +34,10 @@ function [R,neff,Vh,W,B,tau] = psrf(varargin)
 %
 %   See also
 %     CPSRF, MPSRF, IPSRF
-
+%
 % Copyright (C) 1999 Simo Särkkä
 % Copyright (C) 2003-2004,2013 Aki Vehtari
-%
+
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.
@@ -100,5 +102,6 @@ if nargout>1
     cp=[cp(1:ci) 0];   % initial positive sequence
     tau(di)=-1+2*sum(cp); % initial positive sequence estimator
     neff(di)=M*N/tau(di); % initial positive sequence estimator for neff
+    thin(di)=ci*2;
   end
 end

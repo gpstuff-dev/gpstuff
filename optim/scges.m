@@ -21,7 +21,7 @@ function [x, fs, vs, lambda] = scges(f, x, opt, gradf, varargin)
 %    volume I, pp. 317-322. IEEE.
 %
 %  See also SCGES_OPT
-
+%
 % Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 2005 Aki Vehtari
 

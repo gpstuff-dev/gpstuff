@@ -9,7 +9,6 @@ function y = sumlogs(x,dim)
 %
 %    See also SUM
 %
-
 % Copyright (c) 2013 Aki Vehtari
 
 % This software is distributed under the GNU General Public

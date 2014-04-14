@@ -6,7 +6,7 @@ function y = wmean(x, w)
 %    (along first dimension) given weights W.
 %
 %  See also wprctile
-
+%
 % Copyright (c) 2000-2013 Aki Vehtari
 
 % This software is distributed under the GNU General Public

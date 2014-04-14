@@ -21,7 +21,6 @@ function [x,rec] = fsearch(fun,x0,varargin)
 %   element that minimizes the function value when added to the set
 %   is chosen at each round. In a case of tie choose randomly.
 %
-
 % Copyright (c) Aki Vehtari (2007)
 
 % This software is distributed under the GNU General Public 

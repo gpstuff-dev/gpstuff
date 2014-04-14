@@ -25,9 +25,19 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
 %          Poisson likelihood we have z_i=E_i, that is, expected
 %          value for ith case.
 %
+%  References
+%
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
+%
+%    Jarno Vanhatalo, Pasi Jylänki and Aki Vehtari (2009). Gaussian
+%    process regression with Student-t likelihood. In Y. Bengio et al,
+%    editors, Advances in Neural Information Processing Systems 22,
+%    pp. 1910-1918
+% 
 %  See also
 %    GP_SET, GP_E, GPLA_G, GPLA_PRED
-%
+
 %  Description 2
 %    Additional properties meant only for internal use.
 %  
@@ -45,10 +55,10 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
 %
 %    The stabilized Newton's method is implemented as suggested by
 %    Hannes Nickisch (personal communication).
-  
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
-% Copyright (c) 2010 Pasi Jyl�nki
+% Copyright (c) 2010 Pasi Jylänki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -1446,6 +1456,10 @@ end
           end
           
           W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+          if any(isnan(W))
+            [edata,e,eprior,param,ch] = set_output_for_notpositivedefinite();
+            return
+          end
           logZ = 0.5*f'*a - gp.lik.fh.ll(gp.lik, y, f, z);
           
           if W >= 0
@@ -2043,6 +2057,32 @@ end
       if isfield(gp, 'lik') && isfield(gp.lik, 'p')
         lik = gp.lik;
         eprior = eprior - lik.fh.lp(lik);
+      end
+      
+      % ============================================================
+      % Evaluate the prior contribution to the error from the inducing inputs
+      % ============================================================
+      if ~isempty(strfind(gp.infer_params, 'inducing'))
+        if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+          if iscell(gp.p.X_u) % Own prior for each inducing input
+            for i = 1:size(gp.X_u,1)
+              pr = gp.p.X_u{i};
+              eprior = eprior - pr.fh.lp(gp.X_u(i,:), pr);
+            end
+          else
+            eprior = eprior - gp.p.X_u.fh.lp(gp.X_u(:), gp.p.X_u);
+          end
+        end
+      end
+      
+      % ============================================================
+      % Evaluate the prior contribution to the error from mean functions
+      % ============================================================
+      if ~isempty(strfind(gp.infer_params, 'mean'))
+        for i=1:length(gp.meanf)
+          gpmf = gp.meanf{i};
+          eprior = eprior - gpmf.fh.lp(gpmf);
+        end
       end
 
       e = edata + eprior;

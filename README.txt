@@ -1,7 +1,7 @@
 Last modified: 2013-03-20 16:01:42 EET
 -----------------------------------------------------------------
 
-GPstuff: Gaussian process models for Bayesian analysis 4.1
+GPstuff: Gaussian process models for Bayesian analysis 4.3.2
 
 Maintainers: Aki Vehtari <aki.vehtari@aalto.fi>
              Jarno Vanhatalo <jarno.vanhatalo@helsinki.fi>
@@ -52,7 +52,7 @@ Table of contents:
   1) Basic installation without compactly supported covariance
      functions
 
-  * Install the GPstuff package by running matlab_install in this
+  * Install the GPstuff package by running gpstuff_install in this
     folder
 
   * With this option you are able to use all the other functions
@@ -66,16 +66,16 @@ Table of contents:
   use these functions (gpcf_ppcs*) you need the sparse GP
   functionalities in GPstuff which are build over SuiteSparse
   toolbox. To take full advantage of the CS covariance functions
-  install GPstuff by running matlab_install('SuiteSparseOn' ) in the
+  install GPstuff by running gpstuff_install('SuiteSparseOn' ) in the
   present directory.
 
-    The function matlab_install compiles the mex-files and prints on
+    The function gpstuff_install compiles the mex-files and prints on
     the screen, which directories should be added to Matlab paths. 
     
 3. CONTENTS
    
    The GPstuff packge contains the following subdirectories:
-   diag  dist  gp  mc  misc  optim  xunit  SuiteSparse
+   diag  dist  gp  mc  misc  optim  test_gpstuff  SuiteSparse
 
    Each folder contains Contents.m, which summarizes the functions
    in the folder. 
@@ -85,12 +85,9 @@ Table of contents:
 
 4. TESTING THE INSTALLATION
 
-   Installation can be tested by running command test_all, which
-   runs all demos and compares the computed results to pre-saved
-   results. Running test_all takes about one hour and it requires
-   that 'xunit' toolbox is in the Matlab path. xunit package can be
-   downloaded from
-   http://www.mathworks.com/matlabcentral/fileexchange/22846-matlab-xunit-test-framework
+   Installation can be tested by running command run_tests, which
+   runs specific demos and compares the computed results to pre-saved
+   results. 
 
 5. USER QUIDE (VERY SHORT)
 

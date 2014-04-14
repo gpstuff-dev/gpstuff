@@ -19,9 +19,9 @@ function gpcf = gpcf_mask(varargin)
 %
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*, MEAN_*
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
-% Copyright (c) 2008-2010 Jaakko Riihim�ki
+% Copyright (c) 2008-2010 Jaakko Riihimäki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -70,7 +70,7 @@ function gpcf = gpcf_mask(varargin)
   
 end
 
-function [w,s] = gpcf_mask_pak(gpcf, w)
+function [w,s,h] = gpcf_mask_pak(gpcf, w)
 %GPCF_MASK_PAK  Combine GP covariance function parameters into
 %              one vector.
 %
@@ -86,7 +86,7 @@ function [w,s] = gpcf_mask_pak(gpcf, w)
 %  See also
 %    GPCF_MASK_UNPAK
   
-  w = []; s = {};
+  w = []; s = {}; h = [];
 end
 
 function [gpcf, w] = gpcf_mask_unpak(gpcf, w)

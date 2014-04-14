@@ -4,9 +4,8 @@ function lik = lik_loggaussian(varargin)
 %  Description
 %    LIK = LIK_LOGGAUSSIAN('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %    creates a likelihood structure for right censored log-Gaussian
-%    survival model in which the named parameters have the
-%    specified values. Any unspecified parameters are set to
-%    default values.
+%    survival model in which the named parameters have the specified
+%    values. Any unspecified parameters are set to default values.
 %  
 %    LIK = LIK_LOGGAUSSIAN(LIK,'PARAM1',VALUE1,'PARAM2,VALUE2,...)
 %    modify a likelihood structure with the named parameters
@@ -31,15 +30,16 @@ function lik = lik_loggaussian(varargin)
 %    z is a vector of censoring indicators with z = 0 for uncensored event
 %    and z = 1 for right censored event. 
 %
-%    When using the log-Gaussian likelihood you need to give the
+%    When using the log-Gaussian likelihood you can give the
 %    vector z as an extra parameter to each function that requires
-%    also y. For example, you should call gp_optim as follows:
-%    gp_optim(gp, x, y, 'z', z)
+%    also y. For example, you can call gp_optim as follows:
+%      gp_optim(gp, x, y, 'z', z)
+%    If z is not given or it is empty, then usual likelihood for
+%    uncensored data is used
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
 %
-
 % Copyright (c) 2012 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
@@ -96,7 +96,7 @@ function lik = lik_loggaussian(varargin)
 
 end
 
-function [w,s] = lik_loggaussian_pak(lik)
+function [w,s,h] = lik_loggaussian_pak(lik)
 %LIK_LOGGAUSSIAN_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -110,13 +110,15 @@ function [w,s] = lik_loggaussian_pak(lik)
 %   See also
 %   LIK_LOGGAUSSIAN_UNPAK, GP_PAK
   
-  w=[];s={};
+  w=[];s={};h=[];
   if ~isempty(lik.p.sigma2)
     w = log(lik.sigma2);
     s = [s; 'log(loggaussian.sigma2)'];
-    [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
+    h = [h 0];
+    [wh,sh, hh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end
 end
 
@@ -204,11 +206,8 @@ function ll = lik_loggaussian_ll(lik, y, f, z)
 %  See also
 %    LIK_LOGGAUSSIAN_LLG, LIK_LOGGAUSSIAN_LLG3, LIK_LOGGAUSSIAN_LLG2, GPLA_E
   
-  if isempty(z)
-    error(['lik_loggaussian -> lik_loggaussian_ll: missing z!    '... 
-           'loggaussian likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loggaussian and gpla_e.               ']);
+  if numel(z)==0
+    z=0;
   end
 
   s2 = lik.sigma2;
@@ -238,11 +237,8 @@ function llg = lik_loggaussian_llg(lik, y, f, param, z)
 %  See also
 %    LIK_LOGGAUSSIAN_LL, LIK_LOGGAUSSIAN_LLG2, LIK_LOGGAUSSIAN_LLG3, GPLA_E
 
-  if isempty(z)
-    error(['lik_loggaussian -> lik_loggaussian_llg: missing z!    '... 
-           'loggaussian likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loggaussian and gpla_e.               ']);
+  if numel(z)==0
+    z=0;
   end
 
   s2 = lik.sigma2;
@@ -293,11 +289,8 @@ function llg2 = lik_loggaussian_llg2(lik, y, f, param, z)
 %  See also
 %    LIK_LOGGAUSSIAN_LL, LIK_LOGGAUSSIAN_LLG, LIK_LOGGAUSSIAN_LLG3, GPLA_E
 
-  if isempty(z)
-    error(['lik_loggaussian -> lik_loggaussian_llg2: missing z!   '... 
-           'loggaussian likelihood needs the censoring   '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loggaussian and gpla_e.               ']);
+  if numel(z)==0
+    z=0;
   end
 
   s2 = lik.sigma2;
@@ -310,8 +303,9 @@ function llg2 = lik_loggaussian_llg2(lik, y, f, param, z)
         llg2=zeros(size(f));
         llg2(~z) = -1./s2;
         r = log(y(z))-f(z);
-        llg2(z) = (-exp(-r.^2/s2)./(2*pi*s2.*(1-norm_cdf(r/sqrt(s2))).^2) ...
-                + r./(sqrt(2*pi).*s2^(3/2).*(1-norm_cdf(r/sqrt(s2)))).*exp(-r.^2./(2*s2)));
+        a=(1-norm_cdf(r/sqrt(s2)));
+        llg2(z) = (-exp(-r.^2/s2)./(2*pi*s2.*a.^2) ...
+                + r./(sqrt(2*pi).*s2^(3/2).*a).*exp(-r.^2./(2*s2)));
       else
         llg2 = repmat(-1./s2,size(f));
       end
@@ -322,8 +316,9 @@ function llg2 = lik_loggaussian_llg2(lik, y, f, param, z)
         r = log(y(~z))-f(~z);
         llg2(~z) = -1./s2^2.*r;
         r = log(y(z))-f(z);
-        llg2(z) = (-r./(4*pi*s2^2.*(1-norm_cdf(r/sqrt(s2))).^2) ...
-                .* exp(-r.^2./s2) + (-1 + r.^2/s2)./(1-norm_cdf(r/sqrt(s2))).*1./(sqrt(2*pi)*2*s2^(3/2)).*exp(-r.^2./(2*s2)));
+        a=(1-norm_cdf(r/sqrt(s2)));
+        llg2(z) = (-r./(4*pi*s2^2.*a.^2) ...
+                .* exp(-r.^2./s2) + (-1 + r.^2/s2)./a.*1./(sqrt(2*pi)*2*s2^(3/2)).*exp(-r.^2./(2*s2)));
       else
         r = log(y)-f;
         llg2 = -1./s2^2.*r;
@@ -348,11 +343,8 @@ function llg3 = lik_loggaussian_llg3(lik, y, f, param, z)
 %  See also
 %    LIK_LOGGAUSSIAN_LL, LIK_LOGGAUSSIAN_LLG, LIK_LOGGAUSSIAN_LLG2, GPLA_E, GPLA_G
 
-  if isempty(z)
-    error(['lik_loggaussian -> lik_loggaussian_llg3: missing z!   '... 
-           'loggaussian likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_loggaussian and gpla_e.               ']);
+  if numel(z)==0
+    z=0;
   end
 
   s2 = lik.sigma2;
@@ -364,11 +356,12 @@ function llg3 = lik_loggaussian_llg3(lik, y, f, param, z)
         z=logical(z);
         llg3=zeros(size(f));
         r = log(y(z)) - f(z);
-        llg3(z) = 2./(1-norm_cdf(r/sqrt(s2))).^3.*1./(2*pi*s2)^(3/2).*exp(-3/(2*s2)*r.^2) ...
-               - 1./(1-norm_cdf(r/sqrt(s2))).^2.*r./(pi*s2^2).*exp(-r.^2./s2) ...
-               - 1./(1-norm_cdf(r/sqrt(s2))).^2.*r./(2*pi*s2^2).*exp(-r.^2/s2) ...
-               - 1./(1-norm_cdf(r/sqrt(s2))).^1.*1./(s2^(3/2)*sqrt(2*pi)).*exp(-r.^2/(2*s2)) ...
-               + 1./(1-norm_cdf(r/sqrt(s2))).^1.*r.^2./(sqrt(2*pi*s2)*s2^2).*exp(-r.^2/(2*s2));
+        a=(1-norm_cdf(r/sqrt(s2)));
+        llg3(z) = 2./a.^3.*1./(2*pi*s2)^(3/2).*exp(-3/(2*s2)*r.^2) ...
+               - 1./a.^2.*r./(pi*s2^2).*exp(-r.^2./s2) ...
+               - 1./a.^2.*r./(2*pi*s2^2).*exp(-r.^2/s2) ...
+               - 1./a.^1.*1./(s2^(3/2)*sqrt(2*pi)).*exp(-r.^2/(2*s2)) ...
+               + 1./a.^1.*r.^2./(sqrt(2*pi*s2)*s2^2).*exp(-r.^2/(2*s2));
       else
         llg3=zeros(size(f));
       end
@@ -378,14 +371,15 @@ function llg3 = lik_loggaussian_llg3(lik, y, f, param, z)
         llg3=zeros(size(f));
         llg3(~z)=1./s2^2;
         r = log(y(z)) - f(z);
-        llg3(z) = (1./(1-norm_cdf(r/sqrt(s2))).^3.*r./(sqrt(8*pi^3).*s2.^(5/2)).*exp(-3/(2.*s2).*r.^2) ...
-                   + 1./(1-norm_cdf(r./sqrt(s2))).^2.*1./(4.*pi.*s2^2).*exp(-r.^2./s2) ...
-                   - 1./(1-norm_cdf(r./sqrt(s2))).^2.*r.^2./(2*pi*s2^3).*exp(-r.^2./s2) ...
-                   + 1./(1-norm_cdf(r./sqrt(s2))).^2.*1./(4*pi*s2^2).*exp(-r.^2/s2) ...
-                   - 1./(1-norm_cdf(r./sqrt(s2))).^1.*r./(sqrt(2*pi)*2*s2^(5/2)).*exp(-r.^2/(2*s2)) ...
-                   - 1./(1-norm_cdf(r./sqrt(s2))).^2.*r.^2./(4*pi*s2^3).*exp(-r.^2/s2) ...
-                   - 1./(1-norm_cdf(r./sqrt(s2))).^1.*r./(sqrt(2*pi)*s2^(5/2)).*exp(-r.^2/(2*s2)) ...
-                   + 1./(1-norm_cdf(r./sqrt(s2))).^1.*r.^3./(sqrt(2*pi)*2*s2^(7/2)).*exp(-r.^2/(2*s2)));
+        a=(1-norm_cdf(r./sqrt(s2)));
+        llg3(z) = (1./a.^3.*r./(sqrt(8*pi^3).*s2.^(5/2)).*exp(-3/(2.*s2).*r.^2) ...
+                   + 1./a.^2.*1./(4.*pi.*s2^2).*exp(-r.^2./s2) ...
+                   - 1./a.^2.*r.^2./(2*pi*s2^3).*exp(-r.^2./s2) ...
+                   + 1./a.^2.*1./(4*pi*s2^2).*exp(-r.^2/s2) ...
+                   - 1./a.^1.*r./(sqrt(2*pi)*2*s2^(5/2)).*exp(-r.^2/(2*s2)) ...
+                   - 1./a.^2.*r.^2./(4*pi*s2^3).*exp(-r.^2/s2) ...
+                   - 1./a.^1.*r./(sqrt(2*pi)*s2^(5/2)).*exp(-r.^2/(2*s2)) ...
+                   + 1./a.^1.*r.^3./(sqrt(2*pi)*2*s2^(7/2)).*exp(-r.^2/(2*s2)));
       else
         llg3 = repmat(1./s2^2,size(f));
       end
@@ -410,11 +404,8 @@ function [logM_0, m_1, sigm2hati1] = lik_loggaussian_tiltedMoments(lik, y, i1, s
 %  See also
 %    GPEP_E
   
- if isempty(z)
-   error(['lik_loggaussian -> lik_loggaussian_tiltedMoments: missing z!'... 
-          'loggaussian likelihood needs the censoring            '...
-          'indicators as an extra input z. See, for                 '...
-          'example, lik_loggaussian and gpep_e.                       ']);
+ if numel(z)==0
+   z=zeros(size(y));
  end
   
   yy = y(i1);
@@ -424,37 +415,64 @@ function [logM_0, m_1, sigm2hati1] = lik_loggaussian_tiltedMoments(lik, y, i1, s
   m_1=zeros(size(yy));
   sigm2hati1=zeros(size(yy));  
   
-  for i=1:length(i1)
-    % get a function handle of an unnormalized tilted distribution
-    % (likelihood * cavity = Negative-binomial * Gaussian)
-    % and useful integration limits
-    [tf,minf,maxf]=init_loggaussian_norm(yy(i),myy_i(i),sigm2_i(i),yc(i),s2);
-    
-    % Integrate with quadrature
-    RTOL = 1.e-6;
-    ATOL = 1.e-10;
-    [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-    if isnan(m_0)
-      logM_0=NaN;
-      return
-    end
-    sigm2hati1(i) = m_2 - m_1(i).^2;
-    
-    % If the second central moment is less than cavity variance
-    % integrate more precisely. Theoretically for log-concave
-    % likelihood should be sigm2hati1 < sigm2_i.
-    if sigm2hati1(i) >= sigm2_i(i)
-      ATOL = ATOL.^2;
-      RTOL = RTOL.^2;
-      [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-      sigm2hati1(i) = m_2 - m_1(i).^2;
-      if sigm2hati1(i) >= sigm2_i(i)
-         sigm2hati1(i)=sigm2_i(i)-eps;
-         %error('lik_loggaussian_tilted_moments: sigm2hati1 >= sigm2_i');
-      end
-    end
-    logM_0(i) = log(m_0);
+  ind1=yc==1;
+  ind2=yc==0;
+  
+  if sum(ind1)>0
+    logM_0(ind1)=-log(yy(ind1))+norm_lpdf(myy_i(ind1), log(yy(ind1)), sqrt(s2+sigm2_i(ind1)));
+    sigm2hati1(ind1)=1./(1./s2+1./sigm2_i(ind1));
+    m_1(ind1)=sigm2hati1(ind1).*(myy_i(ind1)./sigm2_i(ind1) + log(yy(ind1))/s2);
   end
+  if sum(ind2)>0
+    zi=(myy_i(ind2)-log(yy(ind2)))./sqrt(s2+sigm2_i(ind2));
+    logM_0(ind2)=log(norm_cdf(zi));
+    m_1(ind2)=myy_i(ind2)+sigm2_i(ind2).*norm_pdf(zi)./(norm_cdf(zi).*sqrt(s2+sigm2_i(ind2)));
+    m_2=2*myy_i(ind2).*m_1(ind2) - myy_i(ind2).^2 + sigm2_i(ind2) - ...
+      sigm2_i(ind2).^2.*norm_pdf(zi).*zi./(norm_cdf(zi).*(s2+sigm2_i(ind2)));
+    sigm2hati1(ind2) = m_2 - m_1(ind2).^2;        
+  end
+  if any(sigm2hati1 >= sigm2_i)
+    sigm2hati1(sigm2hati1 >= sigm2_i)=sigm2_i(sigm2hati1 >= sigm2_i)-eps;
+    %error('lik_loggaussian_tilted_moments: sigm2hati1 >= sigm2_i');
+  end
+%   sigm2hati12=sigm2hati1;
+%   m_12=m_1;
+%   logM_02=logM_0;
+  
+%   for i=1:length(i1)
+%     % get a function handle of an unnormalized tilted distribution
+%     % (likelihood * cavity = Negative-binomial * Gaussian)
+%     % and useful integration limits
+%     [tf,minf,maxf]=init_loggaussian_norm(yy(i),myy_i(i),sigm2_i(i),yc(i),s2);
+%     
+%     % Integrate with quadrature
+%     RTOL = 1.e-6;
+%     ATOL = 1.e-10;
+%     [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+% %     ll(~z) = -1/2*log(2*pi*s2) - log(y(~z)) - 1./(2*s2).*(log(y(~z))-f(~z)).^2;
+% %     ll(z) = log(1-norm_cdf((log(y(z))-f(z))./sqrt(s2)));
+%     if isnan(m_0)
+%       logM_0=NaN;
+%       return
+%     end
+%     sigm2hati1(i) = m_2 - m_1(i).^2;
+%     
+%     % If the second central moment is less than cavity variance
+%     % integrate more precisely. Theoretically for log-concave
+%     % likelihood should be sigm2hati1 < sigm2_i.
+%     if sigm2hati1(i) >= sigm2_i(i)
+%       ATOL = ATOL.^2;
+%       RTOL = RTOL.^2;
+%       [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+%       sigm2hati1(i) = m_2 - m_1(i).^2;
+%       if sigm2hati1(i) >= sigm2_i(i)
+%          sigm2hati1(i)=sigm2_i(i)-eps;
+%          %error('lik_loggaussian_tilted_moments: sigm2hati1 >= sigm2_i');
+%       end
+%     end
+%     logM_0(i) = log(m_0);
+%   end
+%   1;
 end
 
 function [g_i] = lik_loggaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
@@ -478,11 +496,8 @@ function [g_i] = lik_loggaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %  See also
 %    GPEP_G
 
-  if isempty(z)
-    error(['lik_loggaussian -> lik_loggaussian_siteDeriv: missing z!'... 
-           'loggaussian likelihood needs the censoring        '...
-           'indicators as an extra input z. See, for             '...
-           'example, lik_loggaussian and gpla_e.                   ']);
+  if numel(z)==0
+    z=zeros(size(y));
   end
 
   yy = y(i1);
@@ -497,7 +512,13 @@ function [g_i] = lik_loggaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   td = @deriv;
   
   % Integrate with quadgk
-  [m_0, fhncnt] = quadgk(tf, minf, maxf);
+  if yc==1
+    m_0=1/yy.*norm_pdf(myy_i, log(yy), sqrt(s2+sigm2_i));
+  else
+    zi=(myy_i-log(yy))./sqrt(s2+sigm2_i);
+    m_0=norm_cdf(zi);
+%     [m_0, fhncnt] = quadgk(tf, minf, maxf);
+  end
   [g_i, fhncnt] = quadgk(@(f) td(f, yy, yc, s2).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*s2;
 end
@@ -536,11 +557,8 @@ function [lpy, Ey, Vary] = lik_loggaussian_predy(lik, Ef, Varf, yt, zt)
 %  See also
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-  if isempty(zt)
-    error(['lik_loggaussian -> lik_loggaussian_predy: missing zt!'... 
-           'loggaussian likelihood needs the censoring    '...
-           'indicators as an extra input zt. See, for         '...
-           'example, lik_loggaussian and gpla_e.               ']);
+  if numel(zt)==0
+    zt=zeros(size(yt));
   end
 
   yc = 1-zt;
@@ -560,18 +578,34 @@ function [lpy, Ey, Vary] = lik_loggaussian_predy(lik, Ef, Varf, yt, zt)
       lpy(i1) = log(sum(py.*pf));
     end
   else
-    for i1=1:length(yt)
-      if abs(Ef(i1))>700
-        lpy(i1) = NaN;
-      else
-        % get a function handle of the likelihood times posterior
-        % (likelihood * posterior = Negative-binomial * Gaussian)
-        % and useful integration limits
-        [pdf,minf,maxf]=init_loggaussian_norm(...
-          yt(i1),Ef(i1),Varf(i1),yc(i1),s2);
-        % integrate over the f to get posterior predictive distribution
-        lpy(i1) = log(quadgk(pdf, minf, maxf));
-      end
+%     for i1=1:length(yt)
+%       if abs(Ef(i1))>700
+%         lpy(i1) = NaN;
+%       else
+%         % get a function handle of the likelihood times posterior
+%         % (likelihood * posterior = Negative-binomial * Gaussian)
+%         % and useful integration limits
+%         [pdf,minf,maxf]=init_loggaussian_norm(...
+%           yt(i1),Ef(i1),Varf(i1),yc(i1),s2);
+%         % integrate over the f to get posterior predictive distribution
+%         lpy(i1) = log(quadgk(pdf, minf, maxf));
+%       end
+%       
+%     end
+    ind1=yc==1;
+    ind2=yc==0;
+    
+    if sum(ind1)>0
+      lpy(ind1,:)=-log(yt(ind1))+norm_lpdf(Ef(ind1), log(yt(ind1)), sqrt(s2+Varf(ind1)));
+      Ey(ind1,:) = exp(Ef(ind1)+Varf(ind1)/2);
+      Vary(ind1,:) = (exp(Varf(ind1))-1).*exp(2*Ef(ind1)+Varf(ind1));
+    end
+    if sum(ind2)>0
+      zi=(Ef(ind2)-log(yt(ind2)))./sqrt(s2+Varf(ind2));
+      lpy(ind2,:)=log(norm_cdf(zi));
+      py1 = norm_cdf(Ef(ind2)./sqrt(1+Varf(ind2)));
+      Ey(ind2,:) = 2*py1 - 1;      
+      Vary(ind2,:) = 1-Ey(ind2).^2;
     end
   end
 end

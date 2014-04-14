@@ -1,8 +1,54 @@
-2013-03-06 Version 4.4
+2014-04-11 Version 4.4
+
+New features
+ - Monotonicity constraint for the latent function. 
+
+   Riihimäki and Vehtari (2010). Gaussian processes with monotonicity
+     information.  Journal of Machine Learning Research: Workshop and
+     Conference Proceedings, 9:645-652.
+
+ - State space implementation for GP inference (1D) using Kalman filtering.
+   For the following covariance functions
+     - Squared-Exponential 
+     - Matérn-3/2 & 5/2 
+     - Exponential
+     - Periodic
+     - Constant
+
+   Särkkä, S., Solin, A., Hartikainen, J. (2013). 
+     Spatiotemporal learning via infinite-dimensional Bayesian filtering and 
+     smoothing. IEEE Signal Processing Magazine, 30(4):51-61.   
+   Simo Sarkka (2013). Bayesian filtering and smoothing. Cambridge 
+     University Press.
+   Solin, A. and Särkkä, S. (2014). Explicit link between periodic 
+     covariance functions and state space models. AISTATS 2014. 
+
+Improvements
+ - GP_PLOT function for quick plotting of GP predictions
+ - GP_IA now warns if it detects multimodal posterior distributions
+ - much faster EP with log-Gaussian likelihood (numerical integrals -> 
+   analytical results)
+ - faster WAIC with GP_IA array (numerical integrals -> analytical results)
+ - New demos demonstrating new features etc.
+    - demo_minimal, minimal demo for regression and classification
+    - demo_kalman1, demo_kalman2
+    - demo_monotonic, demo_monotonic2
+
+Bug fixes
+ - Periodic covariance function works with selectedVariables
+ - Survival likelihoods (log-Gaussian, log-Logistic and Weibull) work now with
+   empty z for uncensored data
+ - Return parameters in correct order from gp_pak if using hyperhyperpriors
+ - Other bug fixes
+
+2014-01-01 Version 4.3.2
+
 Big fixes
  - Changed nested functions to subfunctions for compatibility with Octave 3.8.0
  - Fixed compilation of C source files with Octave.
 
+=======
+>>>>>>> .merge_file_0AHvYo
 2013-11-26 Version 4.3.1
 
 Improvements:

@@ -2,7 +2,7 @@ function bcdf = beta_cdf (x, a, b)
 %  BETA_CDF Beta cumulative distribution function.
 %     P = BETA_CDF(X,A,B) returns the beta cumulative distribution
 %     function with parameters A and B at the values in X.
-
+%
 % Copyright (c) 1995-1997, 2005-2007 Kurt Hornik
 
 % This software is distributed under the GNU General Public

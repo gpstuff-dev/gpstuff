@@ -29,7 +29,7 @@
 %    from http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/leuk.dat
 %
 %  See also  DEMO_SURVIVAL_COXPH
-
+%
 % Copyright (c) 2011 Jaakko Riihimäki
 % Copyright (c) 2013 Aki Vehtari
 
@@ -76,8 +76,8 @@ cfs = gpcf_sexp('lengthScale', ones(1,m),'lengthScale_prior',prior_t('s2',1^2,'n
 
 % Create the likelihood structure
 % log-logistic works best for this data
-lik = lik_loglogistic();
-%lik = lik_loggaussian();
+% lik = lik_loglogistic();
+lik = lik_loggaussian();
 %lik = lik_weibull();
 
 % Create the GP structure

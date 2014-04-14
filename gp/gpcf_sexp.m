@@ -1,11 +1,11 @@
 function gpcf = gpcf_sexp(varargin)
-%GPCF_SEXP  Create a squared exponential covariance function
+%GPCF_SEXP  Create a squared exponential (exponentiated quadratic) covariance function
 %
 %  Description
 %    GPCF = GPCF_SEXP('PARAM1',VALUE1,'PARAM2,VALUE2,...) creates
-%    squared exponential covariance function structure in which the
-%    named parameters have the specified values. Any unspecified
-%    parameters are set to default values.
+%    squared exponential (exponentiated quadratic) covariance function
+%    structure in which the named parameters have the specified
+%    values. Any unspecified parameters are set to default values.
 %
 %    GPCF = GPCF_SEXP(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %    modify a covariance function structure with the named
@@ -24,6 +24,7 @@ function gpcf = gpcf_sexp(varargin)
 %      selectedVariables - vector defining which inputs are used [all]
 %                          selectedVariables is shorthand for using
 %                          metric_euclidean with corresponding components
+%      kalman_deg        - Degree of approximation in type 'KALMAN' [6]
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in
@@ -31,9 +32,10 @@ function gpcf = gpcf_sexp(varargin)
 %
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*, METRIC_*
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -46,6 +48,7 @@ function gpcf = gpcf_sexp(varargin)
   ip=iparser(ip,'addParamValue','magnSigma2',0.1, @(x) isscalar(x) && x>0);
   ip=iparser(ip,'addParamValue','lengthScale',1, @(x) isvector(x) && all(x>0));
   ip=iparser(ip,'addParamValue','metric',[], @isstruct);
+  ip=iparser(ip,'addParamValue','kalman_deg',[], @(x) isscalar(x) && mod(x,1)==0);
   ip=iparser(ip,'addParamValue','magnSigma2_prior', prior_logunif(), ...
                    @(x) isstruct(x) || isempty(x));
   ip=iparser(ip,'addParamValue','lengthScale_prior',prior_t(), ...
@@ -71,6 +74,11 @@ function gpcf = gpcf_sexp(varargin)
   end
   if init || ~ismember('magnSigma2',ip.UsingDefaults)
     gpcf.magnSigma2 = ip.Results.magnSigma2;
+  end
+  if init || ~ismember('kalman_deg',ip.UsingDefaults)
+      if ~isempty(ip.Results.kalman_deg)
+          gpcf.kalman_deg = ip.Results.kalman_deg;
+      end
   end
 
   % Initialize prior structure
@@ -147,11 +155,12 @@ function gpcf = gpcf_sexp(varargin)
     gpcf.fh.trcov  = @gpcf_sexp_trcov;
     gpcf.fh.trvar  = @gpcf_sexp_trvar;
     gpcf.fh.recappend = @gpcf_sexp_recappend;
+    gpcf.fh.cf2ss = @gpcf_sexp_cf2ss;
   end
 
 end
 
-function [w,s] = gpcf_sexp_pak(gpcf)
+function [w,s,h] = gpcf_sexp_pak(gpcf)
 %GPCF_SEXP_PAK  Combine GP covariance function parameters into
 %               one vector
 %
@@ -170,15 +179,18 @@ function [w,s] = gpcf_sexp_pak(gpcf)
 %  See also
 %    GPCF_SEXP_UNPAK
 
-  w=[];s={};
+  w=[];s={}; h=[];
   
   if ~isempty(gpcf.p.magnSigma2)
     w = [w log(gpcf.magnSigma2)];
     s = [s; 'log(sexp.magnSigma2)'];
+    h = [h 1];
     % Hyperparameters of magnSigma2
-    [wh sh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    [wh sh, hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
+    h = [h 1+hh];
   end        
 
   if isfield(gpcf,'metric')
@@ -193,10 +205,13 @@ function [w,s] = gpcf_sexp_pak(gpcf)
       else
         s = [s; 'log(sexp.lengthScale)'];
       end
+      h = [h ones(1,numel(gpcf.lengthScale))];
       % Hyperparameters of lengthScale
-      [wh  sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      [wh  sh, hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
+      h = [h 1+hh];
     end
   end
 
@@ -266,8 +281,8 @@ function lp = gpcf_sexp_lp(gpcf)
 % are sampled are transformed, e.g., W = log(w) where w is all
 % the "real" samples. On the other hand errors are evaluated in
 % the W-space so we need take into account also the Jacobian of
-% transformation, e.g., W -> w = exp(W). See Gelman et.al., 2004,
-% Bayesian data Analysis, second edition, p24.
+% transformation, e.g., W -> w = exp(W). See Gelman et al. (2013),
+% Bayesian Data Analysis, third edition, p. 21.
   lp = 0;
   gpp=gpcf.p;
   
@@ -666,7 +681,7 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask, i1)
 
 end
 
-function DKff = gpcf_sexp_cfdg(gpcf, x)
+function DKff = gpcf_sexp_cfdg(gpcf, x, x2)
 %GPCF_SEXP_CFDG  Evaluate gradient of covariance function, of
 %                which has been taken partial derivative with
 %                respect to x, with respect to parameters.
@@ -690,7 +705,10 @@ function DKff = gpcf_sexp_cfdg(gpcf, x)
   
   [n, m] =size(x);
   ii1=0;
-  Cdm = gpcf.fh.ginput4(gpcf, x);
+  if nargin<3
+    x2=x;
+  end
+  Cdm = gpcf.fh.ginput4(gpcf, x, x2);
   
   % grad with respect to MAGNSIGMA
   if ~isempty(gpcf.p.magnSigma2)
@@ -715,7 +733,7 @@ function DKff = gpcf_sexp_cfdg(gpcf, x)
         s = 1./gpcf.lengthScale.^2;
         dist = 0;
         for i=1:m
-          D = bsxfun(@minus,x(:,i),x(:,i)');
+          D = bsxfun(@minus,x(:,i),x2(:,i)');
           dist = dist + D.^2;
         end
         % input dimension is 1
@@ -739,7 +757,7 @@ function DKff = gpcf_sexp_cfdg(gpcf, x)
         end
         %Preparing
         for i=1:m
-          dist{i} = bsxfun(@minus,x(:,i),x(:,i)').^2;
+          dist{i} = bsxfun(@minus,x(:,i),x2(:,i)').^2;
           s(i) = 1./gpcf.lengthScale(i);
         end
 
@@ -788,6 +806,7 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
   [n, m] =size(x);
   DKff = {};
   [DKdd, DKdd3, DKdd4] = gpcf.fh.ginput2(gpcf, x, x);
+  K=gpcf.fh.trcov(gpcf,x);
   ii1=0;
 
   if m>1
@@ -809,7 +828,7 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
         t2=t1+m-2-(i-1);
         aa(m-1,i)=1;
         k=kron(aa,cat(1,zeros((i)*n,n),DKdda{t1:t2}));
-        k(1:n*(m),:)=[];
+        k(1:n*(m-2)*m,:)=[];
         k=k+k';
         DKffapund = DKffapund + k;
         t1=t2+1;
@@ -884,7 +903,7 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
               t2=t1+m-2-(i-1);
               aa(m-1,i)=1;
               k=kron(aa,cat(1,zeros((i)*n,n),DKffnondiag{t1:t2}));
-              k(1:n*(m),:)=[];
+              k(1:n*(m-2)*m,:)=[];
               k=k+k';
               DKffapu2nd = DKffapu2nd + k;
               t1=t2+1;
@@ -947,10 +966,22 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
                   Dnondiag{i}=DKdda{ii3}.*dist{k};
                 end
               end
+%               for i=1:m-1
+%                 aa=zeros(1,m);
+%                 t2=t1+m-2-(i-1);
+%                 aa(1,i)=1;
+%                 k=kron(aa,cat(1,zeros((i)*n,n),DKffnondiag{t1:t2}));
+%                 %k(1:n*m,:)=[];
+%                 k=k+k';
+%                 DKffapu2nd = DKffapund + k;
+%                 t1=t2+1;
+%               end
+%               aa=zeros(1,m);
               aa=zeros(m-1,m);
+%               aa(1,i)=1;
               aa(m-1,j+1)=1;
               kk=kron(aa,cat(1,zeros((j+1)*n,n),Dnondiag{1+j:m-1}));
-              kk(1:n*(m),:)=[];
+              kk(1:n*(m-2)*m,:)=[];
               kk=kk+kk';
               NDi{k} = NDi{k} + kk;
             end
@@ -1031,8 +1062,8 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2, i1)
       else
         s = 1./gpcf.lengthScale.^2;
       end
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           DK = zeros(size(K));
           DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x(:,i)');
           DK = DK + DK';
@@ -1063,8 +1094,8 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2, i1)
         s = 1./gpcf.lengthScale.^2;
       end
       
-      for i=i1
-        for j = 1:n
+      for j = 1:n
+        for i=i1
           DK= zeros(size(K));
           DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x2(:,i)');
           
@@ -1216,9 +1247,9 @@ function DKff = gpcf_sexp_ginput4(gpcf, x, x2, i1)
   else
     flag=0;
     K = gpcf.fh.cov(gpcf, x, x2);
-    if isequal(x,x2)
-      error('ginput4 fuktio saa vaaran inputin')
-    end
+%     if isequal(x,x2)
+%       error('ginput4 fuktio saa vaaran inputin')
+%     end
   end
   if nargin<4
     i1=1:m;
@@ -1275,6 +1306,12 @@ function reccf = gpcf_sexp_recappend(reccf, ri, gpcf)
     reccf.fh.lp = @gpcf_sexp_lp;
     reccf.fh.lpg = @gpcf_sexp_lpg;
     reccf.fh.cfg = @gpcf_sexp_cfg;
+    reccf.fh.cfdg = @gpcf_sexp_cfdg;
+    reccf.fh.cfdg2 = @gpcf_sexp_cfdg2;
+    reccf.fh.ginput = @gpcf_sexp_ginput;
+    reccf.fh.ginput2 = @gpcf_sexp_ginput2;
+    reccf.fh.ginput3 = @gpcf_sexp_ginput3;
+    reccf.fh.ginput4 = @gpcf_sexp_ginput4;
     reccf.fh.cov = @gpcf_sexp_cov;
     reccf.fh.trcov  = @gpcf_sexp_trcov;
     reccf.fh.trvar  = @gpcf_sexp_trvar;
@@ -1311,4 +1348,48 @@ function reccf = gpcf_sexp_recappend(reccf, ri, gpcf)
     end
   
   end
+end
+
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_sexp_cf2ss(gpcf)
+%GPCF_SEXP_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the covariance function to state space form such that
+%    the process can be described by the stochastic differential equation
+%    of the form: 
+%      df(t)/dt = F f(t) + L w(t),
+%    where w(t) is a white noise process. The observation model now 
+%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
+%
+%  References:
+%    Simo Sarkka, Arno Solin, Jouni Hartikainen (2013).
+%    Spatiotemporal learning via infinite-dimensional Bayesian
+%    filtering and smoothing. IEEE Signal Processing Magazine,
+%    30(4):51-61.
+%
+
+  % Check if approximation degree is given
+  if isfield(gpcf,'kalman_deg')
+      kalman_deg = gpcf.kalman_deg;
+  else
+      kalman_deg = [];
+  end
+
+  % Return model matrices, derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
+      cf_se_to_ss(gpcf.magnSigma2,gpcf.lengthScale,kalman_deg);
+  
+  % Balance matrices for numerical stability
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf] = ...
+      ss_balance(F,L,Qc,H,Pinf,dF,dQc,dPinf);
+  
+  % Check which parameters are optimized
+  if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
+  if isempty(gpcf.p.lengthScale), ind(2) = false; else ind(2) = true; end
+  
+  % Return only those derivatives that are needed
+  dF    = dF(:,:,ind);
+  dQc   = dQc(:,:,ind);
+  dPinf = dPinf(:,:,ind);
+  
 end

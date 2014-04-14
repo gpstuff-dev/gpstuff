@@ -11,7 +11,6 @@ function [xn, xmean, xstd] = normdata(x,xmean,xstd)
 %
 %  See also DENORMDATA
 %
-  
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

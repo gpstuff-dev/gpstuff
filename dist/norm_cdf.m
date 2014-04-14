@@ -8,7 +8,7 @@ function y = norm_cdf(x,mu,sigma)
 %   functions as a constant matrix of the same size as the other inputs.     
 %
 %   Default values for MU and SIGMA are 0 and 1 respectively.
-
+%
 % Copyright (c) 1998-2004,2011 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

@@ -28,7 +28,6 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_loopreds(gp, x, y, varargin)
 %  See also
 %   GP_LOOPRED
 %
-
 % Copyright (c) 2008-2010,2012 Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
 

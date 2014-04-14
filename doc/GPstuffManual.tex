@@ -12,6 +12,7 @@
 \usepackage{url}
 \usepackage{natbib}
 \usepackage{longtable}
+\usepackage{enumitem}
 \usepackage[width=.9\textwidth]{caption}
 %\bibliographystyle{plainnat}
 
@@ -40,6 +41,7 @@
 \def\WAIC{\mathrm{WAIC}}
 
 \DeclareMathOperator{\Poisson}{Poisson}
+\DeclareMathOperator{\NegBin}{NegBin}
 \DeclareMathOperator{\Chi}{Chi}
 \DeclareMathOperator{\GP}{\mathcal{GP}}
 \DeclareMathOperator{\N}{N}
@@ -83,10 +85,24 @@
 
 %}}
 
+% Link coloring
+\usepackage{hyperref}
+\hypersetup{
+    bookmarks=true,         % show bookmarks bar?
+    pdfstartview={FitH},    % fits the width of the page to the window
+    colorlinks=true,        % false: boxed links; true: colored links
+    linkcolor=black,        % color of internal links
+    citecolor=black,        % color of links to bibliography
+    filecolor=black,        % color of file links
+    urlcolor=black          % color of external links
+}
+
 \begin{document}
 
 \title{Bayesian Modeling with Gaussian Processes using the
    \pkg{GPstuff} Toolbox}
+
+\date{2014}
 
 \author{\name Jarno Vanhatalo\thanks{Work done mainly while at the
     Department of Biomedical
@@ -94,11 +110,11 @@
   \addr Department of Environmental Sciences\\
   University of Helsinki\\
   P.O. Box 65, FI-00014 Helsinki, Finland \AND
-  \name Jaakko Riihim\"aki \email jaakko.riihimaki@aalto.fi \\
-  \name Jouni Hartikainen \email jouni.hartikainen@aalto.fi \\
-  \name Pasi Jyl\"anki \email pasi.jylanki@aalto.fi \\
+  \name Jaakko Riihim\"aki\thanks{Not anymore in Aalto University} \email { } \\
+  \name Jouni Hartikainen$^{\dagger}$ \email { } \\
+  \name Pasi Jyl\"anki$^{\dagger}$ \email { } \\
   \name Ville Tolvanen \email ville.tolvanen@aalto.fi \\
-  \name Aki Vehtari \email aki.vehtari@aalto.fi \\
+  \name Aki Vehtari\thanks{Corresponding author} \email aki.vehtari@aalto.fi \\
   \addr Department of Biomedical Engineering and Computational Science\\
   Aalto University School of Science\\
   P.O. Box 12200, FI-00076 Aalto, Finland}
@@ -125,12 +141,15 @@
   with Linux and Windows \proglang{MATLAB} and Octave.  It includes,
   among others, various inference methods, sparse approximations and
   tools for model assessment. In this work, we review these tools and
-  demonstrate the use of \pkg{GPstuff} in several models.
+  demonstrate the use of \pkg{GPstuff} in several models.\\ Last updated 2014-04-11.
 \end{abstract}
 
 \begin{keywords}
 Gaussian process, Bayesian hierarchical model, nonparametric Bayes
 \end{keywords}
+
+% \\
+% 
 
 \newpage
 
@@ -139,7 +158,7 @@ Gaussian process, Bayesian hierarchical model, nonparametric Bayes
 \section{Introduction}
 
 This work reviews a free open source toolbox \pkg{GPstuff} (version
-4.1) which implements a collection of inference methods and tools for
+4.4) which implements a collection of inference methods and tools for
 inference for various Gaussian process (GP) models. The toolbox is
 compatible with Unix and Windows \proglang{MATLAB} \citep{MATLAB:2010}
 (r2009b or later, earlier versions may work, but has not been tested
@@ -147,13 +166,15 @@ extensively) and \proglang{Octave} \citep{octave:2012} (3.6.4 or
 later, compact support covariance functions are not currently working
 in Octave). It is available from
 \url{http://becs.aalto.fi/en/research/bayes/gpstuff/}.
-If you use GPstuff, please use the reference \citep{Vanhatalo+gpstuff:2013}
+If you find GPstuff useful, please use the reference \citep{Vanhatalo+gpstuff:2013}
 \begin{itemize}
 \item[] Jarno Vanhatalo, Jaakko Riihim{\"a}ki, Jouni Hartikainen, Pasi
   Jyl{\"a}nki, Ville Tolvanen and Aki Vehtari (2013). GPstuff: Bayesian
   Modeling with Gaussian Processes. \emph{Journal of Machine Learning
-    Research}, 14:1175-1179.
+    Research}, 14:1175-1179
 \end{itemize}
+and appropriate references mentioned in this text or in the GPstuff
+functions you are using.
 
 GP is a stochastic process, which provides a powerful tool for
 probabilistic inference directly on distributions over functions
@@ -200,17 +221,17 @@ models with multiple latent processes and likelihoods where each
 factor depens on multiple latent values. These are discussed in
 Section \ref{sec:multilatent-models}.
 
-Many GP models such as general dynamic linear models and multi-output
-models, do not fulfill the assumptions
-\eqref{likelihood}-\eqref{hyper_prior}.  However, the current
-implementation of \pkg{GPstuff} relies on them and as will be seen,
-the class of models fulfilling these assumptions is rather rich. Even
-though the observations are assumed to be conditionally independent
-given the latent variables, the dependencies between the observations
-are incorporated into the model via the GP prior. At the moment, only
-independent priors on $\theta$ and $\phi$ are provided, as highlighted
-by equation \eqref{hyper_prior}, but general form $p(\theta,\phi)$
-could be used as well.
+% Many GP models such as general dynamic linear models and multi-output
+% models, do not fulfill the assumptions
+% \eqref{likelihood}-\eqref{hyper_prior}.  However, the current
+% implementation of \pkg{GPstuff} relies on them and as will be seen,
+% the class of models fulfilling these assumptions is rather rich. Even
+% though the observations are assumed to be conditionally independent
+% given the latent variables, the dependencies between the observations
+% are incorporated into the model via the GP prior. At the moment, only
+% independent priors on $\theta$ and $\phi$ are provided, as highlighted
+% by equation \eqref{hyper_prior}, but general form $p(\theta,\phi)$
+% could be used as well.
 %\pkg{GPstuff} contains one model not fulfilling the general model
 %definition, the multi-class model (see \code{demo_multiclass} in the
 %package), which has special implementation discussed in
@@ -233,18 +254,19 @@ machine learning perspective is comprehensively summarized by
 Nowadays, GPs are used, for example, in weather forecasting
 \citep{Fuentes+Raftery:2005,Berrocal+Raftery+Gneiting+Steed:2009},
 spatial statistics
-\citep{Best+Richardson+Thomson:2005,Kaufman+Schervish+Nychka:2008,Banerjee+Gelfand+Finley+Sang:2008},
+\citep{Best+Richardson+Thomson:2005,Kaufman+Schervish+Nychka:2008,Banerjee+Gelfand+Finley+Sang:2008,Myllymaki+Sarkka+Vehtari:2014},
 computational biology
 \citep{Honkela+Gao+Ropponen+Rattray+Lawrence:2011}, reinforcement
 learning
 \citep{Deisenroth+Rasmussen+Peters:2009,Deisenroth+Rasmussen+Fox:2011},
 healthcare applications
-\citep{Stegle+Fallert+MacKay+Brage:2008,Vanhatalo+Pietilainen+Vehtari:2010},
+\citep{Stegle+Fallert+MacKay+Brage:2008,Vanhatalo+Pietilainen+Vehtari:2010,Rantonen+Vehtari+etal:2012,Rantonen+Vehtari+etal:2014},
+survival analysis \citep{Joensuu+etal:2012a,Joensuu+Reichardt+Eriksson+Hall+Vehtari:2014}
 industrial applications \citep{Kalliomaki+Vehtari+Lampinen:2005},
 computer model calibration and emulation
 \citep{Kennedy+OHagan:2001,Conti+Gosling+Oakley+OHagan:2009}, prior
 elicitation \citep{Moala+OHagan:2010} and density estimation
-\citep{Tokdar+Ghosh:2007,Tokdar+Zhu+Ghosh:2010} to name a few.
+\citep{Tokdar+Ghosh:2007,Tokdar+Zhu+Ghosh:2010,Riihimaki+Vehtari:2014} to name a few.
 Despite their attractive theoretical properties and wide range of
 applications, GPs provide practical challenges in implementation.
 
@@ -266,7 +288,7 @@ in Section \ref{sec_cond_post_of_latent}), follow the pseudocode from
 \citep{Rasmussen+Williams:2006}. However, these are later generalized
 and improved as described in
 \citep{Vanhatalo+Jylanki+Vehtari:2009,Vanhatalo+Pietilainen+Vehtari:2010,
-  Vanhatalo+Vehtari:2010,Jylanki+Vanhatalo+Vehtari:2011}.
+  Vanhatalo+Vehtari:2010,Jylanki+Vanhatalo+Vehtari:2011,Riihimaki+Jylanki+Vehtari:2013,Riihimaki+Vehtari:2014}.
 
 There are also many other toolboxes for GP modelling than
 \pkg{GPstuff} freely available. Perhaps the best known packages are
@@ -317,11 +339,11 @@ implementations of \pkg{GPstuff} rely on the sparse matrix toolbox
 % \pkg{GPstuff} can be used to build elaborate hierarchical models and
 % prior structures requiring often several lines of code. 
 
-This work concentrates on discussing the essential theory behind the
-implementation of \pkg{GPstuff}. We explain important parts of the
-code, but the full code demonstrating the important features of the
-package (including also data creation and such), are included in the
-demonstration files \code{demo\_*} to which we refer in the text.
+This work concentrates on discussing the essential theory and methods
+behind the implementation of \pkg{GPstuff}. We explain important parts
+of the code, but the full code demonstrating the important features of
+the package (including also data creation and such), are included in
+the demonstration files \code{demo\_*} to which we refer in the text.
 
 \section{Gaussian process models}
 
@@ -1385,16 +1407,16 @@ and $\alpha\tau$ corresponds to $\sigma_t$.
 
 \begin{figure}
   \begin{center}
-    \subfigure[Gaussian likelihood.]{
+    \subfigure[Gaussian model.]{
       \includegraphics[width=5cm]{neal_data_pic1}\label{neal_data_pic1}
     }    
     ~
-    \subfigure[Student-$t$ likelihood.]{ 
+    \subfigure[Student-$t$ model.]{ 
       \includegraphics[width=5cm]{neal_data_pic2}\label{neal_data_pic2}
     }
   \end{center}\caption{An example of regression with outliers from
     \citep{Neal:1997}. On the left Gaussian and on the right the
-    Student-$t$ likelihood.  The real function is plotted with
+    Student-$t$ model.  The real function is plotted with
     black line.}
   \label{single_obs_figure} 
 \end{figure}
@@ -1402,7 +1424,7 @@ and $\alpha\tau$ corresponds to $\sigma_t$.
 In \pkg{GPstuff} both of the representations are implemented. The
 scale mixture representation is implemented in
 \code{lik\_gaussiansmt} and can be inferred only with MCMC \citep[as
-described by][]{Neal:1998}. The Student-$t$ likelihood is
+described by][]{Neal:1998}. The Student-$t$ model is
 implemented in \code{lik\_t} and can be inferred with Laplace and EP
 approximation and MCMC \citep[as described
 by][]{Vanhatalo+Jylanki+Vehtari:2009,Jylanki+Vanhatalo+Vehtari:2011}.
@@ -1430,9 +1452,9 @@ whose logarithm is given a GP prior. The aim is to infer the relative
 risk. The implementation of these models in \pkg{GPstuff} is discussed
 in \citep{Vanhatalo+Vehtari:2007,Vanhatalo+Pietilainen+Vehtari:2010}.
 
-\subsubsection{Poisson likelihood}
+\subsubsection{Poisson}
 
-The Poisson likelihood is implemented in \code{likelih\_poisson} and
+The Poisson model is implemented in \code{likelih\_poisson} and
 it is
 %
 \begin{equation}
@@ -1499,7 +1521,7 @@ Figure~\ref{demo_spatial1_fig1}.
   \end{center}
 \end{figure}
 
-\subsubsection{Negative binomial likelihood}\label{sec_spatial_demo2}
+\subsubsection{Negative binomial}\label{sec_spatial_demo2}
 
 The negative binomial distribution is a robust version of the Poisson
 distribution similarly as Student-$t$ distribution can be considered
@@ -1517,7 +1539,7 @@ where $\mu_i = e_i\exp(f(\x_i))$ and $r$ is the dispersion parameter
 governing the variance. The model is demonstrated in
 \code{demo\_spatial2}.
 
-\subsubsection{Binomial likelihood}
+\subsubsection{Binomial}
 
 In disease mapping, the Poisson distribution is used to approximate
 the true binomial distribution. This approximation works well if the
@@ -1556,6 +1578,10 @@ parameter value. Construction of a hurdle model is demonstrated in
 binomial hurdle model implemented using \pkg{GPstuff} was used in
 reference \citep{Rantonen+etal:2011} to model sick absence days due
 to low back symptoms.
+
+Alternative way to model excess number of zeros is to couple the zero
+and count processes as in zero-inflated negative binomial model
+described in section~\ref{sec_zinegbin}.
 
 %
 \subsection{Log-Gaussian Cox process}
@@ -1623,7 +1649,8 @@ shown in Figure \ref{fig_demo_lgcp}.
 \subsection{Accelerated failure time survival models}
 
 The accelerated failure time survival models are demonstrated in
-\code{demo\_survival\_aft}.
+\code{demo\_survival\_aft}. These models can be used to model also
+other positive continuous data with or without censoring.
 
 \subsubsection{Weibull}
 \label{sec_weibull_demo}
@@ -1806,6 +1833,8 @@ observations is demonstrated in \code{demo\_derivativeobs}.
 % %  observations, the underlying process and the 95\,\% confidence
 % %  intervals for both GP model with and GP model without derivative
 % %  observations.
+
+Derivative process can be also used to construct a monotonicity constraint as described in section~\ref{sec_monotonic}.
 
 \subsection{Quantile Regression}
 
@@ -2095,6 +2124,7 @@ tumour recurrence after surgery.
 %    x, y, 'z', z)
 
 \subsection{Zero-inflated negative binomial}
+\label{sec_zinegbin}
 
 Zero-inflated negative binomial model is suitable for modelling count
 variables with excessive number of zero observations compared to usual
@@ -2266,6 +2296,42 @@ where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
 observation $i$. Latent variable $f_2$ is used for modeling the shape parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness. Input-dependent Weibull is demonstrated in \code{demo\_inputdependentweibull}.
 
+\subsection{Monotonicity constraint}
+\label{sec_monotonic}.
+
+\citet{Riihimaki+Vehtari:2010} presented how a monotonicity constraint
+for GP can be introduced with virtual derivative observations, and
+the resulting posterior can be approximated with expectation
+propagation.
+
+Currently GPstuff supports monotonicity constraint for models which
+have Gaussian likelihood or fully factoring likelihoods with EP
+inference and which use covariance functions \code{gpcf\_constant},
+\code{gpcf\_linear} and
+\code{gpcf\_sexp}. \citet{Riihimaki+Vehtari:2010} used type II MAP
+estimate for the hyperparameters, but GPstuff allows easy integration
+over the hyperparameters with any method described in
+Section~\ref{sec_marginalization_over_hyperparam}.
+
+GP model with monotonicity constraint can be easily constructed with
+the function \code{gp\_monotonic}. Monotonicity constraint is
+demonstrated in \code{demo\_monotonic} and \code{demo\_monotonic2}.
+
+Figure~\ref{monotonicity} displays the predictions with models with
+and without the monotonicity constraint. The monotonicity constraint
+allows inclusion of sensible prior information that death rate
+increases as age increases. The effect is shown most clearly for
+larger ages where there is less observations, but also overall reduction in
+uncertainty related to the latent function can be seen.
+
+\begin{figure}
+  \begin{center}       
+      \includegraphics[]{demo_monotonic2_fig1.pdf}  
+    \end{center}\caption{Illustration how the monotonicity constraint
+      of the latent function affects the predictions. Mortality rate
+      data from \citet{Broffitt:1988}.}
+  \label{monotonicity} 
+\end{figure}
 
 \section{Mean functions}
 \label{cha:mean-functions}
@@ -3003,6 +3069,117 @@ illustrated in \code{demo\_regression\_hier}.
 
 % ==========================
 
+\section{State space inference}\label{sec:kalman}
+%
+{\footnotesize By {Arno Solin}, {Jukka Koskenranta}, and {Simo S{\"a}rkk{\"a}}.\\}
+
+\noindent
+For one-dimensional Gaussian processes, instead of directly working with the
+usual kernel formalism,$f \sim \mathcal{GP}(0,k(t,t'))$, of the Gaussian
+process, certain classes of covariance functions allow to work with the
+mathematical dual \citep{Sarkka+Solin+Hartikainen:2013}, where the Gaussian
+process is though of as a solution to a $m$th order linear stochastic
+differential equation (SDE). The corresponding inference problem can then solved
+with Kalman filtering type of methods \citep{Grewal+Andrews:2001,Sarkka:2013},
+where the computational complexity is $\mathcal{O}(m^3n)$ making this
+formulation beneficial for long (often temporal) data sets.
+
+The state space model corresponding to the GP regression problem can be given as
+a linear time-invariant stochastic differential equation of the following form:
+%
+\begin{align} \label{eq:SDE}
+  \begin{split}
+  {\mathrm{d} \mathbf{f}(t) \over \mathrm{d} t} 
+    &= \mathbf{F} \mathbf{f}(t) + \mathbf{L} \mathbf{w}(t) \\
+  y_k 
+    &= \mathbf{H} \mathbf{f}(t_k) + \varepsilon_k, 
+    \quad \varepsilon_k \sim \mathrm{N}(0,\sigma_\mathrm{n}^2),
+  \end{split}
+\end{align}
+%
+where $\mathbf{f}(t) = \begin{pmatrix} f_1(t), f_2(t), \ldots, f_m(t)
+\end{pmatrix}^\mathrm{T}$ holds the $m$ stochastic processes, and
+$\mathbf{w}(t)$ is a multi-dimensional white noise process with spectral density
+$\mathbf{Q}_\mathrm{c}$. The model is defined by the feedback matrix
+$\mathbf{F}$ and the noise effect matrix $\mathbf{L}$.
+
+The continuous-time linear time-invariant model \eqref{eq:SDE} can be solved for
+discrete points. This is the closed-form solution to the SDE at the specified
+time points, and it is given as
+%
+\begin{equation} \label{eq:state-space}
+  \mathbf{f}_{k+1} = \mathbf{A}_k \mathbf{f}_k + \mathbf{q}_k, 
+  \quad \mathbf{q}_k \sim \mathrm{N}(\mathbf{0}, \mathbf{Q}_k),
+\end{equation}
+%
+where $\mathbf{f}(t_k) = \mathbf{f}_k$, and the state transition and process
+noise covariance matrices can be solved analytically \citep[see,
+e.g.,][]{Sarkka+Solin+Hartikainen:2013}. They are given as:
+%
+\begin{align}
+  \mathbf{A}_k &= \mathbf{\Phi}(\Delta t_k), \\
+  \mathbf{Q}_k &= \int_{0}^{\Delta t_k} 
+    \mathbf{\Phi}(\Delta t_k-\tau)
+    \mathbf{L} \mathbf{Q}_\mathrm{c} \mathbf{L}^\mathrm{T} 
+    \mathbf{\Phi}(\Delta t_k-\tau)^ \mathrm{d} \tau,
+\end{align}
+%
+where $\Delta t_k = t_{k+1}-t_k$. The iteration is started form the stationary
+state $\mathbf{f}_0 \sim \mathrm{N}(\mathbf{0},\mathbf{P}_\infty)$, where
+$\mathbf{P}_\infty$ is a solution to the Lyapunov equation: $\mathbf{F}
+\mathbf{P}_\infty + \mathbf{P}_\infty \mathbf{F}^\mathrm{T} + \mathbf{L}
+\mathbf{Q}_\mathrm{c} \mathbf{L}^\mathrm{T} = \mathbf{0}$. For more details on
+the connection between state space models and Gaussian processes, see, e.g.,
+\citet{Sarkka+Solin+Hartikainen:2013}.
+
+The inference problem is now directly solvable using Kalman filtering and
+Rauch-Tung-Striebel smoothing methods \citep{Grewal+Andrews:2001, Sarkka:2013}.
+The marginal likelihood and analytic gradients for conjugate gradient
+optimization can be calculated in closed form. The sequential nature of the
+state space solution is not well handled by Matlab/Octave, and thus this
+formulation becomes appealing when the number of data points becomes very large
+(in thousands).
+
+In \pkg{GPstuff}, the following covariance functions are currently supported
+(details on how the conversion is done are given in the accompanying
+references):
+%
+\begin{description}[labelindent=\parindent]
+  \item[Constant] 
+    covariance function.
+  \item[Exponential] 
+    (Ornstein-Uhlenbeck) covariance function.
+  \item[Mat\'ern] 
+    covariance function (for $\nu=3/2$ and $\nu=5/2$).
+  \item[Squared exponential] 
+    covariance function \citep[as presented in][]{Hartikainen+Sarkka:2010}.
+  \item[Periodic covariance] 
+    function both with and without decay (quasi-periodicity) 
+    \citep[as presented in][]{Solin+Sarkka:2014}.
+  \item[Sums and products] 
+    of covariance functions \citep[as given in][]{Solin+Sarkka:2014}.
+\end{description}
+%
+These methods can be accessed by specifying the model type to 
+`\textsc{kalman}', that is
+%
+\begin{verbatim}
+gp = gp_set(gp,'type','KALMAN');
+\end{verbatim}
+%
+Currently the `\textsc{kalman}' option is only supported for one-dimensional GP
+regression, which can be performed by the usual workflow in \pkg{GPstuff}
+after specifying the model type. For a more practical introduction, see the
+demos `\code{demo\_kalman1}' (a simple one-dimensional regression problem) and
+`\code{demo\_kalman2}' \citep[periodic modeling of the Mauna Loa $\text{CO}_2$
+data, following][]{Solin+Sarkka:2014}.
+
+
+
+
+
+
+
 \section{Model assessment and comparison}\label{sec:model_assessment}
 
 There are various means to assess the goodness of the model and its
@@ -3039,6 +3216,8 @@ $(\x_i,y_i)$.
 By repeating this for every point in the training data, we get a
 collection of leave-one-out cross-validation (LOO-CV) predictive
 densities.
+%
+For discussion of Bayeasian cross-validation see \citet{Vehtari+Lampinen:2002,Vehtari+Ojanen:2012,Gelman+Hwang+Vehtari:2013}.
 
 For GP with given hyperparameters the LOO-CV predictions can be
 computed in case of Gaussian likelihood using an analytical
@@ -3048,25 +3227,46 @@ non-Gaussian likelihood using EP approximation
 approximation using linear response approach (in preparation),
 which have been implemented in \code{gp\_loopred}.
 %
+% where $\bar{c}_i$ denotes the $i$th diagonal entry of $C^{-1}$,
+% $q_i$ denotes the $i$th element of $q=C^{-1} y$ and $C$ is computed
+% using the parameters $\dot{\theta}_j$.
+
 If set of hyperparameters have been obtained using \code{gp\_mc} or
 \code{gp\_ia} LOO-posterior can be approximated using importance
-sampling \citep{Gelfand+Dey+Chang:1992,Vehtari+Lampinen:2002},
-which is also implemented in \code{gp\_loopred}.
+sampling or weighting
+\citep{Gelfand+Dey+Chang:1992,Vehtari+Lampinen:2002}, which is also
+implemented in \code{gp\_loopred}. We use an integrated approach
+proposed by \citet[][p. 40]{Vehtari:2001} where leave-one-out
+predictive densities given hyperparameters
+\begin{equation}
+p(y_i|x_i,D_{-i},\vartheta)=\int
+p(y_i|f_i,\vartheta)p(f_i|x_i,D_{-i},\vartheta)df_i 
+\end{equation}
+are obtained using the analytic solution, or the Laplace or EP
+approximation as mentioned above. Thus the importance weighting is
+made only for the hyperparameters. This reduces the variance of
+importance sampling estimate significantly making it useful in
+practice. With these approximations LOO-CV is very fast to compute in
+GPstuff.
 
-To reduce computation time, in $k$-fold-CV, $1/k$ part of the training
-data is left out, and then the predictive distribution is computed
-with a model that is fitted to all of the observations except that
-part.  Since the $k$-fold-CV predictive densities are based on smaller
-training data sets than the full data set, the estimate is slightly
-biased. In \pkg{GPstuff} first order bias correction proposed by
-\citet{Burman:1989} is used.  \pkg{GPstuff} provides \code{gp\_kfcv},
-which computes $k$-fold-CV and bias-corrected $k$-fold-CV with
-log-score and root mean squared error (RMSE). The function
-\code{gp\_kfcv} provides also basic variance estimates for the
-predictive performance estimates.  Variance is computed from the
-estimates for each fold ~\citep[see, e.g.,][]{Dietterich:1998}.  See
-\citep{Vehtari+Lampinen:2002} for more details on estimating the
-uncertainty in performance estimates.
+LOO-CV in GPstuff does not currently work for some multilatent
+models. In such case or if there is reason to doubt the reliability of
+importance sampling, it is best to compute the non-approximated
+cross-validation predictive densities.  To reduce computation time, in
+$k$-fold-CV, $1/k$ part of the training data is left out, and then the
+predictive distribution is computed with a model that is fitted to all
+of the observations except that part.  Since the $k$-fold-CV
+predictive densities are based on smaller training data sets than the
+full data set, the estimate is slightly biased. In \pkg{GPstuff} first
+order bias correction proposed by \citet{Burman:1989} is used.
+\pkg{GPstuff} provides \code{gp\_kfcv}, which computes $k$-fold-CV and
+bias-corrected $k$-fold-CV with log-score and root mean squared error
+(RMSE). The function \code{gp\_kfcv} provides also basic variance
+estimates for the predictive performance estimates.  Variance is
+computed from the estimates for each fold ~\citep[see,
+e.g.,][]{Dietterich:1998}.  See
+\citet{Vehtari+Lampinen:2002,Vehtari+Ojanen:2012} for more details on
+estimating the uncertainty in performance estimates.
 
 \subsection{DIC}
 
@@ -3473,13 +3673,14 @@ prepared.
 The package contains pieces of code written by other people than the
 authors. In the Department of Biomedical Engineering and Computational
 Science at Aalto University these persons are (in alphabetical order):
-Toni Auranen, Pasi Jyl{\"a}nki, Tuomas Nikoskinen, Tomi Peltola, Eero
-Pennala, Heikki Peura, Ville Pietil{\"a}inen, Markus Siivola, Simo S{\"a}rkk{\"a}
-and Ernesto Ulloa. People outside Aalto University are (in
-alphabetical order): Christopher M.  Bishop, Timothy A. Davis, Matthew
-D. Hoffman, Kurt Hornik, Dirk-Jan Kroon, Iain Murray, Ian T. Nabney,
-Radford M. Neal and Carl E. Rasmussen. We want to thank them all for
-sharing their code under a free software license.
+Toni Auranen, Pasi Jyl{\"a}nki, Jukka Koskenranta, Enrique Lelo de
+Larrea Andrade, Tuomas Nikoskinen, Tomi Peltola, Eero Pennala, Heikki
+Peura, Ville Pietil{\"a}inen, Markus Siivola, Arno Solin, Simo
+S{\"a}rkk{\"a} and Ernesto Ulloa. People outside Aalto University are
+(in alphabetical order): Christopher M. Bishop, Timothy A. Davis,
+Matthew D. Hoffman, Kurt Hornik, Dirk-Jan Kroon, Iain Murray, Ian T.
+Nabney, Radford M. Neal and Carl E. Rasmussen. We want to thank them all
+for sharing their code under a free software license.
 
 \bibliography{GPstuff-nodoi}
 
@@ -3530,6 +3731,7 @@ GPML and FBM}\label{appendix:comparison}
     zero-inflated negative binomial  & MCMC/LA &  &  \\
     multinomial logit (softmax) & MCMC/LA & & MCMC \\
     multinomial probit & EP & & MCMC \\
+    monotonicity & EP & & \\
     \multicolumn{4}{l}{\textbf{Priors for parameters ($\vartheta$)}}  \\
     \hline
     several priors, hierarchical priors & x & & x \\
@@ -3548,6 +3750,7 @@ GPML and FBM}\label{appendix:comparison}
     scaled HMC (whitening with approximate posterior covariance) & x  &  & \\
     parallel EP, Robust-EP  & x & & \\
     marginal corrections (cm2 and fact) & x & & \\
+    state space inference (1D for some covariance functions) & x & & \\
     \multicolumn{4}{l}{\textbf{Hyperparameter inference}} \\
     \hline
     type II ML  & x & x & x \\
@@ -3565,7 +3768,7 @@ GPML and FBM}\label{appendix:comparison}
     average predictive comparison & x &  & 
   \end{tabular}
   \normalsize
-  \caption{The comparison of features in GPstuff (v4.1), GPML (v3.2) and FBM (2004-11-10)
+  \caption{The comparison of features in GPstuff (v4.4), GPML (v3.2) and FBM (2004-11-10)
     toolboxes. In case of model blocks the notation x means that it
     can be inferred with any inference method (EP, LA (Laplace), MCMC and
     in case of GPML also with VB). In case of sparse approximations,

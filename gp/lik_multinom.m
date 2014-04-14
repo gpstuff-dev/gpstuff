@@ -16,8 +16,8 @@ function lik = lik_multinom(varargin)
 %
 %  See also
 %    GP_SET, LIK_*
-
-% Copyright (c) 2010 Jaakko Riihim�ki, Pasi Jyl�nki
+%
+% Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2010 Jarno Vanhatalo
 
@@ -58,7 +58,7 @@ function lik = lik_multinom(varargin)
 
 end  
 
-function [w,s] = lik_multinom_pak(lik)
+function [w,s,h] = lik_multinom_pak(lik)
 %LIK_MULTINOM_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -72,7 +72,7 @@ function [w,s] = lik_multinom_pak(lik)
 %  See also
 %    LIK_MULTINOM_UNPAK, GP_PAK
   
-  w = []; s = {};
+  w = []; s = {};h=[];
 end
 
 

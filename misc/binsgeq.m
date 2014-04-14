@@ -6,7 +6,7 @@ function s=binsgeq(pc,p)
 %    vector PC for a first element which is greater than or equal to 
 %    a key P. If no greater element is found, returns LENGTH(PC). 
 %    The size of S is the size of P.
-
+%
 % Copyright (c) 2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

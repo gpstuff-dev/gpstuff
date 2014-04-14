@@ -21,7 +21,6 @@ function [x,rec] = bsearch(fun,x0,opt,varargin)
 %   The element ehich removal minimizes the function value is
 %   removed at each round. In a case of tie choose randomly.
 %
-
 % Copyright (c) Aki Vehtari (2007)
 
 % This software is distributed under the GNU General Public 

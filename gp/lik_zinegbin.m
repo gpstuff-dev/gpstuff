@@ -42,15 +42,15 @@ function lik = lik_zinegbin(varargin)
 %    classification process and the latents f2 with Negative-binomial count
 %    process.
 %
-%    When using the Zinegbin likelihood you need to give the vector z
-%    as an extra parameter to each function that requires also y. 
-%    For example, you should call gpla_nd_e as follows: gpla_nd_e(w, gp,
-%    x, y, 'z', z)
+%    When using the Zinegbin likelihood you can give the
+%    vector z as an extra parameter to each function that requires
+%    also y. For example, you can call gp_optim as follows:
+%      gp_optim(gp, x, y, 'z', z)
+%    If z is not given or it is empty, then z_i=1 is used.
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
 %
-
 % Copyright (c) 2007-2010 Jarno Vanhatalo & Jouni Hartikainen
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2011 Jaakko Riihimäki
@@ -106,7 +106,7 @@ function lik = lik_zinegbin(varargin)
   end
 end
 
-  function [w,s] = lik_zinegbin_pak(lik)
+  function [w,s,h] = lik_zinegbin_pak(lik)
   %LIK_ZINEGBIN_PAK  Combine likelihood parameters into one vector.
   %
   %  Description 
@@ -120,13 +120,15 @@ end
   %   See also
   %   LIK_ZINEGBIN_UNPAK, GP_PAK
     
-    w=[];s={};
+    w=[];s={};h=[];
     if ~isempty(lik.p.disper)
       w = log(lik.disper);
       s = [s; 'log(zinegbin.disper)'];
-      [wh sh] = feval(lik.p.disper.fh.pak, lik.p.disper);
+      h = 0;
+      [wh, sh, hh] = feval(lik.p.disper.fh.pak, lik.p.disper);
       w = [w wh];
       s = [s; sh];
+      h = [h hh];
     end
   end
 
@@ -214,11 +216,8 @@ end
   %  See also
   %    LIK_ZINEGBIN_LLG, LIK_ZINEGBIN_LLG3, LIK_ZINEGBIN_LLG2, GPLA_E
     
-    if isempty(z)
-      error(['lik_zinegbin -> lik_zinegbin_ll: missing z!    '... 
-             'Zinegbin likelihood needs the expected number of    '...
-             'occurrences as an extra input z. See, for         '...
-             'example, lik_zinegbin and gpla_e.               ']);
+    if numel(z)==0
+      z=1;
     end
     
     f=ff(:);
@@ -254,11 +253,8 @@ end
   %  See also
   %    LIK_ZINEGBIN_LL, LIK_ZINEGBIN_LLG2, LIK_ZINEGBIN_LLG3, GPLA_E
 
-    if isempty(z)
-      error(['lik_zinegbin -> lik_zinegbin_llg: missing z!    '... 
-             'Zinegbin likelihood needs the expected number of    '...
-             'occurrences as an extra input z. See, for         '...
-             'example, lik_zinegbin and gpla_e.               ']);
+    if numel(z)==0
+      z=1;
     end
 
     f=ff(:);
@@ -321,11 +317,8 @@ end
   %  See also
   %    LIK_ZINEGBIN_LL, LIK_ZINEGBIN_LLG, LIK_ZINEGBIN_LLG3, GPLA_E
 
-    if isempty(z)
-      error(['lik_zinegbin -> lik_zinegbin_llg2: missing z!   '... 
-             'Zinegbin likelihood needs the expected number of    '...
-             'occurrences as an extra input z. See, for         '...
-             'example, lik_zinegbin and gpla_e.               ']);
+    if numel(z)==0
+      z=1;
     end
 
     f=ff(:);
@@ -412,11 +405,8 @@ end
   %  See also
   %    LIK_ZINEGBIN_LL, LIK_ZINEGBIN_LLG, LIK_ZINEGBIN_LLG2, GPLA_E, GPLA_G
 
-    if isempty(z)
-      error(['lik_zinegbin -> lik_zinegbin_llg3: missing z!   '... 
-             'Zinegbin likelihood needs the expected number of    '...
-             'occurrences as an extra input z. See, for         '...
-             'example, lik_zinegbin and gpla_e.               ']);
+    if numel(z)==0
+      z=1;
     end
 
     f=ff(:);
@@ -529,11 +519,8 @@ end
   %  See also
   %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-    if isempty(zt)
-      error(['lik_zinegbin -> lik_zinegbin_predy: missing zt!'... 
-             'Zinegbin likelihood needs the expected number of    '...
-             'occurrences as an extra input zt. See, for         '...
-             'example, lik_zinegbin and gpla_e.               ']);
+    if numel(zt)==0
+      zt=ones(size(Ef));
     end
 
     ntest=size(zt,1);

@@ -1,9 +1,9 @@
 function lik = lik_inputdependentweibull(varargin)
-%LIK_INPUTDEPENDENTWEIBULL    Create a right censored input dependent Weibull likelihood structure 
+%LIK_INPUTDEPENDENTWEIBULL  Create a (right censored) input dependent Weibull likelihood structure 
 %
 %  Description
 %    LIK = LIK_INPUTDEPENDENTWEIBULL('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
-%    creates a likelihood structure for right censored input dependent
+%    creates a likelihood structure for a right censored input dependent
 %    Weibull survival model in which the named parameters have the
 %    specified values. Any unspecified parameters are set to default 
 %    values.
@@ -32,15 +32,16 @@ function lik = lik_inputdependentweibull(varargin)
 %    implies the input dependance to the shape parameter in the original
 %    Weibull likelihood.
 %
-%    When using the Weibull likelihood you need to give the vector z
-%    as an extra parameter to each function that requires also y. 
-%    For example, you should call gpla_e as follows: gpla_e(w, gp,
-%    x, y, 'z', z)
+%    When using the Weibull likelihood you can give the
+%    vector z as an extra parameter to each function that requires
+%    also y. For example, you can call gp_optim as follows:
+%      gp_optim(gp, x, y, 'z', z)
+%    If z is not given or it is empty, then usual likelihood for
+%    uncensored data is used
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
 %
-
 % Copyright (c) 2011 Jaakko Riihimäki
 % Copyright (c) 2011 Aki Vehtari
 % Copyright (c) 2012 Ville Tolvanen
@@ -97,7 +98,7 @@ function lik = lik_inputdependentweibull(varargin)
 
 end
 
-function [w,s] = lik_inputdependentweibull_pak(lik)
+function [w,s,h] = lik_inputdependentweibull_pak(lik)
 %LIK_INPUTDEPENDENTWEIBULL_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -111,13 +112,15 @@ function [w,s] = lik_inputdependentweibull_pak(lik)
 %   See also
 %   LIK_INPUTDEPENDENTWEIBULL_UNPAK, GP_PAK
   
-  w=[];s={};
+  w=[];s={};h=[];
   if ~isempty(lik.p.shape)
     w = log(lik.shape);
     s = [s; 'log(weibull.shape)'];
-    [wh sh] = lik.p.shape.fh.pak(lik.p.shape);
+    h = [h 0];
+    [wh, sh, hh] = lik.p.shape.fh.pak(lik.p.shape);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end
 end
 
@@ -205,11 +208,8 @@ function ll = lik_inputdependentweibull_ll(lik, y, ff, z)
 %  See also
 %    LIK_INPUTDEPENDENTWEIBULL_LLG, LIK_INPUTDEPENDENTWEIBULL_LLG3, LIK_INPUTDEPENDENTWEIBULL_LLG2, GPLA_E
   
-  if isempty(z)
-    error(['lik_inputdependentweibull -> lik_inputdependentweibull_ll: missing z!    '... 
-           'Weibull likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_inputdependentweibull and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
 
   f=ff(:);
@@ -237,11 +237,8 @@ function llg = lik_inputdependentweibull_llg(lik, y, ff, param, z)
 %  See also
 %    LIK_INPUTDEPENDENTWEIBULL_LL, LIK_INPUTDEPENDENTWEIBULL_LLG2, LIK_INPUTDEPENDENTWEIBULL_LLG3, GPLA_E
 
-  if isempty(z)
-    error(['lik_inputdependentweibull -> lik_inputdependentweibull_llg: missing z!    '... 
-           'Weibull likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_inputdependentweibull and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
 
   f=ff(:);
@@ -279,11 +276,8 @@ function llg2 = lik_inputdependentweibull_llg2(lik, y, ff, param, z)
 %  See also
 %    LIK_INPUTDEPENDENTWEIBULL_LL, LIK_INPUTDEPENDENTWEIBULL_LLG, LIK_INPUTDEPENDENTWEIBULL_LLG3, GPLA_E
 
-  if isempty(z)
-    error(['lik_inputdependentweibull -> lik_inputdependentweibull_llg2: missing z!   '... 
-           'Weibull likelihood needs the censoring   '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_inputdependentweibull and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
 
   a = lik.shape;
@@ -334,11 +328,8 @@ function llg3 = lik_inputdependentweibull_llg3(lik, y, ff, param, z)
 %  See also
 %    LIK_INPUTDEPENDENTWEIBULL_LL, LIK_INPUTDEPENDENTWEIBULL_LLG, LIK_INPUTDEPENDENTWEIBULL_LLG2, GPLA_E, GPLA_G
 
-  if isempty(z)
-    error(['lik_inputdependentweibull -> lik_inputdependentweibull_llg3: missing z!   '... 
-           'Weibull likelihood needs the censoring    '...
-           'indicators as an extra input z. See, for         '...
-           'example, lik_inputdependentweibull and gpla_e.               ']);
+  if numel(z)==0
+    z=1;
   end
 
   a = lik.shape;
@@ -411,11 +402,9 @@ function [lpy, Ey, Vary] = lik_inputdependentweibull_predy(lik, Ef, Varf, yt, zt
 %  See also
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-  if isempty(zt)
-    error(['lik_inputdependentweibull -> lik_inputdependentweibull_predy: missing zt!'... 
-           'Weibull likelihood needs the censoring    '...
-           'indicators as an extra input zt. See, for         '...
-           'example, lik_inputdependentweibull and gpla_e.               ']);
+  if numel(zt)==0
+    % no censoring
+    zt=zeros(size(yt));
   end
 
   yc = 1-zt;

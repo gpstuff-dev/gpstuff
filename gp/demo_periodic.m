@@ -56,12 +56,12 @@
 %    the standard regression and GPEP_E, GPEP_G AND GPEP_PRED for
 %    the expectation propagation.
 %
-%  See also  DEMO_REGRESSION2, DEMO_SPATIAL1
-%
-%  References:
+%  Reference:
 %    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
 %    Processes for Machine Learning. The MIT Press.
-
+%
+%  See also  DEMO_REGRESSION2, DEMO_SPATIAL1
+%
 % Copyright (c) 2009 Heikki Peura
 % Copyright (c) 2010 Aki Vehtari
 
@@ -117,7 +117,7 @@ gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2});
+gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2}, 'jitterSigma2',1e-9);
 
 % -----------------------------
 % --- Conduct the inference ---

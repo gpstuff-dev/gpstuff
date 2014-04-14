@@ -21,7 +21,7 @@ function gpcf = gpcf_noise(varargin)
 %
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 
@@ -76,7 +76,7 @@ function gpcf = gpcf_noise(varargin)
 
 end
 
-function [w, s] = gpcf_noise_pak(gpcf)
+function [w, s, h] = gpcf_noise_pak(gpcf)
 %GPCF_NOISE_PAK  Combine GP covariance function parameters into
 %                one vector.
 %
@@ -95,14 +95,17 @@ function [w, s] = gpcf_noise_pak(gpcf)
 %    GPCF_NOISE_UNPAK
 
 
-  w = []; s = {};
+  w = []; s = {}; h=[];
   if ~isempty(gpcf.p.noiseSigma2)
     w(1) = log(gpcf.noiseSigma2);
     s = [s 'log(noise.noiseSigma2)'];
+    h = 1;
     % Hyperparameters of noiseSigma2
-    [wh sh] = gpcf.p.noiseSigma2.fh.pak(gpcf.p.noiseSigma2);
+    [wh, sh, hh] = gpcf.p.noiseSigma2.fh.pak(gpcf.p.noiseSigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s sh];
+    h = [h 1+hh];
   end    
 
 end
@@ -155,8 +158,8 @@ function lp = gpcf_noise_lp(gpcf)
 % are sampled are from space W = log(w) where w is all the
 % "real" samples. On the other hand errors are evaluated in the
 % W-space so we need take into account also the Jacobian of
-% transformation W -> w = exp(W). See Gelman et.al., 2004,
-% Bayesian data Analysis, second edition, p24.
+% transformation W -> w = exp(W). See Gelman et al. (2013),
+% Bayesian Data Analysis, third edition, p. 21.
   
   lp = 0;
   gpp=gpcf.p;

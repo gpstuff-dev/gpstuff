@@ -10,7 +10,7 @@ function r = invwishrand(S,nu);
 %   Note: E[R]=S*nu/(nu-k-1)
 %
 %	See also WISHRAND
-
+%
 % Copyright (c) 1999 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

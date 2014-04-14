@@ -8,9 +8,10 @@ function gpcf = gpcf_prod(varargin)
 %
 %  See also
 %    GP_SET, GPCF_*
-  
+%
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2014 Arno Solin and Jukka Koskenranta
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -58,11 +59,12 @@ function gpcf = gpcf_prod(varargin)
     gpcf.fh.trcov  = @gpcf_prod_trcov;
     gpcf.fh.trvar  = @gpcf_prod_trvar;
     gpcf.fh.recappend = @gpcf_prod_recappend;
+    gpcf.fh.cf2ss = @gpcf_prod_cf2ss;
   end
 
 end
 
-function [w, s] = gpcf_prod_pak(gpcf)
+function [w, s, h] = gpcf_prod_pak(gpcf)
 %GPCF_PROD_PAK  Combine GP covariance function parameters into one vector
 %
 %  Description
@@ -75,13 +77,14 @@ function [w, s] = gpcf_prod_pak(gpcf)
 %    GPCF_PROD_UNPAK
   
   ncf = length(gpcf.cf);
-  w = []; s = {};
+  w = []; s = {}; h=[];
   
   for i=1:ncf
     cf = gpcf.cf{i};
-    [wi si] = cf.fh.pak(cf);
+    [wi, si, hi] = cf.fh.pak(cf);
     w = [w wi];
     s = [s; si];
+    h = [h hi];
   end
 end
 
@@ -593,4 +596,51 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
     end
   end
 end
+
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_prod_cf2ss(gpcf)
+%GPCF_PROD_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the sum of two covariance functions to the corresponding
+%    sum of two state space models. Details on how this is done can
+%    be found in the reference:
+%
+%  References
+%    Arno Solin and Simo Sarkka (2014). Explicit link between periodic 
+%    covariance functions and state space models. Accepted for 
+%    publication in Proceedings of the Seventeenth International 
+%    Conference on Artifcial Intelligence and Statistics (AISTATS 2014).
+%
+
+  % Vector of function handles of conversion functions 
+  % from covariance functions to state space 
+  cf2ssvect = cell(length(gpcf.cf),1);
+  for k = 1:length(gpcf.cf)
+     
+      % Initial function handle 
+      fh = @(x) gpcf.cf{k}.fh.cf2ss(gpcf.cf{k});
+      
+      % Deal with the periodic (deterministic) covariance function
+      % as a special case
+      if isequal(gpcf.cf{k}.type,'gpcf_periodic') && gpcf.cf{k}.decay == 0
+        cf2ssvect{k} = @(x) cf2ss_periodicprod(fh);
+      else
+        cf2ssvect{k} = fh;
+      end
+      
+  end
+  
+  % Return model matrices, derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
+      cf_prod_to_ss(cf2ssvect);
+  
+end
+
+function [F,L,Pinf1,H,Pinf,dF,dPinf,dPinf1,params] = cf2ss_periodicprod(fh)
+% CF2SS_PERIODICPROD - Computes Qc values for periodic covariance production
+
+ [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = fh();
+ Pinf1 = Pinf; dPinf1 = dPinf;
+end
+
 

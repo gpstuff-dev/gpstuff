@@ -63,9 +63,8 @@ function [apcs,apcss]=gp_avpredcomp(gp, x, y, varargin)
 % 
 %  See also
 %    GP_PRED
-
-% Copyright (c) 2011      Jaakko Riihimäki
-% Copyright (c) 2011      Aki Vehtari
+%
+% Copyright (c) 2011 Jaakko Riihimäki, Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -73,8 +72,7 @@ function [apcs,apcss]=gp_avpredcomp(gp, x, y, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_AVPREDCOMP';
-<<<<<<< HEAD
-ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || iscell(x));
 ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
@@ -84,7 +82,6 @@ ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
 ip=iparser(ip,'addParamValue','nsamp', 500, @(x) isreal(x) && isscalar(x));
 ip=iparser(ip,'addParamValue','deltadist',[], @(x) isvector(x));
-
 ip=iparser(ip,'parse',gp, x, y, varargin{:});
 options=struct();
 options.predcf=ip.Results.predcf;
@@ -95,6 +92,23 @@ if ~isempty(z)
 end
 nsamp=ip.Results.nsamp;
 deltadist = logical(ip.Results.deltadist);
+if iscell(gp)
+  gptype=gp{1}.type;
+  if isfield(gp{1}.lik.fh, 'invlink')
+    gpinvlink=gp{1}.lik.fh.invlink;
+    gplik=gp{1}.lik;
+  else
+    gpinvlink=[];
+  end
+else
+  gptype=gp.type;
+  if isfield(gp.lik.fh, 'invlink')
+    gpinvlink=gp.lik.fh.invlink;
+    gplik=gp.lik;
+  else
+    gpinvlink=[];
+  end
+end
 
 [n, nin]=size(x);
 if isempty(deltadist)
@@ -181,7 +195,7 @@ for k1=1:nin
     setrandstream(seed);
     fr = gp_rnd(gp, x, y, xrep, 'nsamp', nsamp, options);
     
-    if isequal(gp.lik.type, 'Cox-ph')
+    if isequal(gptype, 'Coxph')
       fr=fr(length(gp.lik.stime):end,:);
     end
     
@@ -210,8 +224,8 @@ for k1=1:nin
     end
     
     % compute latent values through the inverse link function
-    if isfield(gp.lik.fh, 'invlink')
-      ilfr = gp.lik.fh.invlink(gp.lik, fr, repmat(z,1,nsamp));
+    if ~isempty(gpinvlink)
+      ilfr = gpinvlink(gplik, fr, repmat(z,1,nsamp));
       % average change in outcome
       b=bsxfun(@minus,ilfr,ilfr(i1,:));
       numyi=sum(bsxfun(@times,W(:,i1).*Usign,b));
@@ -235,7 +249,7 @@ for k1=1:nin
   fsa(:,k1)=numfa./dena;
   fsrms(:,k1)=sqrt(numfrms./dena);
   
-  if isfield(gp.lik.fh, 'invlink')
+  if ~isempty(gpinvlink)
     % outcome is computed through the inverse link function
     ys(:,k1)=numy./den;
     ysa(:,k1)=numya./dena;
@@ -255,7 +269,7 @@ apcs.ps=ps;
 apcs.fs=fs;
 apcs.fsa=fsa;
 apcs.fsrms=fsrms;
-if isfield(gp.lik.fh, 'invlink')
+if ~isempty(gpinvlink)
   apcs.ys=ys;
   apcs.ysa=ysa;
   apcs.ysrms=ysrms;
@@ -268,7 +282,7 @@ if nargout>1
   apcss.dens=dens;
   apcss.densa=densa;
   apcss.densrms=densrms;
-  if isfield(gp.lik.fh, 'invlink')
+  if ~isempty(gpinvlink)
     apcss.numys=numys;
     apcss.numysa=numysa;
     apcss.numysrms=numysrms;
@@ -279,26 +293,3 @@ setrandstream(prevstream);
 
 end
 
-function deltadist = gp_finddeltadist(cf)
-% FINDDELTADIST - Find which covariates are using delta distance
-%   
-deltadist=[];
-if ~iscell(cf) && isfield(cf,'cf')
-  deltadist=union(deltadist,gp_finddeltadist(cf.cf));
-else
-  for cfi=1:numel(cf)
-    if isfield(cf{cfi},'cf')
-      deltadist=union(deltadist,gp_finddeltadist(cf{cfi}.cf));
-    else
-      if isfield(cf{cfi},'metric')
-        if isfield(cf{cfi}.metric,'deltadist')
-          deltadist=union(deltadist,cf{cfi}.metric.deltadist);
-        end
-      elseif ismember(cf{cfi}.type,{'gpcf_cat' 'gpcf_mask'}) && ...
-          isfield(cf{cfi},'selectedVariables')
-        deltadist=union(deltadist,cf{cfi}.selectedVariables);
-      end
-    end
-  end
-end
-end

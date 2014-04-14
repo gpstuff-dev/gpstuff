@@ -12,7 +12,6 @@ function a = softmax2(n)
 %	See also
 %	MLP2, MLP2PAK, MLP2UNPAK, MLP2ERR, MLP2BKP, MLP2GRAD
 %
-
 % Copyright (c) 1999 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

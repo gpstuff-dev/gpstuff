@@ -75,7 +75,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
 %
 %  See also
 %    GPLA_E, GPLA_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
-
+%
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2011-2012 Ville Tolvanen
 % Copyright (c) 2012 Aki Vehtari

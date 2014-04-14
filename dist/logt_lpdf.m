@@ -13,7 +13,7 @@ function y = logt_lpdf(x,v,mu,sigma)
 %   References:
 %      [1]  E. Kreyszig, "Introductory Mathematical Statistics",
 %      John Wiley, New York, 1970, Section 10.3, pages 144-146.
-
+%
 % Copyright (c) 1998-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

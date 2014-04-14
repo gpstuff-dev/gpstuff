@@ -31,7 +31,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
 %
 %  See also
 %    GP_LOOPRED, GP_PRED
-  
+%
 % Copyright (c) 2010-2012  Aki Vehtari, Ville Tolvanen
 % Copyright (c) 2011-2012  Ville Tolvanen
 
@@ -49,6 +49,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
   z=ip.Results.z;
 
   [tmp,tmp,tmp,param] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+  n=size(x,1);
   [muvec_i,sigm2vec_i,lnZ_i] = deal(param.muvec_i, param.sigm2vec_i, param.logZ_i);
 
   Eft=muvec_i;
@@ -57,5 +58,13 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
   if nargout > 3
     [tmp, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, muvec_i, sigm2vec_i, [], z);
   end
-  
+  if size(Eft,1)>n
+    Eft=Eft(1:n);
+    Varft=Varft(1:n);
+    lpyt=lpyt(1:n);
+    if nargout > 3
+      Eyt=Eyt(1:n);
+      Varyt=Varyt(1:n);
+    end
+  end
 end

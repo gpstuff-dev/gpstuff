@@ -19,7 +19,6 @@ function gloo = gpep_loog(w, gp, x, y, varargin)
 %  See also
 %    GP_EPLOOE, GP_SET, GP_PAK, GP_UNPAK
 %
-
 % Copyright (c) 2012 Ville Tolvanen
 
 % This software is distributed under the GNU General Public

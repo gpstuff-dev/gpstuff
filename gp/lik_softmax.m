@@ -16,8 +16,8 @@ function lik = lik_softmax(varargin)
 %
 %  See also
 %    GP_SET, LIK_*
-
-% Copyright (c) 2010 Jaakko Riihim�ki, Pasi Jyl�nki
+%
+% Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -56,7 +56,7 @@ function lik = lik_softmax(varargin)
   
 end
 
-function [w,s] = lik_softmax_pak(lik)
+function [w,s,h] = lik_softmax_pak(lik)
 %LIK_SOFTMAX_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -70,7 +70,7 @@ function [w,s] = lik_softmax_pak(lik)
 %  See also
 %    LIK_SOFTMAX_UNPAK, GP_PAK
   
-  w = []; s = {};
+  w = []; s = {}; h=[];
 end
 
 

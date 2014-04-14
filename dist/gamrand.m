@@ -12,7 +12,7 @@ function r = gamrand(a, b, varargin);
 %      B is degrees of freedom
 %
 %	See also INVGAMRAND
-
+%
 % Copyright (c) 1999 Aki Vehtari
 
 

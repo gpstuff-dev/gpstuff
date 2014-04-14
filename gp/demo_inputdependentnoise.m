@@ -6,9 +6,9 @@
 %       heteroscedastic noise with input dependent noise model
 %       differs from standard noise models (Gaussian, Student-t).
 %
-
+%
 % Copyright (c) Ville Tolvanen 2011-2012
-% 
+ 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.

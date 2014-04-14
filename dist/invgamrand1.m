@@ -11,7 +11,7 @@ function r = invgamrand1(a, b, varargin)
 %      B is degrees of freedom
 %   
 %	See also INVGAMRAND, GAMRAND1
-
+%
 % Copyright (c) 1999 Aki Vehtari
 
 % This software is distributed under the GNU General Public 

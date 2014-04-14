@@ -29,7 +29,7 @@ function s = resampdet(p,m,n);
 %   1996. 
 %
 %   See also RESAMPSIM, RESAMPRES, RESAMPSTR
-
+%
 % Copyright (c) 2003-2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
