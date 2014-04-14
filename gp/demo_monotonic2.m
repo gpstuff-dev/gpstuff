@@ -1,11 +1,8 @@
-%DEMO_MONOTONIC2  Demonstration of monotonic GP regression
+%DEMO_MONOTONIC2  Demonstration of monotonicity information in GP Poisson regression
 %
 %  Description
-%    This demonstration consists of comparison between monotonic GP and
-%    standard GP regression. The monotonocity of the latent functions is
-%    forced by the GP prior where we can compute analytically the
-%    covariance between derivative of the latent function and the latent
-%    functions and the cross-covariance terms.
+%    This demonstration shows the benefit of adding monotonicity
+%    information in GP Poisson regression of mortality data.
 %
 %  References
 %
