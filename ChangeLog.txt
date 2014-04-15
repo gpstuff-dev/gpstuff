@@ -30,7 +30,6 @@ Improvements
  - much faster EP with log-Gaussian likelihood (numerical integrals -> 
    analytical results)
  - faster WAIC with GP_IA array (numerical integrals -> analytical results)
- - PSRF now computed as in BDA3
  - New demos demonstrating new features etc.
     - demo_minimal, minimal demo for regression and classification
     - demo_kalman1, demo_kalman2
@@ -46,7 +45,8 @@ Bug fixes
 2013-11-26 Version 4.3.1
 
 Improvements:
- - Updated cpsrf and psrf to follow BDA3: split each chain to two halves and use Geyer's IPSE for n_eff   
+ - Updated cpsrf and psrf to follow BDA3: split each chain to two
+   halves and use Geyer's IPSE for n_eff
  - Multi-latent models for Octave
 
 2013-10-14 Version 4.3
