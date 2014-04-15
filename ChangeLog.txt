@@ -47,12 +47,9 @@ Big fixes
  - Changed nested functions to subfunctions for compatibility with Octave 3.8.0
  - Fixed compilation of C source files with Octave.
 
-=======
->>>>>>> .merge_file_0AHvYo
-2013-11-26 Version 4.3.1
-
 Improvements:
- - Updated cpsrf and psrf to follow BDA3: split each chain to two halves and use Geyer's IPSE for n_eff   
+ - Updated cpsrf and psrf to follow BDA3: split each chain to two
+   halves and use Geyer's IPSE for n_eff
  - Multi-latent models for Octave
 
 2013-10-14 Version 4.3
