@@ -731,7 +731,7 @@ function gpcf = gpcf_intcov(varargin)
       % Set the function handles
       reccf.fh.pak = @gpcf_intcov_pak;
       reccf.fh.unpak = @gpcf_intcov_unpak;
-      reccf.fh.e = @gpcf_intcov_lp;
+      reccf.fh.lp = @gpcf_intcov_lp;
       reccf.fh.lpg = @gpcf_intcov_lpg;
       reccf.fh.cfg = @gpcf_intcov_cfg;
       reccf.fh.cov = @gpcf_intcov_cov;

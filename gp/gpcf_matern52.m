@@ -849,7 +849,7 @@ function reccf = gpcf_matern52_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_matern52_pak;
     reccf.fh.unpak = @gpcf_matern52_unpak;
-    reccf.fh.e = @gpcf_matern52_lp;
+    reccf.fh.lp = @gpcf_matern52_lp;
     reccf.fh.lpg = @gpcf_matern52_lpg;
     reccf.fh.cfg = @gpcf_matern52_cfg;
     reccf.fh.cov = @gpcf_matern52_cov;

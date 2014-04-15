@@ -505,7 +505,7 @@ function reccf = gpcf_sum_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_sum_pak;
     reccf.fh.unpak = @gpcf_sum_unpak;
-    reccf.fh.e = @gpcf_sum_lp;
+    reccf.fh.lp = @gpcf_sum_lp;
     reccf.fh.lpg = @gpcf_sum_lpg;
     reccf.fh.cfg = @gpcf_sum_cfg;
     reccf.fh.cov = @gpcf_sum_cov;

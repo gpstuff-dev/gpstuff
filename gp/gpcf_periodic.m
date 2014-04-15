@@ -1049,7 +1049,7 @@ function reccf = gpcf_periodic_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_periodic_pak;
     reccf.fh.unpak = @gpcf_periodic_unpak;
-    reccf.fh.e = @gpcf_periodic_lp;
+    reccf.fh.lp = @gpcf_periodic_lp;
     reccf.fh.lpg = @gpcf_periodic_lpg;
     reccf.fh.cfg = @gpcf_periodic_cfg;
     reccf.fh.cov = @gpcf_periodic_cov;

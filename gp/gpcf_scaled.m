@@ -453,7 +453,7 @@ function reccf = gpcf_scaled_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_scaled_pak;
     reccf.fh.unpak = @gpcf_scaled_unpak;
-    reccf.fh.e = @gpcf_scaled_lp;
+    reccf.fh.lp = @gpcf_scaled_lp;
     reccf.fh.lpg = @gpcf_scaled_lpg;
     reccf.fh.cfg = @gpcf_scaled_cfg;
     reccf.fh.cov = @gpcf_scaled_cov;

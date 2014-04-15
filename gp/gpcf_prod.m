@@ -578,7 +578,7 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_prod_pak;
     reccf.fh.unpak = @gpcf_prod_unpak;
-    reccf.fh.e = @gpcf_prod_lp;
+    reccf.fh.lp = @gpcf_prod_lp;
     reccf.fh.lpg = @gpcf_prod_lpg;
     reccf.fh.cfg = @gpcf_prod_cfg;
     reccf.fh.cov = @gpcf_prod_cov;

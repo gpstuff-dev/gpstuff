@@ -359,7 +359,7 @@ function reccf = gpcf_noise_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_noise_pak;
     reccf.fh.unpak = @gpcf_noise_unpak;
-    reccf.fh.e = @gpcf_noise_lp;
+    reccf.fh.lp = @gpcf_noise_lp;
     reccf.fh.lpg = @gpcf_noise_lpg;
     reccf.fh.cfg = @gpcf_noise_cfg;
     reccf.fh.cov = @gpcf_noise_cov;

@@ -1271,7 +1271,7 @@ function reccf = gpcf_ppcs3_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_ppcs3_pak;
     reccf.fh.unpak = @gpcf_ppcs3_unpak;
-    reccf.fh.e = @gpcf_ppcs3_lp;
+    reccf.fh.lp = @gpcf_ppcs3_lp;
     reccf.fh.lpg = @gpcf_ppcs3_lpg;
     reccf.fh.cfg = @gpcf_ppcs3_cfg;
     reccf.fh.cov = @gpcf_ppcs3_cov;
