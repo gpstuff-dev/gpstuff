@@ -114,7 +114,7 @@
   \name Jouni Hartikainen$^{\dagger}$ \email { } \\
   \name Pasi Jyl\"anki$^{\dagger}$ \email { } \\
   \name Ville Tolvanen \email ville.tolvanen@aalto.fi \\
-  \name Aki Vehtari \email aki.vehtari@aalto.fi \\
+  \name Aki Vehtari\thanks{Corresponding author} \email aki.vehtari@aalto.fi \\
   \addr Department of Biomedical Engineering and Computational Science\\
   Aalto University School of Science\\
   P.O. Box 12200, FI-00076 Aalto, Finland}
@@ -2307,18 +2307,22 @@ propagation.
 Currently GPstuff supports monotonicity constraint for models which
 have Gaussian likelihood or fully factoring likelihoods with EP
 inference and which use covariance functions \code{gpcf\_constant},
-\code{gpcf\_linear} and \code{gpcf\_sexp}.
+\code{gpcf\_linear} and
+\code{gpcf\_sexp}. \citet{Riihimaki+Vehtari:2010} used type II MAP
+estimate for the hyperparameters, but GPstuff allows easy integration
+over the hyperparameters with any method described in
+Section~\ref{sec_marginalization_over_hyperparam}.
 
 GP model with monotonicity constraint can be easily constructed with
 the function \code{gp\_monotonic}. Monotonicity constraint is
 demonstrated in \code{demo\_monotonic} and \code{demo\_monotonic2}.
 
 Figure~\ref{monotonicity} displays the predictions with models with
-and without monotonicity constraint. The monotonicity constraint
+and without the monotonicity constraint. The monotonicity constraint
 allows inclusion of sensible prior information that death rate
 increases as age increases. The effect is shown most clearly for
-larger ages where ther is less observations, but overall reduction in
-uncertainty realted to the latent function can be seen.
+larger ages where there is less observations, but also overall reduction in
+uncertainty related to the latent function can be seen.
 
 \begin{figure}
   \begin{center}       

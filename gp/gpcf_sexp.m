@@ -1,11 +1,11 @@
 function gpcf = gpcf_sexp(varargin)
-%GPCF_SEXP  Create a squared exponential covariance function
+%GPCF_SEXP  Create a squared exponential (exponentiated quadratic) covariance function
 %
 %  Description
 %    GPCF = GPCF_SEXP('PARAM1',VALUE1,'PARAM2,VALUE2,...) creates
-%    squared exponential covariance function structure in which the
-%    named parameters have the specified values. Any unspecified
-%    parameters are set to default values.
+%    squared exponential (exponentiated quadratic) covariance function
+%    structure in which the named parameters have the specified
+%    values. Any unspecified parameters are set to default values.
 %
 %    GPCF = GPCF_SEXP(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %    modify a covariance function structure with the named
