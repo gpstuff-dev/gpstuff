@@ -206,7 +206,7 @@ function [w, s, h] = gpcf_periodic_pak(gpcf)
       h = [h 1+hh];
     end
     
-    if ~isempty(gpcf.p.lengthScale_sexp)  && gpcf.decay == 1
+    if gpcf.decay == 1 && ~isempty(gpcf.p.lengthScale_sexp)
       w = [w log(gpcf.lengthScale_sexp)];
       s = [s; 'log(periodic.lengthScale_sexp)'];
       h = [h ones(1,numel(gpcf.lengthScale_sexp))];
