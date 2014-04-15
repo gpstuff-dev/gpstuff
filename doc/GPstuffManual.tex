@@ -2313,9 +2313,10 @@ estimate for the hyperparameters, but GPstuff allows easy integration
 over the hyperparameters with any method described in
 Section~\ref{sec_marginalization_over_hyperparam}.
 
-GP model with monotonicity constraint can be easily constructed with
-the function \code{gp\_monotonic}. Monotonicity constraint is
-demonstrated in \code{demo\_monotonic} and \code{demo\_monotonic2}.
+GP model with monotonicity constraints on one or many covariates can
+be easily constructed with the function
+\code{gp\_monotonic}. Monotonicity constraint is demonstrated in
+\code{demo\_monotonic} and \code{demo\_monotonic2}.
 
 Figure~\ref{monotonicity} displays the predictions with models with
 and without the monotonicity constraint. The monotonicity constraint
@@ -3251,7 +3252,7 @@ GPstuff.
 
 LOO-CV in GPstuff does not currently work for some multilatent
 models. In such case or if there is reason to doubt the reliability of
-importance sampling, it is best to compute the non-approximated
+the leave-one-out approximations, it is best to compute the non-approximated
 cross-validation predictive densities.  To reduce computation time, in
 $k$-fold-CV, $1/k$ part of the training data is left out, and then the
 predictive distribution is computed with a model that is fitted to all
@@ -3262,7 +3263,7 @@ order bias correction proposed by \citet{Burman:1989} is used.
 \pkg{GPstuff} provides \code{gp\_kfcv}, which computes $k$-fold-CV and
 bias-corrected $k$-fold-CV with log-score and root mean squared error
 (RMSE). The function \code{gp\_kfcv} provides also basic variance
-estimates for the predictive performance estimates.  Variance is
+estimates for the predictive performance estimates.  The variance is
 computed from the estimates for each fold ~\citep[see,
 e.g.,][]{Dietterich:1998}.  See
 \citet{Vehtari+Lampinen:2002,Vehtari+Ojanen:2012} for more details on
@@ -3532,13 +3533,13 @@ conventions. The point of view taken in \pkg{GPstuff} comes mainly
 from the machine learning literature where the subject has flourished
 to a hot topic since late 1990's. Our aim in the \pkg{GPstuff} package
 has been to collect existing and create new practical tools for
-analyzing GP models. We acknowledge that most of the basic models and
+analyzing GP models. We acknowledge that many of the basic models and
 algorithms have been proposed by others. However, the implementation
 in \pkg{GPstuff} is unique and contains several practical solutions
 for computational problems that are not published elsewhere. Our own
 contribution on GP theory that is included in \pkg{GPstuff} is
 described mainly in
-\citep{Vanhatalo+Vehtari:2007,Vanhatalo+Vehtari:2008,Vanhatalo+Vehtari:2010,Vanhatalo+Jylanki+Vehtari:2009,Vanhatalo+Pietilainen+Vehtari:2010,Jylanki+Vanhatalo+Vehtari:2011}
+\citep{Vehtari:2001,Vehtari+Lampinen:2002,Vanhatalo+Vehtari:2007,Vanhatalo+Vehtari:2008,Vanhatalo+Vehtari:2010,Vanhatalo+Jylanki+Vehtari:2009,Vanhatalo+Pietilainen+Vehtari:2010,Jylanki+Vanhatalo+Vehtari:2011,Riihimaki+Vehtari:2012,Joensuu+etal:2012a,Riihimaki+Jylanki+Vehtari:2013,Joensuu+Reichardt+Eriksson+Hall+Vehtari:2014,Riihimaki+Vehtari:2014}
 
 Our intention has been to create a toolbox with which useful,
 interpretable results can be produced in a sensible time.
@@ -3691,7 +3692,8 @@ for sharing their code under a free software license.
 \section{Comparison of features in GPstuff, 
 GPML and FBM}\label{appendix:comparison}
 
-
+Table~\ref{table:comparison} shows comparison of 
+features in GPstuff, GPML and FBM.
 
 \begin{table}
   \scriptsize
