@@ -17,6 +17,7 @@
 % License.txt, included with the software, for details.
 
 %% 1D regression %%
+% The El Niño Southern Oscillation (ENSO) climate data
 S = which('demo_minimal');
 L = strrep(S,'demo_minimal.m','demodata/enso.txt');
 data=load(L);
@@ -34,6 +35,7 @@ gp_plot(gp,x,y);
 hold off
 
 %% 2D regression %%
+% See also DEMO_REGRESSION1
 S = which('demo_minimal');
 L = strrep(S,'demo_minimal.m','demodata/dat.1');
 data=load(L);
@@ -51,6 +53,7 @@ hold on
 plot3(x(:,1),x(:,2),y,'r*')
 
 %% 2D classification %%
+% See also DEMO_CLASSIFIC
 S = which('demo_minimal');
 L = strrep(S,'demo_minimal.m','demodata/synth.tr');
 x=load(L);
