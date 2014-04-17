@@ -28,8 +28,8 @@ figure
 % plot data
 plot(x,y,'r.')
 hold on
-% create and optimise a default GP with Gaussian likelihood
-gp=gp_optim([],x,y);
+% create a default GP with Gaussian likelihood and integrate over the parameters
+gp=gp_ia([],x,y);
 % plot predictions
 gp_plot(gp,x,y);
 hold off
@@ -44,8 +44,8 @@ y = data(:,3);
 [n, nin] = size(x);
 
 figure
-% create and optimise a default GP with Gaussian likelihood
-gp=gp_optim([],x,y);
+% create a default GP with Gaussian likelihood and integrate over the parameters
+gp=gp_ia([],x,y);
 % plot predictions
 gp_plot(gp,x,y);
 % plot data
@@ -65,8 +65,8 @@ x(:,end)=[];
 figure
 % create a default GP with a likelihood suitable for classification
 gp=gp_set('lik',lik_logit());
-% optimise
-gp=gp_optim(gp,x,y);
+% integrate over the latent values and parameters
+gp=gp_ia(gp,x,y);
 % plot conditional and joint prediction
 gp_plot(gp,x,y);
 view(2)
@@ -75,4 +75,3 @@ hold on
 plot3(x(y<0,1),x(y<0,2),ones(sum(y<0),1),'yx','MarkerSize',6,'LineWidth',2)
 plot3(x(y>0,1),x(y>0,2),ones(sum(y>0),1),'go','MarkerSize',6)
 hold off
-
