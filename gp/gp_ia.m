@@ -728,7 +728,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           Scale = (nu-2)./nu.*Sigma;
           LS=chol(Scale,'lower');
           
-          if opt.autoscale
+          if ismember(opt.autoscale,{'on' 'full'})
+            % Scaling of the covariance (see Geweke, 1989, Bayesian
+            % inference in econometric models using Monte Carlo integration
             if ismember(opt.display,{'on','iter'})
               fprintf(' IA-is_t: scaling of the covariance\n');
             end
