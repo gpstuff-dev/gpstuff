@@ -201,7 +201,7 @@ function gp = gp_set(varargin)
                    @(x) ismember(x,{'FULL' 'FIC' 'PIC' 'PIC_BLOCK' 'VAR' ...
                       'DTC' 'SOR' 'CS+FIC','KALMAN'}));
   ip.addParamValue('lik',lik_gaussian(), @(x) isstruct(x));
-  ip.addParamValue('jitterSigma2',0, @(x) isscalar(x) && x>=0);
+  ip.addParamValue('jitterSigma2',1e-9, @(x) isscalar(x) && x>=0);
   ip.addParamValue('infer_params','covariance+likelihood', @(x) ischar(x));
   ip.addParamValue('latent_method','Laplace', @(x) ischar(x) || iscell(x));
   ip.addParamValue('latent_opt',struct(), @isstruct);
