@@ -583,6 +583,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         switch gp.latent_method
           case 'Laplace'
             if ~isfield(gp.lik, 'nondiagW')
+              if  isfield(gp,'meanf')
+                error('Mean functions not yet implemented for Laplace diagW :(');
+              end
               %[e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
               [e, edata, eprior, param] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
               [f, L] = deal(param.f, param.L);
