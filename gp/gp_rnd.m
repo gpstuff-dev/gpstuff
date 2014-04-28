@@ -602,18 +602,16 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               K = gp_trcov(gp,xt,predcf);
               if W >= 0
                 if issparse(K_nf) && issparse(L)
-                  K = gp_trcov(gp, x);
                   sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
                   sqrtWKfn = sqrtW*K_nf';
                   V = ldlsolve(L,sqrtWKfn);
                   Covf = K - sqrtWKfn'*V;
                 else
-                  sW = diag(sqrt(W));
-                  V = L\(sW*K_nf');
+                  V = linsolve(L,bsxfun(@times,sqrt(W),K_nf'),struct('LT',true));
                   Covf = K - V'*V;
                 end
               else
-                V = L*diag(W);
+                V = bsxfun(@times,L,W');
                 R = diag(W) - V'*V;
                 Covf = K - K_nf*(R*K_nf');
               end
@@ -671,9 +669,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               zz=tautilde.*(L'*(L*nutilde));
               Ef=K_nf*(nutilde-zz);
               
-              S = diag(tautilde);
-              V = K_nf*S*L';
-              Covf = K - (K_nf*S)*K_nf' + V*V';
+              Knf_S = bsxfun(@times,K_nf,tautilde');
+              V = Knf_S*L';
+              Covf = K - Knf_S*K_nf' + V*V';
             end
         end
         
