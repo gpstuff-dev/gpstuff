@@ -73,7 +73,6 @@ function gpstuff_install(SuiteSparse_path)
     S{4} = [PP '/mc']; 
     S{5} = [PP '/misc']; 
     S{6} = [PP '/optim']; 
-    S{7} = [PP '/xunit']; 
     
     fprintf ('\n The following paths have been added.  You may wish to add them\n') ;
     fprintf ('permanently, using the MATLAB pathtool command or copying the below\n') ;
