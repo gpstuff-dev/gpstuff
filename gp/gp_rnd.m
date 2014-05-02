@@ -71,12 +71,6 @@ end
 xt=ip.Results.xt;
 z=ip.Results.z;
 zt=ip.Results.zt;
-if isempty(xt)
-  xt=x;
-  if isempty(zt)
-    zt=z;
-  end
-end
 tn = size(x,1);
 predcf=ip.Results.predcf;
 tstind=ip.Results.tstind;
@@ -84,6 +78,28 @@ nsamp=ip.Results.nsamp;
 fcorr=ip.Results.fcorr;
 autoscale = ip.Results.autoscale;
 n_scale = min(tn, floor(ip.Results.n_scale));
+if isempty(xt)
+  xt=x;
+  if isempty(tstind)
+    if iscell(gp)
+      gptype=gp{1}.type;
+    else
+      gptype=gp.type;
+    end
+    switch gptype
+      case {'FULL' 'VAR' 'DTC' 'SOR'}
+        tstind = [];
+      case {'FIC' 'CS+FIC'}
+        tstind = 1:size(x,1);
+      case 'PIC'
+        if iscell(gp)
+          tstind = gp{1}.tr_index;
+        else
+          tstind = gp.tr_index;
+        end
+    end
+  end
+end
 
 
 sampyt=[];
