@@ -101,7 +101,6 @@ if isempty(xt)
   end
 end
 
-
 sampyt=[];
 if isstruct(gp) && numel(gp.jitterSigma2)==1
   % Single GP
@@ -613,11 +612,14 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               if isfield(gp.lik, 'nondiagW')
                 error('Autoscale is not implemented for nondiagW in Laplace approximation')
               end
-              [~,~,~, param] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+              [e,~,~, param] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+              if isnan(e)
+                error('Laplace-algorithm returned NaN');
+              end
               [Ef, L, W] = deal(param.f, param.L, param.La2);
               
               % Evaluate the covariance
-              [~,K] = gp_trcov(gp, x, predcf);
+              K = gp_trcov(gp,x);
               K_ss = gp_trcov(gp,xt,predcf);
               K_nf = gp_cov(gp,xt,x,predcf);
               if W >= 0
@@ -640,7 +642,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               end
               
             case 'EP'
-              %[e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+              warning('Autoscale is not recommended for EP')
               [e,~,~,param] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
               if isnan(e)
                 error('EP-algorithm returned NaN');
@@ -681,68 +683,224 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
 
           % ---------------------------
         case 'FIC'
-
+          
           switch gp.latent_method
             case 'Laplace'
-              if ~isempty(tstind) && length(tstind) ~= size(x,1)
+              if ~isempty(tstind) && length(tstind) ~= tn
                 error('tstind (if provided) has to be of same length as x.')
               end
-              
               if isfield(gp.lik, 'nondiagW')
                 error('FIC is not implemented for nondiagW in Laplace approximation')
               end
               
-              [~,~,~, param] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+              % Ensure the direction of tstind
+              tstind = tstind(:);
+              
+              [e,~,~, param] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+              if isnan(e)
+                error('Laplace-algorithm returned NaN');
+              end
               Ef = param.f;
               
               u = gp.X_u;
               K_uu = gp_trcov(gp,u,predcf);
               K_uu = (K_uu+K_uu')./2;          % ensure the symmetry
               Luu = chol(K_uu, 'lower');
-              clear K_uu;
               
               B = Luu\gp_cov(gp,u,x,predcf);
               B2 = Luu\gp_cov(gp,u,xt,predcf);
-              clear Luu;
+              K = B'*B;
+              K_ss = B2'*B2;
+              K_nf = B2'*B;
+              clear K_uu Luu B B2
               
               % If the prediction is made for training set, evaluate Lav
               % also for prediction points.
               if ~isempty(tstind)
-                % N.B. Here the all the training points has to be in the
-                % prediction set, i.e. x has to be a subset of xt.
                 kss = gp_trvar(gp,xt,predcf);
-                Lav = diag(kss(tstind) - sum(B.^2)');
-                K = B'*B + Lav;
-                K_nf = B2'*B;
-                K_nf(tstind,:) = K_nf(tstind,:) + Lav;
-                K_ss = B2'*B2 + diag(kss - sum(B2.^2)');
-                clear kss Lav
+                % Replace diagonals
+                K(1:length(K)+1:numel(K)) = kss(tstind);
+                K_ss(1:length(K_ss)+1:numel(K_ss)) = kss;
+                % Replace common samples in K_nf
+                K_nf(tstind+(0:size(xt,1):(tn-1)*size(xt,1))') = kss(tstind);
+                clear kss
               else
-                K = B'*B + diag(gp_trvar(gp,x) - sum(B.^2)');
-                K_nf = B2'*B;
-                K_ss = B2'*B2 + diag(gp_trvar(gp,xt,predcf) - sum(B2.^2)');
+                % Add lambda
+                % Replace diagonals
+                K(1:length(K)+1:numel(K)) = gp_trvar(gp,x);
+                K_ss(1:length(K_ss)+1:numel(K_ss)) = gp_trvar(gp,xt,predcf);
               end
               
-              Wsqrt = sqrt(-gp.lik.fh.llg2(gp.lik, y, Ef, 'latent', z));
+              Wsqrt = -gp.lik.fh.llg2(gp.lik, y, Ef, 'latent', z);
+              if any(Wsqrt < 0)
+                error('FIC not implemented for non-log-concave likelihoods')
+              end
+              Wsqrt = sqrt(Wsqrt);
               L = chol(eye(size(K)) + bsxfun(@times,bsxfun(@times,Wsqrt,K),Wsqrt'), 'lower');
               
               % Evaluate the covariance for the posterior of f
-              V = L\(bsxfun(@times,Wsqrt,K));
+              V = linsolve(L,bsxfun(@times,Wsqrt,K),struct('LT',true));
               Covf = K - V'*V;
-
+              
             case 'EP'
-              error('Autoscale not yet implemented for FIC with EP')
+              error('Autoscale not implemented for EP/FIC')
 
           end        
 
           % ---------------------------
         case 'PIC'
-          error('Autoscale not yet implemented for PIC')
-          
+          switch gp.latent_method
+            case 'Laplace'
+              
+              u = gp.X_u;
+              K_fu = gp_cov(gp,x,u,predcf);         % f x u
+              K_uu = gp_trcov(gp,u,predcf);         % u x u, noiseles covariance K_uu
+              K_uu = (K_uu+K_uu')./2;               % ensure the symmetry of K_uu
+
+              ind = gp.tr_index;
+              Luu = chol(K_uu)';
+              B=Luu\(K_fu');
+              B2 = Luu\(gp_cov(gp,u,xt,predcf));
+              clear Luu
+              
+              [e,~,~, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+              if isnan(e)
+                error('Laplace-algorithm returned NaN');
+              end
+              [Ef, La2] = deal(p.f, p.La2);
+
+              % Evaluate the variance
+              sqrtW = -gp.lik.fh.llg2(gp.lik, y, Ef, 'latent', z);
+              if any(sqrtW < 0)
+                error('PIC not implemented for non-log-concave likelihoods')
+              end
+              sqrtW = sqrt(sqrtW);
+              % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
+              Lahat = cell(length(ind),1);
+              for i=1:length(ind)
+                Lahat{i} = eye(length(ind{i})) + bsxfun(@times,bsxfun(@times,sqrtW(ind{i}),La2{i}),sqrtW(ind{i})');
+              end
+              sKfu = bsxfun(@times, sqrtW, K_fu);
+              iLasKfu = zeros(size(K_fu));
+              for i=1:length(ind)
+                iLasKfu(ind{i},:) = Lahat{i}\sKfu(ind{i},:);
+              end
+              A2 = K_uu + sKfu'*iLasKfu; A2=(A2+A2')./2;
+              L2 = iLasKfu/chol(A2);
+              
+              % NOTE!
+              % This is done with full matrices at the moment.
+              % Needs to be rewritten.
+              K_ss = B2'*B2;
+              K_nf = B2'*B;
+              K = B'*B;
+              C = -L2*L2';
+              for i=1:length(ind)
+                % Originally 
+                % >> La = gp_trcov(gp, xt(tstind{i},:), predcf) - B2(:,tstind{i})'*B2(:,tstind{i});
+                % >> K_ss(ind{i},ind{i}) =  K_ss(ind{i},ind{i}) + La;
+                % ... changed into (works if xt is not the same as x)
+                % >> La = gp_trcov(gp, xt(tstind{i},:), predcf) - B2(:,tstind{i})'*B2(:,tstind{i});
+                % >> K_ss(tstind{i},tstind{i}) =  K_ss(tstind{i},tstind{i}) + La;
+                % ... which is implemented in the line bellow
+                K_ss(tstind{i},tstind{i}) =  gp_trcov(gp, xt(tstind{i},:), predcf);
+                K_nf(tstind{i},ind{i}) = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf);
+                K(ind{i},ind{i}) = K(ind{i},ind{i}) + La2{i};
+                C(ind{i},ind{i}) =  C(ind{i},ind{i}) + inv(Lahat{i});
+              end
+              
+              Covf = K - K * bsxfun(@times,bsxfun(@times,sqrtW,C),sqrtW') * K;
+              
+              
+            case 'EP'
+              error('Autoscale not implemented for EP/PIC')
+          end
 
           % ---------------------------
         case 'CS+FIC'
-          error('Autoscale not yet implemented for CS+FIC')
+
+          switch gp.latent_method
+            case 'Laplace'
+              if ~isempty(tstind) && length(tstind) ~= tn
+                error('tstind (if provided) has to be of same length as x.')
+              end
+              if isfield(gp.lik, 'nondiagW')
+                error('FIC is not implemented for nondiagW in Laplace approximation')
+              end
+              
+              % Ensure the direction of tstind
+              tstind = tstind(:);
+              
+              % Indexes to all non-compact support and compact support covariances.
+              cscf = cellfun(@(x) isfield(x,'cs'), gp.cf);
+              predcf1 = find(~cscf);
+              predcf2 = find(cscf);
+              if ~isempty(predcf)
+                predcf1 = intersect(predcf1,predcf);
+                predcf2 = intersect(predcf2,predcf);
+              end
+              
+              % Laplace approximation
+              [e,~,~, param] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+              if isnan(e)
+                error('Laplace-algorithm returned NaN');
+              end
+              Ef = param.f;
+              
+              u = gp.X_u;
+              sqrtW = -gp.lik.fh.llg2(gp.lik, y, Ef, 'latent', z);
+              if any(sqrtW < 0)
+                error('CS+FIC not implemented for non-log-concave likelihoods')
+              end
+              sqrtW = sqrt(sqrtW);
+              
+              K_uu = gp_trcov(gp,u,predcf1);
+              K_uu = (K_uu+K_uu')./2;
+              Luu = chol(K_uu)';
+              
+              B=Luu\(gp_cov(gp,u,x,predcf1));
+              B2=Luu\(gp_cov(gp,u,xt,predcf1));
+              K = B'*B;
+              K_ss = B2'*B2;
+              K_nf = B2'*B;
+              clear K_uu Luu B B2
+              
+              if ~isempty(tstind)
+                % Add Lambda
+                kss = gp_trvar(gp,xt,predcf1);
+                % Replace diagonals
+                K(1:length(K)+1:numel(K)) = kss(tstind);
+                K_ss(1:length(K_ss)+1:numel(K_ss)) = kss;
+                % Replace common samples in K_nf
+                K_nf(tstind+(0:size(xt,1):(tn-1)*size(xt,1))') = kss(tstind);
+                
+                % Add CS covariance
+                kss = gp_trcov(gp, xt, predcf2);
+                K = K + kss(tstind,tstind);
+                K_ss = K_ss + kss;
+                clear kss
+                
+              else
+                % Add lambda
+                % Replace diagonals
+                K(1:length(K)+1:numel(K)) = gp_trvar(gp,x,predcf1);
+                K_ss(1:length(K_ss)+1:numel(K_ss)) = gp_trvar(gp,xt,predcf1);
+                
+                % Add CS covariance
+                K = K + gp_trcov(gp, x, predcf2);
+                K_ss = K_ss + gp_trcov(gp, xt, predcf2);
+                
+              end
+              
+              K_nf = K_nf + gp_cov(gp, xt, x, predcf2);
+              
+              L = chol(eye(size(K)) + bsxfun(@times,bsxfun(@times,sqrtW,K),sqrtW'), 'lower');
+              V = linsolve(L,bsxfun(@times,sqrtW,K),struct('LT',true));
+              Covf = K - V'*V;
+              
+            case 'EP'
+              error('Autoscale not implemented for EP/CS+FIC')
+          end
           
       end
       
@@ -762,7 +920,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
       % Optimise the skewness
       delta = [-6:0.5:-0.5, 0.5:0.5:6];
       D = bsxfun(@plus, kron(delta,T(:,1:n_scale)), Ef);
-      ll = zeros(1,n_scale*length(delta)); % Looping is faster than using cellfun
+      ll = zeros(1,n_scale*length(delta)); % Here looping is faster than cellfun
       for i = 1:n_scale*length(delta)
         ll(i) = 2*gp.lik.fh.ll(gp.lik,y,D(:,i),z);
       end
@@ -782,18 +940,33 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         q = [q;ones(tn-n_scale,1)];
         r = [r;ones(tn-n_scale,1)];
       end
-
+      
       % Draw samples from split-norm approximated posterior of f and
       % sample from the conditional distribution of ft for each sample of f
       u = rand(tn,nsamp);
       c = r./(r+q);
-      sampft = K_nf* ...
-        (L'\(L\ ... % samples of f
+      Covft = K_ss - K_nf*(L'\(L\K_nf'));
+      Covft_ind = find(diag(Covft)>gp.jitterSigma2);
+      if length(Covft_ind) == size(xt,1)
+        % The following evaluates samples of ft directly by
+        % Eft + chol(Covft)*randn,
+        % where Eft = K_nf*K\f and Covft = K_ss - K_nf*K\K_nf'
+        sampft = K_nf*(L'\(L\ ...
           bsxfun(@plus,Ef,T*((bsxfun(@times,q,double(bsxfun(@ge,u,c))) ...
           +bsxfun(@times,-r,double(bsxfun(@lt,u,c)))).*abs(randn(tn,nsamp)))) ...
-        )) ...
-        + chol(K_ss - K_nf*(L'\(L\K_nf')),'lower')*randn(size(xt,1),nsamp);
-    
+          )) + chol(Covft,'lower')*randn(size(xt,1),nsamp);
+      else
+        % Zero variance dimensions in p(ft|X,xt,f)
+        % Evaluate first Eft for each f
+        sampft = K_nf*(L'\(L\ ...
+            bsxfun(@plus,Ef,T*((bsxfun(@times,q,double(bsxfun(@ge,u,c))) ...
+            +bsxfun(@times,-r,double(bsxfun(@lt,u,c)))).*abs(randn(tn,nsamp)))) ));
+        % Add variability only from non-zero variance dimensions
+        sampft(Covft_ind,:) = sampft(Covft_ind,:) ...
+          + chol(Covft(Covft_ind,Covft_ind),'lower')*randn(length(Covft_ind),nsamp);
+      end
+      
+      
     else
       % Autoscale off (recommended for EP)
       
@@ -901,8 +1074,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         case 'FIC'
 
           switch gp.latent_method
-            case 'Laplace'
-              % Here tstind = 1 if the prediction is made for the training set 
+            case 'Laplace' 
               if nargin > 6
                 if ~isempty(tstind) && length(tstind) ~= size(x,1)
                   error('tstind (if provided) has to be of same length as x.')
@@ -937,7 +1109,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
                 Qv_ff=sum(B.^2)';
                 %Lav = zeros(size(La));
                 %Lav(tstind) = Kv_ff-Qv_ff;
-                Lav = Kv_ff-Qv_ff;            
+                Lav = Kv_ff-Qv_ff;
                 Ef(tstind) = Ef(tstind) + Lav.*deriv;
               end
 
