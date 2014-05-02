@@ -161,7 +161,11 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
         end        
         % Evaluate the mean
         if issparse(K_nf) && issparse(L)
-          deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z(p));
+          if isempty(z)
+            deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z);
+          else
+            deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z(p));
+          end
           Eft = K_nf(:,p)*deriv;
         else
           deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
