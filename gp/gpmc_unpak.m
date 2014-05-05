@@ -1,13 +1,13 @@
 function gp_rec = gpmc_unpak(gp_rec, w, varargin)
-%GP_PRED Set parameters of GP-IA cell array
+%GPMC_UNPAK Set parameters of GP-MC structure
 %
 %  Description
-%    GP_ARRAY = GPIA_UPAK(GP_ARRAY, W, P_TH)
-%    Set the hyperparameters of the GP_ARRAY for corresponding
-%    hyperparameters in W and weights in P_TH
+%    GP_REC = GPMC_UNPAK(GP, W)
+%    Given Gaussian process GP and hyperparameter weight matrix W,
+%    create GP-MC structure with hyperparameter values filled from W.
 %
 %  See also
-%    GPIA_PAK, GP_PAK, GP_UNPAK, GP_IA
+%    GPMC_PAK, GP_PAK, GP_UNPAK, GP_MC
 %
 % Copyright (c) 2014 Ville Tolvanen
 
