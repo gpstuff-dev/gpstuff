@@ -33,7 +33,7 @@ initTestSuite;
     drawnow;clear;close all
 
 
-% Test predictive mean, variance and density for binomial model with 5% tolerance.        
+% Test predictive mean, variance and density for binomial model with 10% tolerance.
         
   function testPredictiveMeanAndVariance
     values.real = load('realValuesBinomial1.mat','Eyt_la','Varyt_la');

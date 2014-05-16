@@ -321,9 +321,9 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask, i1)
     for i=i3
       cf = gpcf.cf{i};
       if ~savememory
-        DK = cf.fh.cfg(cf, x,x2);
+        DK = cf.fh.cfg(cf, x, [], 1);
       else
-        DK = {cf.fh.cfg(cf,x,x2,[],i1(2))};
+        DK = {cf.fh.cfg(cf, x, [], 1, i1(2))};
       end
       
       CC = 1;
