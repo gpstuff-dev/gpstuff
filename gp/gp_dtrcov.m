@@ -120,9 +120,16 @@ if (isfield(gp,'derivobs') && gp.derivobs)
       % Add Gaussian noise to the obs part of covariance
       lik = gp.lik;
       Noi=lik.fh.trcov(lik, x1);
-      x2=repmat(x1,m,1);
-      Cff = Kff + Noi;
-      C = [Cff Kfd'; Kfd Kdd];
+      Noi=[Noi zeros(size(Noi,1),size(K,2)-size(Noi,2)); ...
+        zeros(size(K,1)-size(Noi,1),size(Noi,2)) ...
+        zeros(size(K,1)-size(Noi,1),size(K,2)-size(Noi,2))];
+      C=K+Noi;
+%       x2=repmat(x1,m,1);
+%       Cff = Kff + Noi;
+%       C = [Cff Kfd'; Kfd Kdd];
+    end
+    if ~isempty(gp.jitterSigma2)
+      C(1:a1:end)=C(1:a1:end) + gp.jitterSigma2;
     end
   end
 end

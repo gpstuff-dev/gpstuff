@@ -341,7 +341,7 @@ function reclik = lik_gaussian_recappend(reclik, ri, lik)
 
   if nargin == 2
     % Initialize the record
-    reclik.type = 'lik_gaussian';
+    reclik.type = 'Gaussian';
     
     % Initialize the parameters
     reclik.sigma2 = []; 

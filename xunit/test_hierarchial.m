@@ -19,7 +19,7 @@ initTestSuite;
     % randomness. Run demo & save test values.
     prevstream=setrandstream(0);    
     disp('Running: demo_hierarchial')
-    demo_hierarchial
+    demo_hierprior
     path = which('test_hierarchial');
     path = strrep(path,'test_hierarchial.m', 'testValues');
     if ~(exist(path, 'dir') == 7)
