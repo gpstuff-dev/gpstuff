@@ -384,7 +384,7 @@ for i1=1:length(ind)
     warning('NaNs in moment computations')
     lctmp(isnan(lctmp))=0;
   end
-  lc2(:,i1) = interp1(fvectmp, lctmp, fvec2, 'cubic');
+  lc2(:,i1) = interp1(fvectmp, lctmp, fvec2, 'pchip');
 
   % Make correction
   pc(:,i1)=exp(lc2(:,i1) + lp(:,i1));
