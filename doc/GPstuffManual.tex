@@ -869,16 +869,19 @@ both the parameters and the latent variables.
 The full MCMC is performed by alternate sampling from the conditional
 posteriors $p(\f|\mathcal{D},\vartheta)$ and
 $p(\vartheta|\mathcal{D},\f)$. Possible choices to sample from the
-conditional posterior of the parameters are, e.g., HMC and slice
-sampling (SLS) \citep{Neal:2003}. Sampling both the parameters and
+conditional posterior of the parameters are, e.g., HMC, no-U-turn sampler \citep{Hoffman+Gelman:2014}, slice
+sampling (SLS) \citep{Neal:2003,Thompson+Neal:2010}. Sampling both the parameters and
 latent variables is usually slow since due to the strong correlation
 between them
 \citep{Vanhatalo+Vehtari:2007,Vanhatalo+Pietilainen+Vehtari:2010}.
+Surrogate slice sampling by \citet{Murray+Adams:2010} can be used to
+sample both the parameters and latent variables at the same time.
+
 Sampling from the (approximate) marginal, $p(\vartheta|\mathcal{D})$,
 is an easier task since the parameter space is smaller.
-
+%
 The parameters can be sampled from their marginal posterior (or its
-approximation) with HMC, SLS \citep{Neal:2003} or via importance
+approximation) with HMC, SLS \citep{Neal:2003,Thompson+Neal:2010} or via importance
 sampling \citep{Geweke:1989}. In importance sampling, we use a
 Gaussian or Student-$t$ proposal distribution $g(\vartheta)$ with mean
 $\hat{\vartheta}$ and covariance approximated with the negative
