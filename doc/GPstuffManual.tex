@@ -1359,7 +1359,7 @@ well as MCMC.
 
 \subsubsection{Marginal posterior corrections}
 
-\pkg{GPstuff} also provides methods for marginal posterior corrections using either Laplace or EP as a latent method \citep{Cseke+Heskes:2011}. Provided correction methods are either \texttt{cm2} or \texttt{fact} for Laplace and \texttt{fact} for EP. 
+\pkg{GPstuff} also provides methods for marginal posterior corrections using either Laplace or EP as a latent method \citep{Cseke+Heskes:2011}. Provided correction methods are either \texttt{cm2} or \texttt{fact} for Laplace and \texttt{fact} for EP. These methods are related to methods proposed by \citet{Tierney+Kadane:1986} and \citet{Rue+Martino+Chopin:2009}.
 
 Univariate marginal posterior corrections can be computed with function \texttt{gp\_predcm} which returns the corrected marginal posterior distributtion for the given indices of input/outputs:
 \begin{verbatim}
@@ -3629,15 +3629,16 @@ example, uniform prior works very badly for the parameters of the
 Student-$t$ distribution. Thus, it is better to spend some time
 thinking what the prior actually says than blindly use the uniform.
 
-Much could be done to improve the inference algorithms in
-\pkg{GPstuff}. For example, the shape of the conditional posterior of
-a latent variable could be estimated more accurately with techniques
-described by, for example, \citet{Rue+Martino+Chopin:2009},
-\citet{Paquet+Winther+Opper:2009}, and \citet{Cseke+Heskes:2010}
-\citep[see also][]{Tierney+Kadane:1986}. Improvements compromise the
-computational speed but are essential for more reliable results, for
-which reason these techniques provide an important future extension
-for the toolbox. There are also other analytic approximations than the
+% Much could be done to improve the inference algorithms in
+% \pkg{GPstuff}. For example, the shape of the conditional posterior of
+% a latent variable could be estimated more accurately with techniques
+% described by, for example, \citet{Rue+Martino+Chopin:2009},
+% \citet{Paquet+Winther+Opper:2009}, and \citet{Cseke+Heskes:2010}
+% \citep[see also][]{Tierney+Kadane:1986}. Improvements compromise the
+% computational speed but are essential for more reliable results, for
+% which reason these techniques provide an important future extension
+%for the toolbox. 
+There are also other analytic approximations than the
 Laplace approximation or EP proposed in the literature. Most of these
 are based on some kind of variational approximation
 \citep{Gibbs+MacKay:2000,Csato+Opper:2002,Tipping+Lawrence:2005,Kuss:2006,Opper+Archambeau:2009}.
@@ -4802,7 +4803,3 @@ related functions. To start see functions with name starting
 
 \end{document}
 
-%%% Local Variables: 
-%%% mode: TeX-PDF
-%%% TeX-master: t
-%%% End: 
