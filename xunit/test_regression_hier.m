@@ -1,35 +1,63 @@
 function test_suite = test_regression_hier
 
-%   Run specific demo and save values for comparison.
+%   Run specific demo, save values and compare the results to the expected.
+%   Works for both xUnit Test Framework package by Steve Eddins and for
+%   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
 %     TEST_ALL, DEMO_REGRESSION_HIER
+%
+% Copyright (c) 2014 Tuomas Sivula
 
-initTestSuite;
-
-% Set random number stream so that test failing isn't because randomness.
-% Run demo & save test values.
-
-function testDemo
-prevstream=setrandstream(0);
-
-disp('Running: demo_regression_hier')
-demo_regression_hier
-path = which('test_regression_hier.m');
-path = strrep(path,'test_regression_hier.m', 'testValues');
-if ~(exist(path, 'dir') == 7)
-    mkdir(path)
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+  
+  % Check if the caller was the xUnit package or the built-in test framework
+  c_stack = dbstack('-completenames');
+  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+    % xUnit package
+    initTestSuite;
+  else
+    % Built-in package
+    % Use all functions except the @setup
+    tests = localfunctions;
+    tests = tests(~cellfun(@(x)strcmp(func2str(x),'setup'),tests));
+    test_suite = functiontests(tests);
+  end
 end
-path = strcat(path, '/testRegression_hier'); 
-save(path, 'Eff');
-
-% Set back initial random stream
-setrandstream(prevstream);
-drawnow;clear;close all
 
 
-function testPredictionMissingData
-values.real = load('realValuesRegression_hier', 'Eff');
-values.test = load(strrep(which('test_regression_hier.m'), 'test_regression_hier.m', 'testValues/testRegression_hier'), 'Eff');
-assertVectorsAlmostEqual(mean(values.real.Eff), mean(values.test.Eff), 'relative', 0.01);
+% -------------
+%     Tests
+% -------------
+
+function testRunDemo(testCase)
+  % Run the correspondin demo and save the values. Note this test has to
+  % be run at lest once before the other test may succeed.
+  run_demo(getName())
+end
+
+function testPredictionMissingData(testCase)
+  verifyVarsEqual(testCase, getName(), {'Eff'}, {@mean}, ...
+    'RelTolElement', 0.01, 'RelTolRange', 0.005)
+end
+
+
+% ------------------------
+%     Helper functions
+% ------------------------
+
+function testCase = setup
+  % Helper function to suply empty array into variable testCase as an
+  % argument for each test function, if using xUnit package. Not to be
+  % used with built-in test framework.
+  testCase = [];
+end
+
+function name = getName
+  % Helperfunction that returns the name of the demo, e.g. 'binomial1'.
+  name = mfilename;
+  name = name(6:end);
+end
 

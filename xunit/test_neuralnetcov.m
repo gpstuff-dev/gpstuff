@@ -1,38 +1,65 @@
 function test_suite = test_neuralnetcov
 
-%   Run specific demo and save values for comparison.
+%   Run specific demo, save values and compare the results to the expected.
+%   Works for both xUnit Test Framework package by Steve Eddins and for
+%   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
 %     TEST_ALL, DEMO_NEURALNETCOV
+%
+% Copyright (c) 2014 Tuomas Sivula
 
-initTestSuite;
-
-
-function testDemo
-% Set random number stream so that failing isn't because randomness. Run
-% demo & save test values.
-prevstream=setrandstream(0);
-
-disp('Running: demo_neuralnetcov')
-demo_neuralnetcov
-path = which('test_neuralnetcov.m');
-path = strrep(path,'test_neuralnetcov.m', 'testValues');
-if ~(exist(path, 'dir') == 7)
-    mkdir(path)
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+  
+  % Check if the caller was the xUnit package or the built-in test framework
+  c_stack = dbstack('-completenames');
+  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+    % xUnit package
+    initTestSuite;
+  else
+    % Built-in package
+    % Use all functions except the @setup
+    tests = localfunctions;
+    tests = tests(~cellfun(@(x)strcmp(func2str(x),'setup'),tests));
+    test_suite = functiontests(tests);
+  end
 end
-path = strcat(path, '/testNeuralnetcov'); 
-save(path,  'Eft_map', 'Varft_map', 'Eft_map2', 'Varft_map2');
 
-% Set back initial random stream
-setrandstream(prevstream);
-drawnow;clear;close all
 
-% Compare test values to real values.
+% -------------
+%     Tests
+% -------------
 
-function testPredictions
-values.real = load('realValuesNeuralnetcov.mat','Eft_map', 'Eft_map2','Varft_map','Varft_map2');
-values.test = load(strrep(which('test_neuralnetcov.m'), 'test_neuralnetcov.m', 'testValues/testNeuralnetcov.mat'), 'Eft_map', 'Eft_map2','Varft_map','Varft_map2');
-assertElementsAlmostEqual(mean(values.real.Eft_map), mean(values.test.Eft_map), 'relative', 0.05);
-assertElementsAlmostEqual(mean(values.real.Eft_map2), mean(values.test.Eft_map2), 'relative', 0.05);
-assertElementsAlmostEqual(mean(values.real.Varft_map), mean(values.test.Varft_map), 'relative', 0.05);
-assertElementsAlmostEqual(mean(values.real.Varft_map2), mean(values.test.Varft_map2), 'relative', 0.05);
+function testRunDemo(testCase)
+  % Run the correspondin demo and save the values. Note this test has to
+  % be run at lest once before the other test may succeed.
+  run_demo(getName())
+end
+
+function testPredictions(testCase)
+  verifyVarsEqual(testCase, getName(), ...
+    {'Eft_map', 'Eft_map2','Varft_map','Varft_map2'}, ...
+    {@mean, @mean, @mean, @mean}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+
+% ------------------------
+%     Helper functions
+% ------------------------
+
+function testCase = setup
+  % Helper function to suply empty array into variable testCase as an
+  % argument for each test function, if using xUnit package. Not to be
+  % used with built-in test framework.
+  testCase = [];
+end
+
+function name = getName
+  % Helperfunction that returns the name of the demo, e.g. 'binomial1'.
+  name = mfilename;
+  name = name(6:end);
+end
+

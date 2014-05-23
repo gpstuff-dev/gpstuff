@@ -1,48 +1,68 @@
 function test_suite = test_monotonic2
 
-%   Run specific demo and save values for comparison.
+%   Run specific demo, save values and compare the results to the expected.
+%   Works for both xUnit Test Framework package by Steve Eddins and for
+%   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
 %     TEST_ALL, DEMO_MONOTONIC2
 %
-% Copyright (c) 2011-2012 Ville Tolvanen
+% Copyright (c) 2014 Tuomas Sivula
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
-
-initTestSuite;
-
-
-  function testDemo
-    % Set random number stream so that the test failing isn't because
-    % randomness. Run demo & save test values.
-    prevstream=setrandstream(0);    
-    disp('Running: demo_monotonic2')
-    demo_monotonic2
-    path = which('test_monotonic2');
-    path = strrep(path,'test_monotonic2.m', 'testValues');
-    if ~(exist(path, 'dir') == 7)
-      mkdir(path)
-    end
-    path = strcat(path, '/testMonotonic2');
-    save(path, 'Eft', 'Varft', 'Eftm', 'Varftm');
-    
-    % Set back initial random stream
-    setrandstream(prevstream);
-    drawnow;clear;close all
-
-
-% Test predictive mean and variance for non-monotonic and monotonic model 
-% with 5% tolerance.
   
-  function testPredictiveMeanAndVariance
-    values.real = load('realValuesMonotonic2.mat','Eft','Varft','Eftm','Varftm');
-    values.test = load(strrep(which('test_monotonic2.m'), 'test_monotonic2.m', 'testValues/testMonotonic2.mat'),'Eft','Varft','Eftm','Varftm');
-    assertElementsAlmostEqual((values.real.Eft), (values.test.Eft), 'relative', 0.05);
-    assertElementsAlmostEqual((values.real.Varft), (values.test.Varft), 'relative', 0.05);
-    assertElementsAlmostEqual((values.real.Eftm), (values.test.Eftm), 'relative', 0.05);
-    assertElementsAlmostEqual((values.real.Varftm), (values.test.Varftm), 'relative', 0.05);
-    
+  % Check if the caller was the xUnit package or the built-in test framework
+  c_stack = dbstack('-completenames');
+  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+    % xUnit package
+    initTestSuite;
+  else
+    % Built-in package
+    % Use all functions except the @setup
+    tests = localfunctions;
+    tests = tests(~cellfun(@(x)strcmp(func2str(x),'setup'),tests));
+    test_suite = functiontests(tests);
+  end
+end
 
+
+% -------------
+%     Tests
+% -------------
+
+function testRunDemo(testCase)
+  % Run the correspondin demo and save the values. Note this test has to
+  % be run at lest once before the other test may succeed.
+  run_demo(getName())
+end
+
+function testPredictiveMeanAndVariance_normal(testCase)
+  verifyVarsEqual(testCase, getName(), {'Eft','Varft'}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testPredictiveMeanAndVariance_monotonic(testCase)
+  verifyVarsEqual(testCase, getName(), {'Eftm','Varftm'}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+
+% ------------------------
+%     Helper functions
+% ------------------------
+
+function testCase = setup
+  % Helper function to suply empty array into variable testCase as an
+  % argument for each test function, if using xUnit package. Not to be
+  % used with built-in test framework.
+  testCase = [];
+end
+
+function name = getName
+  % Helperfunction that returns the name of the demo, e.g. 'binomial1'.
+  name = mfilename;
+  name = name(6:end);
+end
 

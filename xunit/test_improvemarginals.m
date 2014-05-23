@@ -1,65 +1,79 @@
 function test_suite = test_improvemarginals
 
-%   Run specific demo and save values for comparison.
+%   Run specific demo, save values and compare the results to the expected.
+%   Works for both xUnit Test Framework package by Steve Eddins and for
+%   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
 %     TEST_ALL, DEMO_IMPROVEMARGINALS
 %
-% Copyright (c) 2011-2012 Ville Tolvanen
+% Copyright (c) 2014 Tuomas Sivula
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
-
-initTestSuite;
-
-
-  function testDemo
-    % Set random number stream so that the test failing isn't because
-    % randomness. Run demo & save test values.
-    prevstream=setrandstream(0);    
-    disp('Running: demo_improvemarginals')
-    demo_improvemarginals
-    path = which('test_improvemarginals');
-    path = strrep(path,'test_improvemarginals.m', 'testValues');
-    if ~(exist(path, 'dir') == 7)
-      mkdir(path)
-    end
-    path = strcat(path, '/testImprovemarginals');
-    save(path, 'pc_ep', 'fvec_ep', 'pc_ep_pred', 'fvec_ep_pred', ...
-      'pc_la', 'fvec_la', 'pc_la_pred', 'fvec_la_pred', ...
-      'pc_la2', 'fvec_la2', 'pc_la_pred2', 'fvec_la_pred2');
-    
-    % Set back initial random stream
-    setrandstream(prevstream);
-    drawnow;clear;close all
+  
+  % Check if the caller was the xUnit package or the built-in test framework
+  c_stack = dbstack('-completenames');
+  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+    % xUnit package
+    initTestSuite;
+  else
+    % Built-in package
+    % Use all functions except the @setup
+    tests = localfunctions;
+    tests = tests(~cellfun(@(x)strcmp(func2str(x),'setup'),tests));
+    test_suite = functiontests(tests);
+  end
+end
 
 
-% Test the corrected distributions with 5% tolerance.
-        
-  function test_EP_fact
-    values.real = load('realValuesImprovemarginals.mat','pc_ep','fvec_ep','pc_ep_pred','fvec_ep_pred');
-    values.test = load(strrep(which('test_improvemarginals.m'), 'test_improvemarginals.m', 'testValues/testImprovemarginals.mat'),'pc_ep','fvec_ep','pc_ep_pred','fvec_ep_pred');
-    assertElementsAlmostEqual((values.real.pc_ep), (values.test.pc_ep), 'relative', 0.05);
-    assertElementsAlmostEqual([values.real.fvec_ep(1), values.real.fvec_ep(end)], [values.test.fvec_ep(1), values.test.fvec_ep(end)], 'relative', 0.05);
-    assertElementsAlmostEqual((values.real.pc_ep_pred), (values.test.pc_ep_pred), 'relative', 0.05);
-    assertElementsAlmostEqual([values.real.fvec_ep_pred(1), values.real.fvec_ep_pred(end)], [values.test.fvec_ep_pred(1), values.test.fvec_ep_pred(end)], 'relative', 0.05);
+% -------------
+%     Tests
+% -------------
+
+function testRunDemo(testCase)
+  % Run the correspondin demo and save the values. Note this test has to
+  % be run at lest once before the other test may succeed.
+  run_demo(getName())
+end
+
+function test_EP_fact(testCase)
+  verifyVarsEqual(testCase, getName(), ...
+    {'pc_ep','fvec_ep','pc_ep_pred','fvec_ep_pred'}, ...
+    {[], @(x)[x(1),x(end)], [], @(x)[x(1),x(end)]}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function test_Laplace_CM2(testCase)
+  verifyVarsEqual(testCase, getName(), ...
+    {'pc_la','fvec_la','pc_la_pred','fvec_la_pred'}, ...
+    {[], @(x)[x(1),x(end)], [], @(x)[x(1),x(end)]}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function test_Laplace_fact(testCase)
+  verifyVarsEqual(testCase, getName(), ...
+    {'pc_la2','fvec_la2','pc_la_pred2','fvec_la_pred2'}, ...
+    {[], @(x)[x(1),x(end)], [], @(x)[x(1),x(end)]}, ...
+    'RelTolElement', 0.1, 'RelTolRange', 0.05)
+end
 
 
-  function test_Laplace_CM2
-    values.real = load('realValuesImprovemarginals.mat','pc_la','fvec_la','pc_la_pred','fvec_la_pred');
-    values.test = load(strrep(which('test_improvemarginals.m'), 'test_improvemarginals.m', 'testValues/testImprovemarginals.mat'),'pc_la','fvec_la','pc_la_pred','fvec_la_pred');
-    assertElementsAlmostEqual((values.real.pc_la), (values.test.pc_la), 'relative', 0.05);
-    assertElementsAlmostEqual([values.real.fvec_la(1), values.real.fvec_la(end)], [values.test.fvec_la(1), values.test.fvec_la(end)], 'relative', 0.05);
-    assertElementsAlmostEqual((values.real.pc_la_pred), (values.test.pc_la_pred), 'relative', 0.05);
-    assertElementsAlmostEqual([values.real.fvec_la_pred(1), values.real.fvec_la_pred(end)], [values.test.fvec_la_pred(1), values.test.fvec_la_pred(end)], 'relative', 0.05);
+% ------------------------
+%     Helper functions
+% ------------------------
 
+function testCase = setup
+  % Helper function to suply empty array into variable testCase as an
+  % argument for each test function, if using xUnit package. Not to be
+  % used with built-in test framework.
+  testCase = [];
+end
 
-  function test_Laplace_fact
-    values.real = load('realValuesImprovemarginals.mat','pc_la2','fvec_la2','pc_la_pred2','fvec_la_pred2');
-    values.test = load(strrep(which('test_improvemarginals.m'), 'test_improvemarginals.m', 'testValues/testImprovemarginals.mat'),'pc_la2','fvec_la2','pc_la_pred2','fvec_la_pred2');
-    assertElementsAlmostEqual((values.real.pc_la2), (values.test.pc_la2), 'relative', 0.1);
-    assertElementsAlmostEqual([values.real.fvec_la2(1), values.real.fvec_la2(end)], [values.test.fvec_la2(1), values.test.fvec_la2(end)], 'relative', 0.1);
-    assertElementsAlmostEqual((values.real.pc_la_pred2), (values.test.pc_la_pred2), 'relative', 0.1);
-    assertElementsAlmostEqual([values.real.fvec_la_pred2(1), values.real.fvec_la_pred2(end)], [values.test.fvec_la_pred2(1), values.test.fvec_la_pred2(end)], 'relative', 0.1);
+function name = getName
+  % Helperfunction that returns the name of the demo, e.g. 'binomial1'.
+  name = mfilename;
+  name = name(6:end);
+end
 

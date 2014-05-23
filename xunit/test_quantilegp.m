@@ -1,61 +1,69 @@
 function test_suite = test_quantilegp
 
-%   Run specific demo and save values for comparison.
+%   Run specific demo, save values and compare the results to the expected.
+%   Works for both xUnit Test Framework package by Steve Eddins and for
+%   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
 %     TEST_ALL, DEMO_QUANTILEGP
 %
-% Copyright (c) 2011-2012 Ville Tolvanen
+% Copyright (c) 2014 Tuomas Sivula
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
-
-initTestSuite;
-
-
-  function testDemo
-    % Set random number stream so that the test failing isn't because
-    % randomness. Run demo & save test values.
-    
-    disp('Running: demo_quantilegp')
-    demo_quantilegp
-    path = which('test_quantilegp');
-    path = strrep(path,'test_quantilegp.m', 'testValues');
-    if ~(exist(path, 'dir') == 7)
-      mkdir(path)
-    end
-    path = strcat(path, '/testQuantilegp');
-    save(path, 'Ef1','Ef2','Ef3','Ef4','Ef5','Varf1','Varf2','Varf3','Varf4','Varf5');
-    
-    drawnow;clear;close all
-
-
-% Test predictive mean and variance
   
-  function testPredictiveMeanAndVariance_EP
-    values.real = load('realValuesQuantilegp.mat', 'Ef4','Ef5','Varf4','Varf5');
-    values.test = load(strrep(which('test_quantilegp.m'), 'test_quantilegp.m', 'testValues/testQuantilegp.mat'), ...
-      'Ef4','Ef5','Varf4','Varf5');
-    tol = 0.10; % Tolerance
-    assertElementsAlmostEqual(values.real.Ef4, values.test.Ef4, 'relative', tol);
-    assertElementsAlmostEqual(values.real.Varf4, values.test.Varf4, 'relative', tol);
-    assertElementsAlmostEqual(values.real.Ef5, values.test.Ef5, 'relative', tol);
-    assertElementsAlmostEqual(values.real.Varf5, values.test.Varf5, 'relative', tol);
+  % Check if the caller was the xUnit package or the built-in test framework
+  c_stack = dbstack('-completenames');
+  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+    % xUnit package
+    initTestSuite;
+  else
+    % Built-in package
+    % Use all functions except the @setup
+    tests = localfunctions;
+    tests = tests(~cellfun(@(x)strcmp(func2str(x),'setup'),tests));
+    test_suite = functiontests(tests);
+  end
+end
 
-  function testPredictiveMeanAndVariance_MCMC
-    values.real = load('realValuesQuantilegp.mat', 'Ef1','Ef2','Ef3');
-    values.test = load(strrep(which('test_quantilegp.m'), 'test_quantilegp.m', 'testValues/testQuantilegp.mat'), ...
-      'Ef1','Ef2','Ef3');
-    tol = 0.10; % Tolerance
-    % Here the results are compared in L2-norm sense in order to be more
-    % reasonable (using assertVectorsAlmostEqual). This type of comparison
-    % should be used in the other asserts also.
-    assertVectorsAlmostEqual(values.real.Ef1, values.test.Ef1, 'relative', tol);
-    %assertVectorsAlmostEqual(values.real.Varf1, values.test.Varf1, 'relative', tol);
-    assertVectorsAlmostEqual(values.real.Ef2, values.test.Ef2, 'relative', tol);
-    %assertVectorsAlmostEqual(values.real.Varf2, values.test.Varf2, 'relative', tol);
-    assertVectorsAlmostEqual(values.real.Ef3, values.test.Ef3, 'relative', tol);
-    %assertVectorsAlmostEqual(values.real.Varf3, values.test.Varf3, 'relative', tol);
+
+% -------------
+%     Tests
+% -------------
+
+function testRunDemo(testCase)
+  % Run the correspondin demo and save the values. Note this test has to
+  % be run at lest once before the other test may succeed.
+  run_demo(getName())
+end
+
+function testPredictiveMeanAndVariance_EP(testCase)
+  verifyVarsEqual(testCase, getName(), {'Ef4','Ef5','Varf4','Varf5'}, ...
+    'RelTolElement', 0.1, 'RelTolRange', 0.02)
+end
+
+function testPredictiveMean_MCMC(testCase)
+  verifyVarsEqual(testCase, getName(), {'Ef1','Ef2','Ef3'}, ...
+    'RelTolRange', 0.1)
+end
+
+
+% ------------------------
+%     Helper functions
+% ------------------------
+
+function testCase = setup
+  % Helper function to suply empty array into variable testCase as an
+  % argument for each test function, if using xUnit package. Not to be
+  % used with built-in test framework.
+  testCase = [];
+end
+
+function name = getName
+  % Helperfunction that returns the name of the demo, e.g. 'binomial1'.
+  name = mfilename;
+  name = name(6:end);
+end
 
     

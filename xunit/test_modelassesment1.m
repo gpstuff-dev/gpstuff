@@ -1,121 +1,123 @@
 function test_suite = test_modelassesment1
 
-%   Run specific demo and save values for comparison.
+%   Run specific demo, save values and compare the results to the expected.
+%   Works for both xUnit Test Framework package by Steve Eddins and for
+%   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
-%     TEST_ALL, DEMO_SURVIVAL_WEIBULL
+%     TEST_ALL, DEMO_MODELASSESMENT1
 %
-% Copyright (c) 2011-2012 Ville Tolvanen
+% Copyright (c) 2014 Tuomas Sivula
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
+  
+  % Check if the caller was the xUnit package or the built-in test framework
+  c_stack = dbstack('-completenames');
+  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+    % xUnit package
+    initTestSuite;
+  else
+    % Built-in package
+    % Use all functions except the @setup
+    tests = localfunctions;
+    tests = tests(~cellfun(@(x)strcmp(func2str(x),'setup'),tests));
+    test_suite = functiontests(tests);
+  end
+end
 
-initTestSuite;
+
+% -------------
+%     Tests
+% -------------
+
+function testRunDemo(testCase)
+  % Run the correspondin demo and save the values. Note this test has to
+  % be run at lest once before the other test may succeed.
+  run_demo(getName())
+end
+
+function testDICParameters(testCase)
+  verifyVarsEqual(testCase, getName(), {'DIC'}, {@nans2zero}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testDICAll(testCase)
+  verifyVarsEqual(testCase, getName(), {'DIC2'}, {@nans2zero}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testDICLatent(testCase)
+  verifyVarsEqual(testCase, getName(), {'DIC_latent'}, {@nans2zero}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testPeffLatentMarginalized(testCase)
+  verifyVarsEqual(testCase, getName(), {'p_eff'}, {@nans2zero}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testPeffAll(testCase)
+  verifyVarsEqual(testCase, getName(), {'p_eff2'}, {@nans2zero}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testPeffLatent(testCase)
+  verifyVarsEqual(testCase, getName(), {'p_eff_latent'}, {@nans2zero}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testPeffLatent2(testCase)
+  verifyVarsEqual(testCase, getName(), {'p_eff_latent2'}, {@nans2zero}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testLogPredDensity10foldCV(testCase)
+  verifyVarsEqual(testCase, getName(), {'mlpd_cv'}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testMeanSquaredError10foldCV(testCase)
+  verifyVarsEqual(testCase, getName(), {'rmse_cv'}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testLogPredDensityLOOPRED(testCase)
+  verifyVarsEqual(testCase, getName(), {'mlpd_loo'}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testMeanSquaredErrorLOOPRED(testCase)
+  verifyVarsEqual(testCase, getName(), {'rmse_loo'}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testWAIC(testCase)
+  verifyVarsEqual(testCase, getName(), {'WAICV','WAICG'}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
 
 
-  function testDemo
-    % Set random number stream so that test failing isn't because randomness.
-    % Run demo % save test values.
-    prevstream=setrandstream(0);
-    
-    disp('Running: demo_modelassesment1')
-    demo_modelassesment1
-    path = which('test_modelassesment1.m');
-    path = strrep(path,'test_modelassesment1.m', 'testValues');
-    if ~(exist(path, 'dir') == 7)
-      mkdir(path)
-    end
-    path = strcat(path, '/testModelAssesment1');
-    save(path, 'DIC', 'DIC2', 'DIC_latent', 'WAICV', 'WAICG', ...
-      'p_eff', 'p_eff2', 'p_eff_latent', 'p_eff_latent2', 'mlpd_cv', 'rmse_cv', 'mlpd_loo', 'rmse_loo');
-    
-    % Set back initial random stream
-    setrandstream(prevstream);
-    drawnow;clear;close all
-        
-  % Compare test values to real values.
+% ------------------------
+%     Helper functions
+% ------------------------
 
-  function testDICParameters
-    values.real = load('realValuesModelAssesment1.mat','DIC'); 
-    values.real.DIC(isnan(values.real.DIC)) = 0;
-    values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'DIC');
-    values.test.DIC(isnan(values.test.DIC)) = 0;
-    assertVectorsAlmostEqual(values.real.DIC, values.test.DIC, 'relative', 0.05);
-    
-        
-  function testDICAll
-    values.real = load('realValuesModelAssesment1.mat','DIC2');
-    values.real.DIC2(isnan(values.real.DIC2)) = 0;
-    values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'DIC2');
-    values.test.DIC2(isnan(values.test.DIC2)) = 0;
-    assertVectorsAlmostEqual(values.real.DIC2, values.test.DIC2, 'relative', 0.05);
-    
-        
-  function testDICLatent
-    values.real = load('realValuesModelAssesment1.mat','DIC_latent');
-    values.real.DIC_latent(isnan(values.real.DIC_latent)) = 0;
-    values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'DIC_latent');
-    values.test.DIC_latent(isnan(values.test.DIC_latent)) = 0;
-    assertVectorsAlmostEqual(values.real.DIC_latent, values.test.DIC_latent, 'relative', 0.05);
-    
-        
-   function testPeffLatentMarginalized
-     values.real = load('realValuesModelAssesment1.mat','p_eff');
-     values.real.p_eff(isnan(values.real.p_eff)) = 0;
-     values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'p_eff');
-     values.test.p_eff(isnan(values.test.p_eff)) = 0;
-     assertVectorsAlmostEqual(values.real.p_eff, values.test.p_eff, 'relative', 0.05);
-     
+function x = nans2zero(x)
+  % Helperfunction to replace NaNs in an array by zeroes.
+  x(isnan(x)) = 0;
+end
 
-   function testPeffAll
-     values.real = load('realValuesModelAssesment1.mat','p_eff2');
-     values.real.p_eff2(isnan(values.real.p_eff2)) = 0;
-     values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'p_eff2');
-     values.test.p_eff2(isnan(values.test.p_eff2)) = 0;
-     assertVectorsAlmostEqual(values.real.p_eff2, values.test.p_eff2, 'relative', 0.05);
-     
-        
-   function testPeffLatent
-     values.real = load('realValuesModelAssesment1.mat','p_eff_latent');
-     values.real.p_eff_latent(isnan(values.real.p_eff_latent)) = 0;
-     values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'p_eff_latent');
-     values.test.p_eff_latent(isnan(values.test.p_eff_latent)) = 0;
-     assertVectorsAlmostEqual(values.real.p_eff_latent, values.test.p_eff_latent, 'relative', 0.05);
-     
-        
-   function testPeffLatent2
-     values.real = load('realValuesModelAssesment1.mat','p_eff_latent2');
-     values.real.p_eff_latent2(isnan(values.real.p_eff_latent2)) = 0;
-     values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'),'p_eff_latent2');
-     values.test.p_eff_latent2(isnan(values.test.p_eff_latent2)) = 0;
-     assertVectorsAlmostEqual(values.real.p_eff_latent2, values.test.p_eff_latent2, 'relative', 0.05);
-     
-     
-   function testLogPredDensity10foldCV
-     values.real = load('realValuesModelAssesment1.mat', 'mlpd_cv');
-     values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'), 'mlpd_cv');
-     assertVectorsAlmostEqual(values.real.mlpd_cv, values.test.mlpd_cv, 'relative', 0.05);
-     
-        
-   function testMeanSquaredError10foldCV
-     values.real = load('realValuesModelAssesment1.mat', 'rmse_cv');
-     values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'), 'rmse_cv');
-     assertVectorsAlmostEqual(values.real.rmse_cv, values.test.rmse_cv, 'relative', 0.05);
-                 
-   function testLogPredDensityLOOPRED
-     values.real = load('realValuesModelAssesment1.mat', 'mlpd_loo');
-     values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'), 'mlpd_loo');
-     assertVectorsAlmostEqual(values.real.mlpd_loo, values.test.mlpd_loo, 'relative', 0.05);
-     
-        
-   function testMeanSquaredErrorLOOPRED
-     values.real = load('realValuesModelAssesment1.mat', 'rmse_loo');
-     values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'), 'rmse_loo');
-     assertVectorsAlmostEqual(values.real.rmse_loo, values.test.rmse_loo, 'relative', 0.05);
-                 
-   function testWAIC
-    values.real = load('realValuesModelAssesment1.mat', 'WAICV', 'WAICG');
-    values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'), 'WAICV', 'WAICG');
-    assertVectorsAlmostEqual(values.real.WAICV, values.test.WAICV, 'relative', 0.05);     
-    assertVectorsAlmostEqual(values.real.WAICG, values.test.WAICG, 'relative', 0.05);
+function testCase = setup
+  % Helper function to suply empty array into variable testCase as an
+  % argument for each test function, if using xUnit package. Not to be
+  % used with built-in test framework.
+  testCase = [];
+end
+
+function name = getName
+  % Helperfunction that returns the name of the demo, e.g. 'binomial1'.
+  name = mfilename;
+  name = name(6:end);
+end
+

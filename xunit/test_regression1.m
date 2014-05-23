@@ -1,93 +1,96 @@
 function test_suite = test_regression1
 
-%   Run specific demo and save values for comparison.
+%   Run specific demo, save values and compare the results to the expected.
+%   Works for both xUnit Test Framework package by Steve Eddins and for
+%   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
 %     TEST_ALL, DEMO_REGRESSION1
+%
+% Copyright (c) 2014 Tuomas Sivula
 
-initTestSuite;
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+  
+  % Check if the caller was the xUnit package or the built-in test framework
+  c_stack = dbstack('-completenames');
+  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+    % xUnit package
+    initTestSuite;
+  else
+    % Built-in package
+    % Use all functions except the @setup
+    tests = localfunctions;
+    tests = tests(~cellfun(@(x)strcmp(func2str(x),'setup'),tests));
+    test_suite = functiontests(tests);
+  end
+end
 
 
-  function testDemo
-    % Set random number stream so that test failing isn't because randomness.
-    % Run demo & save test values.
-    prevstream=setrandstream(0);
-    
-    disp('Running: demo_regression1')
-    demo_regression1
-    Eft_map = Eft_map(1:50);
-    Varft_map = Varft_map(1:50);
-    Eft_ia = Eft_ia(1:50);
-    Varft_ia = Varft_ia(1:50);
-    Eft_mc = Eft_mc(1:50);
-    Varft_mc = Varft_mc(1:50);
-    path = which('test_regression1.m');
-    path = strrep(path,'test_regression1.m', 'testValues');
-    if ~(exist(path, 'dir') == 7)
-      mkdir(path)
-    end
-    path = strcat(path, '/testRegression1');
-    save(path, 'K', 'C', 'w', 'Eft_map', 'Varft_map', ...
-      'Eft_ia', 'Varft_ia', 'Eft_mc', 'Varft_mc');
-    
-    % Set back initial random stream
-    setrandstream(prevstream);
-    drawnow;clear;close all
+% -------------
+%     Tests
+% -------------
 
-% Test saved values with multiple tests. Covariance matrices and
-% optimized parameters are tested with zero tolerance, while mean and 
-% variances from various approximations are tested with relative tolerance
-% (5% for MCMC and 1% for grid and IA)
+function testRunDemo(testCase)
+  % Run the correspondin demo and save the values. Note this test has to
+  % be run at lest once before the other test may succeed.
+  run_demo(getName())
+end
 
-    function testCovarianceMatrices
-        values.real = load('realValuesRegression1.mat','K','C');
-        values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'K','C');
-        assertElementsAlmostEqual(values.real.K, values.test.K);
-        assertElementsAlmostEqual(values.real.C, values.test.C);
-    
+function testCovarianceMatrices(testCase)
+  verifyVarsEqual(testCase, getName(), {'K','C'}, ...
+    'AbsTol', eps)
+end
 
-    function testOptimizedParameter
-        values.real = load('realValuesRegression1.mat','w');
-        values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'w');
-        assertElementsAlmostEqual(values.real.w, values.test.w, 'relative', 0.1);
-        
-    
+function testOptimizedParameter(testCase)
+  verifyVarsEqual(testCase, getName(), {'w'}, ...
+    'RelTolElement', 0.05)
+end
 
-    function testPredictedMeanVarianceGrid
-        values.real = load('realValuesRegression1.mat','Eft_map','Varft_map');
-        values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'Eft_map','Varft_map');
-        if length(values.test.Eft_map) > 50
-            assertElementsAlmostEqual(values.real.Eft_map(1:50), values.test.Eft_map(1:50), 'relative', 0.1);
-            assertElementsAlmostEqual(values.test.Varft_map(1:50), values.real.Varft_map(1:50), 'relative', 0.1);
-        else
-            assertElementsAlmostEqual(values.test.Eft_map, values.real.Eft_map, 'relative', 0.1);
-            assertElementsAlmostEqual(values.test.Varft_map, values.real.Varft_map, 'relative', 0.1);
-        end
-        
+function testPredictedMeanVarianceGrid(testCase)
+  verifyVarsEqual(testCase, getName(), ...
+    {'Eft_map','Varft_map'}, {@max_size, @max_size}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
 
-    function testPredictedMeanVarianceMC
-        values.real = load('realValuesRegression1.mat','Eft_mc','Varft_mc');
-        values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'Eft_mc','Varft_mc');
-        if length(values.test.Eft_mc) > 50
-            assertElementsAlmostEqual(mean(mean(values.test.Eft_mc(1:50))), mean(mean(values.real.Eft_mc(1:50))), 'relative', 0.1);
-            assertElementsAlmostEqual(mean(values.test.Varft_mc(1:50)), mean(values.real.Varft_mc(1:50)), 'absolute', 0.3);
-       else
-            assertElementsAlmostEqual(mean(mean(values.test.Eft_mc)), mean(mean(values.real.Eft_mc)), 'relative', 0.1);
-            assertElementsAlmostEqual(mean(mean(values.test.Varft_mc)), mean(mean(values.real.Varft_mc)), 'absolute', 0.3);
-        end
-   
+function testPredictedMeanVarianceMC(testCase)
+  verifyVarsEqual(testCase, getName(), ...
+    {'Eft_mc'}, {@max_size}, ...
+    'RelTolElement', 0.1, 'RelTolRange', 0.02)
+  verifyVarsEqual(testCase, getName(), ...
+    {'Varft_mc'}, {@max_size}, ...
+    'AbsTol', 0.3)
+end
 
-    function testPredictedMeanVarianceIA
-        values.real = load('realValuesRegression1.mat','Eft_ia','Varft_ia');
-        values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'Eft_ia','Varft_ia');
-        if length(values.test.Eft_ia) > 50
-            assertElementsAlmostEqual(mean(values.test.Eft_ia(1:50)), mean(values.real.Eft_ia(1:50)), 'relative', 0.1);
-            assertElementsAlmostEqual(mean(values.test.Varft_ia(1:50)), mean(values.real.Varft_ia(1:50)), 'relative', 0.1);
-        else
-            assertElementsAlmostEqual(mean(values.test.Eft_ia), mean(values.real.Eft_ia), 'relative', 0.1);
-            assertElementsAlmostEqual(mean(values.test.Varft_ia), mean(values.real.Varft_ia), 'relative', 0.1);
-        end
-    
-    
+function testPredictedMeanVarianceIA(testCase)
+  verifyVarsEqual(testCase, getName(), ...
+    {'Eft_ia','Varft_ia'}, {@max_size, @max_size}, ...
+    'RelTolElement', 0.1, 'RelTolRange', 0.02)
+end
 
+
+% ------------------------
+%     Helper functions
+% ------------------------
+
+function x = max_size(x)
+  % Helper function that limits the size to 50.
+  if length(x) > 50
+    x = x(1:50);
+  end
+end
+
+function testCase = setup
+  % Helper function to suply empty array into variable testCase as an
+  % argument for each test function, if using xUnit package. Not to be
+  % used with built-in test framework.
+  testCase = [];
+end
+
+function name = getName
+  % Helperfunction that returns the name of the demo, e.g. 'binomial1'.
+  name = mfilename;
+  name = name(6:end);
+end
 

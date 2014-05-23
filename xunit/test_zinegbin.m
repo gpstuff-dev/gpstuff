@@ -1,42 +1,63 @@
 function test_suite = test_zinegbin
 
-%   Run specific demo and save values for comparison.
+%   Run specific demo, save values and compare the results to the expected.
+%   Works for both xUnit Test Framework package by Steve Eddins and for
+%   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
 %     TEST_ALL, DEMO_ZINEGBIN
 %
-% Copyright (c) 2011-2012 Ville Tolvanen
+% Copyright (c) 2014 Tuomas Sivula
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
-
-initTestSuite;
-
-function testDemo
-% Set random number stream so that failing isn't because randomness. Run
-% demo & save test values.
-prevstream=setrandstream(0);
-
-disp('Running: demo_zinegbin')
-demo_zinegbin;
-path = which('test_zinegbin.m');
-path = strrep(path,'test_zinegbin.m', 'testValues');
-if ~(exist(path, 'dir') == 7)
-    mkdir(path)
+  
+  % Check if the caller was the xUnit package or the built-in test framework
+  c_stack = dbstack('-completenames');
+  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+    % xUnit package
+    initTestSuite;
+  else
+    % Built-in package
+    % Use all functions except the @setup
+    tests = localfunctions;
+    tests = tests(~cellfun(@(x)strcmp(func2str(x),'setup'),tests));
+    test_suite = functiontests(tests);
+  end
 end
-path = strcat(path, '/testZinegbin'); 
-Ef=Ef(1:100); Varf=diag(Varf(1:100,1:100));
-save(path, 'Ef', 'Varf');
 
-% Set back initial random stream
-setrandstream(prevstream);
-drawnow;clear;close all
 
-% Compare test values to real values.
+% -------------
+%     Tests
+% -------------
 
-function testPredictionsZinegbin
-values.real = load('realValuesZinegbin', 'Ef', 'Varf');
-values.test = load(strrep(which('test_zinegbin.m'), 'test_zinegbin.m', 'testValues/testZinegbin'), 'Ef', 'Varf');
-assertElementsAlmostEqual(values.real.Ef, values.test.Ef, 'relative', 0.10);
-assertElementsAlmostEqual(values.real.Varf, values.test.Varf, 'relative', 0.10);
+function testRunDemo(testCase)
+  % Run the correspondin demo and save the values. Note this test has to
+  % be run at lest once before the other test may succeed.
+  run_demo(getName())
+end
+
+function testPredictionsZinegbin(testCase)
+  verifyVarsEqual(testCase, getName(), {'Ef', 'Varf'}, ...
+    'RelTolElement', 0.1, 'RelTolRange', 0.02)
+end
+
+
+% ------------------------
+%     Helper functions
+% ------------------------
+
+function testCase = setup
+  % Helper function to suply empty array into variable testCase as an
+  % argument for each test function, if using xUnit package. Not to be
+  % used with built-in test framework.
+  testCase = [];
+end
+
+function name = getName
+  % Helperfunction that returns the name of the demo, e.g. 'binomial1'.
+  name = mfilename;
+  name = name(6:end);
+end
+

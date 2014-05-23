@@ -1,44 +1,68 @@
 function test_suite = test_regression_robust
 
-%   Run specific demo and save values for comparison.
+%   Run specific demo, save values and compare the results to the expected.
+%   Works for both xUnit Test Framework package by Steve Eddins and for
+%   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
 %     TEST_ALL, DEMO_REGRESSION_ROBUST
+%
+% Copyright (c) 2014 Tuomas Sivula
 
-initTestSuite;
-
-
-function testDemo
-% Set random number stream so that failing isn't because randomness. Run
-% demo & save test values.
-prevstream=setrandstream(0);
-
-disp('Running: demo_regression_robust')
-demo_regression_robust
-path = which('test_regression_robust.m');
-path = strrep(path,'test_regression_robust.m', 'testValues');
-if ~(exist(path, 'dir') == 7)
-    mkdir(path)
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+  
+  % Check if the caller was the xUnit package or the built-in test framework
+  c_stack = dbstack('-completenames');
+  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+    % xUnit package
+    initTestSuite;
+  else
+    % Built-in package
+    % Use all functions except the @setup
+    tests = localfunctions;
+    tests = tests(~cellfun(@(x)strcmp(func2str(x),'setup'),tests));
+    test_suite = functiontests(tests);
+  end
 end
-path = strcat(path, '/testRegression_robust'); 
-w=gp_pak(rr);
-save(path, 'Eft', 'Varft', 'w')
 
-% Set back initial random stream
-setrandstream(prevstream);
-drawnow;clear;close all
 
-% Compare test values to real values.
+% -------------
+%     Tests
+% -------------
 
-function testPredictionEP
-values.real = load('realValuesRegression_robust', 'Eft', 'Varft');
-values.test = load(strrep(which('test_regression_robust.m'), 'test_regression_robust.m', 'testValues/testRegression_robust'), 'Eft', 'Varft');
-assertElementsAlmostEqual(mean(values.real.Eft), mean(values.test.Eft), 'relative', 0.05);
-assertElementsAlmostEqual(mean(values.real.Varft), mean(values.test.Varft), 'relative', 0.05);
+function testPredictionEP(testCase)
+  % Run the correspondin demo and save the values. Note this test has to
+  % be run at lest once before the other test may succeed.
+  run_demo(getName())
+end
 
-function testMCMCSamples
-values.real = load('realValuesRegression_robust', 'w');
-values.test = load(strrep(which('test_regression_robust.m'), 'test_regression_robust.m', 'testValues/testRegression_robust'), 'w');
-assertElementsAlmostEqual(mean(values.real.w), mean(values.test.w), 'absolute', 0.5);
-assertElementsAlmostEqual(mean(values.real.w), mean(values.test.w), 'absolute', 0.5);
+function testNeuralNetworkCFPrediction(testCase)
+  verifyVarsEqual(testCase, getName(), {'Eft', 'Varft'}, {@mean, @mean}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function testMCMCSamples(testCase)
+  verifyVarsEqual(testCase, getName(), {'w'}, {@mean}, ...
+    'AbsTol', 0.5)
+end
+
+
+% ------------------------
+%     Helper functions
+% ------------------------
+
+function testCase = setup
+  % Helper function to suply empty array into variable testCase as an
+  % argument for each test function, if using xUnit package. Not to be
+  % used with built-in test framework.
+  testCase = [];
+end
+
+function name = getName
+  % Helperfunction that returns the name of the demo, e.g. 'binomial1'.
+  name = mfilename;
+  name = name(6:end);
+end
 

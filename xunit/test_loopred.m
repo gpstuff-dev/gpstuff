@@ -1,68 +1,82 @@
 function test_suite = test_loopred
 
-%   Run specific demo and save values for comparison.
+%   Run specific demo, save values and compare the results to the expected.
+%   Works for both xUnit Test Framework package by Steve Eddins and for
+%   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
-%     TEST_ALL, DEMO_BINOMIAL1
+%     TEST_ALL, DEMO_LOOPRED
 %
-% Copyright (c) 2011-2012 Ville Tolvanen
+% Copyright (c) 2014 Tuomas Sivula
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
-
-initTestSuite;
-
-
-  function testDemo
-    % Set random number stream so that the test failing isn't because
-    % randomness. Run demo & save test values.
-    prevstream=setrandstream(0);    
-    disp('Running: demo_loopred')
-    demo_loopred
-    path = which('test_loopred');
-    path = strrep(path,'test_loopred.m', 'testValues');
-    if ~(exist(path, 'dir') == 7)
-      mkdir(path)
-    end
-    path = strcat(path, '/testLoopred');
-    save(path, 'Eft_lrs', 'Varft_lrs', 'lpyt_lrs', 'Eft_cav', 'Varft_cav', 'lpyt_cav', 'Eft_inla', 'Varft_inla', 'lpyt_inla' ...
-      , 'Eft_ep', 'Varft_ep', 'lpyt_ep');
-    
-    % Set back initial random stream
-    setrandstream(prevstream);
-    drawnow;clear;close all
+  
+  % Check if the caller was the xUnit package or the built-in test framework
+  c_stack = dbstack('-completenames');
+  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+    % xUnit package
+    initTestSuite;
+  else
+    % Built-in package
+    % Use all functions except the @setup
+    tests = localfunctions;
+    tests = tests(~cellfun(@(x)strcmp(func2str(x),'setup'),tests));
+    test_suite = functiontests(tests);
+  end
+end
 
 
-% Test predictive mean, variance and density for binomial model with 5% tolerance.        
-        
-  function testLrsLOO
-    values.real = load('realValuesLoopred.mat','Eft_lrs','Varft_lrs','lpyt_lrs');
-    values.test = load(strrep(which('test_loopred.m'), 'test_loopred.m', 'testValues/testLoopred.mat'),'Eft_lrs','Varft_lrs','lpyt_lrs');
-    assertElementsAlmostEqual(values.real.Eft_lrs, values.test.Eft_lrs, 'absolute', 0.1);
-    assertElementsAlmostEqual(values.real.Varft_lrs, values.test.Varft_lrs, 'absolute', 0.1);
-    assertElementsAlmostEqual(values.real.lpyt_lrs, values.test.lpyt_lrs, 'absolute', 0.1);
+% -------------
+%     Tests
+% -------------
 
-  function testCavityLOO
-    values.real = load('realValuesLoopred.mat','Eft_cav','Varft_cav','lpyt_cav');
-    values.test = load(strrep(which('test_loopred.m'), 'test_loopred.m', 'testValues/testLoopred.mat'),'Eft_cav','Varft_cav','lpyt_cav');
-    assertElementsAlmostEqual(values.real.Eft_cav, values.test.Eft_cav, 'absolute', 0.1);
-    assertElementsAlmostEqual(values.real.Varft_cav, values.test.Varft_cav, 'absolute', 0.1);
-    assertElementsAlmostEqual(values.real.lpyt_cav, values.test.lpyt_cav, 'absolute', 0.1);
-    
-    
-  function testInlaLOO
-    values.real = load('realValuesLoopred.mat','Eft_inla','Varft_inla','lpyt_inla');
-    values.test = load(strrep(which('test_loopred.m'), 'test_loopred.m', 'testValues/testLoopred.mat'),'Eft_inla','Varft_inla','lpyt_inla');
-    assertElementsAlmostEqual(values.real.Eft_inla, values.test.Eft_inla, 'absolute', 0.1);
-    assertElementsAlmostEqual(values.real.Varft_inla, values.test.Varft_inla, 'absolute', 0.1);
-    assertElementsAlmostEqual(values.real.lpyt_inla, values.test.lpyt_inla, 'absolute', 0.1); 
-    
-  function testEPLOO
-    values.real = load('realValuesLoopred.mat','Eft_ep','Varft_ep','lpyt_ep');
-    values.test = load(strrep(which('test_loopred.m'), 'test_loopred.m', 'testValues/testLoopred.mat'),'Eft_ep','Varft_ep','lpyt_ep');
-    assertElementsAlmostEqual(values.real.Eft_ep, values.test.Eft_ep, 'absolute', 0.1);
-    assertElementsAlmostEqual(values.real.Varft_ep, values.test.Varft_ep, 'absolute', 0.1);
-    assertElementsAlmostEqual(values.real.lpyt_ep, values.test.lpyt_ep, 'absolute', 0.1);    
- 
+function testRunDemo(testCase)
+  % Run the correspondin demo and save the values. Note this test has to
+  % be run at lest once before the other test may succeed.
+  run_demo(getName())
+end
+
+function testLrsLOO(testCase)
+  verifyVarsEqual(testCase, getName(), ...
+    {'Eft_lrs','Varft_lrs','lpyt_lrs'}, ...
+    'AbsTol', 0.1)
+end
+
+function testCavityLOO(testCase)
+  verifyVarsEqual(testCase, getName(), ...
+    {'Eft_cav','Varft_cav','lpyt_cav'}, ...
+    'AbsTol', 0.1)
+end
+
+function testInlaLOO(testCase)
+  verifyVarsEqual(testCase, getName(), ...
+    {'Eft_inla','Varft_inla','lpyt_inla'}, ...
+    'AbsTol', 0.1)
+end
+
+function testEPLOO(testCase)
+  verifyVarsEqual(testCase, getName(), ...
+    {'Eft_ep','Varft_ep','lpyt_ep'}, ...
+    'AbsTol', 0.1)
+end
+
+
+% ------------------------
+%     Helper functions
+% ------------------------
+
+function testCase = setup
+  % Helper function to suply empty array into variable testCase as an
+  % argument for each test function, if using xUnit package. Not to be
+  % used with built-in test framework.
+  testCase = [];
+end
+
+function name = getName
+  % Helperfunction that returns the name of the demo, e.g. 'binomial1'.
+  name = mfilename;
+  name = name(6:end);
+end
 
