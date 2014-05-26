@@ -611,7 +611,7 @@ p(\y|\f)|_{\f=\hat{\f}}$, the approximate posterior predictive
 distribution
 %
 \begin{equation}\label{eq_posterior_in_Laplace_case}
-\tilde{f}|\mathcal{D},\theta, \sigma^2 \sim \GP\left(m_{\text{p}}(\tilde{\x}), k_{\text{p}}(\tilde{\x},\tilde{\x}')\right).
+\tilde{f}|\mathcal{D},\theta, \phi \sim \GP\left(m_{\text{p}}(\tilde{\x}), k_{\text{p}}(\tilde{\x},\tilde{\x}')\right).
 \end{equation}
 %
 Here the mean and covariance are $m_{\text{p}}(\tilde{\x}) = k(\tilde{\x},\mb{X})\nabla\log
@@ -869,16 +869,19 @@ both the parameters and the latent variables.
 The full MCMC is performed by alternate sampling from the conditional
 posteriors $p(\f|\mathcal{D},\vartheta)$ and
 $p(\vartheta|\mathcal{D},\f)$. Possible choices to sample from the
-conditional posterior of the parameters are, e.g., HMC and slice
-sampling (SLS) \citep{Neal:2003}. Sampling both the parameters and
+conditional posterior of the parameters are, e.g., HMC, no-U-turn sampler \citep{Hoffman+Gelman:2014}, slice
+sampling (SLS) \citep{Neal:2003,Thompson+Neal:2010}. Sampling both the parameters and
 latent variables is usually slow since due to the strong correlation
 between them
 \citep{Vanhatalo+Vehtari:2007,Vanhatalo+Pietilainen+Vehtari:2010}.
+Surrogate slice sampling by \citet{Murray+Adams:2010} can be used to
+sample both the parameters and latent variables at the same time.
+
 Sampling from the (approximate) marginal, $p(\vartheta|\mathcal{D})$,
 is an easier task since the parameter space is smaller.
-
+%
 The parameters can be sampled from their marginal posterior (or its
-approximation) with HMC, SLS \citep{Neal:2003} or via importance
+approximation) with HMC, SLS \citep{Neal:2003,Thompson+Neal:2010} or via importance
 sampling \citep{Geweke:1989}. In importance sampling, we use a
 Gaussian or Student-$t$ proposal distribution $g(\vartheta)$ with mean
 $\hat{\vartheta}$ and covariance approximated with the negative
@@ -1359,7 +1362,7 @@ well as MCMC.
 
 \subsubsection{Marginal posterior corrections}
 
-\pkg{GPstuff} also provides methods for marginal posterior corrections using either Laplace or EP as a latent method \citep{Cseke+Heskes:2011}. Provided correction methods are either \texttt{cm2} or \texttt{fact} for Laplace and \texttt{fact} for EP. 
+\pkg{GPstuff} also provides methods for marginal posterior corrections using either Laplace or EP as a latent method \citep{Cseke+Heskes:2011}. Provided correction methods are either \texttt{cm2} or \texttt{fact} for Laplace and \texttt{fact} for EP. These methods are related to methods proposed by \citet{Tierney+Kadane:1986} and \citet{Rue+Martino+Chopin:2009}.
 
 Univariate marginal posterior corrections can be computed with function \texttt{gp\_predcm} which returns the corrected marginal posterior distributtion for the given indices of input/outputs:
 \begin{verbatim}
@@ -3629,15 +3632,16 @@ example, uniform prior works very badly for the parameters of the
 Student-$t$ distribution. Thus, it is better to spend some time
 thinking what the prior actually says than blindly use the uniform.
 
-Much could be done to improve the inference algorithms in
-\pkg{GPstuff}. For example, the shape of the conditional posterior of
-a latent variable could be estimated more accurately with techniques
-described by, for example, \citet{Rue+Martino+Chopin:2009},
-\citet{Paquet+Winther+Opper:2009}, and \citet{Cseke+Heskes:2010}
-\citep[see also][]{Tierney+Kadane:1986}. Improvements compromise the
-computational speed but are essential for more reliable results, for
-which reason these techniques provide an important future extension
-for the toolbox. There are also other analytic approximations than the
+% Much could be done to improve the inference algorithms in
+% \pkg{GPstuff}. For example, the shape of the conditional posterior of
+% a latent variable could be estimated more accurately with techniques
+% described by, for example, \citet{Rue+Martino+Chopin:2009},
+% \citet{Paquet+Winther+Opper:2009}, and \citet{Cseke+Heskes:2010}
+% \citep[see also][]{Tierney+Kadane:1986}. Improvements compromise the
+% computational speed but are essential for more reliable results, for
+% which reason these techniques provide an important future extension
+%for the toolbox. 
+There are also other analytic approximations than the
 Laplace approximation or EP proposed in the literature. Most of these
 are based on some kind of variational approximation
 \citep{Gibbs+MacKay:2000,Csato+Opper:2002,Tipping+Lawrence:2005,Kuss:2006,Opper+Archambeau:2009}.
@@ -4802,7 +4806,3 @@ related functions. To start see functions with name starting
 
 \end{document}
 
-%%% Local Variables: 
-%%% mode: TeX-PDF
-%%% TeX-master: t
-%%% End: 
