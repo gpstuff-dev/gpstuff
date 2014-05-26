@@ -60,7 +60,16 @@ run_demo_data.origStream = setrandstream(0);
 % Hide figure windows
 run_demo_data.origFigVisibility = get(0,'DefaultFigureVisible');
 set(0,'DefaultFigureVisible','off')
+% Check if diay is already used (no logging then)
+if strcmp(get(0,'Diary'), 'off')
+  run_demo_data.diary = 1;
+else
+  run_demo_data.diary = 0;
+end
 clear name varToSave fpath mode
+
+% Create cleanup function to restore changes
+run_demo_cleanupObj = onCleanup(@() restoreChanges(run_demo_data));
 
 % Create the folder if it does not exist
 if ~(exist([run_demo_data.mode 'Values/'], 'dir') == 7)
@@ -74,8 +83,7 @@ try
     run_demo_data.name, repmat('-',1,79-15-length(run_demo_data.name)));
   
   % Create log, if diary is not currently running
-  if strcmp(get(0,'Diary'), 'off')
-    run_demo_data.diary = 1;
+  if run_demo_data.diary
     if exist([run_demo_data.mode 'Values/' run_demo_data.name '.txt'] ,'file')
       delete([run_demo_data.mode 'Values/' run_demo_data.name '.txt']);
     end
@@ -92,8 +100,8 @@ try
   end
   fprintf('Demo completed in %.3f minutes\n', toc(run_demo_data.timer_id)/60)
   
-  % Close diary if logged
-  if isfield(run_demo_data, 'diary')
+  % Close diary at this point (if logged)
+  if run_demo_data.diary
     diary off;
   end
 
@@ -101,14 +109,6 @@ catch err
   % Error running the demo
   ME = MException('run_demo:DemoFailure', 'Could not run demo_%s', run_demo_data.name);
   ME = addCause(ME, err);
-  % Restore changes and raise error
-  close all;
-  cd(run_demo_data.origPath)
-  setrandstream(run_demo_data.origStream);
-  set(0,'DefaultFigureVisible',run_demo_data.origFigVisibility)
-  if isfield(run_demo_data, 'diary')
-    diary off;
-  end
   throw(ME)
 end
 
@@ -148,25 +148,32 @@ try
     f.(n{1}).properties.Visible='on';
     save(filename,'-struct','f')
   end
-  % Close all the 'hidden' figures
-  close all;
   
 catch err
   % Error saving the variables
   ME = MException('run_demo:DemoResultSaveFailure', 'Could not save the results');
   ME = addCause(ME, err);
-  % Restore changes and raise error
-  close all;
-  cd(run_demo_data.origPath)
-  setrandstream(run_demo_data.origStream);
-  set(0,'DefaultFigureVisible',run_demo_data.origFigVisibility)
   throw(ME)
 end
 
 fprintf('Results saved into the folder ''xunit/%sValues/''\n\n', run_demo_data.mode)
 
-% Restore changes
-cd(run_demo_data.origPath)
-setrandstream(run_demo_data.origStream);
-set(0,'DefaultFigureVisible',run_demo_data.origFigVisibility)
+end
 
+
+function restoreChanges(run_demo_data)
+  % Ensure that changes are restored when exiting the function
+  
+  % Close all the 'hidden' figures
+  close all;
+  % Change directory
+  cd(run_demo_data.origPath)
+  % Set back previous random stream
+  setrandstream(run_demo_data.origStream);
+  % Set back original figure visibility
+  set(0,'DefaultFigureVisible',run_demo_data.origFigVisibility)
+  % Ensure that diary is closed (if used)
+  if run_demo_data.diary
+    diary off;
+  end
+end
