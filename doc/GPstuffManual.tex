@@ -3239,19 +3239,18 @@ If set of hyperparameters have been obtained using \code{gp\_mc} or
 \code{gp\_ia} LOO-posterior can be approximated using importance
 sampling or weighting
 \citep{Gelfand+Dey+Chang:1992,Vehtari+Lampinen:2002}, which is also
-implemented in \code{gp\_loopred}. We use an integrated approach
-proposed by \citet[][p. 40]{Vehtari:2001} where leave-one-out
+implemented in \code{gp\_loopred}. We use an integrated following \citet[][p. 40]{Vehtari:2001} where leave-one-out
 predictive densities given hyperparameters
 \begin{equation}
 p(y_i|x_i,D_{-i},\vartheta)=\int
 p(y_i|f_i,\vartheta)p(f_i|x_i,D_{-i},\vartheta)df_i 
 \end{equation}
 are obtained using the analytic solution, or the Laplace or EP
-approximation as mentioned above. Thus the importance weighting is
-made only for the hyperparameters. This reduces the variance of
-importance sampling estimate significantly making it useful in
-practice. With these approximations LOO-CV is very fast to compute in
-GPstuff.
+approximation as mentioned above \citep[see
+also][]{Held+Schrodle+Rue:2010}. Thus the importance weighting is made
+only for the hyperparameters. This reduces the variance of importance
+sampling estimate significantly making it useful in practice. With
+these approximations LOO-CV is very fast to compute in GPstuff.
 
 LOO-CV in GPstuff does not currently work for some multilatent
 models. In such case or if there is reason to doubt the reliability of
