@@ -35,7 +35,7 @@ end
 function testPredictionEP(testCase)
   % Run the correspondin demo and save the values. Note this test has to
   % be run at lest once before the other test may succeed.
-  run_demo(getName())
+  rundemo(getName())
 end
 
 function testNeuralNetworkCFPrediction(testCase)

@@ -1,8 +1,8 @@
-function run_demo(name, varToSave, mode)
-%RUN_DEMO  Run a GPstuff demo and save the results.
+function rundemo(name, varToSave, mode)
+%RUNDEMO  Run a GPstuff demo and save the results.
 %
 %   Description
-%     RUN_DEMO(name, varToSave, mode) runs the GPstuff demo given in name
+%     RUNDEMO(name, varToSave, mode) runs the GPstuff demo given in name
 %     and save given variables into the folder 'testValues' or 'realValues'.
 %     This function is used by test_* to compare the results into the
 %     precomputed expected ones.
@@ -70,8 +70,8 @@ end
 % Run the demo and create log into the desired directory
 try
   
-  fprintf(['Run demo_' run_demo_data.name ' and save the values ' ...
-    'into the folder ''' run_demo_data.mode 'Values''\n\n'])
+  fprintf('---- Run demo_%s %s\n\n', ...
+    run_demo_data.name, repmat('-',1,79-15-length(run_demo_data.name)));
   
   % Create log, if diary is not currently running
   if strcmp(get(0,'Diary'), 'off')
@@ -163,7 +163,7 @@ catch err
   throw(ME)
 end
 
-disp(['Results saved into the folder ''xunit/' run_demo_data.mode 'Values/'''])
+fprintf('Results saved into the folder ''xunit/%sValues/''\n\n', run_demo_data.mode)
 
 % Restore changes
 cd(run_demo_data.origPath)
