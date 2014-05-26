@@ -129,7 +129,7 @@
 
 \begin{abstract}%   <- trailing '%' for backward compatibility of .sty file
   Gaussian processes (GP) are powerful tools for probabilistic
-  modeling purposes. They can be used to define prior distributions
+  modeling purposes. They can be used to define prior distributions 
   over latent functions in hierarchical Bayesian models. The prior
   over functions is defined implicitly by the mean and covariance
   function, which determine the smoothness and variability of the
@@ -1378,9 +1378,11 @@ The returned value \texttt{pc} corresponds to corrected marginal posterior for t
 In this section, we desribe other likelihood functions, which
 factorize so that each factor depend only on single latent value.
  
-\subsection{Robust regression with Student-$t$ observation model}
+\subsection{Robust regression}
 
-A commonly used observation model in the GP regression is the Gaussian
+\subsubsection{Student-$t$ observation model}
+
+A commonly used observation model in the GP regression is the Gaussian 
 distribution. This is convenient since the marginal likelihood is
 analytically tractable. However, a known limitation with the Gaussian
 observation model is its non-robustness, due which outlying
@@ -1405,7 +1407,7 @@ U_i & \sim \text{Inv-}\chi^2(\nu, \tau^2), \label{eq_scale_mixture_2}
 where each observation has its own noise variance $\alpha U_i$ that is
 $\text{Inv-}\chi^2$ distributed
 \citep{Neal:1997,Gelman+etal+BDA3:2013}. The degrees of freedom $\nu$
-corresponds to the degrees of freedom in the Student-$t$ distribution
+corresponds to the degrees of freedom in the Student-$t$ distribution 
 and $\alpha\tau$ corresponds to $\sigma_t$.
 
 \begin{figure}
@@ -1433,7 +1435,19 @@ approximation and MCMC \citep[as described
 by][]{Vanhatalo+Jylanki+Vehtari:2009,Jylanki+Vanhatalo+Vehtari:2011}.
 These are demonstrated in \code{demo\_regression\_robust}.
 
+\subsubsection{Laplace observation model}
 
+Besides the Student-T observation model, Laplace distribution is another robust alternative to the normal 
+Gaussian observation model
+%
+\begin{equation}
+ \y | \f, \sigma  \sim \prod_{i=1}^n \left( 2\sigma \right)^{-1} \exp \left( -\frac{|y_i - f_i|}{\sigma} \right),
+\end{equation}
+%
+where $\sigma$ is the scale parameter of the Laplace distribution. 
+
+In \pkg{GPstuff}, the Laplace observation model implementation is in \code{lik\_laplace}. It should be noted that since the Laplace distribution is 
+not differentiable with respect to $\f$ in the mode, only EP approximation or MCMC can be used for inference. 
 \subsection{Count data}\label{sec_spatial_demo1}
 
 Count data are observed in applications. One such common application
