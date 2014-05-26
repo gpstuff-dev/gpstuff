@@ -223,8 +223,12 @@ function DKff = gpcf_noise_cfg(gpcf, x, x2, mask, i1)
   DKff = {};
 
   if ~isempty(gpcf.p.noiseSigma2)
+    [n, m] =size(x);
+    n1=n+1;
+    D = sparse([],[],[],n,n,0);
+    D(1:n1:end)=D(1:n1:end)+gpcf.noiseSigma2;
     gpp=gpcf.p;
-    DKff{1}=gpcf.noiseSigma2;
+    DKff{1}=D;
   end
   if nargin==4
     % Use memory save option

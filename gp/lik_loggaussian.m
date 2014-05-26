@@ -596,13 +596,17 @@ function [lpy, Ey, Vary] = lik_loggaussian_predy(lik, Ef, Varf, yt, zt)
     ind2=yc==0;
     
     if sum(ind1)>0
-      lpy(ind1,:)=-log(yt(ind1))+norm_lpdf(Ef(ind1), log(yt(ind1)), sqrt(s2+Varf(ind1)));
+      if ~isempty(yt)
+        lpy(ind1,:)=-log(yt(ind1))+norm_lpdf(Ef(ind1), log(yt(ind1)), sqrt(s2+Varf(ind1)));
+      end
       Ey(ind1,:) = exp(Ef(ind1)+Varf(ind1)/2);
       Vary(ind1,:) = (exp(Varf(ind1))-1).*exp(2*Ef(ind1)+Varf(ind1));
     end
     if sum(ind2)>0
-      zi=(Ef(ind2)-log(yt(ind2)))./sqrt(s2+Varf(ind2));
-      lpy(ind2,:)=log(norm_cdf(zi));
+      if ~isempty(yt)
+        zi=(Ef(ind2)-log(yt(ind2)))./sqrt(s2+Varf(ind2));
+        lpy(ind2,:)=log(norm_cdf(zi));
+      end
       py1 = norm_cdf(Ef(ind2)./sqrt(1+Varf(ind2)));
       Ey(ind2,:) = 2*py1 - 1;      
       Vary(ind2,:) = 1-Ey(ind2).^2;

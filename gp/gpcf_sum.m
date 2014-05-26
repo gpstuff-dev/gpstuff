@@ -285,10 +285,10 @@ function DKff = gpcf_sum_cfg(gpcf, x, x2, mask, i1)
     DKff = {};
     for i=i2
       cf = gpcf.cf{i};
-      if savememory
-        DK = cf.fh.cfg(cf, x, [], 1, i1(2));
+      if ~savememory
+        DK = cf.fh.cfg(cf, x, [], mask);
       else
-        DK = cf.fh.cfg(cf, x, [], 1);
+        DK = {cf.fh.cfg(cf, x, [], mask, i1(2))};
       end
       DKff = [DKff DK];
 

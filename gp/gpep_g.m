@@ -1110,26 +1110,22 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
 
         gdata_lik = 0;       
-        lik = gp.lik;
-          
-        for k1 = 1:length(y)
-          if isempty(eta)
-            gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
-          else
-            gdata_lik = gdata_lik - lik.fh.siteDeriv2(lik, y, k1, sigm2_i(k1), mu_i(k1), z, eta(k1), Z_i(k1));
-          end
-        end
+        lik = gp.lik; 
+        gprior_lik = -lik.fh.lpg(lik);   % evaluate prior contribution for the gradient
+        if ~isempty(gprior_lik)          % calculate gradient wrt likelihood parameters only if they have prior
 
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          gprior_lik = -lik.fh.lpg(lik);
-        else
-          gprior_lik = zeros(size(gdata_lik));
+            for k1 = 1:length(y)
+                if isempty(eta)
+                    gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+                else
+                    gdata_lik = gdata_lik - lik.fh.siteDeriv2(lik, y, k1, sigm2_i(k1), mu_i(k1), z, eta(k1), Z_i(k1));
+                end
+            end
+            
+            % set the gradients into vectors that will be returned
+            gdata = [gdata gdata_lik];
+            gprior = [gprior gprior_lik];
         end
-
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior gprior_lik];
       end
     end    
     if isfield(gp,'lik_mono') && isequal(gp.lik.type, 'Gaussian')

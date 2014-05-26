@@ -186,7 +186,7 @@ function [w,s,h] = gpcf_sexp_pak(gpcf)
     s = [s; 'log(sexp.magnSigma2)'];
     h = [h 1];
     % Hyperparameters of magnSigma2
-    [wh sh, hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    [wh, sh, hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
     sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
