@@ -124,7 +124,22 @@ switch gp.type
   % FULL GP (and compact support GP)
   % ============================================================
   case 'FULL'   % A full GP
-    [K, C] = gp_trcov(gp, x);
+    if isfield(gp, 'lik_mono')
+      [K,C] = gp_dtrcov(gp, x, gp.xv);      
+      if isequal(gp.lik.type, 'Gaussian')
+        % Condition the derivatives on the observations
+        cc=C(size(x,1)+1:end,size(x,1)+1:end);
+        cy=C(size(x,1)+1:end,1:size(x,1));
+        cyy=C(1:size(x,1),1:size(x,1));
+        C=cc - cy*(cyy\cy');
+        %C=0.5.*(C+C')+1e-10.*eye(size(C));
+        meany=cy*(cyy\y(1:n));
+        y=(y(n+1:end)-meany);
+        n=length(y);
+      end
+    else
+      [K, C] = gp_trcov(gp, x);
+    end
     
     % Are there specified mean functions
     if  ~isfield(gp,'meanf')       % a zero mean function

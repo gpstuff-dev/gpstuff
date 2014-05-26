@@ -106,8 +106,12 @@ function ll = lik_probit_ll(lik, y, f, z)
   if ~isempty(find(abs(y)~=1))
     error('lik_probit: The class labels have to be {-1,1}')
   end
-  
-  p = y.*f;
+  if isfield(lik, 'nu')
+    nu=lik.nu;
+  else
+    nu=1;
+  end
+  p = y.*f/nu;
   ll = log(norm_cdf(p));
   if any(p<-10)
     % Asymptotic expansion of norm_cdf
