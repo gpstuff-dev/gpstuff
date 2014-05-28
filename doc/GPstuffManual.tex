@@ -3360,10 +3360,10 @@ where $BU_t$ is Bayes training utility
 \begin{align}
   BU_t = \frac{1}{n} \sum_{i=1}^n \log p(y_i|D,M_k) 
 \end{align}
-and $GU_g$ is Gibbs generalization utility
+and $GU_t$ is Gibbs training utility
 \begin{align}
-  GU_g = \int p_t(\tilde{y}) \int p(\theta|D,M_k) \log
-  p(\tilde{y}|\theta,M_k) d\theta d\tilde{y} 
+  GU_t = \frac{1}{n} \sum_{i=1}^n \int \log
+  p(y_i|\theta,M_k)  p(\theta|D,M_k) d\theta
 \end{align}
 WAIC can also be given as a functional variance form 
 \begin{align}
