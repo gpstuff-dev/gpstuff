@@ -49,10 +49,8 @@ if nargin<1 || isempty(suiteSparse)
     if (~isempty (strfind (computer, '64')))
       % 64-bit MATLAB
       mex -O -g -largeArrayDims -output private/trcov linuxCsource/trcov.c
-      mex -O -g -largeArrayDims -output private/dist_euclidean linuxCsource/dist_euclidean.c
     else
-      mex -O -output private/trcov linuxCsource/trcov.c 
-      mex -O -output private/dist_euclidean linuxCsource/dist_euclidean.c
+      mex -O -output private/trcov linuxCsource/trcov.c
     end
     
     fprintf ('\n GP package succesfully compiled ') ;
@@ -78,18 +76,18 @@ else
         d = '-g -largeArrayDims' ;
         
         % Compile the 'trcov' mex-function
-        mex -O -g -largeArrayDims -output trcov linuxCsource/trcov.c 
-        mex -O -g -largeArrayDims -output ldlrowmodify linuxCsource/ldlrowmodify.c 
+        mex -O -g -largeArrayDims -output private/trcov linuxCsource/trcov.c 
+        mex -O -g -largeArrayDims -output private/ldlrowmodify linuxCsource/ldlrowmodify.c 
         
         if v >= 7.8
             d = [d ' -DLONG -D''LONGBLAS=UF_long'''];
         end
     else
-        mex -O -output trcov linuxCsource/trcov.c 
-        mex -O -output ldlrowmodify linuxCsource/ldlrowmodify.c 
+        mex -O -output private/trcov linuxCsource/trcov.c 
+        mex -O -output private/ldlrowmodify linuxCsource/ldlrowmodify.c 
     end
 
-    % Compile the 'spinv', 'ldlrowupdate' and 'ldlrowmodify' mex-functions
+    % Compile the 'spinv' and 'ldlrowupdate' mex-functions
     % This is awfully long since the functions need all the functionalities of SuiteSparse
 
     include = '-I../../CHOLMOD/MATLAB -I../../AMD/Include -I../../COLAMD/Include -I../../CCOLAMD/Include -I../../CAMD/Include -I../Include -I../../UFconfig' ;
@@ -364,7 +362,8 @@ else
     if pc
         % compile mexFunctions
         mex_src =  'winCsource\spinv';
-        s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        outpath = 'private\spinv';
+        s = sprintf ('mex %s -DDLONG -O %s -output %s %s.c', d, include, outpath, mex_src) ;
         s = [s obj];
         s = [s ' '];
         s = [s lapack];
@@ -372,7 +371,8 @@ else
         
         %mex_src = 'linuxCsource/ldlrowupdate';
         mex_src = 'winCsource\ldlrowupdate';
-        s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        outpath = 'private\ldlrowupdate';
+        s = sprintf ('mex %s -DDLONG -O %s -output %s %s.c', d, include, outpath, mex_src) ;
         s = [s obj];
         s = [s ' '];
         s = [s lapack];
@@ -380,7 +380,8 @@ else
     else
         % compile mexFunctions
         mex_src =  'linuxCsource/spinv';
-        s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        outpath = 'private/spinv';
+        s = sprintf ('mex %s -DDLONG -O %s -output %s %s.c', d, include, outpath, mex_src) ;
         s = [s obj];
         s = [s ' '];
         s = [s lapack];
@@ -388,7 +389,8 @@ else
         
         %mex_src = 'linuxCsource/ldlrowupdate';
         mex_src = 'linuxCsource/ldlrowupdate';
-        s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        outpath = 'private/ldlrowupdate';
+        s = sprintf ('mex %s -DDLONG -O %s -output %s %s.c', d, include, outpath, mex_src) ;
         s = [s obj];
         s = [s ' '];
         s = [s lapack];
