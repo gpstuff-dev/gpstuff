@@ -7,15 +7,21 @@ function test_suite = test_modelassesment1
 %   See also
 %     TEST_ALL, DEMO_MODELASSESMENT1
 %
+% Copyright (c) 2011-2012 Ville Tolvanen
 % Copyright (c) 2014 Tuomas Sivula
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
   
-  % Check if the caller was the xUnit package or the built-in test framework
-  c_stack = dbstack('-completenames');
-  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+  % Check which package to use
+  if exist('initTestSuite', 'file')
+    initTestSuite_path = which('initTestSuite');
+  else
+    initTestSuite_path = '';
+  end
+  if ~isempty(initTestSuite_path) && ...
+     exist([initTestSuite_path(1:end-15) 'runtests'], 'file')
     % xUnit package
     initTestSuite;
   else

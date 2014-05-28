@@ -27,7 +27,8 @@ function verifyVarsEqual(testCase, name, varargin)
 %        corresponding actual and expected arrays before comparison. Cell
 %        containing an empty array indicates that no function is used for
 %        that variable. Empty array in general indicates that no function
-%        is applied for any variable.
+%        is applied for any variable. Providing a single function handle
+%        applies the function to all variables.
 %
 %    OPTIONS is optional parameter-value pair
 %      RelTolElement - tolerance relative to the magnitude of each element
@@ -54,7 +55,8 @@ ip.addRequired('name', @ischar)
 ip.addOptional('vars', 'same', @(x) iscellstr(x) ...
     || (ischar(x) && strcmp(x,'same')))
 ip.addOptional('funcs', [], @(x) isempty(x) || ...
-    (iscell(x) && all( cellfun(@(y)isa(y,'function_handle'),x) )))
+    isa(x,'function_handle') || (iscell(x) && all( ...
+    cellfun(@(y)isa(y,'function_handle')||isempty(y),x) )))
 ip.addParamValue('RelTolElement', 0, ...
   @(x) isnumeric(x) && isscalar(x) && isreal(x) && x >= 0)
 ip.addParamValue('RelTolRange', 0, ...
@@ -78,7 +80,7 @@ if ischar(vars) && strcmp(vars, 'same')
 end
 
 % Validate parameter funcs
-if ~isempty(funcs) && length(funcs) ~= length(vars)
+if ~isempty(funcs) && iscell(funcs) && length(funcs) ~= length(vars)
   error('Parameter funcs size mismatch')
 end
 
@@ -115,17 +117,26 @@ for i = 1:length(vars)
       @() load([path, 'realValues/' name '.mat'], vars{i}));
   end
   
+  % Error message (if the variable should fail the validation)
+  msg = ['The variable ' vars{i} ' failed the verification.'];
+  
   % Apply funcs
-  if ~isempty(funcs) && ~isempty(funcs{i})
+  if isa(funcs,'function_handle')
+    actual = funcs(actual.(vars{i}));
+    expected = funcs(expected.(vars{i}));
+    %Add info to the error message
+    msg = sprintf('%s\nFunction applied:\n%s', msg, func2str(funcs));
+  elseif ~isempty(funcs) && ~isempty(funcs{i})
     actual = funcs{i}(actual.(vars{i}));
     expected = funcs{i}(expected.(vars{i}));
+    %Add info to the error message
+    msg = sprintf('%s\nFunction applied:\n%s', msg, func2str(funcs{i}));
   else
     actual = actual.(vars{i});
     expected = expected.(vars{i});
   end
   
-  % Error message (if the variable should fail the validation)
-  msg = ['The variable ' vars{i} ' failed the verification.'];
+  
   
   if isempty(testCase)
     
@@ -146,7 +157,7 @@ for i = 1:length(vars)
       end
       if tol_range > 0
         viol_range = diff > tol_range ...
-          *( max(max(expected)) - min(min(expected)) );
+          *( max(expected(:)) - min(expected(:)) );
       end
       if tol_abs > 0
         viol_abs = diff > tol_abs;
@@ -204,10 +215,10 @@ for i = 1:length(vars)
       if tol_range > 0
         if exist('tolObj', 'var')
           tolObj = tolObj | matlab.unittest.constraints.AbsoluteTolerance( ...
-            tol_range*( max(max(expected)) - min(min(expected)) ));
+            tol_range*( max(expected(:)) - min(expected(:)) ));
         else
           tolObj = matlab.unittest.constraints.AbsoluteTolerance( ...
-            tol_range*( max(max(expected)) - min(min(expected)) ));
+            tol_range*( max(expected(:)) - min(expected(:)) ));
         end
       end
       if tol_abs > 0

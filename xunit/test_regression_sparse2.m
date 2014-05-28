@@ -7,15 +7,21 @@ function test_suite = test_regression_sparse2
 %   See also
 %     TEST_ALL, DEMO_REGRESSION_SPARSE2
 %
+% Copyright (c) 2011-2012 Ville Tolvanen
 % Copyright (c) 2014 Tuomas Sivula
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
   
-  % Check if the caller was the xUnit package or the built-in test framework
-  c_stack = dbstack('-completenames');
-  if exist([c_stack(2).file(1:end-11) 'initTestSuite'], 'file')
+  % Check which package to use
+  if exist('initTestSuite', 'file')
+    initTestSuite_path = which('initTestSuite');
+  else
+    initTestSuite_path = '';
+  end
+  if ~isempty(initTestSuite_path) && ...
+     exist([initTestSuite_path(1:end-15) 'runtests'], 'file')
     % xUnit package
     initTestSuite;
   else
@@ -40,13 +46,13 @@ end
 
 function testPredictionsFull(testCase)
   verifyVarsEqual(testCase, getName(), ...
-    {'Eft_full', 'Varft_full'}, {@mean, @mean}, ...
-    'RelTolElement', 0.1, 'RelTolRange', 0.02)
+    {'Eft_full', 'Varft_full'}, @(x)mean(x(1:100)), ...
+    'RelTolElement', 0.1)
 end
 
 function testPredictionsVar(testCase)
   verifyVarsEqual(testCase, getName(), ...
-    {'Eft_var', 'Varft_var'}, ...
+    {'Eft_var', 'Varft_var'}, @(x)x(1:100), ...
     'RelTolElement', 0.1, 'RelTolRange', 0.02)
 end
 

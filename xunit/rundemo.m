@@ -6,6 +6,14 @@ function rundemo(name, varToSave, mode)
 %     and save given variables into the folder 'testValues' or 'realValues'.
 %     This function is used by test_* to compare the results into the
 %     precomputed expected ones.
+%     
+%     The saved components are:
+%       - desired workspace variables into <name>.mat
+%       - command line output log into <name>.txt
+%       - new created figures into <name>_fig#.fig
+%     If diary is on before this function is called, it is left untouched
+%     and the logfile is not created. Figures created before this function
+%     are not touched.
 %
 %   Parameters:
 %     name
@@ -45,13 +53,12 @@ if ~(strcmp(mode, 'test') || strcmp(mode, 'real'))
   error('Mode has to be ''test'' or ''real''')
 end
 
-% Close all figures
-close all;
-
 % Save required variables into the structure run_demo_data
 run_demo_data.name = name;
 run_demo_data.varToSave = varToSave;
 run_demo_data.mode = mode;
+% Store original figures
+run_demo_data.orig_figs =  get(0,'children');
 % Change working directory
 fpath = mfilename('fullpath');
 run_demo_data.origPath = cd(fpath(1:end-length(mfilename)));
@@ -138,7 +145,7 @@ try
   end
   
   % Save all figures into the desired folder
-  for i = get(0,'children')'
+  for i = setdiff(get(0,'children'), run_demo_data.orig_figs)'
     filename = [run_demo_data.mode 'Values/' run_demo_data.name '_fig' num2str(i) '.fig'];
     % First save the figure hidden
     saveas(i,filename)
@@ -164,8 +171,10 @@ end
 function restoreChanges(run_demo_data)
   % Ensure that changes are restored when exiting the function
   
-  % Close all the 'hidden' figures
-  close all;
+  % Close all created 'hidden' figures
+  for i = setdiff(get(0,'children'), run_demo_data.orig_figs)'
+    close(i);
+  end
   % Change directory
   cd(run_demo_data.origPath)
   % Set back previous random stream

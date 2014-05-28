@@ -67,6 +67,8 @@ gp=gp_optim(gp,x,y,'z',ye,'opt',opt, 'optimf', @fminlbfgs);
 
 % make prediction to the data points
 [Ef, Varf] = gp_pred(gp, x, y, x, 'z', ye);
+% Store the diagonal of Varf for testing purposes
+Varf = diag(Varf);
 
 % Define help parameters for plotting
 xii=sub2ind([60 35],x0(:,2),x0(:,1));

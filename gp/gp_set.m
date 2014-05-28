@@ -40,7 +40,7 @@ function gp = gp_set(varargin)
 %                     created by lik_gaussian(). If likelihood is
 %                     non-Gaussian, see latent_method below.
 %      jitterSigma2 - Positive jitter to be added in the diagonal of 
-%                     covariance matrix. The default is 0.
+%                     covariance matrix. The default is 1e-9.
 %      infer_params - String defining which parameters are inferred.
 %                     The default is 'covariance+likelihood'.
 %                      'covariance'     = infer parameters of the
