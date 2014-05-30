@@ -41,11 +41,12 @@ end
 function testRunDemo(testCase)
   % Run the correspondin demo and save the values. Note this test has to
   % be run at lest once before the other test may succeed.
-  rundemo(getName())
+  rundemo(getName(), ...
+    {{'Ef' @(x)x(1:100)}, {'Varf', @(x)diag(x(1:100,1:100))}})
 end
 
 function testPredictionsZinegbin(testCase)
-  verifyVarsEqual(testCase, getName(), {'Ef', 'Varf'}, @(x)x(1:100), ...
+  verifyVarsEqual(testCase, getName(), {'Ef', 'Varf'}, ...
     'RelTolElement', 0.1, 'RelTolRange', 0.02)
 end
 

@@ -3,9 +3,9 @@ function rundemo(name, varToSave, mode)
 %
 %   Description
 %     RUNDEMO(name, varToSave, mode) runs the GPstuff demo given in name
-%     and save given variables into the folder 'testValues' or 'realValues'.
-%     This function is used by test_* to compare the results into the
-%     precomputed expected ones.
+%     and save given variables into the folder 'testValues' or 
+%     'realValues'. This function is used by test_* to compare the results
+%     into the precomputed expected ones.
 %     
 %     The saved components are:
 %       - desired workspace variables into <name>.mat
@@ -24,7 +24,15 @@ function rundemo(name, varToSave, mode)
 %       the desired folder. Giving string 'all' saves the whole work
 %       space. String 'same' (default) looks the names of the saved
 %       variables in the file 'realValues/<nameOfTheDemo>.mat' and saves
-%       them. Empty array indicates that nothig is saved.
+%       them. Empty array indicates that nothig is saved. A function can be
+%       applied into the variable before saving by providing a cell array
+%       containing the name of the variable and the function handle (in
+%       that order) in place of the name string in the cell array varToSave
+%       e.g. varToSave = {'var1' {'var2' @(x)diag(x)} 'var3'} saves
+%       variables var1, var2 = diag(var2) and var3. By providing a third
+%       cell array string element, the name of the saved variable can be
+%       changed, e.g. {'varOut' @(x)diag(x), 'varOrig'} saves variable
+%       varOut = diag(varOrig).
 %     mode (optional)
 %       String 'test' (default) or 'real' indicating which folder the
 %       results are saved.
@@ -91,7 +99,8 @@ try
   
   % Create log, if diary is not currently running
   if run_demo_data.diary
-    if exist([run_demo_data.mode 'Values/' run_demo_data.name '.txt'] ,'file')
+    if exist([run_demo_data.mode 'Values/' run_demo_data.name '.txt'] ...
+        ,'file')
       delete([run_demo_data.mode 'Values/' run_demo_data.name '.txt']);
     end
     diary([run_demo_data.mode 'Values/' run_demo_data.name '.txt']);
@@ -105,7 +114,8 @@ try
     fprintf('\n gp hyperparameters: \n \n')
     disp(gp_pak(gp))
   end
-  fprintf('Demo completed in %.3f minutes\n', toc(run_demo_data.timer_id)/60)
+  fprintf('Demo completed in %.3f minutes\n', ...
+    toc(run_demo_data.timer_id)/60)
   
   % Close diary at this point (if logged)
   if run_demo_data.diary
@@ -114,7 +124,8 @@ try
 
 catch err
   % Error running the demo
-  ME = MException('run_demo:DemoFailure', 'Could not run demo_%s', run_demo_data.name);
+  ME = MException('run_demo:DemoFailure', 'Could not run demo_%s', ...
+    run_demo_data.name);
   ME = addCause(ME, err);
   throw(ME)
 end
@@ -124,10 +135,50 @@ try
   
   % Save variables
   if ~isempty(run_demo_data.varToSave)
-    if iscellstr(run_demo_data.varToSave)
-      % Save given variables
-      save([run_demo_data.mode 'Values/' run_demo_data.name], run_demo_data.varToSave{:})
-    elseif ischar(run_demo_data.varToSave) && strcmp(run_demo_data.varToSave, 'same')
+    if iscell(run_demo_data.varToSave)
+      % Apply functions
+      broken = 0;
+      for i = 1:length(run_demo_data.varToSave)
+        if iscell(run_demo_data.varToSave{i}) ...
+            && length(run_demo_data.varToSave{i}) >= 2 ...
+            && ischar(run_demo_data.varToSave{i}{1}) ...
+            && isvarname(run_demo_data.varToSave{i}{1}) ...
+            && isa(run_demo_data.varToSave{i}{2}, 'function_handle') ...
+            && (length(run_demo_data.varToSave{i}) == 2 ...
+            || (length(run_demo_data.varToSave{i}) == 3 ...
+            && ischar(run_demo_data.varToSave{i}{3}) ...
+            && isvarname(run_demo_data.varToSave{i}{3})) )
+          if length(run_demo_data.varToSave{i}) == 2
+            if exist(run_demo_data.varToSave{i}{1}, 'var')
+              eval(sprintf('%s = run_demo_data.varToSave{i}{2}(%s);', ...
+                run_demo_data.varToSave{i}{1}, ...
+                run_demo_data.varToSave{i}{1}));
+            else
+              error('Variable %s not found', run_demo_data.varToSave{i}{1})
+            end
+          else
+            if exist(run_demo_data.varToSave{i}{3}, 'var')
+              eval(sprintf('%s = run_demo_data.varToSave{i}{2}(%s);', ...
+                run_demo_data.varToSave{i}{1}, ...
+                run_demo_data.varToSave{i}{3}));
+            else
+              error('Variable %s not found', run_demo_data.varToSave{i}{3})
+            end
+          end
+          run_demo_data.varToSave{i} = run_demo_data.varToSave{i}{1};
+        elseif ~ischar(run_demo_data.varToSave{i})
+          warning('Unsupported parameter varToSave, no variables saved.')
+          broken = 1;
+          break
+        end
+      end
+      if ~broken
+        % Save given variables
+        save([run_demo_data.mode 'Values/' run_demo_data.name], ...
+          run_demo_data.varToSave{:})
+      end
+    elseif ischar(run_demo_data.varToSave) ...
+        && strcmp(run_demo_data.varToSave, 'same')
       % Save the same variables as in the 'realValues/<nameOfTheDemo>.mat'
       finfo = whos(matfile(['realValues/' run_demo_data.name '.mat']));
       if ~isempty(finfo)
@@ -136,7 +187,8 @@ try
         warning(['File realValues/' run_demo_data.name '.mat not found' ...
           'or file has no variables.'])
       end
-    elseif ischar(run_demo_data.varToSave) && strcmp(run_demo_data.varToSave, 'all')
+    elseif ischar(run_demo_data.varToSave) ...
+        && strcmp(run_demo_data.varToSave, 'all')
       % Save all variables
       save([run_demo_data.mode 'Values/' run_demo_data.name])
     else
@@ -146,7 +198,8 @@ try
   
   % Save all figures into the desired folder
   for i = setdiff(get(0,'children'), run_demo_data.orig_figs)'
-    filename = [run_demo_data.mode 'Values/' run_demo_data.name '_fig' num2str(i) '.fig'];
+    filename = [run_demo_data.mode 'Values/' ...
+      run_demo_data.name '_fig' num2str(i) '.fig'];
     % First save the figure hidden
     saveas(i,filename)
     % Then change the visible-flag on
@@ -158,12 +211,14 @@ try
   
 catch err
   % Error saving the variables
-  ME = MException('run_demo:DemoResultSaveFailure', 'Could not save the results');
+  ME = MException('run_demo:DemoResultSaveFailure', ...
+    'Could not save the results');
   ME = addCause(ME, err);
   throw(ME)
 end
 
-fprintf('Results saved into the folder ''xunit/%sValues/''\n\n', run_demo_data.mode)
+fprintf('Results saved into the folder ''xunit/%sValues/''\n\n', ...
+  run_demo_data.mode)
 
 end
 

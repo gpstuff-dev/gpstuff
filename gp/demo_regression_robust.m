@@ -302,9 +302,6 @@ gp=gp_set(gp, 'latent_opt', struct('f', f));
 % Sample 
 [rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, 'display', 20);
 rr = thin(rgp,100,2);
-% save the hyperparameters for testing purposes
-w = gp_pak(rr);
-
 
 % make predictions for test set
 [Eft, Varft] = gp_pred(rr,x,y,xt);

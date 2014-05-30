@@ -41,7 +41,7 @@ end
 function testRunDemo(testCase)
   % Run the correspondin demo and save the values. Note this test has to
   % be run at lest once before the other test may succeed.
-  rundemo(getName())
+  rundemo(getName(), {'Eft', 'Varft', {'w', @gp_pak, 'rr'}})
 end
 
 function testPredictionEP(testCase)

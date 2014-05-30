@@ -41,7 +41,11 @@ end
 function testRunDemo(testCase)
   % Run the correspondin demo and save the values. Note this test has to
   % be run at lest once before the other test may succeed.
-  rundemo(getName())
+  rundemo(getName(), { ...
+    'K', 'C', 'w', ...
+    {'Eft_map', @(x)x(1:50)}, {'Varft_map', @(x)x(1:50)}, ...
+    {'Eft_ia', @(x)x(1:50)}, {'Varft_ia', @(x)x(1:50)}, ...
+    {'Eft_mc', @(x)x(1:50)}, {'Varft_mc', @(x)x(1:50)} })
 end
 
 function testCovarianceMatrices(testCase)
@@ -60,22 +64,20 @@ end
 
 function testPredictedMeanVarianceGrid(testCase)
   verifyVarsEqual(testCase, getName(), ...
-    {'Eft_map','Varft_map'}, {@max_size, @max_size}, ...
+    {'Eft_map','Varft_map'}, ...
     'RelTolElement', 0.05, 'RelTolRange', 0.01)
 end
 
 function testPredictedMeanVarianceMC(testCase)
-  verifyVarsEqual(testCase, getName(), ...
-    {'Eft_mc'}, {@max_size}, ...
+  verifyVarsEqual(testCase, getName(), {'Eft_mc'}, ...
     'RelTolElement', 0.1, 'RelTolRange', 0.02)
-  verifyVarsEqual(testCase, getName(), ...
-    {'Varft_mc'}, {@max_size}, ...
+  verifyVarsEqual(testCase, getName(), {'Varft_mc'}, ...
     'AbsTol', 0.3)
 end
 
 function testPredictedMeanVarianceIA(testCase)
   verifyVarsEqual(testCase, getName(), ...
-    {'Eft_ia','Varft_ia'}, {@max_size, @max_size}, ...
+    {'Eft_ia','Varft_ia'}, ...
     'RelTolElement', 0.1, 'RelTolRange', 0.02)
 end
 
@@ -83,13 +85,6 @@ end
 % ------------------------
 %     Helper functions
 % ------------------------
-
-function x = max_size(x)
-  % Helper function that limits the size to 50.
-  if length(x) > 50
-    x = x(1:50);
-  end
-end
 
 function testCase = setup
   % Helper function to suply empty array into variable testCase as an
