@@ -67,6 +67,16 @@ function [w, s, h] = gp_pak(gp, param)
       param = gp.infer_params;
     end
     
+    if isfield(gp, 'latent_method') && isequal(gp.latent_method,'SVI')
+      w=[gp.t1; gp.t2(:)]';
+      if length(gp.t1)>1
+        s = [s; sprintf('E[u] x %d', gp.nind); ...
+          sprintf('Cov[u] x %d', gp.nind^2)];
+      else
+        s = [s; 'E[u]'; 'Cov[u]'];
+      end
+    end
+    
     % Pack the parameters of covariance functions
     if ~isempty(strfind(param, 'covariance'))
       ncf = length(gp.cf);
@@ -83,6 +93,12 @@ function [w, s, h] = gp_pak(gp, param)
     % Pack the parameters of likelihood function
     if ~isempty(strfind(param, 'likelihood'))
       [wi, si, hi] = gp.lik.fh.pak(gp.lik);
+      if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI') ...
+          && ~isequal(gp.lik.type, 'Gaussian')
+        wi=log(gp.lik.sigma2);
+        si='log(sigma2)';
+        hi=0;
+      end
       w = [w wi];
       s = [s; si];
       h = [h hi];
@@ -91,6 +107,11 @@ function [w, s, h] = gp_pak(gp, param)
     % Pack the parameters of the second likelihood function (monotonic)
     if ~isempty(strfind(param, 'likelihood')) && isfield(gp, 'lik_mono')
       [wi, si, hi] = gp.lik_mono.fh.pak(gp.lik_mono);
+      if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI')
+        wi=log(gp.lik_mono.sigma2);
+        si='log(sigma2_mono)';
+        hi=0;
+      end
       w = [w wi];
       s = [s; si];
       h = [h hi];

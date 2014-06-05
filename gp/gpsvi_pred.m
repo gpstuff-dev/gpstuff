@@ -147,63 +147,61 @@ if nargout > 2 && isempty(yt)
 end
 
 
-switch gp.type
-  case 'FULL'
-    
-    % Check the tstind vector
-    if nargin > 5
-      if ~isempty(tstind) && length(tstind) ~= size(x,1)
-        error('tstind (if provided) has to be of same length as x.')
-      end
-    else
-      tstind = [];
-    end
-%     [tmp,tmp,tmp,param]=gpsvi_e(gp_pak(gp),gp,x,y);
-    
-    u = gp.X_u;
-    m=gp.m;
-    S=gp.S;
-    if size(u,2) ~= size(x,2)
-      % Turn the inducing vector on right direction
-      u=u';
-    end
-    % Calculate some help matrices
-    K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
-    K_nu = gp_cov(gp,xt,u);       % n x u
-    [Luu, notpositivedefinite] = chol(K_uu,'lower');
-    if notpositivedefinite
-      Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
-      return
-    end
-    
-    Eft = K_nu*(Luu'\(Luu\m));
 
-    if nargout > 1
-      [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
-      B2=Luu\(K_nu');
-      B3=K_uu\(K_nu');
-      
-      Varft = Knn_v - sum(B2.*B2)' + sum(B3.*(S*B3))';
-    end
-    if isequal(gp.lik.type,'Probit')
-      s2=gp.lik.sigma2;
-      Varft=Varft+s2;
-    end
-    
-    
-    if nargout > 2
-      if isequal(gp.lik.type, 'Gaussian')
-        Eyt = Eft;
-        Varyt = Varft + Cnn_v - Knn_v;
-        if ~isempty(yt)
-          lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
-        end
-      else
-        if nargout>3
-          [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
-        else
-          lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
-        end
-      end
-    end
+% Check the tstind vector
+if nargin > 5
+  if ~isempty(tstind) && length(tstind) ~= size(x,1)
+    error('tstind (if provided) has to be of same length as x.')
+  end
+else
+  tstind = [];
 end
+%     [tmp,tmp,tmp,param]=gpsvi_e(gp_pak(gp),gp,x,y);
+
+u = gp.X_u;
+m=gp.m;
+S=gp.S;
+if size(u,2) ~= size(x,2)
+  % Turn the inducing vector on right direction
+  u=u';
+end
+% Calculate some help matrices
+K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
+K_nu = gp_cov(gp,xt,u);       % n x u
+[Luu, notpositivedefinite] = chol(K_uu,'lower');
+if notpositivedefinite
+  Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+  return
+end
+
+Eft = K_nu*(Luu'\(Luu\m));
+
+if nargout > 1
+  [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
+  B2=Luu\(K_nu');
+  B3=K_uu\(K_nu');
+
+  Varft = Knn_v - sum(B2.*B2)' + sum(B3.*(S*B3))';
+end
+if isequal(gp.lik.type,'Probit')
+  s2=gp.lik.sigma2;
+  Varft=Varft+s2;
+end
+
+
+if nargout > 2
+  if isequal(gp.lik.type, 'Gaussian')
+    Eyt = Eft;
+    Varyt = Varft + Cnn_v - Knn_v;
+    if ~isempty(yt)
+      lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+    end
+  else
+    if nargout>3
+      [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+    else
+      lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+    end
+  end
+end
+

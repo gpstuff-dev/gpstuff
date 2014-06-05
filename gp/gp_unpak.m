@@ -56,6 +56,28 @@ if size(w,1) > 1
   error(' The vector to be packed has to be row vector! \n')
 end
 
+if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI')
+  w=w(:);
+  gp.t1=w(1:length(gp.t1));
+  w(1:length(gp.t1))=[];
+  t2=reshape(w(1:numel(gp.t2)), length(gp.t1), length(gp.t1));
+  [V,D]=eig(t2);
+  gp.t2=t2;
+  w(1:numel(gp.t2))=[];
+  dtmp=-0.5./diag(D);
+%   if any(dtmp<eps)
+%     % Force positive definite covariance matrix
+%     fprintf(['Variational covariance not positive definite. ' ...
+%       'Forcing positive definitiness.\n']);
+%     dtmp(dtmp<eps)=eps;
+%     %gp.t2=-0.5.*(V*diag(1./dtmp))/V;
+%   end
+  dtmp=diag(dtmp);
+  gp.S=(V*dtmp)/V;
+  gp.m=gp.S*gp.t1;
+  w=w';
+end
+
 % Unpack the parameters of covariance functions
 if ~isempty(strfind(param, 'covariance'))
   ncf = length(gp.cf);
@@ -71,10 +93,18 @@ end
 % Unpack the parameters of likelihood function
 if ~isempty(strfind(param, 'likelihood'))
   [gp.lik w] = gp.lik.fh.unpak(gp.lik, w);
-  
+  if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI') ...
+      && ~isequal(gp.lik.type, 'Gaussian')
+    gp.lik.sigma2=exp(w(1));
+    w(1)=[];
+  end
   % Unpack the parameters of the second likelihood function (monotonicity)
   if isfield(gp, 'lik_mono')
     [gp.lik_mono w] = gp.lik_mono.fh.unpak(gp.lik_mono, w);
+    if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI')
+      gp.lik_mono.sigma2=exp(w(1));
+      w(1)=[];
+    end
   end
 end
 

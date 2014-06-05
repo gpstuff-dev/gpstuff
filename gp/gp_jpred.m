@@ -85,6 +85,9 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   elseif numel(gp.jitterSigma2)>1
     fh_pred=@gpmc_jpred;
   elseif isfield(gp,'latent_method')
+    if strcmp(gp.latent_method, 'SVI')
+      error('GP_JPRED not implemnted for SVI')
+    end
     fh_pred=gp.fh.jpred;
   else
     error('Logical error by coder of this function!')

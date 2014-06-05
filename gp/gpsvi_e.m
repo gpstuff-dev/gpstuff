@@ -32,7 +32,7 @@ function [e, edata, eprior, param] = gpsvi_e(w, gp, varargin)
 %    Additional properties meant only for internal use.
 %  
 %    GP = GPSVI_E('init', GP) takes a GP structure GP and
-%    initializes required fields for the Laplace approximation.
+%    initializes required fields for the SVI approximation.
 % 
 %    GP = GPSVI_E('clearcache', GP) takes a GP structure GP and clears the
 %    internal cache stored in the nested function workspace.
@@ -75,14 +75,17 @@ function [e, edata, eprior, param] = gpsvi_e(w, gp, varargin)
     % Initialize cache
     ch = [];
 
-    % set function handle to the nested function laplace_algorithm
-    % this way each gp has its own peristent memory for EP
+    % set function handle to the nested function svi_algorithm
+    % this way each gp has its own peristent memory for SVI
     gp.fh.ne = @svi_algorithm;
     % set other function handles
     gp.fh.e=@gpsvi_e;
     gp.fh.g=@gpsvi_g;
     gp.fh.pred=@gpsvi_pred;
-    gp.fh.jpred=@gp_jpred;
+    % gp.fh.jpred=@gp_jpred;
+    if isfield(gp.fh, 'jpred')
+      gp.fh = rmfield(gp.fh, 'jpred');
+    end
     gp.fh.looe=@gp_looe;
     gp.fh.loog=@gp_loog;
     gp.fh.loopred=@gpsvi_loopred;
@@ -93,8 +96,8 @@ function [e, edata, eprior, param] = gpsvi_e(w, gp, varargin)
     % clear the cache
     gp.fh.ne('clearcache');
   else
-    % call laplace_algorithm using the function handle to the nested function
-    % this way each gp has its own peristent memory for Laplace
+    % call svi_algorithm using the function handle to the nested function
+    % this way each gp has its own peristent memory for SVI
     %[e, edata, eprior, f, L, a, La2, p] = gp.fh.ne(w, gp, x, y, z);
     [e, edata, eprior, param] = gp.fh.ne(w, gp, x, y, z);
   end
@@ -105,7 +108,7 @@ function [e, edata, eprior, param] = gpsvi_e(w, gp, varargin)
       ch=[];
       return
   end
-  % code for the Laplace algorithm
+  % code for the SVI algorithm
 
   % check whether saved values can be used
     if isempty(z)

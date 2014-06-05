@@ -153,6 +153,14 @@ function gp = gp_set(varargin)
 %      derivobs     - Tells whether derivative observations are
 %                     used: 'on' or 'off' (default).
 %
+%    The additional fields needed with SVI (stochastic variational
+%    inference) GP model are:
+%      latent_method - Must be set to 'SVI'. N.B. likelihood may or may not
+%                      be gaussian in this case.
+%      X_u           - Inducing inputs. If omitted, the inducing points are
+%                      generated using clustering in the inference phase.
+%
+%
 %  See also
 %    GPCF_*, LIK_*, PRIOR_*, GP_PAK, GP_UNPAK, GP_E, GP_G, GP_EG,
 %    GP_PRED, GP_MC, GP_IA, ...
@@ -332,7 +340,7 @@ function gp = gp_set(varargin)
   end
   if ismember(gp.type,{'FIC' 'PIC' 'PIC_BLOCK' 'VAR' 'DTC' 'SOR'}) ...
       && isempty(gp.X_u)
-    error(sprintf('Need to set X_u when using %s',gp.type))
+    error('Need to set X_u when using %s',gp.type)
   end
   if ismember(gp.type,{'CS+FIC'})
     % check that we have both cs and non-cs type covariance functions
@@ -350,12 +358,10 @@ function gp = gp_set(varargin)
     end
   end
   if ismember(gp.type,{'KALMAN'})
-      
     % Check likelihood function
     if ~strcmpi(gp.lik.type,'Gaussian')
       error('The ''KALMAN'' option only supports Gaussian likelihoods.')
     end
-    
     % Check covariance functions
     for j=1:length(gp.cf)
       if ~isfield(gp.cf{j}.fh,'cf2ss'),
@@ -363,16 +369,25 @@ function gp = gp_set(varargin)
              gp.cf{j}.type) 
       end
     end
-    
   end
+  % SVI
+  if (isfield(gp, 'latent_method') && strcmp(gp.latent_method, 'SVI')) ...
+      || strcmp(ip.Results.latent_method, 'SVI')
+    if init || ~ismember('X_u',ip.UsingDefaults) || ~isfield(gp, 'X_u')
+      gp.X_u = ip.Results.X_u;
+      gp.nind = size(gp.X_u,1);
+    end
+  end
+  
   % Latent method
-  if isfield(gp.lik.fh,'trcov') && ~isfield(gp, 'lik_mono')
+  if isfield(gp.lik.fh,'trcov') && ~isfield(gp, 'lik_mono') ...
+      && ~strcmp(ip.Results.latent_method, 'SVI')
     % Gaussian likelihood
     if ~ismember('latent_method',ip.UsingDefaults)
       error('No latent method needed with a Gaussian likelihood')
     end
     if isfield(gp,'latent_method')
-      gp=rmfield(gp,'latent_method')
+      gp=rmfield(gp,'latent_method');
     end
     gp.fh.e=@gp_e;
     gp.fh.g=@gp_g;
@@ -412,6 +427,16 @@ function gp = gp_set(varargin)
           gp.latent_method=latent_method;
           % following sets gp.fh.e = @laplace_algorithm;
           gp = gpla_e('init', gp);
+        case 'SVI'
+          % Remove traces of other latent methods
+          if isfield(gp,'latent_method') && ~isequal(latent_method,gp.latent_method) && isfield(gp,'latent_opt')
+            gp=rmfield(gp,'latent_opt');
+          end
+          if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
+          % Set latent method
+          gp.latent_method=latent_method;
+          % following sets gp.fh.e = @svi_algorithm;
+          gp = gpsvi_e('init', gp);
         case 'NA'
           % no latent method set
           if isfield(gp,'latent_method'); gp=rmfield(gp,'latent_method'); end
@@ -583,6 +608,10 @@ function gp = gp_set(varargin)
           end
           if init || ~ismember('maxiter',ipla.UsingDefaults) || ~isfield(gp,'maxiter')
             gp.latent_opt.maxiter = ipla.Results.maxiter;
+          end
+        case 'SVI'
+          if ~isempty(fieldnames(latent_opt))
+            error('No latent_opt for SVI')
           end
         otherwise
           error('Unknown type of latent_method!')
