@@ -56,7 +56,9 @@ if size(w,1) > 1
   error(' The vector to be packed has to be row vector! \n')
 end
 
-if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI')
+% Unpack SVI variational parameters
+if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI') ...
+    && isfield(gp, 't1')
   w=w(:);
   gp.t1=w(1:length(gp.t1));
   w(1:length(gp.t1))=[];

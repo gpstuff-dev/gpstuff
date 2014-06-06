@@ -1,28 +1,107 @@
 function [gp, diagnosis] = svigp(gp, x, y, varargin)
-%SVIGP Summary of this function goes here
-%   Detailed explanation goes here
+%SVIGP  Stochastic variational inference for GP
+%
+%  Description
+%    GP = SVIGP(GP, X, Y, OPTIONS) optimises the variational, likelihood
+%    and covariance function parameters of a sparse SVI GP model
+%    given matrix X of training inputs and vector Y of training targets.
+%    The model follows the description in Hensman, Fusi and Lawrence
+%    (2013).
+%
+%    [GP, DIAGNOSIS] = SVIGP(GP, X, Y, OPTIONS) also returns values
+%    monitored during the iteration. The structure DIAGNOSIS contains
+%    the energy in the field e, the likelihood and covariance function
+%    parameters in the field w, and the mean log predictive density (if xt
+%    and yt is provided) in the field mlpd. The first dimension corresponds
+%    to the main iteration in all these arrays. The second dimension
+%    corresponds to the minibatch iteration in e and w. The third dimension
+%    corresponds to the different parameters in w.
+%
+%    OPTIONS is optional parameter-value pair
+%      xt          - test inputs. Used for monitoring the mean log
+%                    predictive density, N.B. the monitoring needs both xt
+%                    and yt.
+%      yt          - observed yt in test points. Used for monitoring the
+%                    mean log predictive density, N.B. the monitoring needs
+%                    both xt and yt.
+%      z           - optional observed quantity in triplet (x_i,y_i,z_i)
+%                    Some likelihoods may use this. For example, in case of 
+%                    Poisson likelihood we have z_i=E_i, that is, expected
+%                    value for ith case.
+%      zt          - optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%                    Some likelihoods may use this. For example, in case of 
+%                    Poisson likelihood we have z_i=E_i, that is, the
+%                    expected value for the ith case. N.B. used only in the
+%                    monitoring of the mean log predictive density.
+%      X_u         - inducing inputs. If omitted, kmeans clustering is
+%                    applied and the resulting cluster centroids are
+%                    selected. The number of inducing variables is then
+%                    controlled by the parameter nu (see below).
+%      nu          - the number of inducing variables if X_u is omitted.
+%                    The default is min(floor(0.1*n), 1500), where n is
+%                    the number of training inputs.
+%      m           - initial mean of the inducing variables. The default is
+%                    zero vector.
+%      S           - initial covariance of the inducing variables. The
+%                    default is 0.1 times identity matrix.
+%      n_minibatch - absolute or relative size of the minibatches (relative
+%                    to the number of the training inputs). Does not have
+%                    to be divisible with the number of training inputs.
+%                    The default is 0.1 (relative).
+%      maxiter     - the maximum number of iterations (default 5000).
+%      momentum    - momentum term for the covariance function parameters
+%                    (default 0.9)
+%      mu1         - initial step size of the variational parameters
+%                    (default 0.01).
+%      mu2         - initial step size of the likelihood and covariance
+%                    function parameters (default 1e-5)
+%      tol         - tolerance of energy for the convergence
+%                    (default 1e-6).
+%      step_size   - function handle for the step size as a function of the
+%                    iteration. The default function is
+%                    f(i) = 1/(1+i/n_minibatch), where n_minibatch is the
+%                    size of the minibatches.
+%      display     - Control the amount of diagnostic verbosity.
+%                    'off' displays nothing (default), 'final' display the
+%                    final output, and 'iter' displays output at each
+%                    iteration.
+%
+%  See also
+%    GP_SET, GPSVI_PRED, GPSVI_PREDGRAD, GPSVI_E, GPSVI_G, DEMO_SVI*
+%
+%  References:
+%    Hensman, J., Fusi, N. and Lawrence, N. D. (2013). Gaussian processes
+%    for big data. arXiv preprint arXiv:1309.6835.
+%
+% Copyright (c) 2014 Ville Tolvanen
+% Copyright (c) 2014 Tuomas Sivula
+
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
+
+
 ip=inputParser;
 ip.FunctionName = 'SVIGP';
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addOptional('xt', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('xt', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('yt', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('zt', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('X_u', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('nu', [], @(x) isreal(x) && isscalar(x))
+ip.addParamValue('nu', [], @(x) isreal(x) && isscalar(x) && x > 0)
 ip.addParamValue('m', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('S', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('n_minibatch', [], @(x) isreal(x) && isscalar(x))
-ip.addParamValue('minibatch_frac', 0.1, @(x) isreal(x) && isscalar(x) && 0<x && x<1)
-ip.addParamValue('maxiter', 5000, @(x) isreal(x) && isscalar(x))
-ip.addParamValue('momentum', 0.9, @(x) isreal(x) && isscalar(x))
-ip.addParamValue('mu1', 0.01, @(x) isreal(x) && isscalar(x))
-ip.addParamValue('mu2', 1e-5, @(x) isreal(x) && isscalar(x))
+ip.addParamValue('n_minibatch', 0.1, @(x) isreal(x) && isscalar(x) && x > 0)
+ip.addParamValue('maxiter', 5000, @(x) isreal(x) && isscalar(x) && x > 0)
+ip.addParamValue('momentum', 0.9, @(x) isreal(x) && isscalar(x) && x > 0)
+ip.addParamValue('mu1', 0.01, @(x) isreal(x) && isscalar(x) && x > 0)
+ip.addParamValue('mu2', 1e-5, @(x) isreal(x) && isscalar(x) && x > 0)
 ip.addParamValue('tol', 1e-6, @(x) isreal(x) && isscalar(x))
 ip.addParamValue('step_size', [], @(x) isa(x,'function_handle'))
-ip.addParamValue('display', 'on', @(x) ismember(x,{'on', 'off'}))
+ip.addParamValue('display', 'final', @(x) ismember(x,{'final', 'iter', 'off'}))
 
 ip.parse(gp, x,y,varargin{:});
 x=ip.Results.x;
@@ -30,19 +109,19 @@ y=ip.Results.y;
 z=ip.Results.z;
 xt=ip.Results.xt;
 yt=ip.Results.yt;
+zt=ip.Results.zt;
 X_u=ip.Results.X_u;
 nu=ip.Results.nu;
 m=ip.Results.m;
 S=ip.Results.S;
 n_minibatch=ip.Results.n_minibatch;
-minibatch_frac=ip.Results.minibatch_frac;
 momentum=ip.Results.momentum;
 mu1=ip.Results.mu1;
 mu2=ip.Results.mu2;
 step_size=ip.Results.step_size;
 maxiter=ip.Results.maxiter;
 tol=ip.Results.tol;
-display = strcmp(ip.Results.display, 'on');
+display = ip.Results.display;
 
 % Check if latent method SVI has been set
 if ~isfield(gp, 'latent_method') || ~isequal(gp.latent_method, 'SVI')
@@ -54,19 +133,21 @@ if xor(isempty(xt), isempty(yt))
   warning('Need both xt and yt for monitoring mean log predictive density.');
 end
 n=size(x,1);
-if isempty(n_minibatch)
-  n_minibatch=floor(minibatch_frac.*n);
+
+if n_minibatch < 1
+  n_minibatch = floor(n_minibatch*n);
 end
 if n_minibatch > n
-  n_minibatch=floor(minibatch_frac.*n);
-  warning('Too many minibatches, using %.2f*n = %d instead.', ...
-    minibatch_frac, n_minibatch)
+  n_minibatch = floor(0.1*n);
+  warning('Too many minibatches, using floor(0.1*n) = %d instead.', ...
+    n_minibatch)
 end
+
 if isempty(step_size)
   step_size=@(iter) 1/(1+iter./n_minibatch);
 end
 
-% Handle the inducing variables
+% Handle the inducing inputs
 if ~ismember('X_u',ip.UsingDefaults)
   gp.X_u = X_u;
   gp.nind = size(X_u,1);
@@ -76,7 +157,7 @@ if isempty(gp.X_u)
   if isempty(nu)
     nu=min(floor(0.1.*n),1500);
   end
-  fprintf('Assign inducing variables by clustering\n')
+  fprintf('Assign inducing inputs by clustering\n')
   Sw=warning('off','stats:kmeans:EmptyCluster');
   [~,X_u] = kmeans(x, nu,'Start','uniform',...
     'EmptyAction','singleton');
@@ -113,17 +194,23 @@ end
 gp.t1=gp.S\gp.m;
 gp.t2=-0.5.*inv(gp.S);
 
+% Preprocess conditions for iteration
+display_i = strcmp(display, 'iter');
+if ~isempty(xt) && ~isempty(yt) && ( display_i || nargout > 1)
+  mlpd_iter = 1;
+else
+  mlpd_iter = 0;
+end
 
-% Hyperparameters
+% Parameters
 w=gp_pak(gp);
 w0=w;
 nh1=numel(gp.t1)+numel(gp.t2);
 nh2=length(w)-nh1;
 
 % Initial step-size vector
-mu0=mu1.*ones(size(w));
+mu0 = mu1.*ones(size(w));
 mu0(end-nh2+1:end)=mu2;
-% mu0(end-2:end)=1e-4;
 
 % Size of minibatches
 nb=n_minibatch;
@@ -132,8 +219,11 @@ nbb=ceil(n/nb);
 
 % Monitored values
 if nargout > 1
-  e_all=zeros(maxiter,nbb);
-  w_all=zeros(maxiter,nbb,nh2);
+  e_all = zeros(maxiter,nbb);
+  w_all = zeros(maxiter,nbb,nh2);
+  if mlpd_iter
+    mlpd_all = zeros(maxiter,1);
+  end
 end
 
 g_old=zeros(size(w));
@@ -142,7 +232,7 @@ etot_old=Inf;
 
 % Iterate until convergence or maxiter
 converged = 0;
-for iter=1:maxiter
+for iter = 1:maxiter
   
   % Divide the data into minibatches
   inds = cell(nbb,1);
@@ -153,55 +243,61 @@ for iter=1:maxiter
   inds{nbb} = ind((nbb-1)*nb+1:end);
   
   % Compute the step-size
-  mu=mu0.*step_size(iter);
+  mu = mu0.*step_size(iter);
   
+  % Iterate all the minibatches
   etot = 0;
   for i=1:nbb
     gp.data_prop=length(inds{i})./n;
     e = gpsvi_e(w,gp,x(inds{i},:),y(inds{i},:), 'z', z);
+    etot = etot+e;
+    g = gpsvi_g(w,gp,x(inds{i},:),y(inds{i},:));
+    g = mu.*g + momentum.*g_old;
+    g_old = g;
+    w = w+g;
     if nargout > 1
       e_all(iter,i) = e;
+      w_all(iter,i,:) = w(end-nh2+1:end);
     end
-    etot = etot+e;
-    g=gpsvi_g(w,gp,x(inds{i},:),y(inds{i},:));
-    g=mu.*g + momentum.*g_old;
-    g_old=g;
     if ~isnan(etot) ...
-        && all(~isinf(exp(w(end-2:end)+g(end-2:end)))) ...
-        && all(exp(w(end-2:end)+g(end-2:end))~=0) ...
+        && all(~isinf(exp(w(end-nh2+1:end)))) ...
+        && all(exp(w(end-nh2+1:end))~=0) ...
         && ~any(isnan(g)) ...
         && ~isnan(gpsvi_e(w+g,gp,x(inds{i},:),y(inds{i},:), 'z', z))
-      w=w+g;
-      if nargout > 1
-        w_all(iter,i,:) = w(end-nh2+1:end);
-      end
-      gp=gp_unpak(gp,w);
+      gp = gp_unpak(gp,w);
     else
       fprintf('Bad parameter values, decreasing step-size and momentum.\n');
-      mu0=0.1.*mu0;
-      momentum=0.5*momentum;
-      w=w0;
-      g_old=zeros(1,nh1+nh2);
-      break
+      mu0 = 0.1.*mu0;
+      momentum = 0.5*momentum;
+      w = w0;
+      g_old = zeros(1,nh1+nh2);
+      continue
     end
     gpsvi_e('clearcache',gp);
   end
-  
-  % Check for convergence
   etot=etot/nbb;
-  if display
-    if ~isempty(xt) && ~isempty(yt)
-      [~,~,lpyt]=gpsvi_pred(gp,x,y,xt,'yt',yt);
+  
+  if mlpd_iter
+    [~,~,lpyt] = gpsvi_pred(gp,x,y,xt,'yt',yt, 'z', z, 'zt', zt);
+    lpyt = mean(lpyt);
+    if nargout > 1
+      mlpd_all(iter) = lpyt;
+    end
+  end
+  if display_i
+    if mlpd_iter
       fprintf('iter=%d / %d, e=%.3f, mlpd=%.3f, de=%.5f\n', ...
-        iter, maxiter, etot, mean(lpyt), abs(etot-etot_old));
+        iter, maxiter, etot, lpyt, abs(etot-etot_old));
     else
       fprintf('iter=%d / %d, e=%.3f, de=%.5f\n', ...
         iter, maxiter, etot, abs(etot-etot_old));
     end
   end
+  
+  % Check for convergence
   if abs(etot-etot_old)<tol
     converged = 1;
-    if display
+    if strcmp(display, 'iter')
       fprintf('Energy converged\n')
     end
     break
@@ -210,13 +306,30 @@ for iter=1:maxiter
   
 end
 
+% Display results
 if ~converged
   fprintf('Iteration limit reached while optimising the parameters\n')
+elseif ~strcmp(display, 'off')
+  fprintf('Tolerance reached in %d iterations\n', iter)
+end
+if strcmp(display, 'final')
+  if mlpd_iter
+    fprintf('e=%.3f, mlpd=%.3f\n', etot, lpyt);
+  elseif ~isempty(xt) && ~isempty(yt)
+    [~,~,lpyt] = gpsvi_pred(gp,x,y,xt,'yt',yt, 'z', z, 'zt', zt);
+    fprintf('e=%.3f, mlpd=%.3f\n', etot, mean(lpyt));
+  else
+    fprintf('e=%.3f\n', etot);
+  end
 end
 
+% Save the monitored values
 if nargout > 1
-  diagnosis.e = e_all;
-  diagnosis.w = w_all;
+  diagnosis.e = e_all(1:iter,:);
+  diagnosis.w = w_all(1:iter,:,:);
+  if mlpd_iter
+    diagnosis.mlpd = mlpd_all(1:iter);
+  end
 end
 
 end

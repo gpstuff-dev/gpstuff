@@ -370,7 +370,7 @@ function gp = gp_set(varargin)
       end
     end
   end
-  % SVI
+  % SVI inducing inputs
   if (isfield(gp, 'latent_method') && strcmp(gp.latent_method, 'SVI')) ...
       || strcmp(ip.Results.latent_method, 'SVI')
     if init || ~ismember('X_u',ip.UsingDefaults) || ~isfield(gp, 'X_u')

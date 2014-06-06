@@ -67,7 +67,9 @@ function [w, s, h] = gp_pak(gp, param)
       param = gp.infer_params;
     end
     
-    if isfield(gp, 'latent_method') && isequal(gp.latent_method,'SVI')
+    % Pack SVI variational parameters 
+    if isfield(gp, 'latent_method') && isequal(gp.latent_method,'SVI') ...
+        && isfield(gp, 't1')
       w=[gp.t1; gp.t2(:)]';
       if length(gp.t1)>1
         s = [s; sprintf('E[u] x %d', gp.nind); ...

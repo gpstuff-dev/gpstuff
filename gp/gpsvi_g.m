@@ -1,5 +1,5 @@
 function [g, gdata, gprior] = gpsvi_g(w, gp, x, y, varargin)
-%GPLA_G   Evaluate gradient of Laplace approximation's marginal
+%GPSVI_G   Evaluate gradient of Laplace approximation's marginal
 %         log posterior estimate (GPLA_E)
 %
 %  Description

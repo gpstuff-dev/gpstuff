@@ -1,5 +1,5 @@
 function [Eft, Varft, lpyt, Eyt, Varyt] = gpsvi_pred(gp, x, y, varargin)
-%GP_PRED  Make predictions with Gaussian process 
+%GPSVI_PRED  Make predictions with Gaussian process 
 %
 %  Description
 %    [EFT, VARFT] = GP_PRED(GP, X, Y, XT, OPTIONS)
