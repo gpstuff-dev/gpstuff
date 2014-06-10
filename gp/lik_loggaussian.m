@@ -418,23 +418,44 @@ function [logM_0, m_1, sigm2hati1] = lik_loggaussian_tiltedMoments(lik, y, i1, s
   ind1=yc==1;
   ind2=yc==0;
   
-  if sum(ind1)>0
-    logM_0(ind1)=-log(yy(ind1))+norm_lpdf(myy_i(ind1), log(yy(ind1)), sqrt(s2+sigm2_i(ind1)));
-    sigm2hati1(ind1)=1./(1./s2+1./sigm2_i(ind1));
-    m_1(ind1)=sigm2hati1(ind1).*(myy_i(ind1)./sigm2_i(ind1) + log(yy(ind1))/s2);
+  if ~isscalar(sigm2_i)
+    if sum(ind1)>0
+      logM_0(ind1)=-log(yy(ind1))+norm_lpdf(myy_i(ind1), log(yy(ind1)), sqrt(s2+sigm2_i(ind1)));
+      sigm2hati1(ind1)=1./(1./s2+1./sigm2_i(ind1));
+      m_1(ind1)=sigm2hati1(ind1).*(myy_i(ind1)./sigm2_i(ind1) + log(yy(ind1))/s2);
+    end
+    if sum(ind2)>0
+      zi=(myy_i(ind2)-log(yy(ind2)))./sqrt(s2+sigm2_i(ind2));
+      logM_0(ind2)=log(norm_cdf(zi));
+      m_1(ind2)=myy_i(ind2)+sigm2_i(ind2).*norm_pdf(zi)./(norm_cdf(zi).*sqrt(s2+sigm2_i(ind2)));
+      m_2=2*myy_i(ind2).*m_1(ind2) - myy_i(ind2).^2 + sigm2_i(ind2) - ...
+        sigm2_i(ind2).^2.*norm_pdf(zi).*zi./(norm_cdf(zi).*(s2+sigm2_i(ind2)));
+      sigm2hati1(ind2) = m_2 - m_1(ind2).^2;        
+    end
+    if any(sigm2hati1 >= sigm2_i)
+      sigm2hati1(sigm2hati1 >= sigm2_i)=sigm2_i(sigm2hati1 >= sigm2_i)-eps;
+      %error('lik_loggaussian_tilted_moments: sigm2hati1 >= sigm2_i');
+    end
+  else
+    if sum(ind1)>0
+      logM_0(ind1)=-log(yy(ind1))+norm_lpdf(myy_i(ind1), log(yy(ind1)), sqrt(s2+sigm2_i));
+      sigm2hati1(ind1)=1./(1./s2+1./sigm2_i);
+      m_1(ind1)=sigm2hati1(ind1).*(myy_i(ind1)./sigm2_i + log(yy(ind1))/s2);
+    end
+    if sum(ind2)>0
+      zi=(myy_i(ind2)-log(yy(ind2)))./sqrt(s2+sigm2_i);
+      logM_0(ind2)=log(norm_cdf(zi));
+      m_1(ind2)=myy_i(ind2)+sigm2_i.*norm_pdf(zi)./(norm_cdf(zi).*sqrt(s2+sigm2_i));
+      m_2=2*myy_i(ind2).*m_1(ind2) - myy_i(ind2).^2 + sigm2_i - ...
+        sigm2_i.^2.*norm_pdf(zi).*zi./(norm_cdf(zi).*(s2+sigm2_i));
+      sigm2hati1(ind2) = m_2 - m_1(ind2).^2;        
+    end
+    if any(sigm2hati1 >= sigm2_i)
+      sigm2hati1(sigm2hati1 >= sigm2_i)=sigm2_i-eps;
+      %error('lik_loggaussian_tilted_moments: sigm2hati1 >= sigm2_i');
+    end
   end
-  if sum(ind2)>0
-    zi=(myy_i(ind2)-log(yy(ind2)))./sqrt(s2+sigm2_i(ind2));
-    logM_0(ind2)=log(norm_cdf(zi));
-    m_1(ind2)=myy_i(ind2)+sigm2_i(ind2).*norm_pdf(zi)./(norm_cdf(zi).*sqrt(s2+sigm2_i(ind2)));
-    m_2=2*myy_i(ind2).*m_1(ind2) - myy_i(ind2).^2 + sigm2_i(ind2) - ...
-      sigm2_i(ind2).^2.*norm_pdf(zi).*zi./(norm_cdf(zi).*(s2+sigm2_i(ind2)));
-    sigm2hati1(ind2) = m_2 - m_1(ind2).^2;        
-  end
-  if any(sigm2hati1 >= sigm2_i)
-    sigm2hati1(sigm2hati1 >= sigm2_i)=sigm2_i(sigm2hati1 >= sigm2_i)-eps;
-    %error('lik_loggaussian_tilted_moments: sigm2hati1 >= sigm2_i');
-  end
+  
 %   sigm2hati12=sigm2hati1;
 %   m_12=m_1;
 %   logM_02=logM_0;

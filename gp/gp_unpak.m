@@ -94,16 +94,17 @@ end
 
 % Unpack the parameters of likelihood function
 if ~isempty(strfind(param, 'likelihood'))
-  [gp.lik w] = gp.lik.fh.unpak(gp.lik, w);
+  [gp.lik, w] = gp.lik.fh.unpak(gp.lik, w);
   if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI') ...
-      && ~isequal(gp.lik.type, 'Gaussian')
+      && ~isequal(gp.lik.type, 'Gaussian') && ~isempty(gp.lik.p.sigma2)
     gp.lik.sigma2=exp(w(1));
     w(1)=[];
   end
   % Unpack the parameters of the second likelihood function (monotonicity)
   if isfield(gp, 'lik_mono')
-    [gp.lik_mono w] = gp.lik_mono.fh.unpak(gp.lik_mono, w);
-    if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI')
+    [gp.lik_mono, w] = gp.lik_mono.fh.unpak(gp.lik_mono, w);
+    if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI') ...
+         && ~isempty(gp.lik_mono.p.sigma2)
       gp.lik_mono.sigma2=exp(w(1));
       w(1)=[];
     end

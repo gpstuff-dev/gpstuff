@@ -158,6 +158,11 @@ else
 end
 %     [tmp,tmp,tmp,param]=gpsvi_e(gp_pak(gp),gp,x,y);
 
+% Check if the variational parameters has been set
+if ~isfield(gp, 'm') || ~isfield(gp, 'S')
+  error('Variational parameters has not been set. Call SVIGP first.')
+end
+
 u = gp.X_u;
 m=gp.m;
 S=gp.S;

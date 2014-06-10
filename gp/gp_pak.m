@@ -96,7 +96,8 @@ function [w, s, h] = gp_pak(gp, param)
     if ~isempty(strfind(param, 'likelihood'))
       [wi, si, hi] = gp.lik.fh.pak(gp.lik);
       if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI') ...
-          && ~isequal(gp.lik.type, 'Gaussian')
+          && ~isequal(gp.lik.type, 'Gaussian') && isfield(gp, 't1') ...
+          && ~isempty(gp.lik.p.sigma2)
         wi=log(gp.lik.sigma2);
         si='log(sigma2)';
         hi=0;
@@ -109,7 +110,8 @@ function [w, s, h] = gp_pak(gp, param)
     % Pack the parameters of the second likelihood function (monotonic)
     if ~isempty(strfind(param, 'likelihood')) && isfield(gp, 'lik_mono')
       [wi, si, hi] = gp.lik_mono.fh.pak(gp.lik_mono);
-      if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI')
+      if isfield(gp, 'latent_method') && isequal(gp.latent_method, 'SVI') ...
+           && isfield(gp, 't1') && ~isempty(gp.lik_mono.p.sigma2)
         wi=log(gp.lik_mono.sigma2);
         si='log(sigma2_mono)';
         hi=0;

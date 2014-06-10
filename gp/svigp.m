@@ -18,53 +18,59 @@ function [gp, diagnosis] = svigp(gp, x, y, varargin)
 %    corresponds to the different parameters in w.
 %
 %    OPTIONS is optional parameter-value pair
-%      xt          - test inputs. Used for monitoring the mean log
-%                    predictive density, N.B. the monitoring needs both xt
-%                    and yt.
-%      yt          - observed yt in test points. Used for monitoring the
-%                    mean log predictive density, N.B. the monitoring needs
-%                    both xt and yt.
-%      z           - optional observed quantity in triplet (x_i,y_i,z_i)
-%                    Some likelihoods may use this. For example, in case of 
-%                    Poisson likelihood we have z_i=E_i, that is, expected
-%                    value for ith case.
-%      zt          - optional observed quantity in triplet (xt_i,yt_i,zt_i)
-%                    Some likelihoods may use this. For example, in case of 
-%                    Poisson likelihood we have z_i=E_i, that is, the
-%                    expected value for the ith case. N.B. used only in the
-%                    monitoring of the mean log predictive density.
-%      X_u         - inducing inputs. If omitted, kmeans clustering is
-%                    applied and the resulting cluster centroids are
-%                    selected. The number of inducing variables is then
-%                    controlled by the parameter nu (see below).
-%      nu          - the number of inducing variables if X_u is omitted.
-%                    The default is min(floor(0.1*n), 1500), where n is
-%                    the number of training inputs.
-%      m           - initial mean of the inducing variables. The default is
-%                    zero vector.
-%      S           - initial covariance of the inducing variables. The
-%                    default is 0.1 times identity matrix.
-%      n_minibatch - absolute or relative size of the minibatches (relative
-%                    to the number of the training inputs). Does not have
-%                    to be divisible with the number of training inputs.
-%                    The default is 0.1 (relative).
-%      maxiter     - the maximum number of iterations (default 5000).
-%      momentum    - momentum term for the covariance function parameters
-%                    (default 0.9)
-%      mu1         - initial step size of the variational parameters
-%                    (default 0.01).
-%      mu2         - initial step size of the likelihood and covariance
-%                    function parameters (default 1e-5)
-%      tol         - tolerance of energy for the convergence
-%                    (default 1e-6).
-%      step_size   - function handle for the step size as a function of the
-%                    iteration. The default function is
-%                    f(i) = 1/(1+i/n_minibatch), where n_minibatch is the
-%                    size of the minibatches.
-%      display     - Control the amount of diagnostic verbosity.
-%                    'off' displays nothing (default), 'final' display the
-%                    final output, and 'iter' displays output at each
-%                    iteration.
+%      xt               - test inputs. Used for monitoring the mean log
+%                         predictive density, N.B. the monitoring needs
+%                         both xt and yt.
+%      yt               - observed yt in test points. Used for monitoring
+%                         the mean log predictive density, N.B. the
+%                         monitoring needs both xt and yt.
+%      z                - optional observed quantity in triplet
+%                         (x_i,y_i,z_i) Some likelihoods may use this. For
+%                         example, in case of Poisson likelihood we have
+%                         z_i=E_i, that is, expected value for ith case.
+%      zt               - optional observed quantity in triplet
+%                         (xt_i,yt_i,zt_i) Some likelihoods may use this.
+%                         For example, in case of Poisson likelihood we
+%                         have z_i=E_i, that is, the expected value for the
+%                         ith case. N.B. used only in the monitoring of the
+%                         mean log predictive density.
+%      X_u              - inducing inputs. If omitted, kmeans clustering is
+%                         applied and the resulting cluster centroids are
+%                         selected. The number of inducing variables is
+%                         then controlled by the parameter nu (see below).
+%      nu               - the number of inducing variables if X_u is
+%                         omitted. The default is min(floor(0.1*n), 1500),
+%                         where n is the number of training inputs.
+%      m                - initial mean of the inducing variables. The
+%                         default is zero vector.
+%      S                - initial covariance of the inducing variables. The
+%                         default is 0.1 times identity matrix.
+%      n_minibatch      - absolute or relative size of the minibatches
+%                         (relative to the number of the training inputs).
+%                         Does not have to be divisible with the number of
+%                         training inputs. The default is 0.1 (relative).
+%      maxiter          - the maximum number of iterations (default 5000).
+%      momentum         - momentum term for the covariance function
+%                         parameters (default 0.9)
+%      mu1              - initial step size of the variational parameters
+%                         (default 0.01).
+%      mu2              - initial step size of the likelihood and
+%                         covariance function parameters (default 1e-5)
+%      tol              - tolerance of energy for the convergence
+%                         (default 1e-6).
+%      step_size        - function handle for the step size as a function
+%                         of the iteration. The default function is f(i) =
+%                         1/(1+i/n_minibatch), where n_minibatch is the
+%                         size of the minibatches.
+%      lik_sigma2       - likelihood variance in the case of non-gaussian
+%                         likelihood
+%      lik_sigma2_prior - prior for the likelihood variance in the case of
+%                         non-gaussian likelihood. The default is 
+%                         prior_loggaussian.
+%      display          - Control the amount of diagnostic verbosity.
+%                         'off' displays nothing (default), 'final' display
+%                         the final output, and 'iter' displays output at
+%                         each iteration.
 %
 %  See also
 %    GP_SET, GPSVI_PRED, GPSVI_PREDGRAD, GPSVI_E, GPSVI_G, DEMO_SVI*
@@ -101,7 +107,9 @@ ip.addParamValue('mu1', 0.01, @(x) isreal(x) && isscalar(x) && x > 0)
 ip.addParamValue('mu2', 1e-5, @(x) isreal(x) && isscalar(x) && x > 0)
 ip.addParamValue('tol', 1e-6, @(x) isreal(x) && isscalar(x))
 ip.addParamValue('step_size', [], @(x) isa(x,'function_handle'))
-ip.addParamValue('display', 'final', @(x) ismember(x,{'final', 'iter', 'off'}))
+ip.addParamValue('lik_sigma2',0.1, @(x) isscalar(x) && x>=0);
+ip.addParamValue('lik_sigma2_prior',prior_loggaussian(), @(x) isstruct(x) || isempty(x));
+ip.addParamValue('display', 'iter', @(x) ismember(x,{'final', 'iter', 'off'}))
 
 ip.parse(gp, x,y,varargin{:});
 x=ip.Results.x;
@@ -121,6 +129,8 @@ mu2=ip.Results.mu2;
 step_size=ip.Results.step_size;
 maxiter=ip.Results.maxiter;
 tol=ip.Results.tol;
+lik_sigma2 = ip.Results.lik_sigma2;
+lik_sigma2_prior = ip.Results.lik_sigma2_prior;
 display = ip.Results.display;
 
 % Check if latent method SVI has been set
@@ -135,10 +145,10 @@ end
 n=size(x,1);
 
 if n_minibatch < 1
-  n_minibatch = floor(n_minibatch*n);
+  n_minibatch = max(floor(n_minibatch*n),1);
 end
 if n_minibatch > n
-  n_minibatch = floor(0.1*n);
+  n_minibatch = max(floor(0.1*n),1);
   warning('Too many minibatches, using floor(0.1*n) = %d instead.', ...
     n_minibatch)
 end
@@ -187,12 +197,16 @@ elseif ~isfield(gp, 'S') || any(size(gp.S) ~= gp.nind)
   gp.S = 0.1*eye(gp.nind);
   % gp.S = gp_trcov(gp,gp.X_u);
 end
-
-if ~isfield(gp.lik, 'sigma2')
-  gp.lik.sigma2=0.1;
-end
 gp.t1=gp.S\gp.m;
 gp.t2=-0.5.*inv(gp.S);
+
+% Handle the likelihood variance
+if ~isfield(gp.lik, 'sigma2')
+  gp.lik.sigma2 = lik_sigma2;
+  gp.lik.p.sigma2 = lik_sigma2_prior;
+  gp.lik.fh.lp = @lik_lp;
+  gp.lik.fh.lpg = @lik_lpg;
+end
 
 % Preprocess conditions for iteration
 display_i = strcmp(display, 'iter');
@@ -203,10 +217,10 @@ else
 end
 
 % Parameters
-w=gp_pak(gp);
-w0=w;
-nh1=numel(gp.t1)+numel(gp.t2);
-nh2=length(w)-nh1;
+w = gp_pak(gp);
+w0 =w;
+nh1 = numel(gp.t1) + numel(gp.t2);
+nh2 = length(w)-nh1;
 
 % Initial step-size vector
 mu0 = mu1.*ones(size(w));
@@ -248,10 +262,16 @@ for iter = 1:maxiter
   % Iterate all the minibatches
   etot = 0;
   for i=1:nbb
+    if isempty(z)
+      zi = [];
+    else
+      zi = z(inds{i},:);
+    end
     gp.data_prop=length(inds{i})./n;
-    e = gpsvi_e(w,gp,x(inds{i},:),y(inds{i},:), 'z', z);
+    [e,~,~,param] = gpsvi_e(w,gp,x(inds{i},:),y(inds{i},:), 'z', zi);
     etot = etot+e;
-    g = gpsvi_g(w,gp,x(inds{i},:),y(inds{i},:));
+    g = gpsvi_g(w,gp,x(inds{i},:),y(inds{i},:), 'z', zi, ...
+      'gpsvi_e_param', param);
     g = mu.*g + momentum.*g_old;
     g_old = g;
     w = w+g;
@@ -263,7 +283,7 @@ for iter = 1:maxiter
         && all(~isinf(exp(w(end-nh2+1:end)))) ...
         && all(exp(w(end-nh2+1:end))~=0) ...
         && ~any(isnan(g)) ...
-        && ~isnan(gpsvi_e(w+g,gp,x(inds{i},:),y(inds{i},:), 'z', z))
+        && ~isnan(gpsvi_e(w+g,gp,x(inds{i},:),y(inds{i},:), 'z', zi))
       gp = gp_unpak(gp,w);
     else
       fprintf('Bad parameter values, decreasing step-size and momentum.\n');
@@ -278,7 +298,7 @@ for iter = 1:maxiter
   etot=etot/nbb;
   
   if mlpd_iter
-    [~,~,lpyt] = gpsvi_pred(gp,x,y,xt,'yt',yt, 'z', z, 'zt', zt);
+    [~,~,lpyt] = gpsvi_pred(gp,x,y,xt,'yt',yt, 'z', zi, 'zt', zt);
     lpyt = mean(lpyt);
     if nargout > 1
       mlpd_all(iter) = lpyt;
@@ -333,3 +353,48 @@ if nargout > 1
 end
 
 end
+
+
+function lp = lik_lp(lik, varargin)
+%LIK_LP  log(prior) of the likelihood parameters
+%
+%  Description
+%    LP = LIK_LP(LIK) takes a likelihood structure LIK and
+%    returns log(p(th)), where th collects the parameters. This
+%    subfunction is needed if there are likelihood parameters.
+%
+%  See also
+%    LIK_*, SVIGP
+
+
+% If prior for sigma2sion parameter, add its contribution
+lp=0;
+if ~isempty(lik.p.sigma2)
+  lp = lik.p.sigma2.fh.lp(lik.sigma2, lik.p.sigma2) +log(lik.sigma2);
+end
+
+end
+
+
+function lpg = lik_lpg(lik)
+%LIK_LPG  d log(prior)/dth of the likelihood parameters
+%
+%  Description
+%    E = LIK_NEGBIN_LPG(LIK) takes a likelihood structure LIK and
+%    returns d log(p(th))/dth, where th collects the parameters.
+%    This subfunction is needed if there are likelihood parameters.
+%
+%  See also
+%    LIK_*, SVIGP
+
+lpg=[];
+if ~isempty(lik.p.sigma2)
+  % Evaluate the gprior with respect to sigma2
+  ggs = lik.p.sigma2.fh.lpg(lik.sigma2, lik.p.sigma2);
+  lpg = ggs(1).*lik.sigma2 + 1;
+  if length(ggs) > 1
+    lpg = [lpg ggs(2:end)];
+  end
+end
+end
+

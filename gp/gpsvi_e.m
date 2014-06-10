@@ -1,5 +1,5 @@
 function [e, edata, eprior, param] = gpsvi_e(w, gp, varargin)
-%GPSVI_E  Do Laplace approximation and return marginal log posterior estimate
+%GPSVI_E  Return marginal log posterior estimate for SVI model
 %
 %  Description
 %    E = GPSVI_E(W, GP, X, Y, OPTIONS) takes a GP structure GP
@@ -211,7 +211,7 @@ function [e, edata, eprior, param] = gpsvi_e(w, gp, varargin)
       if isequal(gp.lik.type, 'Gaussian')
         term1=term1-n/2*log(2*pi*s2)-sum(1./(2*s2)*(y-KfuiKuum).^2);
       else
-        term1=term1+sum(gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, s2, KfuiKuum));
+        term1=term1+sum(gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, s2, KfuiKuum, z));
       end
       term2=term2-sum(1/(2*s2)*(Kv_ff-Qv_ff));
       term3=term3-0.5/s2.*sum(sum(S.*(iKuuKfu*iKuuKfu')));
@@ -219,6 +219,7 @@ function [e, edata, eprior, param] = gpsvi_e(w, gp, varargin)
       [LS, notpositivedefinite]=chol(S,'lower');
       if notpositivedefinite
         e=NaN;edata=NaN;eprior=NaN;
+        return
       end
       kl=0.5.*(trace(K_uu\S)+m'*(K_uu\m) - nu ...
         - 2.*sum(log(diag(LS))) + 2.*sum(log(diag(Luu))));
