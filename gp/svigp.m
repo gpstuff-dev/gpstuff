@@ -39,7 +39,7 @@ function [gp, diagnosis] = svigp(gp, x, y, varargin)
 %                         selected. The number of inducing variables is
 %                         then controlled by the parameter nu (see below).
 %      nu               - the number of inducing variables if X_u is
-%                         omitted. The default is min(floor(0.1*n), 1500),
+%                         omitted. The default is min(floor(0.1*n),1500),
 %                         where n is the number of training inputs.
 %      m                - initial mean of the inducing variables. The
 %                         default is zero vector.
@@ -50,6 +50,8 @@ function [gp, diagnosis] = svigp(gp, x, y, varargin)
 %                         Does not have to be divisible with the number of
 %                         training inputs. The default is 0.1 (relative).
 %      maxiter          - the maximum number of iterations (default 5000).
+%                         Providing 0 initialises the gp structure
+%                         parameters without optimisation.
 %      momentum         - momentum term for the covariance function
 %                         parameters (default 0.9)
 %      mu1              - initial step size of the variational parameters
@@ -78,7 +80,7 @@ function [gp, diagnosis] = svigp(gp, x, y, varargin)
 %  References:
 %    Hensman, J., Fusi, N. and Lawrence, N. D. (2013). Gaussian processes
 %    for big data. arXiv preprint arXiv:1309.6835.
-%
+
 % Copyright (c) 2014 Ville Tolvanen
 % Copyright (c) 2014 Tuomas Sivula
 
@@ -101,7 +103,7 @@ ip.addParamValue('nu', [], @(x) isreal(x) && isscalar(x) && x > 0)
 ip.addParamValue('m', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('S', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('n_minibatch', 0.1, @(x) isreal(x) && isscalar(x) && x > 0)
-ip.addParamValue('maxiter', 5000, @(x) isreal(x) && isscalar(x) && x > 0)
+ip.addParamValue('maxiter', 5000, @(x) isreal(x) && isscalar(x) && x >= 0)
 ip.addParamValue('momentum', 0.9, @(x) isreal(x) && isscalar(x) && x > 0)
 ip.addParamValue('mu1', 0.01, @(x) isreal(x) && isscalar(x) && x > 0)
 ip.addParamValue('mu2', 1e-5, @(x) isreal(x) && isscalar(x) && x > 0)
@@ -133,6 +135,9 @@ lik_sigma2 = ip.Results.lik_sigma2;
 lik_sigma2_prior = ip.Results.lik_sigma2_prior;
 display = ip.Results.display;
 
+% Initialise the diagnosis output structure
+diagnosis = struct();
+
 % Check if latent method SVI has been set
 if ~isfield(gp, 'latent_method') || ~isequal(gp.latent_method, 'SVI')
   gp=gp_set(gp, 'latent_method', 'SVI');
@@ -160,7 +165,6 @@ end
 % Handle the inducing inputs
 if ~ismember('X_u',ip.UsingDefaults)
   gp.X_u = X_u;
-  gp.nind = size(X_u,1);
 end
 if isempty(gp.X_u)
   % Assign X_u by clustering
@@ -173,10 +177,10 @@ if isempty(gp.X_u)
     'EmptyAction','singleton');
   warning(Sw);
   gp.X_u = X_u;
-  gp.nind = size(X_u,1);
 end
+gp.nind = size(gp.X_u,1);
 
-% Handle the rest of the parameters parameters
+% Handle the rest of the parameters
 if ~ismember('m',ip.UsingDefaults)
   if length(m) == gp.nind
     gp.m = m;
@@ -208,6 +212,11 @@ if ~isfield(gp.lik, 'sigma2')
   gp.lik.fh.lpg = @lik_lpg;
 end
 
+% Return prematurely if only initialising
+if maxiter == 0
+  return
+end
+
 % Preprocess conditions for iteration
 display_i = strcmp(display, 'iter');
 if ~isempty(xt) && ~isempty(yt) && ( display_i || nargout > 1)
@@ -237,6 +246,7 @@ if nargout > 1
   w_all = zeros(maxiter,nbb,nh2);
   if mlpd_iter
     mlpd_all = zeros(maxiter,1);
+    rmse_all = zeros(maxiter,1);
   end
 end
 
@@ -298,16 +308,18 @@ for iter = 1:maxiter
   etot=etot/nbb;
   
   if mlpd_iter
-    [~,~,lpyt] = gpsvi_pred(gp,x,y,xt,'yt',yt, 'z', zi, 'zt', zt);
+    [Eft,~,lpyt] = gpsvi_pred(gp,x,y,xt,'yt',yt, 'z', zi, 'zt', zt);
     lpyt = mean(lpyt);
     if nargout > 1
       mlpd_all(iter) = lpyt;
+      rmse = sqrt(mean((yt-Eft).^2));
+      rmse_all(iter) = rmse;
     end
   end
   if display_i
     if mlpd_iter
-      fprintf('iter=%d / %d, e=%.3f, mlpd=%.3f, de=%.5f\n', ...
-        iter, maxiter, etot, lpyt, abs(etot-etot_old));
+      fprintf('iter=%d / %d, e=%.3f, mlpd=%.3f, rmse=%.3f, de=%.5f\n', ...
+        iter, maxiter, etot, lpyt, rmse, abs(etot-etot_old));
     else
       fprintf('iter=%d / %d, e=%.3f, de=%.5f\n', ...
         iter, maxiter, etot, abs(etot-etot_old));
@@ -334,10 +346,11 @@ elseif ~strcmp(display, 'off')
 end
 if strcmp(display, 'final')
   if mlpd_iter
-    fprintf('e=%.3f, mlpd=%.3f\n', etot, lpyt);
+    fprintf('e=%.3f, mlpd=%.3f, rmse=%.3f\n', etot, lpyt, rmse);
   elseif ~isempty(xt) && ~isempty(yt)
-    [~,~,lpyt] = gpsvi_pred(gp,x,y,xt,'yt',yt, 'z', z, 'zt', zt);
-    fprintf('e=%.3f, mlpd=%.3f\n', etot, mean(lpyt));
+    [Eft,~,lpyt] = gpsvi_pred(gp,x,y,xt,'yt',yt, 'z', z, 'zt', zt);
+    fprintf('e=%.3f, mlpd=%.3f, rmse=%.3f\n', ...
+      etot, mean(lpyt)), sqrt(mean((yt-Eft).^2));
   else
     fprintf('e=%.3f\n', etot);
   end
@@ -349,6 +362,7 @@ if nargout > 1
   diagnosis.w = w_all(1:iter,:,:);
   if mlpd_iter
     diagnosis.mlpd = mlpd_all(1:iter);
+    diagnosis.rmse = rmse_all(1:iter);
   end
 end
 
@@ -362,6 +376,7 @@ function lp = lik_lp(lik, varargin)
 %    LP = LIK_LP(LIK) takes a likelihood structure LIK and
 %    returns log(p(th)), where th collects the parameters. This
 %    subfunction is needed if there are likelihood parameters.
+%    Added for non-gaussian likelihoods in SVIGP.
 %
 %  See also
 %    LIK_*, SVIGP
@@ -372,7 +387,6 @@ lp=0;
 if ~isempty(lik.p.sigma2)
   lp = lik.p.sigma2.fh.lp(lik.sigma2, lik.p.sigma2) +log(lik.sigma2);
 end
-
 end
 
 
@@ -383,6 +397,7 @@ function lpg = lik_lpg(lik)
 %    E = LIK_NEGBIN_LPG(LIK) takes a likelihood structure LIK and
 %    returns d log(p(th))/dth, where th collects the parameters.
 %    This subfunction is needed if there are likelihood parameters.
+%    Added for non-gaussian likelihoods in SVIGP.
 %
 %  See also
 %    LIK_*, SVIGP

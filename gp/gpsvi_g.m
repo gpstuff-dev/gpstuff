@@ -1,14 +1,12 @@
 function [g, gdata, gprior] = gpsvi_g(w, gp, x, y, varargin)
-%GPSVI_G   Evaluate gradient of Laplace approximation's marginal
-%         log posterior estimate (GPLA_E)
+%GPSVI_G  Evaluate approximate natural gradient for SVIGP
 %
 %  Description
-%    G = GPLA_G(W, GP, X, Y, OPTIONS) takes a full GP parameter
-%    vector W, structure GP a matrix X of input vectors and a
-%    matrix Y of target vectors, and evaluates the gradient G of
-%    EP's marginal log posterior estimate. Each row of X
-%    corresponds to one input vector and each row of Y corresponds
-%    to one target vector.
+%    G = GPLA_G(W, GP, X, Y, OPTIONS) takes a full GP parameter vector W,
+%    structure GP a matrix X of input vectors and a matrix Y of target
+%    vectors, and evaluates the approximate natural gradient G of the
+%    marginal log likelihood estimate. Each row of X corresponds to one
+%    input vector and each row of Y corresponds to one target vector.
 %
 %    [G, GDATA, GPRIOR] = GPLA_G(W, GP, X, Y, OPTIONS) also returns
 %    the data and prior contributions to the gradient.
@@ -23,7 +21,7 @@ function [g, gdata, gprior] = gpsvi_g(w, gp, x, y, varargin)
 %                      [~,~,~,param] = gpsvi_e(w,gp,x,y,'z',z);.
 %
 %  See also
-%    GP_SET, GP_G, GPLA_E, GPLA_PRED
+%    GP_SET, GP_G, GPSVI_E, GPSVI_PRED
 
 % Copyright (c) 2014 Ville Tolvanen
 

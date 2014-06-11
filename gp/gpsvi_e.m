@@ -1,13 +1,12 @@
 function [e, edata, eprior, param] = gpsvi_e(w, gp, varargin)
-%GPSVI_E  Return marginal log posterior estimate for SVI model
+%GPSVI_E  Return log marginal likelihood energy for SVI model
 %
 %  Description
 %    E = GPSVI_E(W, GP, X, Y, OPTIONS) takes a GP structure GP
 %    together with a matrix X of input vectors and a matrix Y of
-%    target vectors, and finds the Laplace approximation for the
-%    conditional posterior p(Y | X, th), where th is the
-%    parameters. Returns the energy at th (see below). Each
-%    row of X corresponds to one input vector and each row of Y
+%    target vectors, and returns the energy of the log marginal
+%    likelihood lower bound (L3) given the existing approximation.
+%    Each row of X corresponds to one input vector and each row of Y
 %    corresponds to one target vector.
 %
 %    [E, EDATA, EPRIOR] = GPSVI_E(W, GP, X, Y, OPTIONS) returns also 
@@ -39,16 +38,8 @@ function [e, edata, eprior, param] = gpsvi_e(w, gp, varargin)
 %
 %    [e, edata, eprior, f, L, a, La2, p] = GPSVI_E(w, gp, x, y, varargin)
 %    returns many useful quantities produced by EP algorithm.
-%
-%    The Newton's method is implemented as described in Rasmussen
-%    and Williams (2006).
-%
-%    The stabilized Newton's method is implemented as suggested by
-%    Hannes Nickisch (personal communication).
   
-% Copyright (c) 2007-2010 Jarno Vanhatalo
-% Copyright (c) 2010 Aki Vehtari
-% Copyright (c) 2010 Pasi Jyl�nki
+% Copyright (c) 2014 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
