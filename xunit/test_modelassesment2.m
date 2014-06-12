@@ -45,38 +45,33 @@ function testRunDemo(testCase)
 end
 
 function testDICParameters(testCase)
-  verifyVarsEqual(testCase, getName(), {'DIC'}, {@nans2zero}, ...
+  verifyVarsEqual(testCase, getName(), {'DIC'}, @nans2zero, ...
     'RelTolElement', 0.05, 'RelTolRange', 0.01)
 end
 
 function testDICAll(testCase)
-  verifyVarsEqual(testCase, getName(), {'DIC2'}, {@nans2zero}, ...
+  verifyVarsEqual(testCase, getName(), {'DIC2'}, @nans2zero, ...
     'RelTolElement', 0.05, 'RelTolRange', 0.01)
 end
 
 function testDICLatent(testCase)
-  verifyVarsEqual(testCase, getName(), {'DIC_latent'}, {@nans2zero}, ...
+  verifyVarsEqual(testCase, getName(), {'DIC_latent'}, @nans2zero, ...
     'RelTolElement', 0.05, 'RelTolRange', 0.01)
 end
 
 function testPeffLatentMarginalized(testCase)
-  verifyVarsEqual(testCase, getName(), {'p_eff'}, {@nans2zero}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
-end
-
-function testPeffAll(testCase)
-  verifyVarsEqual(testCase, getName(), {'p_eff2'}, {@nans2zero}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+  verifyVarsEqual(testCase, getName(), {'p_eff'}, @nans2zero, ...
+    'AbsTol', 0.5)
 end
 
 function testPeffLatent(testCase)
-  verifyVarsEqual(testCase, getName(), {'p_eff_latent'}, {@nans2zero}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+  verifyVarsEqual(testCase, getName(), {'p_eff_latent'}, @nans2zero, ...
+    'AbsTol', 0.5)
 end
 
 function testPeffLatent2(testCase)
-  verifyVarsEqual(testCase, getName(), {'p_eff_latent2'}, {@nans2zero}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+  verifyVarsEqual(testCase, getName(), {'p_eff_latent2'}, @nans2zero, ...
+    'AbsTol', 0.5)
 end
 
 function testLogPredDensity10foldCV(testCase)

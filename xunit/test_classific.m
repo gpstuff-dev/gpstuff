@@ -61,7 +61,7 @@ function testEP(testCase)
 end
 
 function testMC(testCase)
-  verifyVarsEqual(testCase, getName(), {'Efs_mc'}, {@(x)mean(x,2)}, ...
+  verifyVarsEqual(testCase, getName(), {'Efs_mc'}, @(x)mean(x,2), ...
     'RelTolRange', 0.2)
 end
 
