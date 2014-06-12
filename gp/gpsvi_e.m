@@ -158,7 +158,7 @@ function [e, edata, eprior, param] = gpsvi_e(w, gp, varargin)
       K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
       [Luu, notpositivedefinite] = chol(K_uu, 'lower');
       if notpositivedefinite
-        [edata, eprior, e, ch] = set_output_for_notpositivedefinite;
+        [edata,e,eprior,~,ch] = set_output_for_notpositivedefinite;
         param=NaN;
         return
       end
@@ -209,7 +209,8 @@ function [e, edata, eprior, param] = gpsvi_e(w, gp, varargin)
       % KL divergence from q(u), N(m,S), to p(u), N(0,Kuu).
       [LS, notpositivedefinite]=chol(S,'lower');
       if notpositivedefinite
-        e=NaN;edata=NaN;eprior=NaN;
+        [edata,e,eprior,~,ch] = set_output_for_notpositivedefinite;
+        param=NaN;
         return
       end
       kl=0.5.*(trace(K_uu\S)+m'*(K_uu\m) - nu ...

@@ -39,8 +39,10 @@ function [gp, diagnosis] = svigp(gp, x, y, varargin)
 %                         selected. The number of inducing variables is
 %                         then controlled by the parameter nu (see below).
 %      nu               - the number of inducing variables if X_u is
-%                         omitted. The default is min(floor(0.1*n),1500),
-%                         where n is the number of training inputs.
+%                         omitted. Can be given as an absolute value or
+%                         relative to the input size. The default is
+%                         min(floor(0.1*n),1500), where n is the number
+%                         of training inputs.
 %      m                - initial mean of the inducing variables. The
 %                         default is zero vector.
 %      S                - initial covariance of the inducing variables. The
@@ -65,14 +67,17 @@ function [gp, diagnosis] = svigp(gp, x, y, varargin)
 %                         1/(1+i/n_minibatch), where n_minibatch is the
 %                         size of the minibatches.
 %      lik_sigma2       - likelihood variance in the case of non-gaussian
-%                         likelihood
+%                         likelihood (default 0.1).
 %      lik_sigma2_prior - prior for the likelihood variance in the case of
 %                         non-gaussian likelihood. The default is 
-%                         prior_loggaussian.
+%                         prior_loggaussian('mu',-2, 's2', 0.5).
 %      display          - Control the amount of diagnostic verbosity.
-%                         'off' displays nothing (default), 'final' display
-%                         the final output, and 'iter' displays output at
-%                         each iteration.
+%                         'off' displays nothing, 'final' display the
+%                         final output, and 'iter' displays output at
+%                         each iteration. Alternatively by providing a
+%                         scalar value, fewer iterations can be displayed,
+%                         e.g. value 10 displays only every tenth
+%                         value (default behaviour).
 %
 %  See also
 %    GP_SET, GPSVI_PRED, GPSVI_PREDGRAD, GPSVI_E, GPSVI_G, DEMO_SVI*
@@ -103,15 +108,17 @@ ip.addParamValue('nu', [], @(x) isreal(x) && isscalar(x) && x > 0)
 ip.addParamValue('m', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('S', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('n_minibatch', 0.1, @(x) isreal(x) && isscalar(x) && x > 0)
-ip.addParamValue('maxiter', 5000, @(x) isreal(x) && isscalar(x) && x >= 0)
+ip.addParamValue('maxiter', 2000, @(x) isreal(x) && isscalar(x) && x >= 0)
 ip.addParamValue('momentum', 0.9, @(x) isreal(x) && isscalar(x) && x > 0)
 ip.addParamValue('mu1', 0.01, @(x) isreal(x) && isscalar(x) && x > 0)
 ip.addParamValue('mu2', 1e-5, @(x) isreal(x) && isscalar(x) && x > 0)
 ip.addParamValue('tol', 1e-6, @(x) isreal(x) && isscalar(x))
 ip.addParamValue('step_size', [], @(x) isa(x,'function_handle'))
 ip.addParamValue('lik_sigma2',0.1, @(x) isscalar(x) && x>=0);
-ip.addParamValue('lik_sigma2_prior',prior_loggaussian(), @(x) isstruct(x) || isempty(x));
-ip.addParamValue('display', 'iter', @(x) ismember(x,{'final', 'iter', 'off'}))
+ip.addParamValue('lik_sigma2_prior',prior_loggaussian('mu',-2, 's2', 0.5), ...
+  @(x) isstruct(x) || isempty(x));
+ip.addParamValue('display', 10, @(x) ismember(x,{'final','iter','off'}) ...
+  || (isreal(x) && isscalar(x) && x > 1) )
 
 ip.parse(gp, x,y,varargin{:});
 x=ip.Results.x;
@@ -169,7 +176,9 @@ end
 if isempty(gp.X_u)
   % Assign X_u by clustering
   if isempty(nu)
-    nu=min(floor(0.1.*n),1500);
+    nu = min(max(floor(0.1.*n),1),1500);
+  elseif nu < 1
+    nu = max(floor(nu.*n),1);
   end
   fprintf('Assign inducing inputs by clustering\n')
   Sw=warning('off','stats:kmeans:EmptyCluster');
@@ -217,14 +226,6 @@ if maxiter == 0
   return
 end
 
-% Preprocess conditions for iteration
-display_i = strcmp(display, 'iter');
-if ~isempty(xt) && ~isempty(yt) && ( display_i || nargout > 1)
-  mlpd_iter = 1;
-else
-  mlpd_iter = 0;
-end
-
 % Parameters
 w = gp_pak(gp);
 w0 =w;
@@ -244,18 +245,23 @@ nbb=ceil(n/nb);
 if nargout > 1
   e_all = zeros(maxiter,nbb);
   w_all = zeros(maxiter,nbb,nh2);
-  if mlpd_iter
+  if ~isempty(xt) && ~isempty(yt)
     mlpd_all = zeros(maxiter,1);
     rmse_all = zeros(maxiter,1);
   end
 end
-
 g_old=zeros(size(w));
 momentum=momentum.*ones(size(w));
 etot_old=Inf;
 
+% Preprocess conditions for iteration
+disp_iter = strcmp(display, 'iter');
+disp_i = 0;
+disp_count = display;
+
 % Iterate until convergence or maxiter
 converged = 0;
+try_fix_mu2 = 0;
 for iter = 1:maxiter
   
   % Divide the data into minibatches
@@ -271,6 +277,7 @@ for iter = 1:maxiter
   
   % Iterate all the minibatches
   etot = 0;
+  broken = 0;
   for i=1:nbb
     if isempty(z)
       zi = [];
@@ -295,19 +302,43 @@ for iter = 1:maxiter
         && ~any(isnan(g)) ...
         && ~isnan(gpsvi_e(w+g,gp,x(inds{i},:),y(inds{i},:), 'z', zi))
       gp = gp_unpak(gp,w);
+    elseif ~try_fix_mu2
+      fprintf('Bad parameter values, decreasing mu2.\n');
+      try_fix_mu2 = 1;
+      mu2 = 0.1*mu2;
+      mu0(end-nh2+1:end)=mu2;
+      w = w0;
+      g_old = zeros(1,nh1+nh2);
+      broken = 1;
+      break
     else
       fprintf('Bad parameter values, decreasing step-size and momentum.\n');
       mu0 = 0.1.*mu0;
       momentum = 0.5*momentum;
       w = w0;
       g_old = zeros(1,nh1+nh2);
-      continue
+      broken = 1;
+      break
     end
     gpsvi_e('clearcache',gp);
   end
+  if broken
+    continue
+  end
   etot=etot/nbb;
   
-  if mlpd_iter
+  % Analyse and print
+  if isscalar(display)
+    if disp_count == display
+      disp_i = 1;
+      disp_count = 1;
+    else
+      disp_i = 0;
+      disp_count = disp_count +1;
+    end
+  end
+  if ~isempty(xt) && ~isempty(yt) ...
+      && ( disp_iter || nargout > 1 || disp_i)
     [Eft,~,lpyt] = gpsvi_pred(gp,x,y,xt,'yt',yt, 'z', zi, 'zt', zt);
     lpyt = mean(lpyt);
     if nargout > 1
@@ -315,15 +346,13 @@ for iter = 1:maxiter
       rmse = sqrt(mean((yt-Eft).^2));
       rmse_all(iter) = rmse;
     end
-  end
-  if display_i
-    if mlpd_iter
+    if disp_iter || disp_i
       fprintf('iter=%d / %d, e=%.3f, mlpd=%.3f, rmse=%.3f, de=%.5f\n', ...
         iter, maxiter, etot, lpyt, rmse, abs(etot-etot_old));
-    else
-      fprintf('iter=%d / %d, e=%.3f, de=%.5f\n', ...
-        iter, maxiter, etot, abs(etot-etot_old));
     end
+  elseif disp_iter || disp_i
+    fprintf('iter=%d / %d, e=%.3f, de=%.5f\n', ...
+      iter, maxiter, etot, abs(etot-etot_old));
   end
   
   % Check for convergence
@@ -340,19 +369,22 @@ end
 
 % Display results
 if ~converged
-  fprintf('Iteration limit reached while optimising the parameters\n')
+  fprintf('Iteration limit %d reached while optimising the parameters\n', ...
+    maxiter)
 elseif ~strcmp(display, 'off')
   fprintf('Tolerance reached in %d iterations\n', iter)
 end
-if strcmp(display, 'final')
-  if mlpd_iter
-    fprintf('e=%.3f, mlpd=%.3f, rmse=%.3f\n', etot, lpyt, rmse);
+if strcmp(display, 'final') || isscalar(display)
+  if ~isempty(xt) && ~isempty(yt) && ( nargout > 1 || disp_i)
+    fprintf(['Final values:\n' ...
+      'e=%.3f, mlpd=%.3f, rmse=%.3f\n'], etot, lpyt, rmse);
   elseif ~isempty(xt) && ~isempty(yt)
     [Eft,~,lpyt] = gpsvi_pred(gp,x,y,xt,'yt',yt, 'z', z, 'zt', zt);
-    fprintf('e=%.3f, mlpd=%.3f, rmse=%.3f\n', ...
+    fprintf(['Final values:\n' ...
+      'e=%.3f, mlpd=%.3f, rmse=%.3f\n'], ...
       etot, mean(lpyt)), sqrt(mean((yt-Eft).^2));
   else
-    fprintf('e=%.3f\n', etot);
+    fprintf('Final energy: %.3f\n', etot);
   end
 end
 
@@ -360,7 +392,7 @@ end
 if nargout > 1
   diagnosis.e = e_all(1:iter,:);
   diagnosis.w = w_all(1:iter,:,:);
-  if mlpd_iter
+  if ~isempty(xt) && ~isempty(yt)
     diagnosis.mlpd = mlpd_all(1:iter);
     diagnosis.rmse = rmse_all(1:iter);
   end
