@@ -6,7 +6,8 @@ function [gp, diagnosis] = svigp(gp, x, y, varargin)
 %    and covariance function parameters of a sparse SVI GP model
 %    given matrix X of training inputs and vector Y of training targets.
 %    The model follows the description in Hensman, Fusi and Lawrence
-%    (2013).
+%    (2013). Supported likelihood functions are gaussian (for regression)
+%    and probit (for classification).
 %
 %    [GP, DIAGNOSIS] = SVIGP(GP, X, Y, OPTIONS) also returns values
 %    monitored during the iteration. The structure DIAGNOSIS contains
@@ -148,6 +149,11 @@ diagnosis = struct();
 % Check if latent method SVI has been set
 if ~isfield(gp, 'latent_method') || ~isequal(gp.latent_method, 'SVI')
   gp=gp_set(gp, 'latent_method', 'SVI');
+end
+
+% Check if latent method is not gaussian or probit
+if ~strcmp(gp.lik.type, 'Gaussian') && ~strcmp(gp.lik.type, 'Probit')
+  error('Supported likelihoods for SVIGP are gaussian and probit.')
 end
 
 % Process parameters
@@ -347,11 +353,11 @@ for iter = 1:maxiter
       rmse_all(iter) = rmse;
     end
     if disp_iter || disp_i
-      fprintf('iter=%d / %d, e=%.3f, mlpd=%.3f, rmse=%.3f, de=%.5f\n', ...
+      fprintf('iter=%d/%d, e=%.3f, mlpd=%.4g, rmse=%.4g, de=%.5g\n', ...
         iter, maxiter, etot, lpyt, rmse, abs(etot-etot_old));
     end
   elseif disp_iter || disp_i
-    fprintf('iter=%d / %d, e=%.3f, de=%.5f\n', ...
+    fprintf('iter=%d/%d, e=%.3f, de=%.5g\n', ...
       iter, maxiter, etot, abs(etot-etot_old));
   end
   
@@ -377,11 +383,11 @@ end
 if strcmp(display, 'final') || isscalar(display)
   if ~isempty(xt) && ~isempty(yt) && ( nargout > 1 || disp_i)
     fprintf(['Final values:\n' ...
-      'e=%.3f, mlpd=%.3f, rmse=%.3f\n'], etot, lpyt, rmse);
+      'e=%.3f, mlpd=%.4g, rmse=%.4g\n'], etot, lpyt, rmse);
   elseif ~isempty(xt) && ~isempty(yt)
     [Eft,~,lpyt] = gpsvi_pred(gp,x,y,xt,'yt',yt, 'z', z, 'zt', zt);
     fprintf(['Final values:\n' ...
-      'e=%.3f, mlpd=%.3f, rmse=%.3f\n'], ...
+      'e=%.3f, mlpd=%.4g, rmse=%.4g\n'], ...
       etot, mean(lpyt)), sqrt(mean((yt-Eft).^2));
   else
     fprintf('Final energy: %.3f\n', etot);
