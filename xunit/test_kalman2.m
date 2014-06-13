@@ -41,7 +41,11 @@ end
 function testRunDemo(testCase)
   % Run the correspondin demo and save the values. Note this test has to
   % be run at lest once before the other test may succeed.
+  
+  % Suppress an expected warning
+  Sw = warning('off','MATLAB:nearlySingularMatrix');
   rundemo(getName())
+  warning(Sw); % Return the original warning visibility status
 end
 
 function testPredictionsKalman2(testCase)

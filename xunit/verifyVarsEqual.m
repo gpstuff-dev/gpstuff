@@ -94,7 +94,7 @@ for i = 1:length(vars)
   % Load the variables
   if isempty(testCase)
     % xUnit package
-    warning('off','MATLAB:load:variableNotFound')
+    Sw = warning('off','MATLAB:load:variableNotFound')
     try
       actual = load([path, 'testValues/' name '.mat'], vars{i});
       if ~isfield(actual, vars{i})
@@ -105,10 +105,10 @@ for i = 1:length(vars)
         error(['Variable ' vars{i} ' not found in realValues/' name '.mat'])
       end
     catch err
-      warning('on','MATLAB:load:variableNotFound')
+      warning(Sw)
       rethrow(err)
     end
-    warning('on','MATLAB:load:variableNotFound')
+    warning(Sw)
   else
     % Built-in test framework
     actual = assertWarningFree(testCase, ...
