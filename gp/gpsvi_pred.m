@@ -2,22 +2,22 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpsvi_pred(gp, x, y, varargin)
 %GPSVI_PRED  Make predictions with SVI GP
 %
 %  Description
-%    [EFT, VARFT] = GP_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT] = GPSVI_PRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training inputs and
 %    vector Y of training targets, and evaluates the predictive
 %    distribution at test inputs XT. Returns a posterior mean EFT and
 %    variance VARFT of latent variables. Each row of X corresponds to one
 %    input vector and each row of Y corresponds to one output vector.
 %
-%    [EFT, VARFT, LPYT] = GP_PRED(GP, X, Y, XT, 'yt', YT, OPTIONS)
+%    [EFT, VARFT, LPYT] = GPSVI_PRED(GP, X, Y, XT, 'yt', YT, OPTIONS)
 %    returns also logarithm of the predictive density LPYT of the
 %    observations YT at test input locations XT. This can be used
 %    for example in the cross-validation. Here Y has to be a vector.
 % 
-%    [EFT, VARFT, LPYT, EYT, VARYT] = GP_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GPSVI_PRED(GP, X, Y, XT, OPTIONS)
 %    returns also the posterior predictive mean EYT and variance VARYT.
 %
-%    [EF, VARF, LPY, EY, VARY] = GP_PRED(GP, X, Y, OPTIONS)
+%    [EF, VARF, LPY, EY, VARY] = GPSVI_PRED(GP, X, Y, OPTIONS)
 %    evaluates the predictive distribution at training inputs X
 %    and logarithm of the predictive density LPY of the training
 %    observations Y.
