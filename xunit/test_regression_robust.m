@@ -50,7 +50,9 @@ function testPredictionEP(testCase)
 end
 
 function testMCMCSamples(testCase)
-  verifyVarsEqual(testCase, getName(), {'w'}, @mean, ...
+  verifyVarsEqual(testCase, getName(), {'w'}, @(x) mean(x(:,1)), ...
+    'AbsTol', 1)
+  verifyVarsEqual(testCase, getName(), {'w'}, @(x) mean(x(:,[2,3])), ...
     'AbsTol', 0.5)
 end
 

@@ -3,11 +3,13 @@ function log = runtestset(mode)
 %
 %  Description
 %    LOG = RUN_GP_TESTS(MODE) runs a set of tests in xunit folder and
-%    returns the test log. Parameter MODE can be either 'fast' (default) or
-%    'all'. Fast mode runs a selection of test taking about one hour and
-%    all mode runs all the tests. Each of the tests runs corresponding demo
+%    returns the test log. Each of the tests runs corresponding demo
 %    and compares the values to previously saved ones for errors. This is
 %    useful e.g. in case user modifies functions provided by GPstuff.
+%
+%    Possible values for parameter MODE:
+%      'fast' - runs a selection of test taking about one hour (default)
+%      'all'  - runs all the tests
 %
 %    Can be used with both xUnit Test Framework package by Steve Eddins
 %    and the built-in Unit Testing Framework.
