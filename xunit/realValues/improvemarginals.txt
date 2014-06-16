@@ -1,0 +1,9 @@
+Time elapsed for marginal corrections with EP-FACT: 0.2 s and for predictions 0.1 s
+Time elapsed for marginal corrections with LA-CM2: 0.2 s and for predictions 0.1 s
+Time elapsed for marginal corrections with LA-FACT: 0.1 s and for predictions 0.1 s
+
+ gp hyperparameters: 
+ 
+    2.3026   -0.1054   -0.1054
+
+Demo completed in 0.029 minutes

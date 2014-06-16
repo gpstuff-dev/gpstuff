@@ -1,0 +1,27 @@
+Classification (EP), Neuralnetwork covariance function without and with memory saving (optimization and prediction)
+Elapsed time is 6.419354 seconds.
+Elapsed time is 6.433990 seconds.
+Classification (Laplace), Squared-Exponential covariance function without and with memory saving (optimization and prediction)
+Elapsed time is 1.118030 seconds.
+Elapsed time is 1.522736 seconds.
+Regression, FIC GP, Matern-3/2 covariance function, without and with memory saving (optimization and prediction)
+Elapsed time is 0.295367 seconds.
+Elapsed time is 0.314384 seconds.
+Regression, VAR GP, Squared-Exponential covariance function, without and with memory saving (optimization and prediction)
+Elapsed time is 2.041667 seconds.
+Elapsed time is 1.953337 seconds.
+Spatial process (Laplace), FIC GP, PPCS3 covariance function, without and with memory saving (optimization and prediction)
+Elapsed time is 0.911109 seconds.
+Elapsed time is 1.163756 seconds.
+Spatial process (EP), FIC GP, Squared-Exponential covariance function, without and with memory saving (optimization and prediction)
+Elapsed time is 11.673574 seconds.
+Elapsed time is 11.344609 seconds.
+Spatial process (Laplace), FIC GP, Neuralnetwork covariance function, without and with memory saving (optimization and prediction)
+Elapsed time is 0.872615 seconds.
+Elapsed time is 1.700451 seconds.
+
+ gp hyperparameters: 
+ 
+    0.2956    1.5729   -2.9479    4.1251
+
+Demo completed in 0.806 minutes

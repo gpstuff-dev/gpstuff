@@ -1,0 +1,28 @@
+Probit model with Laplace integration over the latent values and
+MAP estimate for the parameters
+ TolFun reached. Func-count 27. Final f(x)=81.5289. Elapsed time 1.10
+Probit model with EP integration over the latent values and
+MAP estimate for the parameters
+ TolFun reached. Func-count 7. Final f(x)=81.748. Elapsed time 0.30
+Probit model with MCMC integration over the latent values and
+the parameters
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -943.088  2.0e+00  
+   40  -933.602  7.0e+00  
+   60  -975.302  7.0e+00  
+   80  -978.888  6.0e+00  
+  100  -1009.051  1.1e+01  
+  120  -1048.534  7.0e+00  
+  140  -1027.652  6.0e+00  
+  160  -1001.384  6.0e+00  
+  180  -1016.275  2.0e+00  
+  200  -1090.211  4.0e+00  
+  220  -1088.827  0.0e+00  
+Compare MCMC, Laplace and EP results for two latent variables
+
+ gp hyperparameters: 
+ 
+    3.2607   -0.7237    0.0613
+
+Demo completed in 0.966 minutes

@@ -1,0 +1,37 @@
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1             308.325    
+     1           2           2             250.194       0.0270693
+     2           4           4              217.36        0.343244
+     3           5           5             213.499               1
+     4           6           6             212.393               1
+     5           7           7             208.388               1
+     6           9           9             207.639             0.1
+     7          12          12             207.121        0.199533
+     8          13          13             207.077               1
+     9          14          14             207.056               1
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in the objective function value was less than TolFun.
+  Iterations : 10
+  Function Count : 15
+  Minimum found : 207.0551
+  Intern Time : 0.012945 seconds
+  Total Time : 21.6357 seconds
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1             2750.29    
+     1           2           2             2642.11      0.00651754
+     2           4           4             2634.45             0.1
+     3           5           5             2604.95               1
+     4           7           7             2603.24        0.426833
+     5           8           8             2602.72               1
+     6           9           9             2602.69               1
+     7          10          10             2602.69               1
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 8
+  Function Count : 11
+  Minimum found : 2602.6849
+  Intern Time : 0.008021 seconds
+  Total Time : 116.946 seconds
+Demo completed in 2.323 minutes
