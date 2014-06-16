@@ -217,7 +217,7 @@ catch err
   throw(ME)
 end
 
-fprintf('Results saved into the folder ''xunit/%sValues/''\n\n', ...
+fprintf('Results saved into the folder ''tests/%sValues/''\n\n', ...
   run_demo_data.mode)
 
 end

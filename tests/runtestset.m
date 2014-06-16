@@ -2,7 +2,7 @@ function log = runtestset(mode)
 %RUNTESTSET  Run a set of tests in GPstuff.
 %
 %  Description
-%    LOG = RUN_GP_TESTS(MODE) runs a set of tests in xunit folder and
+%    LOG = RUN_GP_TESTS(MODE) runs a set of tests in tests folder and
 %    returns the test log. Each of the tests runs corresponding demo
 %    and compares the values to previously saved ones for errors. This is
 %    useful e.g. in case user modifies functions provided by GPstuff.
