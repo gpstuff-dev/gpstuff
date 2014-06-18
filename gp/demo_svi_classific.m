@@ -111,16 +111,4 @@ plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
 plot(gp.X_u(:,1),gp.X_u(:,2),'gs', 'markersize', 8, 'linewidth', 1);
 set(gcf, 'color', 'w'), title('predictive probability, training cases and inducing inputs with SVIGP', 'fontsize', 14)
 
-% % Compare to the precomputed values from demo_classific
-% test_folder = which('test_all.m');
-% real_vals = [test_folder(1:end-10), 'realValuesClassific.mat'];
-% if exist(real_vals, 'file')
-%   la = load(real_vals,'Eft_la','Varft_la');
-%   ep = load(real_vals,'Eft_ep','Varft_ep');
-%   mc = load(real_vals,'Efs_mc','Varfs_mc');
-%   ...
-%   ...
-%   
-% end
-
 

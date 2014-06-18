@@ -17,42 +17,44 @@ function log = runtestset(mode)
 %
 %    N.B. The time estimates assumes that SuiteSparse is used. The
 %    estimated runtime of the individual demos (min):
-%       binomial1              0.0570
-%       binomial2              2.8533
-%       binomial_apc           0.2244
-%       classific              1.0576
-%       derivativeobs          0.0201
-%       hierprior              2.7335
-%       hurdle                 2.2864
-%       improvemarginals       0.0426
-%       kalman1                0.0442
-%       kalman2                6.2701
-%       lgcp                   0.0692
-%       loopred                1.0173
-%       memorysave             0.7269
-%       modelassesment1       12.8916
-%       modelassesment2       45.4903
-%       monotonic2             0.4059
-%       multiclass            42.3722
-%       multiclass_nested_ep   1.0884
-%       multinom               1.0269
-%       neuralnetcov           0.0757
-%       periodic               0.3800
-%       quantilegp             2.8618
-%       regression1            1.0282
-%       regression_additive1   0.2578
-%       regression_additive2   0.1123
-%       regression_hier        0.4091
-%       regression_meanf       0.0147
-%       regression_ppcs       58.4807
-%       regression_robust      1.3518
-%       regression_sparse1     0.2732
-%       regression_sparse2     0.0444
-%       spatial1               4.4727
-%       spatial2               8.2087
-%       survival_aft           6.5190
-%       survival_coxph        15.8717
-%       zinegbin               1.7628
+%       binomial1              0.057
+%       binomial2              2.853
+%       binomial_apc           0.224
+%       classific              1.058
+%       derivativeobs          0.020
+%       hierprior              2.734
+%       hurdle                 2.286
+%       improvemarginals       0.043
+%       kalman1                0.044
+%       kalman2                6.270
+%       lgcp                   0.069
+%       loopred                1.017
+%       memorysave             0.727
+%       modelassesment1       12.892
+%       modelassesment2       45.490
+%       monotonic2             0.406
+%       multiclass            42.372
+%       multiclass_nested_ep   1.088
+%       multinom               1.027
+%       neuralnetcov           0.076
+%       periodic               0.380
+%       quantilegp             2.862
+%       regression1            1.028
+%       regression_additive1   0.258
+%       regression_additive2   0.112
+%       regression_hier        0.409
+%       regression_meanf       0.015
+%       regression_ppcs       58.481
+%       regression_robust      1.352
+%       regression_sparse1     0.273
+%       regression_sparse2     0.044
+%       spatial1               4.473
+%       spatial2               8.209
+%       survival_aft           6.519
+%       survival_coxph        15.872
+%       svi_classific          2.713
+%       svi_regression         0.740
+%       zinegbin               1.763
 %
 %  See also
 %    Readme.txt
@@ -83,7 +85,8 @@ fast_tests = {'test_binomial1' ...
 'test_regression_hier' ...
 'test_regression_meanf' ...
 'test_regression_sparse1' ...
-'test_regression_sparse2'}';
+'test_regression_sparse2' ...
+'test_svi_regression'}';
 
 % Define tests to run on hour mode
 hour_tests = {'test_binomial1' ...
@@ -116,6 +119,8 @@ hour_tests = {'test_binomial1' ...
 'test_spatial1' ...
 'test_spatial2' ...
 'test_survival_aft' ...
+'test_svi_classific' ...
+'test_svi_regression' ...
 'test_zinegbin'}';
 
 % Path to the unittest folder

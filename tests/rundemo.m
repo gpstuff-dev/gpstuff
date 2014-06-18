@@ -111,8 +111,11 @@ try
   run(['demo_' run_demo_data.name])
   % If variable gp exist, display hypreparameters
   if exist('gp', 'var')
-    fprintf('\n gp hyperparameters: \n \n')
-    disp(gp_pak(gp))
+    run_demo_data.w = gp_pak(gp);
+    if numel(run_demo_data.w) <= 10
+      fprintf('\n gp hyperparameters: \n \n')
+      disp(run_demo_data.w)
+    end
   end
   fprintf('Demo completed in %.3f minutes\n', ...
     toc(run_demo_data.timer_id)/60)
