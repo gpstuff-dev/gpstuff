@@ -1,0 +1,14 @@
+ TolFun reached. Func-count 27. Final f(x)=-10.5562. Elapsed time 0.16
+ TolFun reached. Func-count 27. Final f(x)=-10.5562. Elapsed time 1.36
+
+   Parameter |     FULL |   KALMAN 
+-----------------------------------
+  magnSigma2 |   0.0944 |   0.0944 
+ lengthScale |   0.7018 |   0.7018 
+      sigma2 |   0.0083 |   0.0083 
+
+ gp hyperparameters: 
+ 
+   -2.3606   -0.3541   -4.7891
+
+Demo completed in 0.036 minutes

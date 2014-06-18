@@ -85,7 +85,7 @@ Table of contents:
 3. CONTENTS
    
    The GPstuff packge contains the following subdirectories:
-     iag  dist  gp  mc  misc  optim  xunit*  SuiteSparse*
+   diag  dist  gp  mc  misc  optim  tests*  SuiteSparse*
    (* not in Octave)
 
    Each folder contains Contents.m, which summarizes the functions
@@ -96,11 +96,12 @@ Table of contents:
 
 4. TESTING THE INSTALLATION
 
-   Installation can be tested by running command test_all, which
-   runs all demos and compares the computed results to pre-saved
-   results. Running test_all takes about one hour and it requires
-   that 'xunit' toolbox is in the Matlab/Octave path. xunit package can be
-   downloaded from
+   Installation can be tested by running command runtestset('fast'), which
+   runs a collection of demos and compares the computed results to pre-saved
+   results. Running this takes about one hour and it requires Matlab version
+   2013b or greater for the unit test framework. Alternatively, the
+   'xunit' package can be used instead. The xunit package can be downloaded
+   from
    http://www.mathworks.com/matlabcentral/fileexchange/22846-matlab-xunit-test-framework
 
 5. USER QUIDE (VERY SHORT)

@@ -1,0 +1,23 @@
+Optimize the hyperparameters
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1             145.286    
+     1           2           2             106.602       0.0541548
+     2           5           5             102.985        0.120757
+     3           8           8             98.2436       0.0807225
+     4          10          10             98.0724        0.254374
+     5          11          11             98.0559               1
+     6          12          12             98.0407               1
+     7          14          14             98.0398        0.216519
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 8
+  Function Count : 15
+  Minimum found : 98.0398
+  Intern Time : 0.010704 seconds
+  Total Time : 60.4646 seconds
+
+Optimized magnitude sigma^2: 13.1109
+Optimized lengthscales: 0.58525     0.64233      4.8782      4.3622
+The percentage of misclassified points: 0.1525
+Demo completed in 1.082 minutes

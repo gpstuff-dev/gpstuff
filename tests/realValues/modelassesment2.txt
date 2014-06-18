@@ -1,0 +1,481 @@
+Data analysis with probit likelihood
+Probit with Laplace integration over the latent values 
+and MAP estimate for the parameters                    
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in the objective function value was less than TolFun.
+  Iterations : 9
+  Function Count : 13
+  Minimum found : 78.8894
+  Intern Time : 0.007441 seconds
+  Total Time : 0.54661 seconds
+Evaluating the CV utility. The inference method is MAP.
+ The CV-fold number: 1/10 
+ The CV-fold number: 2/10 
+ The CV-fold number: 3/10 
+ The CV-fold number: 4/10 
+ The CV-fold number: 5/10 
+ The CV-fold number: 6/10 
+ The CV-fold number: 7/10 
+ The CV-fold number: 8/10 
+ The CV-fold number: 9/10 
+ The CV-fold number: 10/10 
+Probit with EP integration over the latent values and MAP 
+estimate for the parameters                               
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in the objective function value was less than TolFun.
+  Iterations : 4
+  Function Count : 8
+  Minimum found : 79.1395
+  Intern Time : 0.004267 seconds
+  Total Time : 0.50173 seconds
+Evaluating the CV utility. The inference method is MAP.
+ The CV-fold number: 1/10 
+ The CV-fold number: 2/10 
+ The CV-fold number: 3/10 
+ The CV-fold number: 4/10 
+ The CV-fold number: 5/10 
+ The CV-fold number: 6/10 
+ The CV-fold number: 7/10 
+ The CV-fold number: 8/10 
+ The CV-fold number: 9/10 
+ The CV-fold number: 10/10 
+Probit with MCMC integration over the latent values and 
+the parameters                                          
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -588.426  9.0e+00  
+   40  -587.970  1.0e+01  
+   60  -626.360  1.5e+01  
+   80  -626.707  4.0e+00  
+  100  -617.044  0.0e+00  
+  120  -630.091  2.0e+01  
+  140  -615.030  5.0e+00  
+  160  -653.144  6.0e+00  
+  180  -608.386  1.8e+01  
+  200  -635.256  1.3e+01  
+  220  -590.438  2.0e+00  
+Evaluating the CV utility. The inference method is MCMC.
+ The CV-fold number: 1/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -547.984  7.0e+00  
+   40  -540.295  8.0e+00  
+ The CV-fold number: 2/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -535.925  1.0e+01  
+   40  -505.911  0.0e+00  
+ The CV-fold number: 3/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -526.682  9.0e+00  
+   40  -472.494  5.0e+00  
+ The CV-fold number: 4/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -530.221  1.5e+01  
+   40  -562.331  1.3e+01  
+ The CV-fold number: 5/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -549.694  8.0e+00  
+   40  -521.740  9.0e+00  
+ The CV-fold number: 6/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -481.416  5.0e+00  
+   40  -495.256  2.0e+00  
+ The CV-fold number: 7/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -523.814  1.2e+01  
+   40  -486.134  8.0e+00  
+ The CV-fold number: 8/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -550.736  1.3e+01  
+   40  -551.778  1.3e+01  
+ The CV-fold number: 9/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -551.138  8.0e+00  
+   40  -615.547  8.0e+00  
+ The CV-fold number: 10/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -480.774  0.0e+00  
+   40  -418.991  7.0e+00  
+[Warning: For 1 data point the effective sample size in IS is less than n/10] 
+[> In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/gp/gpmc_loopred.m',113,1)">gpmc_loopred at 113</a>
+  In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/gp/gp_loopred.m',85,1)">gp_loopred at 85</a>
+  In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/gp/demo_modelassesment2.m',137,1)">demo_modelassesment2 at 137</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/xunit/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/xunit/test_modelassesment2.m',44,1)">test_modelassesment2>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',684,1)">TestRunner>TestRunner.runMethod at 684</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',99,1)">TestRunnerPlugin>TestRunnerPlugin.runMethod at 99</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',99,1)">TestRunnerPlugin>TestRunnerPlugin.runMethod at 99</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',538,1)">TestRunner>TestRunner.runMethodOnPlugins at 538</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',555,1)">TestRunner>TestRunner.runMethodsOnTestContent at 555</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',753,1)">TestRunner>TestRunner.runTestMethod at 753</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',95,1)">TestRunnerPlugin>TestRunnerPlugin.runTestMethod at 95</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',95,1)">TestRunnerPlugin>TestRunnerPlugin.runTestMethod at 95</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',538,1)">TestRunner>TestRunner.runMethodOnPlugins at 538</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',655,1)">TestRunner>TestRunner.runTestSuite at 655</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',54,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 54</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',54,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 54</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',77,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 77</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',538,1)">TestRunner>TestRunner.runMethodOnPlugins at 538</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',175,1)">TestRunner>TestRunner.run at 175</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',364,1)">TestSuite>TestSuite.run at 364</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/runtests.m',44,1)">runtests at 44</a>
+  In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/xunit/runtestset.m',94,1)">runtestset at 94</a>] 
+Probit with EP integration over the latent values and 
+grid integration over the parameters                  
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 8
+  Function Count : 11
+  Minimum found : 79.1395
+  Intern Time : 0.006339 seconds
+  Total Time : 0.6401 seconds
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 1.72 seconds
+ IA-grid: Total elapsed time 2.02 seconds
+Evaluating the CV utility. The inference method is IA.
+ The CV-fold number: 1/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 28 points
+    Elapsed time 1.15 seconds
+ IA-grid: Total elapsed time 2.03 seconds
+ The CV-fold number: 2/10 
+ IA-grid: finding the mode
+    Elapsed time 1.18 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 1.37 seconds
+ IA-grid: Total elapsed time 2.72 seconds
+ The CV-fold number: 3/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 1.51 seconds
+ IA-grid: Total elapsed time 2.50 seconds
+ The CV-fold number: 4/10 
+ IA-grid: finding the mode
+    Elapsed time 1.07 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 1.45 seconds
+ IA-grid: Total elapsed time 2.70 seconds
+ The CV-fold number: 5/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 1.49 seconds
+ IA-grid: Total elapsed time 2.10 seconds
+ The CV-fold number: 6/10 
+ IA-grid: finding the mode
+    Elapsed time 1.03 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 1.45 seconds
+ IA-grid: Total elapsed time 2.66 seconds
+ The CV-fold number: 7/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 1.34 seconds
+ IA-grid: Total elapsed time 2.15 seconds
+ The CV-fold number: 8/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 1.40 seconds
+ IA-grid: Total elapsed time 2.44 seconds
+ The CV-fold number: 9/10 
+ IA-grid: finding the mode
+    Elapsed time 1.07 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 28 points
+    Elapsed time 1.28 seconds
+ IA-grid: Total elapsed time 2.53 seconds
+ The CV-fold number: 10/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 1.34 seconds
+ IA-grid: Total elapsed time 2.30 seconds
+Data analysis with logit likelihood
+Logit with Laplace integration over the latent values and 
+MAP estimate for the parameters                           
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in the objective function value was less than TolFun.
+  Iterations : 12
+  Function Count : 15
+  Minimum found : 79.3867
+  Intern Time : 0.008351 seconds
+  Total Time : 0.48857 seconds
+Evaluating the CV utility. The inference method is MAP.
+ The CV-fold number: 1/10 
+ The CV-fold number: 2/10 
+ The CV-fold number: 3/10 
+ The CV-fold number: 4/10 
+ The CV-fold number: 5/10 
+ The CV-fold number: 6/10 
+ The CV-fold number: 7/10 
+ The CV-fold number: 8/10 
+ The CV-fold number: 9/10 
+ The CV-fold number: 10/10 
+Logit with EP integration over the latent values and MAP
+estimate for the parameters                             
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in the objective function value was less than TolFun.
+  Iterations : 4
+  Function Count : 9
+  Minimum found : 79.5156
+  Intern Time : 0.004829 seconds
+  Total Time : 8.2143 seconds
+Evaluating the CV utility. The inference method is MAP.
+ The CV-fold number: 1/10 
+ The CV-fold number: 2/10 
+ The CV-fold number: 3/10 
+ The CV-fold number: 4/10 
+ The CV-fold number: 5/10 
+ The CV-fold number: 6/10 
+ The CV-fold number: 7/10 
+ The CV-fold number: 8/10 
+ The CV-fold number: 9/10 
+ The CV-fold number: 10/10 
+Logit with MCMC integration over the latent values and 
+the parameters                                         
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -533.055  1.0e+01  
+   40  -518.968  6.0e+00  
+   60  -472.492  3.0e+00  
+   80  -478.123  0.0e+00  
+  100  -599.868  5.0e+00  
+  120  -577.869  1.0e+01  
+  140  -535.928  1.3e+01  
+  160  -555.210  8.0e+00  
+  180  -578.161  7.0e+00  
+  200  -580.977  7.0e+00  
+Evaluating the CV utility. The inference method is MCMC.
+ The CV-fold number: 1/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -501.194  8.0e+00  
+   40  -474.223  5.0e+00  
+ The CV-fold number: 2/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -534.713  1.3e+01  
+   40  -528.955  1.3e+01  
+ The CV-fold number: 3/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -450.989  7.0e+00  
+   40  -500.478  7.0e+00  
+ The CV-fold number: 4/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -503.487  4.0e+00  
+   40  -510.591  0.0e+00  
+ The CV-fold number: 5/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -388.814  5.0e+00  
+   40  -437.343  9.0e+00  
+ The CV-fold number: 6/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -460.051  1.1e+01  
+   40  -470.438  1.0e+01  
+ The CV-fold number: 7/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -438.615  3.0e+00  
+   40  -499.552  6.0e+00  
+ The CV-fold number: 8/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -495.175  1.0e+01  
+   40  -504.217  1.0e+01  
+ The CV-fold number: 9/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -513.708  2.0e+00  
+   40  -522.626  8.0e+00  
+ The CV-fold number: 10/10 
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -519.795  5.0e+00  
+   40  -486.984  7.0e+00  
+Logit with EP integration over the latent values and grid 
+integration over the parameters                           
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 5
+  Function Count : 9
+  Minimum found : 79.5156
+  Intern Time : 0.005054 seconds
+  Total Time : 9.4608 seconds
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+    Elapsed time 2.05 seconds
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 47.04 seconds
+ IA-grid: Total elapsed time 49.57 seconds
+Evaluating the CV utility. The inference method is IA.
+ The CV-fold number: 1/10 
+ IA-grid: finding the mode
+    Elapsed time 13.49 seconds
+ IA-grid: computing Hessian using multiplication
+    Elapsed time 1.93 seconds
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 28 points
+    Elapsed time 34.38 seconds
+ IA-grid: Total elapsed time 49.80 seconds
+ The CV-fold number: 2/10 
+ IA-grid: finding the mode
+    Elapsed time 8.59 seconds
+ IA-grid: computing Hessian using multiplication
+    Elapsed time 1.92 seconds
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 40.96 seconds
+ IA-grid: Total elapsed time 51.48 seconds
+ The CV-fold number: 3/10 
+ IA-grid: finding the mode
+    Elapsed time 9.60 seconds
+ IA-grid: computing Hessian using multiplication
+    Elapsed time 1.84 seconds
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 42.37 seconds
+ IA-grid: Total elapsed time 53.81 seconds
+ The CV-fold number: 4/10 
+ IA-grid: finding the mode
+    Elapsed time 10.00 seconds
+ IA-grid: computing Hessian using multiplication
+    Elapsed time 1.83 seconds
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 40.80 seconds
+ IA-grid: Total elapsed time 52.63 seconds
+ The CV-fold number: 5/10 
+ IA-grid: finding the mode
+    Elapsed time 6.13 seconds
+ IA-grid: computing Hessian using multiplication
+    Elapsed time 1.84 seconds
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 42.12 seconds
+ IA-grid: Total elapsed time 50.09 seconds
+ The CV-fold number: 6/10 
+ IA-grid: finding the mode
+    Elapsed time 11.59 seconds
+ IA-grid: computing Hessian using multiplication
+    Elapsed time 1.75 seconds
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 28 points
+    Elapsed time 35.16 seconds
+ IA-grid: Total elapsed time 48.50 seconds
+ The CV-fold number: 7/10 
+ IA-grid: finding the mode
+    Elapsed time 9.40 seconds
+ IA-grid: computing Hessian using multiplication
+    Elapsed time 1.74 seconds
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 31 points
+    Elapsed time 39.63 seconds
+ IA-grid: Total elapsed time 50.78 seconds
+ The CV-fold number: 8/10 
+ IA-grid: finding the mode
+    Elapsed time 12.50 seconds
+ IA-grid: computing Hessian using multiplication
+    Elapsed time 1.93 seconds
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 41.01 seconds
+ IA-grid: Total elapsed time 55.45 seconds
+ The CV-fold number: 9/10 
+ IA-grid: finding the mode
+    Elapsed time 14.53 seconds
+ IA-grid: computing Hessian using multiplication
+    Elapsed time 1.93 seconds
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 28 points
+    Elapsed time 35.96 seconds
+ IA-grid: Total elapsed time 52.43 seconds
+ The CV-fold number: 10/10 
+ IA-grid: finding the mode
+    Elapsed time 10.44 seconds
+ IA-grid: computing Hessian using multiplication
+    Elapsed time 1.75 seconds
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 32 points
+    Elapsed time 40.17 seconds
+ IA-grid: Total elapsed time 52.37 seconds
+Summary of the results
+
+S =
+
+         pr_Laplace  pr_EP  pr_MCMC  pr_IA  lo_Laplace  lo_EP  lo_MCMC  lo_IA
+ CV-mlpd   -0.29     -0.28   -0.29   -0.28    -0.29     -0.28   -0.28   -0.28
+ LOO-mlpd  -0.28     -0.27   -0.28   -0.28    -0.28     -0.28   -0.28   -0.28
+ 
+ WAIC      -0.31     -0.28   -0.30   -0.28    -0.29     -0.28   -0.28   -0.28
+ 
+ DIC_h       NaN       NaN   -0.33   -0.33      NaN       NaN   -0.33   -0.33
+ DIC_a       NaN       NaN   -0.28   -0.27      NaN       NaN   -0.28   -0.28
+ DIC_l     -0.30     -0.28     NaN     NaN    -0.30     -0.28     NaN     NaN
+ peff_h      NaN       NaN    1.45    2.40      NaN       NaN    2.96    2.42
+ peff_a      NaN       NaN    7.90    6.20      NaN       NaN    9.71    9.20
+ peff_l     8.72      9.19     NaN     NaN     8.84      9.18     NaN     NaN
+ peff_l2   13.14      8.48     NaN     NaN    12.19      8.41     NaN     NaN
+ 
+ The notation is as follows:
+ pr_*     = probit likelihood and inference method
+ lo_*     = logit likelihood and inference method
+ CV-mlpd  = mean log predictive density from the 10-fold CV. 
+ LOO-mlpd = mean log predictive density from the 10-fold CV. 
+ WAIC     = Widely applicable information criterion. 
+ DIC_h    = DIC with focus on parameters. 
+ DIC_a    = DIC with focus on parameters and laten variables (all). 
+ DIC_l    = DIC with focus on latent variables. 
+ peff_h   = effective number of parameters (latent variables marginalized). 
+ peff_a   = effective number of parameters and latent variables. 
+ peff_l   = effective number of latent variables evaluated with gp_peff. 
+ peff_l2  = effective number of latent variables evaluated with gp_dic. 
+ 
+
+
+ gp hyperparameters: 
+ 
+    3.8250   -0.8579   -0.1429
+
+Demo completed in 46.102 minutes

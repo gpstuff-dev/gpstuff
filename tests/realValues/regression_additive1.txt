@@ -1,0 +1,87 @@
+
+gp = 
+
+            type: 'FULL'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]  [1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-09
+              fh: [1x1 struct]
+
+ TolX reached. Func-count 56. Final f(x)=600.635. Elapsed time 4.58
+
+gp_fic = 
+
+            type: 'FIC'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]  [1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-09
+             X_u: [24x1 double]
+            nind: 24
+               p: [1x1 struct]
+              fh: [1x1 struct]
+
+ TolFun reached. Func-count 45. Final f(x)=1257.57. Elapsed time 1.97
+
+gp_pic = 
+
+            type: 'PIC'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]  [1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-06
+             X_u: [24x1 double]
+            nind: 24
+               p: [1x1 struct]
+        tr_index: []
+              fh: [1x1 struct]
+
+ TolX reached. Func-count 45. Final f(x)=636.321. Elapsed time 4.25
+ TolFun reached. Func-count 3. Final f(x)=636.321. Elapsed time 0.28
+
+gp_csfic = 
+
+            type: 'CS+FIC'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]  [1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-09
+             X_u: [24x1 double]
+            nind: 24
+               p: [1x1 struct]
+              fh: [1x1 struct]
+
+[Warning: Function value at xnew not finite or a number] 
+[> In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/optim/fminscg.m',202,1)">fminscg at 202</a>
+  In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/gp/gp_optim.m',121,1)">gp_optim at 121</a>
+  In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/gp/demo_regression_additive1.m',305,1)">demo_regression_additive1 at 305</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/xunit/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/xunit/test_regression_additive1.m',44,1)">test_regression_additive1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',684,1)">TestRunner>TestRunner.runMethod at 684</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',99,1)">TestRunnerPlugin>TestRunnerPlugin.runMethod at 99</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',99,1)">TestRunnerPlugin>TestRunnerPlugin.runMethod at 99</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',538,1)">TestRunner>TestRunner.runMethodOnPlugins at 538</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',555,1)">TestRunner>TestRunner.runMethodsOnTestContent at 555</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',753,1)">TestRunner>TestRunner.runTestMethod at 753</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',95,1)">TestRunnerPlugin>TestRunnerPlugin.runTestMethod at 95</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',95,1)">TestRunnerPlugin>TestRunnerPlugin.runTestMethod at 95</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',538,1)">TestRunner>TestRunner.runMethodOnPlugins at 538</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',655,1)">TestRunner>TestRunner.runTestSuite at 655</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',54,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 54</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',54,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 54</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',77,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 77</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',538,1)">TestRunner>TestRunner.runMethodOnPlugins at 538</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',175,1)">TestRunner>TestRunner.run at 175</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',364,1)">TestSuite>TestSuite.run at 364</a>
+  In <a href="matlab: opentoline('/proj/matlab/matlab2013b/toolbox/matlab/testframework/runtests.m',44,1)">runtests at 44</a>
+  In <a href="matlab: opentoline('/proj/bayes/tsivula/gpstuff/xunit/runtestset.m',94,1)">runtestset at 94</a>] 
+ TolX reached. Func-count 45. Final f(x)=600.505. Elapsed time 1.31
+
+ gp hyperparameters: 
+ 
+    5.7476    4.8844    1.6333    2.0965   -3.5407
+
+Demo completed in 0.236 minutes

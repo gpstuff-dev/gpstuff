@@ -248,6 +248,8 @@ gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-4);
 rgp=thin(rgp,101);
 nmc=size(rgp.jitterSigma2,1);
 
+nsamp_mcmc = 2000;
+
 % First make predictions just with the linear part to get
 % probability that linear effect is positive
 % [Efts, Varfts] = gpmc_preds(rgp, x, y, xgrid(1), 'z', N, 'zt', Ntgrid(1),'predcf',2);
@@ -258,7 +260,7 @@ pbetapositive_mcmc = mean(fs<0);
 % Get samples from the joint distribution of the latent values at 0 and 1
 % to compute the corresponding linear model parameters alpha and beta
 % in Gelman et al (2013)
-fs = gp_rnd(rgp, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000);
+fs = gp_rnd(rgp, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', nsamp_mcmc);
 a=fs(1,:);b=fs(2,:)-fs(1,:);
 % compute samples from the LD50 given b>0 (see, Gelman et al (2013))
 ld50s=-a(b>0)./b(b>0);
@@ -266,8 +268,9 @@ ld50s=-a(b>0)./b(b>0);
 % Make predictions for the latent value at test points
 % [Efts, Varfts] = gpmc_preds(rgp, x, y, xgrid, 'z', N, 'zt', Ntgrid);
 % fs=Efts+randn(size(Efts)).*sqrt(Varfts);
-fs = gp_rnd(rgp, x, y, xgrid, 'z', N, 'zt', Ntgrid, 'nsamp', 10000);
+fs = gp_rnd(rgp, x, y, xgrid, 'z', N, 'zt', Ntgrid, 'nsamp', nsamp_mcmc);
 Eft_mcmc = mean(fs,2);
+
 % Visualise the predictions
 
 % Latent function

@@ -3,9 +3,9 @@
 F = mfilename;
 S = which(F);
 if exist('OCTAVE_VERSION', 'builtin')
-  subfolders={'diag' 'dist' 'gp' 'mc' 'misc' 'optim' 'xunit', 'octave_compat', 'inputparser'};
+  subfolders={'diag' 'dist' 'gp' 'mc' 'misc' 'optim' 'tests', 'octave_compat', 'inputparser'};
 else
-  subfolders={'diag' 'dist' 'gp' 'mc' 'misc' 'optim' 'xunit'};
+  subfolders={'diag' 'dist' 'gp' 'mc' 'misc' 'optim' 'tests'};
 end
 for sf=subfolders
   addpath(strrep(S,[F '.m'],sf{:}))
@@ -21,7 +21,7 @@ end
 %addpath([gpstuffroot 'mc'])
 %addpath([gpstuffroot 'misc'])
 %addpath([gpstuffroot 'optim'])
-%addpath([gpstuffroot 'xunit'])
+%addpath([gpstuffroot 'tests'])
 
 % If using Octave version of GPstuff, also add the following
 %addpath([gpstuffroot 'inputparser'])

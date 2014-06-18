@@ -1,0 +1,30 @@
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1             2964.84    
+     1           2           2             2908.76       0.0146046
+     2           4           4             2900.33             0.1
+     3           5           5             2885.72               1
+     4           7           7              2864.1        0.295668
+     5           8           8             2848.64               1
+     6           9           9             2842.71               1
+     7          10          10             2842.05               1
+     8          12          12             2841.84        0.266463
+     9          14          14             2841.81        0.143598
+    10          15          15             2841.77               1
+    11          16          16             2841.71               1
+    12          17          17              2841.7               1
+    13          18          18             2841.69               1
+    14          19          19             2841.69               1
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 15
+  Function Count : 20
+  Minimum found : 2841.6901
+  Intern Time : 0.017685 seconds
+  Total Time : 102.8869 seconds
+
+ gp hyperparameters: 
+ 
+    4.0478    1.3173   -2.6332    1.4244
+
+Demo completed in 1.745 minutes
