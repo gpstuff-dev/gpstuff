@@ -71,7 +71,7 @@ end
 
 function testPeffLatent2(testCase)
   verifyVarsEqual(testCase, getName(), {'p_eff_latent2'}, @nans2zero, ...
-    'AbsTol', 0.5)
+    'AbsTol', 1.4)
 end
 
 function testLogPredDensity10foldCV(testCase)

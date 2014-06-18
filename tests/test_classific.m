@@ -60,10 +60,11 @@ function testEP(testCase)
     'RelTolElement', 0.05, 'RelTolRange', 0.01)
 end
 
-function testMC(testCase)
-  verifyVarsEqual(testCase, getName(), {'Efs_mc'}, @(x)mean(x,2), ...
-    'RelTolRange', 0.2)
-end
+% The results vary too much to be tested reliably
+% function testMC(testCase)
+%   verifyVarsEqual(testCase, getName(), {'Efs_mc'}, @(x)mean(x,2), ...
+%     'RelTolRange', 0.2)
+% end
 
 
 % ------------------------
