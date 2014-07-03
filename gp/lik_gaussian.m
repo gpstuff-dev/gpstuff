@@ -217,6 +217,38 @@ function [logM_0, m_1, sigm2hati1] = lik_gaussian_tiltedMoments(lik, y, i1, sigm
   
 end
 
+function ll = lik_gaussian_ll(lik, y, f, z)
+%LIK_EPGAUSSIAN_LL  Log likelihood
+%
+%  Description
+%    LL = LIK_EPGAUSSIAN_LL(LIK, Y, F, Z) takes a likelihood
+%    structure LIK, succes counts Y, numbers of trials Z, and
+%    latent values F. Returns the log likelihood, log p(y|f,z).
+%    This subfunction is needed when using Laplace approximation
+%    or MCMC for inference with non-Gaussian likelihoods. This 
+%    subfunction is also used in information criteria (DIC, WAIC)
+%    computations.
+%
+%  See also
+%    LIK_EPGAUSSIAN_LLG, LIK_EPGAUSSIAN_LLG3, LIK_EPGAUSSIAN_LLG2, GPLA_E
+  
+%   if isempty(z)
+%     error(['lik_epgaussian -> lik_epgaussian_ll: missing z!'... 
+%            'EP-Gaussian likelihood needs the expected number of   '...
+%            'occurrences as an extra input z. See, for         '...
+%            'example, lik_epgaussian and gpla_e.             ']);
+%   end
+
+  sigma2=lik.sigma2;
+  ll=sum(norm_lpdf(y,f,sqrt(sigma2)));  
+
+%   
+%   expf = exp(f);
+%   p = expf ./ (1+expf);
+%   N = z;
+%   ll =  sum(gammaln(N+1)-gammaln(y+1)-gammaln(N-y+1)+y.*log(p)+(N-y).*log(1-p));
+end
+
 function DKff = lik_gaussian_cfg(lik, x, x2)
 %LIK_GAUSSIAN_CFG  Evaluate gradient of covariance with respect to
 %                 Gaussian noise
@@ -352,6 +384,7 @@ function reclik = lik_gaussian_recappend(reclik, ri, lik)
     reclik.fh.unpak = @lik_gaussian_unpak;
     reclik.fh.lp = @lik_gaussian_lp;
     reclik.fh.lpg = @lik_gaussian_lpg;
+    reclik.fh.ll= @lik_gaussian_ll;
     reclik.fh.cfg = @lik_gaussian_cfg;
     reclik.fh.trcov  = @lik_gaussian_trcov;
     reclik.fh.trvar  = @lik_gaussian_trvar;

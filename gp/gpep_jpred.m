@@ -132,15 +132,37 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
     case 'FULL'        % Predictions with FULL GP model
       %[e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);  
       [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);  
-      [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
       
-      [K, C]=gp_trcov(gp,x);
-      [kstarstar, C_nn] = gp_trcov(gp, xt, predcf);
+      [tautildee, nutildee, L, L2] = deal(p.tautilde, p.nutilde, p.L, p.La2);
+      tautilde=tautildee(:,1);
+      nutilde=nutildee(:,1);
+      if isfield(gp.lik,'int_likparam') && gp.lik.int_likparam && ~gp.lik.inputparam
+        % Give q(theta) to likelihood function to integrate ovet
+        zt=[p.mf2 L2'*L2];
+      end
+      if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude && ~gp.lik.inputmagnitude
+        zt=[zt p.mf3 p.La3'*p.La3];
+      end
+      if (isfield(gp.lik, 'int_likparam') && gp.lik.inputparam) || ...
+          (isfield(gp.lik, 'int_magnitude') && gp.lik.inputmagnitude) ...
+          || (isfield(gp.lik, 'int_likparam') && isfield(gp, 'comp_cf'))
+        [K,C]=gp_trcov(gp,x,gp.comp_cf{1});
+        kstarstar = gp_trcov(gp, xt, gp.comp_cf{1});
+        K_nf=gp_cov(gp,xt,x,gp.comp_cf{1});
+      else
+        [K, C]=gp_trcov(gp,x);
+        kstarstar = gp_trcov(gp, xt, predcf);
+        K_nf=gp_cov(gp,xt,x,predcf);
+      end
+%       [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
+      
+%       [K, C]=gp_trcov(gp,x);
+%       [kstarstar, C_nn] = gp_trcov(gp, xt, predcf);
       ntest=size(xt,1);
-      K_nf=gp_cov(gp,xt,x,predcf);
+%       K_nf=gp_cov(gp,xt,x,predcf);
       [n,nin] = size(x);
       
-      if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')  
+      if size(tautildee,2)==1 && all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
         % This is the usual case where likelihood is log concave
         % for example, Poisson and probit
         sqrttautilde = sqrt(tautilde);
@@ -180,22 +202,47 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
             Covft = Covft + RAR;
           end
         end
-      else                         % We might end up here if the likelihood is not log concave
-                                   % For example Student-t likelihood. 
-                                   % NOTE! This does not work reliably yet
-      z=tautilde.*(L'*(L*nutilde));
-      Eft=K_nf*(nutilde-z);
-      
-      if nargout > 1
-        S = diag(tautilde);
-        V = K_nf*S*L';
-        Covft = kstarstar - (K_nf*S)*K_nf' + V*V';
-      end
+      else
+        % We might end up here if the likelihood is not log concave
+        % For example Student-t likelihood.
+        % NOTE! This does not work reliably yet
+%         z=tautilde.*(L'*(L*nutilde));
+%         Eft=K_nf*(nutilde-z);
+%         
+%         if nargout > 1
+%           S = diag(tautilde);
+%           V = K_nf*S*L';
+%           Covft = kstarstar - (K_nf*S)*K_nf' + V*V';
+%         end
+        % An alternative implementation for avoiding negative variances
+        [Eft,V]=pred_var(tautilde,K,K_nf,nutilde);
+        Covft=kstarstar-V;
       end
       %         if nargout > 2
       %             Eyt = Eft;
       %             Varyt = Covft + (C_nn - kstarstar);
       %         end
+      if isfield(gp.lik, 'int_likparam') && gp.lik.int_likparam && gp.lik.inputparam
+        tautilde=tautildee(:,2);
+        nutilde=nutildee(:,2);
+        [K, C]=gp_trcov(gp,x, gp.comp_cf{2});
+        kstarstar = gp_trcov(gp, xt, gp.comp_cf{2});
+        K_nf=gp_cov(gp,xt,x,gp.comp_cf{2});
+        
+        [Eft(:,2),V]=pred_var(tautilde,K,K_nf,nutilde);
+        Covft(:,:,2)=kstarstar-V;
+      end
+      if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude && gp.lik.inputmagnitude
+        tautilde=tautildee(:,end);
+        nutilde=nutildee(:,end);
+        [K, C]=gp_trcov(gp,x, gp.comp_cf{end});
+        kstarstar = gp_trcov(gp, xt, gp.comp_cf{end});
+        K_nf=gp_cov(gp,xt,x,gp.comp_cf{end});
+        
+        [Eft(:,end+1),V]=pred_var(tautilde,K,K_nf,nutilde);
+        Covft(:,:,end+1)=kstarstar-V;
+      end
+      
       % ============================================================
       % FIC
       % ============================================================        
@@ -506,5 +553,58 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
     error('Too many output arguments for GPEP_JPRED.')
   end
   
+
+end
+
+function [m,S]=pred_var(tau_q,K,A,b)
+
+% helper function for determining
+%
+% m = A * inv( K+ inv(diag(tau_q)) ) * inv(diag(tau_q)) *b
+% S = diag( A * inv( K+ inv(diag(tau_q)) ) * A)
+%
+% when the site variances tau_q may be negative
+%
+
+  ii1=find(tau_q>0); n1=length(ii1); W1=sqrt(tau_q(ii1));
+  ii2=find(tau_q<0); n2=length(ii2); W2=sqrt(abs(tau_q(ii2)));
+
+  m=A*b;
+  b=K*b;
+  S=zeros(size(A,1));
+  u=0;
+  U=0;
+  if ~isempty(ii1)
+    % Cholesky decomposition for the positive sites
+    L1=(W1*W1').*K(ii1,ii1);
+    L1(1:n1+1:end)=L1(1:n1+1:end)+1;
+    L1=chol(L1);
+    
+    U = bsxfun(@times,A(:,ii1),W1')/L1;
+    u = L1'\(W1.*b(ii1));
+    
+    m = m-U*u;
+    S=S+U*U';
+%     S = S+sum(U.^2,2);
+  end
+
+  if ~isempty(ii2)
+    % Cholesky decomposition for the negative sites
+    V=bsxfun(@times,K(ii2,ii1),W1')/L1;
+    L2=(W2*W2').*(V*V'-K(ii2,ii2));
+    L2(1:n2+1:end)=L2(1:n2+1:end)+1;
+    
+    [L2,pd]=chol(L2);
+    if pd==0
+      U = bsxfun(@times,A(:,ii2),W2')/L2 -U*(bsxfun(@times,V,W2)'/L2);
+      u = L2'\(W2.*b(ii2)) -L2'\(bsxfun(@times,V,W2)*u);
+      
+      m = m+U*u;
+      S = S-U*U';
+%       S = S-sum(U.^2,2);
+    else
+      fprintf('Posterior covariance is negative definite.\n')
+    end
+  end
 
 end
