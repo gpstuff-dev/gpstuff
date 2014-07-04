@@ -68,11 +68,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %    inference for latent Gaussian models by using integrated nested
 %    Laplace approximations.
 %
-%    Jarno Vanhatalo, Ville Pietil‰inen and Aki Vehtari (2010). 
+%    Jarno Vanhatalo, Ville Pietil√§inen and Aki Vehtari (2010). 
 %    Approximate inference for disease mapping with sparse Gaussian
 %    processes. Statistics in Medicine, 29(15):1580-1607.
 %
-% Copyright (c) 2009-2010 Ville Pietil‰inen, Jarno Vanhatalo
+% Copyright (c) 2009-2010 Ville Pietil√§inen, Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public

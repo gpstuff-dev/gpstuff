@@ -491,6 +491,9 @@ function gp = gp_set(varargin)
           ipep.addParamValue('cavity_var_lim', 2, @(x) isreal(x) && isfinite(x))
           % the intial damping factor
           ipep.addParamValue('df', 0.8, @(x) isreal(x) && isfinite(x))
+          % the intial damping factor related to input dependent
+          % noise/magnitude
+          ipep.addParamValue('df2', 0.8, @(x) isreal(x) && isfinite(x))
           % the initial fraction parameter
           ipep.addParamValue('eta', 1, @(x) isreal(x) && isfinite(x))
           % the secondary fraction parameter          
@@ -536,6 +539,13 @@ function gp = gp_set(varargin)
               gp.latent_opt.df = 1;
             else
               gp.latent_opt.df = ipep.Results.df;
+            end
+          end
+          if init || ~ismember('df2',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'df2')
+            if strcmp(gp.latent_opt.parallel,'off') && ismember('df2',ipep.UsingDefaults)
+              gp.latent_opt.df2 = 1;
+            else
+              gp.latent_opt.df2 = ipep.Results.df2;
             end
           end
           if strcmp(gp.latent_opt.optim_method, 'robust-EP')

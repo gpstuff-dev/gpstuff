@@ -20,7 +20,7 @@ function delta  = gradcheck(w, func, grad, varargin)
 % License.txt, included with the software, for details.
 
 % Reasonable value for step size
-epsilon = 1.0e-5;
+epsilon = 1.0e-6;
 
 func = fcnchk(func, length(varargin));
 grad = fcnchk(grad, length(varargin));

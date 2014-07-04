@@ -2,20 +2,8 @@ function lik = lik_epgaussian(varargin)
 %LIK_EPGAUSSIAN  Create a EP-Gaussian likelihood structure 
 %
 %  Description
-%    LIK = LIK_EPGAUSSIAN creates EP-Gaussian likelihood structure.
-%
-%    The likelihood is defined as follows:
-%                  __ n
-%      p(y|f, z) = || i=1 [ p_i^(y_i)*(1-p_i)^(z_i-y_i)) * 
-%                           gamma(z_i+1)/(gamma(y_i+1)*gamma(z_i-y_i+1))]
-%    where p_i = exp(f_i)/ (1+exp(f_i)) is the succes probability,
-%    which is a function of the latent variable f_i and z is a
-%    vector of numbers of trials. 
-%
-%    When using EP-Gaussian likelihood you need to give the vector z
-%    as an extra parameter to each function that requires y also. 
-%    For example, you should call gpla_e as follows
-%      gpla_e(w, gp, x, y, 'z', z)
+%    LIK = LIK_EPGAUSSIAN creates EP-Gaussian likelihood structure used
+%    in models with input dependent noise/magnitude.
 %
 %  See also
 %    GP_SET, LIK_*
