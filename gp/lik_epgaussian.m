@@ -93,7 +93,7 @@ function lik = lik_epgaussian(varargin)
 
 end
 
-function [w,s] = lik_epgaussian_pak(lik)
+function [w, s, h] = lik_epgaussian_pak(lik)
 %LIK_EPGAUSSIAN_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
@@ -104,15 +104,17 @@ function [w,s] = lik_epgaussian_pak(lik)
 %    used for example in energy and gradient computations.
 %
 %  See also
-%    LIK_NEGBIN_UNPAK, GP_PAK
+%    LIK_EPGAUSSIAN_UNPAK, GP_PAK
 
-  w=[];s={};
+  w = []; s = {}; h=[];
   if ~isempty(lik.p.sigma2)
     w = log(lik.sigma2);
     s = [s; 'log(epgaussian.sigma2)'];
-    [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
+    h = [h 0];
+    [wh, sh, hh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
     w = [w wh];
     s = [s; sh];
+    h = [h hh];
   end
 end
 

@@ -700,10 +700,6 @@ end
 %---------------% Skip intendation
 %---------------% -->
                 
-                if issparse(C)
-                  error('Sparse cov not implemented for lik_epgaussian.')
-                end
-                
                 if (int_likparam && gp.lik.inputparam) || (int_magnitude && gp.lik.inputmagnitude) ...
                     || (isfield(gp.lik, 'int_likparam') && isfield(gp, 'comp_cf'))
                   [K,C] = gp_trcov(gp, x, gp.comp_cf{1});
@@ -713,6 +709,10 @@ end
                 if any(isnan(K(:))) || any(K(:)>1e10)
                   [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
                   return
+                end
+                
+                if issparse(C)
+                  error('Sparse cov not implemented for lik_epgaussian.')
                 end
                 
                 % The EP algorithm for full support covariance function
