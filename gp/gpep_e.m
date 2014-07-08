@@ -1505,7 +1505,7 @@ end
 %                         %                           dif=0.5.*real(log(det(C+taut))) - sum(log(diag(LL)))
 %                       end
                     logZep=-logZep;
-                    evec(iter)=logZep;
+%                     evec(iter)=logZep;
                     L=LS;
                     B=1;
 %                       if isnan(logZep)
@@ -1912,16 +1912,16 @@ end
                         end
                       end
                       
-                      evec(iter)=logZep;
-                      mlpd(iter)=sum(logM0);
-                      if ns==3 && inputmagnitude
-                        nuvec(iter,:)=[nutilde(10,:)];
-                        tauvec(iter,:)=[tautilde(10,:)];
-                        nuvec2(iter,:)=[nutilde(20,:)];
-                        tauvec2(iter,:)=[tautilde(20,:)];
-                        nuvec3(iter,:)=[nutilde(30,:)];
-                        tauvec3(iter,:)=[tautilde(30,:)];
-                      end
+%                       evec(iter)=logZep;
+%                       mlpd(iter)=sum(logM0);
+%                       if ns==3 && inputmagnitude
+%                         nuvec(iter,:)=[nutilde(10,:)];
+%                         tauvec(iter,:)=[tautilde(10,:)];
+%                         nuvec2(iter,:)=[nutilde(20,:)];
+%                         tauvec2(iter,:)=[tautilde(20,:)];
+%                         nuvec3(iter,:)=[nutilde(30,:)];
+%                         tauvec3(iter,:)=[tautilde(30,:)];
+%                       end
                       iter=iter+1;
                       if ismember(display, {'iter', 'on'})
                         if exist('inputparam','var') && ~inputparam

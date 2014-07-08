@@ -594,6 +594,11 @@ function gp = gp_set(varargin)
               gp.latent_opt.display = ipep.Results.display;
             end
           end
+          if isfield(gp.lik, 'int_likparam')
+            if init || ~ismember('display',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'display')
+              gp.latent_opt.display = ipep.Results.display;
+            end
+          end
         case 'Laplace'
           % Handle latent_opt
           ipla=inputParser;
