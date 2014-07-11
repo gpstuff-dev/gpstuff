@@ -59,10 +59,10 @@ function testDICLatent(testCase)
     'RelTolElement', 0.05, 'RelTolRange', 0.01)
 end
 
-function testPeffLatentMarginalized(testCase)
-  verifyVarsEqual(testCase, getName(), {'p_eff'}, @nans2zero, ...
-    'AbsTol', 0.5)
-end
+% function testPeffLatentMarginalized(testCase)
+%   verifyVarsEqual(testCase, getName(), {'p_eff'}, @nans2zero, ...
+%     'AbsTol', 0.5)
+% end
 
 function testPeffLatent(testCase)
   verifyVarsEqual(testCase, getName(), {'p_eff_latent'}, @nans2zero, ...
