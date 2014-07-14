@@ -11,20 +11,27 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, varargin)
 %    distribution p(yt|x,y,xt) at locations XT.
 %
 %    OPTIONS is optional parameter-value pair
-%      nsamp  - determines the number of samples (default = 1).
-%      predcf - index vector telling which covariance functions are 
-%               used for prediction. Default is all (1:gpcfn)
-%      tstind - a vector defining, which rows of X belong to which 
-%               training block in *IC type sparse models. Default is [].
-%               See also GP_PRED.
-%      z      - optional observed quantity in triplet (x_i,y_i,z_i)
-%               Some likelihoods may use this. For example, in case of 
-%               Poisson likelihood we have z_i=E_i, that is, expected value 
-%               for ith case. 
-%      fcorr  - Method used for latent marginal posterior corrections. 
-%               Default is 'off'. Possible methods are 'fact' for EP
-%               and either 'fact' or 'cm2' for Laplace. If method is
-%               'on', 'fact' is used for EP and 'cm2' for Laplace.
+%      nsamp     - determines the number of samples (default = 1).
+%      predcf    - index vector telling which covariance functions are 
+%                  used for prediction. Default is all (1:gpcfn)
+%      tstind    - a vector defining, which rows of X belong to which 
+%                  training block in *IC type sparse models. Default is [].
+%                  See also GP_PRED.
+%      z         - optional observed quantity in triplet (x_i,y_i,z_i)
+%                  Some likelihoods may use this. For example, in case of 
+%                  Poisson likelihood we have z_i=E_i, that is, expected
+%                  value
+%                  for ith case. 
+%      fcorr     - Method used for latent marginal posterior corrections. 
+%                  Default is 'off'. Possible methods are 'fact' for EP
+%                  and either 'fact' or 'cm2' for Laplace. If method is
+%                  'on', 'fact' is used for EP and 'cm2' for Laplace.
+%      autoscale - determines if the samples are drawn from split-normal
+%                  approximation in the case of non-gaussian likelihood.
+%                  Possible values are 'on' and 'off' (default).
+%      n_scale   - the maximum number of the most significant principal
+%                  component directories to scale in the autoscaling
+%                  process (default 50).
 %
 %    If likelihood is non-Gaussian and gp.latent_method is either
 %    Laplace or EP, the samples are drawn from the Gaussian
@@ -113,14 +120,15 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
     
     if nargout > 1
       [Eft, Covft, ~, Eyt, Covyt] ...
-        = gp_jpred(gp,x,y,xt,'predcf',predcf,'tstind',tstind);
+        = gp_jpred(gp,x,y,xt,'z',z,'predcf',predcf,'tstind',tstind);
     else
-      [Eft, Covft] = gp_jpred(gp,x,y,xt,'predcf',predcf,'tstind',tstind);
+      [Eft, Covft] = gp_jpred(gp,x,y,xt,'z',z, ...
+                              'predcf',predcf,'tstind',tstind);
     end
     rr = randn(size(xt,1),nsamp);
-    sampft = bsxfun(@plus, Eft, Covft*rr);
+    sampft = bsxfun(@plus, Eft, chol(Covft,'lower')*rr);
     if nargout > 1
-      sampyt = bsxfun(@plus, Eyt, Covyt*rr);
+      sampyt = bsxfun(@plus, Eyt, chol(Covyt,'lower')*rr);
     end
     
   else
@@ -447,14 +455,13 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
           + chol(Covft(Covft_ind,Covft_ind),'lower')*randn(length(Covft_ind),nsamp);
       end
       
-      
     else
       % -------------------
       %    Autoscale off
       % -------------------
-      [Eft, Covft] = gp_jpred(gp,x,y,xt, ...
+      [Eft, Covft] = gp_jpred(gp,x,y,xt,'z',z, ...
         'predcf',predcf, 'tstind',tstind, 'fcorr','off');
-      sampft = bsxfun(@plus, Eft, Covft*randn(size(xt,1),nsamp));
+      sampft = bsxfun(@plus, Eft, chol(Covft,'lower')*randn(size(xt,1),nsamp));
       
       if ~isequal(fcorr, 'off')
         % Do marginal corrections for samples
