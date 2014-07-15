@@ -97,6 +97,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+  ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}))
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
     ip.parse(gp, x, y, varargin{:});
@@ -109,6 +110,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
   zt=ip.Results.zt;
   predcf=ip.Results.predcf;
   tstind=ip.Results.tstind;
+  fcorr=ip.Results.fcorr;
   if isempty(xt)
     xt=x;
     if isempty(tstind)
@@ -131,14 +133,19 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
       end
     end
     if isempty(yt)
-      yt=y;gi
+      yt=y;
     end
     if isempty(zt)
       zt=z;
     end
   end
-
+  
+  if ~isequal(fcorr, 'off')
+    warning('Marginal corrections not available for joint predictions');
+    fcorr='off';
+  end
   [tn, tnin] = size(x);
+  
   if isfield(gp.lik, 'nondiagW')
     [Eft,Covft]=gpla_pred(gp, x, y, xt, 'z', z, 'tstind', tstind, 'predcf', predcf);
   else
@@ -161,7 +168,11 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
         end        
         % Evaluate the mean
         if issparse(K_nf) && issparse(L)
-          deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z(p));
+          if isempty(z)
+            deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z);
+          else
+            deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z(p));
+          end
           Eft = K_nf(:,p)*deriv;
         else
           deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
