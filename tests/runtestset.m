@@ -22,6 +22,7 @@ function log = runtestset(mode)
 %       binomial_apc           0.224
 %       classific              1.058
 %       derivativeobs          0.020
+%       epinf                 76.727
 %       hierprior              2.734
 %       hurdle                 2.286
 %       improvemarginals       0.043
