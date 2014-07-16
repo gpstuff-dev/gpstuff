@@ -46,17 +46,17 @@ end
 
 function testDICParameters(testCase)
   verifyVarsEqual(testCase, getName(), {'DIC'}, @nans2zero, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testDICAll(testCase)
   verifyVarsEqual(testCase, getName(), {'DIC2'}, @nans2zero, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testDICLatent(testCase)
   verifyVarsEqual(testCase, getName(), {'DIC_latent'}, @nans2zero, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 % function testPeffLatentMarginalized(testCase)
@@ -66,7 +66,7 @@ end
 
 function testPeffLatent(testCase)
   verifyVarsEqual(testCase, getName(), {'p_eff_latent'}, @nans2zero, ...
-    'AbsTol', 0.5)
+    'AbsTol', 0.6)
 end
 
 function testPeffLatent2(testCase)
@@ -76,17 +76,17 @@ end
 
 function testLogPredDensity10foldCV(testCase)
   verifyVarsEqual(testCase, getName(), {'mlpd_cv'}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testLogPredDensityLOOPRED(testCase)
   verifyVarsEqual(testCase, getName(), {'mlpd_loo'}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testWAIC(testCase)
   verifyVarsEqual(testCase, getName(), {'WAIC'}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 

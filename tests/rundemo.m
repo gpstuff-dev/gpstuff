@@ -127,10 +127,13 @@ try
 
 catch err
   % Error running the demo
-  ME = MException('run_demo:DemoFailure', 'Could not run demo_%s', ...
-    run_demo_data.name);
-  ME = addCause(ME, err);
-  throw(ME)
+  % Here the exception could be included as a cause to a new exeption but
+  % that makes the information related to this exeption harder to see.
+  % ME = MException('run_demo:DemoFailure', 'Could not run demo_%s', ...
+  %   run_demo_data.name);
+  % ME = addCause(ME, err);
+  % throw(ME)
+  rethrow(err)
 end
 
 % Save the results into the desired directory
