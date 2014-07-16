@@ -119,6 +119,11 @@ ip.addParamValue('predcf', [], @(x) isempty(x) || ...
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}))
+
+% Add z and zt for compatibility although not used
+ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
+
 ip.parse(gp, x, y, varargin{:});
 xt=ip.Results.xt;
 yt=ip.Results.yt;

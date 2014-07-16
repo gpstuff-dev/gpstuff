@@ -143,16 +143,27 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
       if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude && ~gp.lik.inputmagnitude
         zt=[zt p.mf3 p.La3'*p.La3];
       end
-      if (isfield(gp.lik, 'int_likparam') && gp.lik.inputparam) || ...
-          (isfield(gp.lik, 'int_magnitude') && gp.lik.inputmagnitude) ...
-          || (isfield(gp.lik, 'int_likparam') && isfield(gp, 'comp_cf'))
-        [K,C]=gp_trcov(gp,x,gp.comp_cf{1});
-        kstarstar = gp_trcov(gp, xt, gp.comp_cf{1});
-        K_nf=gp_cov(gp,xt,x,gp.comp_cf{1});
+      if ~isfield(gp, 'lik_mono')
+        if (isfield(gp.lik, 'int_likparam') && gp.lik.inputparam) || ...
+            (isfield(gp.lik, 'int_magnitude') && gp.lik.inputmagnitude) ...
+            || (isfield(gp.lik, 'int_likparam') && isfield(gp, 'comp_cf'))
+          [K,C]=gp_trcov(gp,x,gp.comp_cf{1});
+          kstarstar = gp_trcov(gp, xt, gp.comp_cf{1});
+          K_nf=gp_cov(gp,xt,x,gp.comp_cf{1});
+        else
+          [K, C]=gp_trcov(gp,x);
+          kstarstar = gp_trcov(gp, xt, predcf);
+          K_nf=gp_cov(gp,xt,x,predcf);
+        end
       else
-        [K, C]=gp_trcov(gp,x);
-        kstarstar = gp_trcov(gp, xt, predcf);
-        K_nf=gp_cov(gp,xt,x,predcf);
+        x2=x;
+        y2=y;
+        x=gp.xv;
+        [K,C]=gp_dtrcov(gp,x2,x);
+        kstarstar=gp_trcov(rmfield(gp,{'derivobs','lik_mono'}),xt);
+        ntest=size(xt,1);
+        K_nf=gp_dcov(gp,x2,xt,predcf)';
+        K_nf(ntest+1:end,:)=[];
       end
 %       [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
       
@@ -162,7 +173,9 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
 %       K_nf=gp_cov(gp,xt,x,predcf);
       [n,nin] = size(x);
       
-      if size(tautildee,2)==1 && all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
+      if size(tautildee,2)==1 && all(tautilde > 0) ...
+          && ~(isequal(gp.latent_opt.optim_method, 'robust-EP') ...
+               || isfield(gp, 'lik_mono'))
         % This is the usual case where likelihood is log concave
         % for example, Poisson and probit
         sqrttautilde = sqrt(tautilde);
