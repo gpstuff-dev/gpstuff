@@ -383,7 +383,7 @@ switch gp.type
     Lav = Cv_ff-Qv_ff;   % 1 x f, Vector of diagonal elements
                          % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
     iLaKfu = zeros(size(K_fu));  % f x u,
-    n=size(x,1)
+    n=size(x,1);
     for i=1:n
         iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
     end
