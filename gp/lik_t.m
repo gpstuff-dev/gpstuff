@@ -403,7 +403,11 @@ function [logM_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, my
     % Set the limits for integration and integrate with quad
     % -----------------------------------------------------
     mean_app = myy_i(i);
-    sigm_app = sqrt(sigm2_i(i));
+    if ~isscalar(sigm2_i)
+      sigm_app = sqrt(sigm2_i(i));
+    else
+      sigm_app = sqrt(sigm2_i);
+    end
     
     
     lambdaconf(1) = mean_app - 8.*sigm_app; lambdaconf(2) = mean_app + 8.*sigm_app;
@@ -454,7 +458,16 @@ function [logM_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, my
     sigm2hati1(i) = m_2 - m_1(i).^2;
     logM_0(i) = log(m_0);
   end
-
+  function integrand = zeroth_moment(f)
+    r = yy-f;
+    term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
+    integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
+    if ~isscalar(sigm2_i)
+      integrand = integrand.*exp(- 0.5 * (f-myy_i(i)).^2./sigm2_i(i) - log(sigm2_i(i))/2 - log(2*pi)/2); %
+    else
+      integrand = integrand.*exp(- 0.5 * (f-myy_i(i)).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
+    end
+  end
 end
 
 function [g_i] = lik_t_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)

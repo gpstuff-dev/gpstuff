@@ -1,11 +1,20 @@
-Last modified: 2013-03-20 16:01:42 EET
+Last modified: 2014-05-16 09:58:33 EEST
 -----------------------------------------------------------------
 
+<<<<<<< HEAD
 GPstuff: Gaussian process models for Bayesian analysis 4.3.2
+=======
+GPstuff: Gaussian process models for Bayesian analysis 4.4
+>>>>>>> origin/develop
 
-Maintainers: Aki Vehtari <aki.vehtari@aalto.fi>
-             Jarno Vanhatalo <jarno.vanhatalo@helsinki.fi>
-             
+Maintainer: Aki Vehtari <aki.vehtari@aalto.fi>
+
+*** If you use GPstuff (or otherwise refer to it), use the following reference ***
+  Jarno Vanhatalo, Jaakko Riihimäki, Jouni Hartikainen, Pasi Jylänki,
+  Ville Tolvanen, and Aki Vehtari (2013). GPstuff: Bayesian Modeling
+  with Gaussian Processes. Journal of Machine Learning Research,
+  14(Apr):1175-1179. 
+  Available at http://jmlr.csail.mit.edu/papers/v14/vanhatalo13a.html
 
 This software is distributed under the GNU General Public Licence
 (version 3 or later); please refer to the file Licence.txt,
@@ -24,13 +33,18 @@ Table of contents:
 ------------------------------------------
 1. INTRODUCTION
 
-  GPstuff is a collection of Matlab functions to build and analyze
-  Bayesian models build over Gaussian processes. The toolbox is tested
-  with Matlab R2009b-2012b in 64bit Windows and Linux environments and
-  with Octave 3.6.4 in 64bit Linux environment (it should work in the
-  32bit versions as well but they are not tested properly). NOTE! For
-  Octave, use the Octave specific package available from the GPstuff
-  homepage.
+  The GPstuff toolbox is a versatile collection of Gaussian process
+  models and computational tools required for inference. The tools
+  include, among others, various inference methods, sparse
+  approximations and model assessment methods.
+
+  The GPstuff toolbox works (at least) with Matlab versions r2009b
+  (7.9) or newer (older versions down to 7.7 should work also, but the
+  code is not tested with them). Most of the functionality works also
+  with Octave (3.6.4 or newer, see release notes for details). GPstuff
+  can also be called from R with RcppOctave package. Most of the code
+  is written in m-files but some of the most computationally critical
+  parts have been coded in C.
 
   The code for GPstuff can be found in subfolders. The SuiteSparse
   folder contains an exact copy of the SuiteSparse v3.4 toolbox by Tim
@@ -75,7 +89,12 @@ Table of contents:
 3. CONTENTS
    
    The GPstuff packge contains the following subdirectories:
+<<<<<<< HEAD
    diag  dist  gp  mc  misc  optim  test_gpstuff  SuiteSparse
+=======
+   diag  dist  gp  mc  misc  optim  tests*  SuiteSparse*
+   (* not in Octave)
+>>>>>>> origin/develop
 
    Each folder contains Contents.m, which summarizes the functions
    in the folder. 
@@ -85,9 +104,19 @@ Table of contents:
 
 4. TESTING THE INSTALLATION
 
+<<<<<<< HEAD
    Installation can be tested by running command run_tests, which
    runs specific demos and compares the computed results to pre-saved
    results. 
+=======
+   Installation can be tested by running command runtestset('fast'), which
+   runs a collection of demos and compares the computed results to pre-saved
+   results. Running this takes about one hour and it requires Matlab version
+   2013b or greater for the unit test framework. Alternatively, the
+   'xunit' package can be used instead. The xunit package can be downloaded
+   from
+   http://www.mathworks.com/matlabcentral/fileexchange/22846-matlab-xunit-test-framework
+>>>>>>> origin/develop
 
 5. USER QUIDE (VERY SHORT)
 
@@ -137,12 +166,13 @@ Table of contents:
 
 6. REFERENCE
 
-   If you use GPstuff, please use the reference:
+   If you use GPstuff (or otherwise refer to it), use the following reference
 
    Jarno Vanhatalo, Jaakko Riihimäki, Jouni Hartikainen, Pasi Jylänki,
-   Ville Tolvanen, Aki Vehtari (2013). GPstuff: A Toolbox for Bayesian
-   Modeling with Gaussian Processes. In Journal of Machine Learning
-   Research, accepted for publication.
+   Ville Tolvanen, Aki Vehtari (2013). GPstuff: Bayesian Modeling with
+   Gaussian Processes. Journal of Machine Learning Research,
+   14(Apr):1175-1179.  
+   Available at http://jmlr.csail.mit.edu/papers/v14/vanhatalo13a.html
 
 7. JMLR DISCLAIMER
 

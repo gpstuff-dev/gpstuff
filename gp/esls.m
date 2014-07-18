@@ -50,7 +50,24 @@ if (nargin < 7) || isempty(angle_range)
 end
 
 if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'});
-  [K, C] = gp_trcov(gp,x);
+  if isfield(gp, 'lik_mono')
+    xv=gp.xv;
+    yv=round(gp.nvd./abs(gp.nvd));
+    yv=bsxfun(@times,yv,ones(size(xv,1),length(gp.nvd)));
+    [K,C] = gp_dtrcov(gp, x, gp.xv);
+    if isequal(gp.lik.type, 'Gaussian')
+      cc=C(size(x,1)+1:end,size(x,1)+1:end);
+      cy=C(size(x,1)+1:end,1:size(x,1));
+      cyy=C(1:size(x,1),1:size(x,1));
+      C=cc - cy*(cyy\cy');
+      %C=0.5.*(C+C')+1e-10.*eye(size(C));
+      meany=cy*(cyy\y);
+    else
+      meany=zeros(size(f));
+    end
+  else
+    [K, C] = gp_trcov(gp, x);
+  end
 else
   if ~isfield(gp.lik,'xtime')
     nl=[0 repmat(size(y,1), 1, length(gp.comp_cf))];
@@ -77,7 +94,18 @@ if isfield(gp,'meanf')
 end
 L=chol(C, 'lower');
 
-cur_log_like = gp.lik.fh.ll(gp.lik, y, f, z);
+if isfield(gp, 'lik_mono')
+  % Monotonic GP
+  if isequal(gp.lik.type, 'Gaussian')
+    cur_log_like = gp.lik_mono.fh.ll(gp.lik_mono, yv(:), f+meany, z);
+  else
+    cur_log_like = gp.lik.fh.ll(gp.lik, y, f(1:size(y,1)), z);
+    cur_log_like = cur_log_like ...
+      + gp.lik_mono.fh.ll(gp.lik, yv(:), f(size(y,1)+1:end), z);
+  end
+else
+  cur_log_like = gp.lik.fh.ll(gp.lik, y, f, z);
+end
 for i1=1:opt.repeat  
 
   % Set up the ellipse and the slice threshold
@@ -102,7 +130,19 @@ for i1=1:opt.repeat
   while true
     % Compute f for proposed angle difference and check if it's on the slice
     f_prop = f*cos(phi) + nu*sin(phi);
-    cur_log_like = gp.lik.fh.ll(gp.lik, y, f_prop, z);
+    if isfield(gp, 'lik_mono')
+      % Monotonic GP
+      if isequal(gp.lik.type, 'Gaussian')
+        cur_log_like = gp.lik_mono.fh.ll(gp.lik_mono, yv(:), f_prop+meany, z);
+      else
+        cur_log_like = gp.lik.fh.ll(gp.lik, y, f_prop(1:size(y,1)), z);
+        cur_log_like = cur_log_like ...
+          + gp.lik_mono.fh.ll(gp.lik_mono, yv(:), f_prop(size(y,1)+1:end), z);
+      end
+    else
+      cur_log_like = gp.lik.fh.ll(gp.lik, y, f_prop, z);
+    end
+%     cur_log_like = gp.lik.fh.ll(gp.lik, y, f_prop, z);
     if (cur_log_like > hh) && ~isinf(cur_log_like)
       % New point is on slice, ** EXIT LOOP **
       break;
@@ -120,6 +160,9 @@ for i1=1:opt.repeat
     slrej = slrej + 1;
   end
   f = f_prop;
+end
+if isfield(gp,'lik_mono') && isequal(gp.lik.type, 'Gaussian')
+  f=f+meany;
 end
 energ = [];
 diagn.rej = slrej;

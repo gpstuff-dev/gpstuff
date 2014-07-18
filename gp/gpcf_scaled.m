@@ -2,9 +2,9 @@ function gpcf = gpcf_scaled(varargin)
 %GPCF_SCALED  Create a scaled covariance function
 %
 %  Description
-%    GPCF = GPCF_scaled('cf', {GPCF_1, GPCF_2, ...}) 
+%    GPCF = GPCF_SCALED('cf', {GPCF_1, GPCF_2, ...}) 
 %    creates a scaled version of a covariance function as follows
-%          GPCF_scaled = diag(x(:,scaler))*GPCF*diag(x(:,scaler))
+%          GPCF_SCALED = diag(x(:,scaler))*GPCF*diag(x(:,scaler))
 %    where x is the matrix of inputs (see, e.g. gp_trcov).
 %
 %    Parameters for the scaled covariance function are [default]
@@ -24,7 +24,7 @@ function gpcf = gpcf_scaled(varargin)
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
   ip=inputParser;
@@ -453,7 +453,7 @@ function reccf = gpcf_scaled_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_scaled_pak;
     reccf.fh.unpak = @gpcf_scaled_unpak;
-    reccf.fh.e = @gpcf_scaled_lp;
+    reccf.fh.lp = @gpcf_scaled_lp;
     reccf.fh.lpg = @gpcf_scaled_lpg;
     reccf.fh.cfg = @gpcf_scaled_cfg;
     reccf.fh.cov = @gpcf_scaled_cov;

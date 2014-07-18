@@ -71,7 +71,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
 %
 %  See also
 %    GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
-%
+
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010      Heikki Peura
 % Copyright (c) 2011      Pasi Jylänki
@@ -242,6 +242,116 @@ end
       % ============================================================
       case 'FULL'        % Predictions with FULL GP model
                          %[e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+        if isfield(gp.lik, 'int_likparam')
+        
+        [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+        [tautildee, nutildee, L, L2] = deal(p.tautilde, p.nutilde, p.L, p.La2);
+        
+        tautilde=tautildee(:,1);
+        nutilde=nutildee(:,1);
+        if isfield(gp.lik,'int_likparam') && gp.lik.int_likparam && ~gp.lik.inputparam
+          % Give q(theta) to likelihood function to integrate ovet          
+          zt=[p.mf2 L2'*L2];
+        end
+        if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude && ~gp.lik.inputmagnitude
+          zt=[zt p.mf3 p.La3'*p.La3];
+        end
+        if (isfield(gp.lik, 'int_likparam') && gp.lik.inputparam) || ...
+            (isfield(gp.lik, 'int_magnitude') && gp.lik.inputmagnitude) ...
+            || (isfield(gp.lik, 'int_likparam') && isfield(gp, 'comp_cf'))
+          [K,C]=gp_trcov(gp,x,gp.comp_cf{1});
+          kstarstar = gp_trvar(gp, xt, gp.comp_cf{1});
+          K_nf=gp_cov(gp,xt,x,gp.comp_cf{1});
+        else
+          [K, C]=gp_trcov(gp,x);
+          kstarstar = gp_trvar(gp, xt, predcf);
+          K_nf=gp_cov(gp,xt,x,predcf);
+        end
+        ntest=size(xt,1);
+        [n,nin] = size(x);
+        
+        if size(tautildee,2)==1 && all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
+          % This is the usual case where likelihood is log concave
+          % for example, Poisson and probit
+          sqrttautilde = sqrt(tautilde(:,1));
+          Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
+          
+          if ~isfield(gp,'meanf')
+            if issparse(L)          % If compact support covariance functions are used
+                                    % the covariance matrix will be sparse
+              zz=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
+            else
+              zz=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+            end
+            
+            Eft=K_nf*(nutilde-zz);    % The mean, zero mean GP
+          else
+            zz = Stildesqroot*(L'\(L\(Stildesqroot*(C))));
+            
+            Eft_zm=K_nf*(nutilde-zz*nutilde); % The mean, zero mean GP
+            Ks = eye(size(zz)) - zz;           % inv(K + S^-1)*S^-1
+            Ksy = Ks*nutilde;
+            [RB RAR] = mean_predf(gp,x,xt,K_nf',Ks,Ksy,'EP',Stildesqroot.^2);
+            
+            Eft = Eft_zm + RB;            % The mean
+          end
+          
+          % Compute variance
+          if nargout > 1
+            if issparse(L)
+              V = ldlsolve(L, Stildesqroot*K_nf');
+              Varft = kstarstar - sum(K_nf.*(Stildesqroot*V)',2);
+            else
+              V = (L\Stildesqroot)*K_nf';
+              Varft = kstarstar - sum(V.^2)';
+            end
+            if isfield(gp,'meanf')
+              Varft = Varft + RAR;
+            end
+          end
+        else
+          % We might end up here if the likelihood is not log concave
+          % For example Student-t likelihood.
+          
+          %{
+          zz=tautilde.*(L'*(L*nutilde));
+          Eft=K_nf*(nutilde-zz);
+          
+          if nargout > 1
+            S = diag(tautilde);
+            V = K_nf*S*L';
+            Varft = kstarstar - sum((K_nf*S).*K_nf,2) + sum(V.^2,2);
+          end
+          %}
+          
+          % An alternative implementation for avoiding negative variances
+          [Eft,V]=pred_var(tautilde,K,K_nf,nutilde);
+          Varft=kstarstar-V;
+          
+        end
+        if isfield(gp.lik, 'int_likparam') && gp.lik.int_likparam && gp.lik.inputparam
+          tautilde=tautildee(:,2);
+          nutilde=nutildee(:,2);
+          [K, C]=gp_trcov(gp,x, gp.comp_cf{2});
+          kstarstar = gp_trvar(gp, xt, gp.comp_cf{2});
+          K_nf=gp_cov(gp,xt,x,gp.comp_cf{2});
+          
+          [Eft(:,2),V]=pred_var(tautilde,K,K_nf,nutilde);
+          Varft(:,2)=kstarstar-V;        
+        end
+        if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude && gp.lik.inputmagnitude
+          tautilde=tautildee(:,end);
+          nutilde=nutildee(:,end);
+          [K, C]=gp_trcov(gp,x, gp.comp_cf{end});
+          kstarstar = gp_trvar(gp, xt, gp.comp_cf{end});
+          K_nf=gp_cov(gp,xt,x,gp.comp_cf{end});
+          
+          [Eft(:,end+1),V]=pred_var(tautilde,K,K_nf,nutilde);
+          Varft(:,end+1)=kstarstar-V;        
+        end
+        
+        else
+        
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
         
@@ -335,6 +445,8 @@ end
             return
           end
           
+        end
+        
         end
         % ============================================================
         % FIC

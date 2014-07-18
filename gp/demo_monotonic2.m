@@ -58,6 +58,8 @@ gpb = gp_set('lik', lik, 'cf', {cfl cfs}, 'jitterSigma2', 1e-6, 'latent_method',
 % 1) sexp
 subplot(2,2,1)
 gpiaa=gp_ia(gpa,xn,y,'z',z);
+% Do predictions for testing purposes
+[Eft,Varft]=gp_pred(gpiaa, xn,y,xn,'z',z);
 gp_plot(gpiaa,xn,y,'z',z,'zt',zt,'target','mu','normdata',nd)
 hold on
 plot(d.age,d.y./d.N*1000,'r*')
@@ -73,6 +75,8 @@ gpam=gpa;gpam.xv=xn(2:2:end);
 gpam=gp_monotonic(gpam,xn,y,'z',z,'nvd', 1, 'optimize', 'on', ...
                   'opt', opt, 'optimf', @fminlbfgs);
 gpiaam=gp_ia(gpam,xn,y,'z',z);
+% Do predictions for testing purposes
+[Eftm,Varftm]=gp_pred(gpiaam, xn,y,xn,'z',z);
 gp_plot(gpiaam,xn,y,'z',z,'zt',zt,'target','mu','normdata',nd)
 hold on
 plot(d.age,d.y./d.N*1000,'r*')

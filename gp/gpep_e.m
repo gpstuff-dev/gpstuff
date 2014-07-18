@@ -56,6 +56,7 @@ function [e, edata, eprior, param] = gpep_e(w, gp, varargin)
 %      = GPEP_E(w, gp, x, y, options)
 %    returns many useful quantities produced by EP algorithm.
 %
+
 % Copyright (c) 2007  Jaakko Riihimäki
 % Copyright (c) 2007-2010  Jarno Vanhatalo
 % Copyright (c) 2010 Heikki Peura
@@ -520,21 +521,38 @@ end
       
     else % diagonal W
       
+
       if 0%~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
-%         % The covariance function parameters or data haven't changed
-%         % so we can return the energy and the site parameters that are saved
-%         e = ch.e;
-%         edata = ch.edata;
-%         eprior = ch.eprior;
-%         param.tautilde = ch.tautilde;
-%         param.nutilde = ch.nutilde;
-%         param.L = ch.L;
-%         param.La2 = ch.La2;
-%         param.b = ch.b;
-%         param.muvec_i = ch.muvec_i;
-%         param.sigm2vec_i = ch.sigm2vec_i;
-%         param.logZ_i = ch.logZ_i;
-%         param.eta = ch.eta;
+%        % The covariance function parameters or data haven't changed
+%        % so we can return the energy and the site parameters that are saved
+%        e = ch.e;
+%        edata = ch.edata;
+%        eprior = ch.eprior;
+%        param.tautilde = ch.tautilde;
+%        param.nutilde = ch.nutilde;
+%        param.L = ch.L;
+%        param.La2 = ch.La2;
+%        param.b = ch.b;
+%        param.muvec_i = ch.muvec_i;
+%        param.sigm2vec_i = ch.sigm2vec_i;
+%        param.logZ_i = ch.logZ_i;
+%        param.eta = ch.eta;
+%        if  isfield(gp.lik, 'int_likparam')
+%          if ~(isfield(gp.lik,'joint_mean_magnitude') && gp.lik.joint_mean_magnitude)
+%            if isfield(gp.lik, 'int_likparam') && gp.lik.int_likparam
+%              param.mf2=ch.mf2;
+%              param.Sigm2=ch.La2;
+%            end
+%            if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude
+%              param.mf3=ch.mf3;
+%              param.La3=ch.La3;
+%            end
+%          else
+%            param.mf=ch.mf;
+%            param.Sigm=ch.Sigm;
+%            param.C=ch.C;
+%          end
+%        end
       else
         
         switch gp.latent_opt.optim_method
@@ -563,21 +581,103 @@ end
             maxiter = gp.latent_opt.maxiter;
             tol = gp.latent_opt.tol;
             df = gp.latent_opt.df;
-            nutilde = zeros(size(y));
-            tautilde = zeros(size(y));
-            muvec_i=zeros(size(y));
-            sigm2vec_i=zeros(size(y));
-            logZep_old=0; logZep=Inf;
-            if ~isfield(gp,'meanf')
-              mf = zeros(size(y));
-            else
-              [H,b_m,B_m]=mean_prep(gp,x,[]);
-              mf = H'*b_m;
-            end
             
-            logM0 = zeros(n,1);
-            muhat = zeros(n,1);
-            sigm2hat = zeros(n,1);                        
+            if isfield(gp.lik, 'int_likparam')
+            
+              if ~isfield(gp.latent_opt, 'ninner1')
+                ninner1=20;
+              else
+                ninner1=gp.latent_opt.ninner1;
+              end
+              if ~isfield(gp.latent_opt, 'ninner2')
+                ninner2=40;
+              else
+                ninner2=gp.latent_opt.ninner2;
+              end
+              if ~isfield(gp.latent_opt, 'df2')
+                df2o=0.5;
+                df2=df2o;
+              else
+                df2o=gp.latent_opt.df2;
+                df2=df2o;
+              end
+              logZep_old=0; logZep=Inf;
+              if isfield(gp.latent_opt,'display')
+                display=gp.latent_opt.display;
+              else
+                display='on';
+                gp.latent_opt.display='on';
+              end
+              logM0 = zeros(n,1);
+              if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude ...
+                  && isfield(gp.lik, 'int_likparam') && gp.lik.int_likparam
+                if ~isfield(gp.lik, 'joint_mean_magnitude') || ~gp.lik.joint_mean_magnitude
+                  int_likparam=true;
+                  ns=3;
+                  int_magnitude=true;
+                  gp=gp_unpak(gp, [0 w(2:end)]);
+                  joint_mean_magnitude=false;
+                else
+                  joint_mean_magnitude=true;
+                  int_likparam=true;
+                  ns=4;
+                  int_magnitude=true;
+                  gp=gp_unpak(gp, [0 w(2:end)]);
+                end
+              elseif isfield(gp.lik, 'int_likparam') && gp.lik.int_likparam ...
+                  && (~isfield(gp.lik, 'int_magnitude') || ~gp.lik.int_magnitude)
+                int_magnitude=false;
+                int_likparam=true;
+                ns=2;
+              elseif isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude ...
+                  && (~isfield(gp.lik, 'int_likparam') || ~gp.lik.int_likparam)
+                int_magnitude=true;
+                int_likparam=false;
+                ns=2;
+                gp=gp_unpak(gp, [0 w(2:end)]);
+              else
+                int_magnitude=false;
+                int_likparam=false;
+                ns=1;
+              end
+              
+              muhat = zeros(n,ns);
+              sigm2hat = zeros(n,ns);
+              nutilde = zeros(n,ns);
+              tautilde = zeros(n,ns);
+              muvec_i=zeros(n,ns);
+              sigm2vec_i=zeros(n,ns);
+              if ~isfield(gp,'meanf')
+                mf = zeros(n,ns);
+              else
+                [H,b_m,B_m]=mean_prep(gp,x,[]);
+                mf = H'*b_m;
+              end
+              if isfield(gp.lik, 'param_lim')
+                param_lim=gp.lik.param_lim;
+              else
+                param_lim=[0.01^2 2];
+              end
+            
+            else
+            
+              nutilde = zeros(size(y));
+              tautilde = zeros(size(y));
+              muvec_i=zeros(size(y));
+              sigm2vec_i=zeros(size(y));
+              logZep_old=0; logZep=Inf;
+              if ~isfield(gp,'meanf')
+                mf = zeros(size(y));
+              else
+                [H,b_m,B_m]=mean_prep(gp,x,[]);
+                mf = H'*b_m;
+              end
+              
+              logM0 = zeros(n,1);
+              muhat = zeros(n,1);
+              sigm2hat = zeros(n,1);
+            
+            end
             
             % =================================================
             % First Evaluate the data contribution to the error
@@ -586,6 +686,1349 @@ end
               % FULL
               % ============================================================
               case 'FULL'   % A full GP
+                
+                if isfield(gp.lik, 'int_likparam')
+                
+%---------------% Skip intendation
+%---------------% -->
+                
+                if (int_likparam && gp.lik.inputparam) || (int_magnitude && gp.lik.inputmagnitude) ...
+                    || (isfield(gp.lik, 'int_likparam') && isfield(gp, 'comp_cf'))
+                  [K,C] = gp_trcov(gp, x, gp.comp_cf{1});
+                else
+                  [K,C] = gp_trcov(gp, x);
+                end
+                if any(isnan(K(:))) || any(K(:)>1e10)
+                  [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                  return
+                end
+                
+                if issparse(C)
+                  error('Sparse cov not implemented for lik_epgaussian.')
+                end
+                
+                % The EP algorithm for full support covariance function
+                if ~isfield(gp,'meanf')
+                  Sigm = C;                      
+                  meanfp=false;                    
+                else
+                  Sigm = C + H'*B_m*H;
+                  meanfp=true;
+                end
+                if int_likparam
+                  if ~gp.lik.inputparam                      
+                    inputparam=0;
+                    tauprior=0.5;
+                    nuprior=log(0.1);
+                    Sigm2=1/tauprior;
+                    mf(:,2)=nuprior/tauprior;
+                  else
+                    inputparam=1;
+                    if ~isfield(gp, 'comp_cf') || isempty(gp.comp_cf)
+                      error('Define multiple covariance functions for latent processes using gp.comp_cf (see gp_set)');
+                    end
+                    C2=gp_trcov(gp, x, gp.comp_cf{2});
+                    if any(isnan(C2(:))) || any(C2(:)>1e10)
+                      [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                      return
+                    end
+                    Sigm2=C2;
+                    %mf(:,2)=zeros(n,1);
+                  end
+                end
+                if int_magnitude
+                  if isfield(gp.lik, 'inputmagnitude') && gp.lik.inputmagnitude
+                    inputmagnitude=1;
+                    if exist('inputparam','var') && inputparam
+                      C3=gp_trcov(gp,x,gp.comp_cf{3});
+                    else
+                      C3=gp_trcov(gp,x,gp.comp_cf{2});
+                    end
+                    if any(isnan(C3(:))) || any(C3(:)>1e10)
+                      [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                      return
+                    end
+                    Sigm3=C3;
+                  else
+                    inputmagnitude=0;
+                    nuprior_magnitude=0;
+                    tauprior_magnitude=0.1;
+                    Sigm3=1./tauprior_magnitude;
+                  end
+                end
+                df0=df;
+                
+                if exist('joint_mean_magnitude', 'var') && joint_mean_magnitude
+                  Sigm=blkdiag(Sigm,Sigm2,Sigm3);
+                  C=Sigm;
+                  [LC,npd]=chol(C);
+                  if npd
+                    [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
+                  invLC=inv(LC);
+                  invC=invLC*invLC';
+                  mf=[zeros(n,1) -2.*ones(n,1) zeros(n,1)];
+                  % Natural parameter version
+                  tautilde(:,[1 2 3])=zeros(n,3);
+                  % Covariance version
+%                     tautilde(:,[1 2 3])=100.*ones(n,3);
+                end
+                
+                % The EP -algorithm
+                convergence=false;
+                while iter<=maxiter && ~convergence
+                  logZep_old=logZep;
+                  logM0_old=logM0;
+                  
+                  rej=0;
+                  if isequal(gp.latent_opt.init_prev, 'on') && iter==1 && ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1) && isequal(datahash,ch.datahash)
+                    tautilde=ch.tautilde;
+                    nutilde=ch.nutilde;
+                  else
+                    if isequal(gp.latent_opt.parallel,'on')
+                      % parallel-EP
+                      % compute marginal and cavity parameters
+                      if ~int_likparam && ~int_magnitude
+                        
+                      else
+                        if ~exist('joint_mean_magnitude', 'var')|| ~joint_mean_magnitude
+                          dSigm=diag(Sigm);
+                          if int_likparam
+                            if ~gp.lik.inputparam
+                              dSigm=[dSigm repmat(Sigm2,n,1)];
+                            else
+                              dSigm=[dSigm diag(Sigm2)];
+                            end
+                          end
+                          if int_magnitude
+                            if inputmagnitude
+                              dSigm=[dSigm diag(Sigm3)];
+                              if joint_mean_magnitude
+                                dSigm=[dSigm Sigm4];
+                              end
+                            else
+                              dSigm=[dSigm repmat(Sigm3,n,1)];
+                            end
+                          end
+                          tau=1./dSigm-tautilde;
+                          nu = 1./dSigm.*mf-nutilde;
+                          muvec_i=nu./tau;
+                          sigm2vec_i=1./tau;
+                        else
+%                             if iter==1
+                          for ii=1:n
+                            tt=Sigm([ii ii+n ii+2*n],[ii ii+n ii+2*n]);
+                            tauu=[tautilde(ii,1) 0 tautilde(ii,4); ...
+                              0 tautilde(ii,2) 0; ...
+                              tautilde(ii,4) 0 tautilde(ii,3)];
+                            % Natural parameter version
+                            tt2=inv(inv(tt)-tauu);
+                            nuu=tt\mf(ii,1:3)'-nutilde(ii,1:3)';
+                            % Covariance version
+%                               tt2=inv(inv(tt)-inv(tauu));
+%                               nuu=tt\mf(ii,1:3)'-tauu\nutilde(ii,1:3)';
+
+                            sigm2vec_i(ii,[1 2 3 4])=[tt2(1,1) tt2(2,2) tt2(3,3) tt2(1,3)];
+                            muvec_i(ii,[1 2 3])=tt2*nuu;
+                          end
+%                             else
+%                               sigm2vec_i=ss_vec_i;
+%                               muvec_i=mu_vec_i;
+%                             end
+%                             dSigm=diag(Sigm(n+1:2*n,n+1:2*n));
+%                             tau=1./dSigm-tautilde(:,2);
+%                             nu = 1./dSigm.*mf(:,2)-nutilde(:,2);
+%                             muvec_i(:,2)=nu./tau;
+%                             sigm2vec_i(:,2)=1./tau;
+                        end
+                        
+                        % compute moments of tilted distributions
+                        [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
+                        if any(isnan(logM0))
+                          [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                          return
+                        end
+                        
+                        % update site parameters
+                        if ~exist('joint_mean_magnitude', 'var')|| ~joint_mean_magnitude
+                          tautilde_old=tautilde;
+                          nutilde_old=nutilde;
+                          deltatautilde=1./sigm2hat-tau-tautilde;
+                          deltanutilde=1./sigm2hat.*muhat-nu-nutilde;
+                          
+                          
+                          dfvec=zeros(size(deltatautilde));
+                          dfvec(deltatautilde>0)=df;
+                          dfvec(deltatautilde<0)=df2;
+                          ij1=0;
+                          if isfield(gp, 'test')
+                            ij1=0;
+                            if iter>5
+                              if int_likparam && iter>ninner1 %&& ~int_magnitude
+                                dfvec(:,2)=0;
+                              end
+                              if ~int_likparam && ns==2
+                                if iter>ninner2
+                                  dfvec(:,2)=0;
+                                end
+                              elseif ns==3
+                                if iter>ninner2
+                                  dfvec(:,2:3)=0;
+                                end
+                              end
+                              %                               if iter>10
+                              %                                 if iter>15
+                              %                                   dfvec(:,2)=0;
+                              %                                 else
+                              % %                                   dfvec(:,1)=0;
+                              %                                 end
+                              %                               else
+                              %                                 dfvec(:,2)=0;
+                              %                               end
+                            end
+                            
+                            %                             deltavec(:,iter)=reshape((deltatautilde(:,2:end)),2*n,1);
+                            %                             if iter==10
+                            %                               rec_mean=mean(deltavec(:,iter-4:end),2);
+                            %                               ind_zeros=[];
+                            %                             elseif iter>10
+                            %                               rec_mean=rec_mean+0.2.*(deltavec(:,iter)-deltavec(:,iter-5));
+                            %                             end
+                            %                             if iter>10
+                            %                               ind_zeros=unique([ind_zeros; find(abs(rec_mean)<1e-4)]);
+                            %                               dfvec(ind_zeros+n)=0;
+                            %                             end
+                          end
+                        else
+                          tautilde_old=tautilde;
+                          nutilde_old=nutilde;
+                          if iter>1
+                            deltanutilde_old=deltanutilde;
+                            deltatautilde_old=deltatautilde;
+                          end
+                          dfvec=zeros(size(tautilde));
+                          reji=1;
+                          for ii=1:n
+                            % Update site approximations:
+                            % new posterior - cavity
+                            s_new=[sigm2hat(ii,1) 0 sigm2hat(ii,4); ...
+                              0 sigm2hat(ii,2) 0; ...
+                              sigm2hat(ii,4) 0 sigm2hat(ii,3)];
+                            s_cav=[sigm2vec_i(ii,1) 0 sigm2vec_i(ii,4); ...
+                              0 sigm2vec_i(ii,2) 0; ...                                
+                              sigm2vec_i(ii,4) 0 sigm2vec_i(ii,3)];
+                            % Natural parameter version
+                            s_site_new=inv(s_new)-inv(s_cav);
+                            % Covariance version
+%                               s_site_new=inv(inv(s_new)-inv(s_cav));
+
+%                               ds=df0.*s_site_new + (1-df0).*[tautilde(ii,1) 0 tautilde(ii,4);0 tautilde(ii,2) 0;tautilde(ii,4) 0 tautilde(ii,3)];
+%                               [~,npd]=chol(ds);
+%                               while npd
+%                                 df0=0.9.*df0;
+%                                 ds=df0.*s_site_new + (1-df0).*[tautilde(ii,1) 0 tautilde(ii,4);0 tautilde(ii,2) 0;tautilde(ii,4) 0 tautilde(ii,3)];
+%                                 [~,npd]=chol(ds);
+%                                 if df0<1e-5
+%                                   df0=0;
+%                                   rej=rej+1;
+%                                   break;
+%                                 end
+%                               end
+%                               dfvec(ii,:)=df0.*ones(size(dfvec(ii,:)));
+%                               df0=0.5;
+%                               [~,npd]=chol(s_site_new);
+%                               if npd
+%                                 deltatautilde(ii,:) = zeros(1,4);
+%                                 deltanutilde(ii,1:3) = zeros(1,3);
+%                                 rej=rej+1;
+% %                                 reji=[reji ii];
+%                               else
+                              deltatautilde(ii,:) = [s_site_new(1,1) s_site_new(2,2) s_site_new(3,3) s_site_new(1,3)] ...
+                                - tautilde(ii,:);
+                              % Natural parameter version
+                              mu_site_new=s_new\muhat(ii,1:3)' - s_cav\muvec_i(ii,1:3)';
+                              % Covariance version
+%                                 mu_site_new=s_site_new*(s_new\muhat(ii,1:3)' - s_cav\muvec_i(ii,1:3)');
+
+                              deltanutilde(ii,1:3) = mu_site_new - nutilde(ii,1:3)';
+%                                 if any(isnan(deltatautilde(ii,:)))
+%                                   deltatautilde(ii,:)=zeros(1,4);
+%                                   deltanutilde(ii,:)=zeros(1,3);
+%                                   rej=rej+1;
+%                                 end
+%                               end
+                          end
+%                             deltatautilde(:,2)=1./sigm2hat(:,2)-tau-tautilde(:,2);
+%                             deltanutilde(:,2)=1./sigm2hat(:,2).*muhat(:,2)-nu-nutilde(:,2);
+                          if iter>150
+                            df=df/(1+floor(iter/150));
+                            df2=df2/(1+floor(iter/150));
+                            tol=tol*10^(-floor(iter/150));
+                          end
+                          dfvec(deltatautilde>0)=df;
+                          dfvec(deltatautilde<0)=df2;
+                          deltanutilde=[deltanutilde(:,1:3) zeros(n,1)];
+%                             if iter>1
+%                               deltanutilde=deltanutilde + 0.1.*deltanutilde_old;
+%                               deltatautilde=deltatautilde + 0.1.*deltatautilde_old;
+%                             end
+%                             if iter<100
+%                               dfvec(:,4)=0;
+%                             end
+%                             while(any(any(tautilde(:,1:3)+dfvec(:,1:3).*deltatautilde(:,1:3) < 0)))
+%                               [inds,tmp]=find(tautilde(:,1:3)+dfvec(:,1:3).*deltatautilde(:,1:3) < 0);
+%                               rej=length(inds)*3;
+%                               dfvec(inds,:)=0.5.*dfvec(inds,:);
+%                             end
+                            
+                          %                             inds=unique([find(abs(deltatautilde)>1e4); ...
+                          %                               find(isinf(deltatautilde)); find(isnan(deltatautilde)); ...
+                          %                               find(abs(deltanutilde)>1e4); ...
+                          %                               find(isinf(deltanutilde)); find(isnan(deltanutilde))]);
+                          %                             dfvec(inds)=0;
+                          %                             rej=length(inds);
+                          %                             deltatautilde(:,4)=zeros(n,1);
+                        end
+                        tautilde=tautilde+dfvec.*deltatautilde;
+                        nutilde=nutilde+dfvec.*deltanutilde;
+                        
+                      end
+                      
+                    else
+                      % sequential-EP
+                      muvec_i = zeros(n,ns); sigm2vec_i = zeros(n,ns);
+                      for i1=1:n
+                        % Algorithm utilizing Cholesky updates
+                        % This is numerically more stable but slower
+                        % $$$                             % approximate cavity parameters
+                        % $$$                             S11 = sum(Ls(:,i1).^2);
+                        % $$$                             S1 = Ls'*Ls(:,i1);
+                        % $$$                             tau_i=S11^-1-tautilde(i1);
+                        % $$$                             nu_i=S11^-1*mf(i1)-nutilde(i1);
+                        % $$$
+                        % $$$                             mu_i=nu_i/tau_i;
+                        % $$$                             sigm2_i=tau_i^-1;
+                        % $$$
+                        % $$$                             if sigm2_i < 0
+                        % $$$                                 [ii i1]
+                        % $$$                             end
+                        % $$$
+                        % $$$                             % marginal moments
+                        % $$$                             [M0(i1), muhat, sigm2hat] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, mu_i, z);
+                        % $$$
+                        % $$$                             % update site parameters
+                        % $$$                             deltatautilde = sigm2hat^-1-tau_i-tautilde(i1);
+                        % $$$                             tautilde(i1) = tautilde(i1)+deltatautilde;
+                        % $$$                             nutilde(i1) = sigm2hat^-1*muhat-nu_i;
+                        % $$$
+                        % $$$                             upfact = 1./(deltatautilde^-1+S11);
+                        % $$$                             if upfact > 0
+                        % $$$                                 Ls = cholupdate(Ls, S1.*sqrt(upfact), '-');
+                        % $$$                             else
+                        % $$$                                 Ls = cholupdate(Ls, S1.*sqrt(-upfact));
+                        % $$$                             end
+                        % $$$                             Sigm = Ls'*Ls;
+                        % $$$                             mf=Sigm*nutilde;
+                        % $$$
+                        % $$$                             muvec_i(i1,1)=mu_i;
+                        % $$$                             sigm2vec_i(i1,1)=sigm2_i;
+                        
+                        % Algorithm as in Rasmussen and Williams 2006
+                        % approximate cavity parameters
+                        if ~int_likparam && ~int_magnitude
+                          
+                        else
+                          % Integrate over likelihood parameter with EP
+                          Sigmi=Sigm(:,i1);
+                          if int_likparam
+                            if ~inputparam
+                              Sigmi=[Sigmi repmat(Sigm2,n,1)];
+                            else
+                              Sigmi=[Sigmi Sigm2(:,i1)];
+                            end
+                          end
+                          if int_magnitude
+                            if ~inputmagnitude
+                              Sigmi=[Sigmi repmat(Sigm3,n,1)];
+                            else
+                              Sigmi=[Sigmi Sigm3(:,i1)];
+                            end
+                          end
+                          
+                          Sigmii=Sigmi(i1,:);
+                          tau_i=1./Sigmii-tautilde(i1,:);
+                          nu_i = 1./Sigmii.*mf(i1,:)-nutilde(i1,:);
+                          mu_i=nu_i./tau_i;
+                          sigm2_i=1./tau_i;
+                          muvec_i(i1,:)=mu_i;
+                          sigm2vec_i(i1,:)=sigm2_i;
+                          
+                          [logM0(i1), muhat(i1,:), sigm2hat(i1,:)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
+                            
+                          if isnan(logM0(i1))
+                            [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                            return
+                          end
+                          
+
+                          deltatautilde=sigm2hat(i1,:).^-1-tau_i-tautilde(i1,:);
+                          deltanutilde=sigm2hat(i1,:).^-1.*muhat(i1,:)-nu_i-nutilde(i1,:);
+                          tautilde_old=tautilde;
+                          nutilde_old=nutilde;
+                          Sigm2_old=Sigm2;
+                          Sigm_old=Sigm;
+                          
+                          % Update mean and variance after each site update (standard EP)
+                          
+                          % if deltautilde<0, choose df so that
+                          %
+                          % dlog|Sigm| = (1+df*deltatautilde(1)*Sigmii(1)) >0;
+                          %
+                          % Sigm2vec = diag(Sigm2) - (ds*Sigmii.^2);
+                          % 
+                          % Sigm2vec_i = Sigm2vec - tautildenew >0
+                          %
+                          % if not decrease df
+                          %
+                          % else
+                          %
+                          % Sigm2 = Sigm2 - ((ds*Sigmi(:,2))*Sigmi(:,2)');
+                          
+                          df2=df2o;
+                          if deltatautilde(1)<0
+                            dft=df2;
+                            dflim1=-1/(deltatautilde(1)*Sigmii(1));
+                            if dft > dflim1
+                              dft=dflim1;
+                            end
+                          else
+                            dft=df;
+                          end                              
+                          ds = dft.*deltatautilde(1)/(1+dft.*deltatautilde(1)*Sigmii(1));
+                          sigm2vec=diag(Sigm) - (ds.*Sigmi(:,1).^2);
+                          deltat=zeros(n,1);
+                          deltat(i1)=deltatautilde(1);
+                          while any(1./sigm2vec - (tautilde(:,1)+dft.*deltat) < 1./diag(C))
+                            dft=0.5.*dft;
+                            if dft<0.01
+                              dft=0;
+                            end
+                            ds = dft.*deltatautilde(1)/(1+dft.*deltatautilde(1)*Sigmii(1));
+                            sigm2vec=diag(Sigm) - (ds.*Sigmi(:,1).^2);
+                            rej = rej+1;
+                            if isequal(gp.latent_opt.display, 'iter')
+                              fprintf('Bad cavity variances for f, increasing damping\n');
+                            end
+                          end
+                          Sigm = Sigm - ((ds*Sigmi(:,1))*Sigmi(:,1)');
+                          tautilde(i1,1)=tautilde(i1,1)+dft.*deltatautilde(1);
+                          nutilde(i1,1)=nutilde(i1,1)+dft.*deltanutilde(1);
+                          %                               df2=df2o;
+                          %                             else
+                          %                               ds = df.*deltatautilde(1)/(1+df.*deltatautilde(1)*Sigmii(1));
+                          %                               Sigm = Sigm - ((ds*Sigmi(:,1))*Sigmi(:,1)');
+                          %                               tautilde(i1,1)=tautilde(i1,1)+df.*deltatautilde(1);
+                          %                               nutilde(i1,1)=nutilde(i1,1)+df.*deltanutilde(1);
+                          %                             end
+                          if int_likparam
+                            if deltatautilde(2)<0
+                              dft=df2;
+                              dflim1=-1/(deltatautilde(2)*Sigmii(2));
+                              if dft > dflim1
+                                dft=dflim1;
+                              end
+                            else
+                              dft=df;
+                            end
+                            ds = dft.*deltatautilde(2)/(1+dft.*deltatautilde(2)*Sigmii(2));
+                            if ~gp.lik.inputparam
+                              sigm2vec = Sigm2 - (ds*Sigmii(2)^2);
+                            else
+                              sigm2vec = diag(Sigm2) - (ds*Sigmi(:,2).^2);
+                            end
+                            deltat=zeros(n,1);
+                            deltat(i1)=deltatautilde(2);
+                            while (inputparam && any(1./sigm2vec - (tautilde_old(:,2)+dft.*deltat) < 1./diag(C2))) ...
+                                || (~inputparam && any(1./sigm2vec - (tautilde_old(:,2)+dft.*deltat) < 0))
+                              dft=0.5.*dft;
+                              if dft<0.01
+                                dft=0;
+                              end
+                              ds = dft.*deltatautilde(2)/(1+dft.*deltatautilde(2)*Sigmii(2));
+                              if ~gp.lik.inputparam
+                                sigm2vec = Sigm2 - (ds*Sigmii(2)^2);
+                              else
+                                sigm2vec = diag(Sigm2) - (ds*Sigmi(:,2).^2);
+                              end
+                              rej = rej+1;
+                              if isequal(gp.latent_opt.display, 'iter')
+                                fprintf('Bad cavity variances for theta, increasing damping\n');
+                              end
+                            end
+                            if ~inputparam
+                              Sigm2 = Sigm2 - (ds*Sigmii(2)^2);
+                            else
+                              Sigm2 = Sigm2 - (ds*Sigmi(:,2)*Sigmi(:,2)');
+                            end
+                            tautilde(i1,2)=tautilde(i1,2)+dft.*deltatautilde(2);
+                            nutilde(i1,2)=nutilde(i1,2)+dft.*deltanutilde(2);
+                          end
+                          
+                          if int_magnitude
+                            % Integrate over magnitude
+                            if deltatautilde(ns)<0
+                              dft=df2;
+                              dflim1=-1/(deltatautilde(ns)*Sigmii(ns));
+                              if dft > dflim1
+                                dft=dflim1;
+                              end
+                            else
+                              dft=df;
+                            end
+                            ds = dft.*deltatautilde(ns)/(1+dft.*deltatautilde(ns)*Sigmii(ns));
+                            if ~inputmagnitude
+                              sigm2vec = Sigm3 - (ds*Sigmii(ns)^2);
+                            else
+                              sigm2vec = diag(Sigm3) - (ds*Sigmi(:,ns).^2);
+                            end
+                            deltat=zeros(n,1);
+                            deltat(i1)=deltatautilde(ns);
+                            while (inputmagnitude && any(1./sigm2vec - (tautilde_old(:,ns)+dft.*deltat) < 0)) ...
+                              || (~inputmagnitude && any(1./sigm2vec - (tautilde_old(:,ns)+dft.*deltat) < 0))
+                              dft=0.5.*dft;
+                              if dft<0.01
+                                dft=0;
+                              end
+                              ds = dft.*deltatautilde(ns)/(1+dft.*deltatautilde(ns)*Sigmii(ns));
+                              if ~inputmagnitude
+                                sigm2vec = Sigm3 - (ds*Sigmii(ns)^2);
+                              else
+                                sigm2vec = diag(Sigm3) - (ds*Sigmi(:,ns).^2);
+                              end
+                              rej = rej+1;
+                              if isequal(gp.latent_opt.display, 'iter')
+                                fprintf('Bad cavity variances for phi, increasing damping\n');
+                              end
+                            end
+                            if ~inputmagnitude
+                              Sigm3 = Sigm3 - (ds*Sigmii(ns)^2);
+                            else
+                              Sigm3 = Sigm3 - (ds*Sigmi(:,ns)*Sigmi(:,ns)');
+                            end
+                            tautilde(i1,ns)=tautilde(i1,ns)+dft.*deltatautilde(ns);
+                            nutilde(i1,ns)=nutilde(i1,ns)+dft.*deltanutilde(ns);
+                          end
+%                             Sigm*(taut\([nutilde(:,1);nutilde(:,2);nutilde(:,3)]))
+                          mf(:,1)=Sigm*nutilde(:,1);
+                          if int_likparam
+                            if ~inputparam
+                              mf(:,2)=Sigm2*(sum(nutilde(:,2))+nuprior);
+                            else
+                              mf(:,2)=Sigm2*nutilde(:,2);
+                            end
+                          end
+                          if int_magnitude
+                            if ~inputmagnitude
+                              mf(:,ns)=Sigm3*(sum(nutilde(:,ns))+nuprior_magnitude);
+                            else
+                              mf(:,ns)=Sigm3*nutilde(:,ns);
+                            end
+                          end
+%                             if any(1./diag(Sigm) - tautilde(:,1) < 1./diag(C))
+%                               1;
+%                             end
+%                             if inputparam
+%                               if any((1./diag(Sigm2) - tautilde(:,2)) + eps < 1./diag(C2))
+%                                 1;
+%                               end
+%                             end
+%                             if inputmagnitude
+%                               if any((1./diag(Sigm3) - tautilde(:,ns)) + eps < 1./diag(C3))
+%                                 1;
+%                               end
+%                             end
+%                             if any(exp(mf(:,2))<-5)
+%                               tautilde=tautilde_old;
+%                               nutilde=nutile_old;
+%                               Sigm2=Sigm2_old;
+%                               if isequal(gp.latent_opt.display, 'iter')
+%                                 fprintf('Bad means for theta\n');                                
+%                               end
+%                               rej=rej+1;
+%                             end
+                        end
+                      end
+                    end
+                  end
+                  
+                  % Recompute the approximate posterior parameters
+                  % parallel- and sequential-EP
+                  if any(isnan(tautilde(:,1))) || any(isinf(tautilde(:,1)))
+                    indt=find(isinf(tautilde(:,1)) | isnan(tautilde(:,1)));
+                    tautilde(indt,:)=tautilde_old(indt,:);
+                    nutilde(indt,:)=nutilde_old(indt,:);
+                  end
+                  if exist('joint_mean_magnitude', 'var') && joint_mean_magnitude
+                    if any(isnan(tautilde(:))) || any(isinf(tautilde(:))) || ...
+                        any(isnan(nutilde(:))) || any(isinf(nutilde(:)))
+                      indt=find(isinf(tautilde) | isnan(tautilde) | ...
+                        isinf(nutilde) | isnan(nutilde));
+                      tautilde(indt)=tautilde_old(indt);
+                      nutilde(indt)=nutilde_old(indt);
+                      rej=length(indt);
+                    end
+                    %Sigm=blkdiag(C,C2,C3);
+                    taut=diag([tautilde(:,1);tautilde(:,2);tautilde(:,3)]);
+                    taut=taut+diag(tautilde(:,4),2*n)+diag(tautilde(:,4),-2*n);
+                    % Natural parameter version
+                    tmp=invC+taut;
+                    % Covariance version
+                    %                       tmp=inv(C)+inv(taut);
+                    Sigm=inv(tmp);
+                    nuut=[nutilde(:,1);nutilde(:,2);nutilde(:,3)];
+                    % Natural parameter version
+                    mf=tmp\nuut;
+                    % Covariance version
+                    % mf=tmp\(taut\nuut);
+                    mf=reshape(mf,n,3);
+                      
+                    [~,npd]=chol(Sigm);
+
+                    if ~npd
+                      for ii=1:n
+                        tt=Sigm([ii ii+n ii+2*n],[ii ii+n ii+2*n]);
+                        tauu=[tautilde(ii,1) 0 tautilde(ii,4); ...
+                          0 tautilde(ii,2) 0; ...
+                          tautilde(ii,4) 0 tautilde(ii,3)];
+                        % Natural parameter version
+                        tt2=inv(inv(tt)-tauu);
+                        % Covariance version
+%                           tt2=inv(inv(tt)-inv(tauu));
+                        [~,npd]=chol(tt2);
+                        if npd
+                          ss_vec_i(ii,:)=-1*ones(1,4);
+                          break;
+                        else
+                          % Natural parameter version
+                          nuu=tt\mf(ii,1:3)'-nutilde(ii,1:3)';
+                          % Covariance version
+%                             nuu=tt\mf(ii,1:3)'-tauu\nutilde(ii,1:3)';
+                          mu_vec_i(ii,[1 2 3])=tt2*nuu;
+                          ss_vec_i(ii,:)=[tt2(1,1) tt2(2,2) tt2(3,3) tt2(1,3)];
+                        end
+                      end
+                      if  any(any(ss_vec_i(:,1:3)<0)) && isequal(display, 'iter')
+                        fprintf('Bad cavity variances, recomputing with more damping. \n');
+                      end
+                    else
+                      if isequal(display, 'iter')
+                        fprintf('Posterior covariance not positive definite, recomputing with more damping. \n');
+                      end
+                      ss_vec_i=-1.*ones(size(tautilde));
+                    end
+                    while any(any(ss_vec_i(:,1:3)<0))
+                      if isequal(display, 'iter')
+                        fprintf('Bad cavity variances, recomputing with more damping. \n');
+                      end
+                      dfvec=0.1.*dfvec;
+                      tautilde=tautilde_old+dfvec.*deltatautilde;
+                      nutilde=nutilde_old+dfvec.*deltanutilde;
+%                         indi=find(ss_vec_i(:,1:3)<0);
+%                         tautilde(indi,:)=tautilde_old(indi,:);
+%                         nutilde(indi,:)=nutilde_old(indi,:);
+                      taut=diag([tautilde(:,1);tautilde(:,2);tautilde(:,3)]);
+                      taut=taut+diag(tautilde(:,4),2*n)+diag(tautilde(:,4),-2*n);
+                      % Natural parameter version
+                      tmp=invC+taut;
+                      % Covariance version
+                      % tmp=inv(C)+inv(taut);
+                      Sigm=inv(tmp);
+                      nuut=[nutilde(:,1);nutilde(:,2);nutilde(:,3)];
+                      % Natural parameter version
+                      mf=tmp\nuut;
+                      % Covariance version
+                      % mf=tmp\(taut\nuut);
+                      mf=reshape(mf,n,3);                        
+                      
+                      for ii=1:n
+                        tt=Sigm([ii ii+n ii+2*n],[ii ii+n ii+2*n]);
+                        tauu=[tautilde(ii,1) 0 tautilde(ii,4); ...
+                          0 tautilde(ii,2) 0; ...
+                          tautilde(ii,4) 0 tautilde(ii,3)];
+                        % Natural parameter version
+                        tt2=inv(inv(tt)-tauu);
+                        nuu=tt\mf(ii,1:3)'-nutilde(ii,1:3)';
+                        % Covariance version
+%                           tt2=inv(inv(tt)-inv(tauu));
+%                           nuu=tt\mf(ii,1:3)'-tauu\nutilde(ii,1:3)';
+                        mu_vec_i(ii,[1 2 3])=tt2*nuu;
+                        ss_vec_i(ii,[1 2 3 4])=[tt2(1,1) tt2(2,2) tt2(3,3) tt2(1,3)];
+                      end
+                      if all(dfvec<1e-3)
+                        if isequal(display, 'iter')
+                          fprintf('Could not find positive cavity variances. Resetting EP algorithm with more initial damping.\n');
+                        end
+                        df=0.5.*df;
+                        df2=0.5.*df2;
+                        Sigm=C;
+                        tmp=eye(size(Sigm));
+                        mf=[zeros(n,1) -2.*ones(n,1) zeros(n,1)];
+                        tautilde=zeros(size(tautilde));
+                        nutilde=zeros(size(nutilde));
+                        break;
+                      end
+                    end
+                    if any(diag(Sigm)<0)
+                      if isequal(display, 'iter')
+                        fprintf('Negative posterior variances, recomputing with more damping. \n');
+                      end
+                      indi=find(reshape(diag(Sigm),n,3)<0);
+                      tautilde(indi)=tautilde_old(indi);
+                      nutilde(indi)=nutilde_old(indi);
+                      taut=diag([tautilde(:,1);tautilde(:,2);tautilde(:,3)]);
+                      taut=taut+diag(tautilde(:,4),2*n)+diag(tautilde(:,4),-2*n);
+                      % Natural parameter version
+                      tmp=invC+taut;
+                      % Covariance version
+%                         tmp=inv(C)+inv(taut);
+                      Sigm=inv(tmp);
+                    end
+                    [LS,npd]=chol(Sigm);
+                    if npd
+                      if isequal(display, 'iter')
+                        fprintf('Posterior covariance not positive definite. Resetting EP algorithm with more initial damping.\n');
+                      end
+                      df=0.5.*df;
+                      df2=0.5.*df2;
+                      if all(df<1e-4) || all(df2<1e-4)
+                        if isequal(display, 'iter')
+                          fprintf('Could not find positive definite posterior covariance matrix even with high damping. Returnin NaN.\n');
+                        end
+                        [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                        return
+                      end
+                      Sigm=C;
+                      tmp=eye(size(Sigm));
+                      tautilde=zeros(size(tautilde));
+                      nutilde=zeros(size(nutilde));
+                    end
+                    nuut=[nutilde(:,1);nutilde(:,2);nutilde(:,3)];
+                    % Natural parameter version
+                    mf=tmp\nuut;
+                    % Covariance version
+%                       mf=tmp\(taut\nuut);
+
+%                       mf=tmp\(taut\([nutilde(:,1);nutilde(:,2)./tautilde(:,2);nutilde(:,3)]));
+                    mf=reshape(mf,n,3);
+%                       cov=diag(Sigm(1:n,2*n+1:end));
+%                       Sigm3=diag(Sigm(2*n+1:end,2*n+1:end));
+%                       figure(1);plot(x,y,'.',x,(mf(:,1)-cov./Sigm3.*mf(:,3)).*exp(0.5.*mf(:,3)+1/8.*Sigm3) ...
+%                         + cov./Sigm3.*exp(0.5.*mf(:,3) + 1/8.*Sigm3).*(mf(:,3)+0.5.*Sigm3), '-k', ...
+%                         x(reji),(mf(reji,1)-cov(reji)./Sigm3(reji).*mf(reji,3)).*exp(0.5.*mf(reji,3)+1/8.*Sigm3(reji)) ...
+%                         + cov(reji)./Sigm3(reji).*exp(0.5.*mf(reji,3) + 1/8.*Sigm3(reji)).*(mf(reji,3)+0.5.*Sigm3(reji)),'.r');
+%                       figure(3);plot(x,y,'.',x,mf(:,1));
+%                       figure(2);plot(x,exp(0.5.*mf(:,2)));
+%                       figure(4);plot(x,exp(0.5.*mf(:,3)));
+                    % Natural parameter version
+%                       [LL,npd]=chol(C+inv(taut),'lower');
+%                       
+%                       U=taut;U(1:3*n+1:end)=0;U(U<0)=0;
+%                       U(1:n,1:n)=U(1:n,2*n+1:3*n);
+%                       U(2*n+1:3*n,2*n+1:3*n)=U(1:n,2*n+1:3*n);
+%                       U=sqrt(U./2);
+%                       V=taut;V(1:3*n+1:end)=0;V(V>0)=0;V=abs(V);
+%                       V(2*n+1:3*n,2*n+1:3*n)=V(1:n,2*n+1:3*n);
+%                       V(1:n,1:n)=V(1:n,2*n+1:3*n);
+%                       V=sqrt(V./2);
+%                       D=diag(taut-U*U'+V*V');
+%                       [~,A] = evaluate_q(zeros(3*n,1), D, C, display);
+%                       Laa=chol(A);
+% %                       A=inv(inv(C)+diag(D));
+%                       La=chol(eye(3*n)+U*A*U);
+%                       %B=inv(inv(A)+U*U);
+%                       Lb=chol(eye(3*n)-V*((inv(A)+U*U)\V));
+%                       
+%                       LS=(-sum(log(diag(Lb))) - sum(log(diag(La))) ...
+%                         +sum(log(diag(Laa))));
+                    % Covariance version
+%                       [LL,npd]=chol(C+taut,'lower');
+
+
+                    term1=0.5.*mf(:)'*(Sigm\mf(:)) + sum(log(diag(LS))) + ...
+                       - sum(log(diag(LC)));                     
+                    
+                    term2 = sum(logM0);
+                    term3 = 0;
+                    term4 = 0;
+                    for i=1:n
+                      sigm2v=[sigm2vec_i(i,1) 0 sigm2vec_i(i,4);0 sigm2vec_i(i,2) 0; ...
+                        sigm2vec_i(i,4) 0 sigm2vec_i(i,3)];
+                      muv=muvec_i(i,1:3)';
+                      sigm2p = Sigm([i, i+n, i+2*n], [i, i+n, i+2*n]);
+                      mup = mf(i,:)';
+                      term3 = term3 + 0.5.*muv'*(sigm2v\muv) + 0.5.*log(det(sigm2v)) + 3/2*log(2*pi);
+                      term4 = term4 - 0.5.*mup'*(sigm2p\mup) - 0.5.*log(det(sigm2p)) - 3/2*log(2*pi);
+                    end
+%                       term4=-n*term1;
+                    logZep=term1+term2+term3+term4;
+                      
+%                       logZep=sum(logM0) - n/2*log(2*pi) -sum(log(diag(chol(C)))) ...
+%                         - 0.5.*log(det(taut)) + (-sum(log(diag(Lb))) - sum(log(diag(La))) ...
+%                         +sum(log(diag(Laa)))) - 0.5.*nuut'*((C+inv(taut))\nuut);
+                    
+                    
+%                       if npd
+%                         if isequal(display, 'iter')
+%                           fprintf('Negative definite q-distribution\n');
+%                         end
+%                         chol(Sigm);
+%                         % Natural parameter version
+%                         [U,S,V]=svd(C+inv(taut));
+%                         % Covariance version
+% %                         [U,S,V]=svd(C+taut);
+%                         %                           logZep=sum(logM0) - n/2*log(2*pi) - 0.5.*real(log(det(C+taut))) ...
+%                         %                             -0.5.*nuut'*(taut\nuut) + 0.5.*mf(:)'*(tmp*mf(:));
+%                         logZep=sum(logM0) - n/2*log(2*pi) - 0.5.*sum(log(diag(S))) ...
+%                           + 0.5.*nuut'*(taut\nuut) - 0.5.*mf(:)'*(tmp*mf(:));
+%                       else
+%                         logZep=sum(logM0) - n/2*log(2*pi) - sum(log(diag(LL))) ...
+%                           + 0.5.*nuut'*(taut\nuut) - 0.5.*mf(:)'*(tmp*mf(:));
+%                         %                           dif=0.5.*real(log(det(C+taut))) - sum(log(diag(LL)))
+%                       end
+                    logZep=-logZep;
+%                     evec(iter)=logZep;
+                    L=LS;
+                    B=1;
+%                       if isnan(logZep)
+%                         [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+%                         return
+%                       end
+                    
+                    iter=iter+1;
+                    if ismember(display, {'iter', 'on'})
+                      if exist('inputparam','var') && ~inputparam
+                        if ~int_magnitude || inputmagnitude
+                          fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, theta=%.5f, var(theta)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep), (mf(end,2)), Sigm2, rej);
+                        elseif ~int_likparam
+                          fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, phi=%.5f, var(phi)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep), (mf(end,2)), Sigm3, rej);
+                        else
+                          fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, theta=%.5f, var(theta)=%.5f, phi=%.5f, var(phi)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep),mf(end,2), Sigm2, mf(end,3), Sigm3,rej);
+                        end
+                      else
+                        if int_magnitude && ~inputmagnitude
+                          fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, phi=%.5f, var(phi)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep), mf(end,ns), Sigm3,rej);
+                        else
+                          fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep),rej);
+                        end
+                      end
+                    end
+                    
+                  else
+                    if ~meanfp % zero mean function used
+                      % NOTICE! upper triangle matrix! cf. to
+                      % line 13 in the algorithm 3.5, p. 58.
+                      
+                      [mf(:,1), Sigm, tmp, L1t, L2t] = evaluate_q(nutilde(:,1), tautilde(:,1), C, display);
+                      if isempty(L1t)
+                        [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                        return
+                      end
+                      
+                      if isequal(gp.latent_opt.parallel, 'on')
+                        df2=df2o;
+                        df=df0;
+                        rej=0;
+                        clear('indt');
+                        % Check that cavity distributions can be computed
+                        while (isempty(L2t)) %|| any(1./diag(Sigm) - tautilde(:,1) < 0)
+                          %                       while (any(tautilde(:,1) < 0) || notpositivedefinite) && size(deltatautilde,1)>1
+                          if any(isnan(tautilde(:,1))) || any(isinf(tautilde(:,1)))
+                            indt=find(isinf(tautilde(:,1)) | isnan(tautilde(:,1)));
+                            tautilde(indt,:)=tautilde_old(indt,:);
+                            nutilde(indt,:)=nutilde_old(indt,:);
+                          end
+                          %                           indt2=find(1./diag(Sigm) - tautilde(:,1) < 0);
+                          indt=find(deltatautilde(:,1)<0);
+                          %                           indt=unique([indt(:), indt2(:)]);
+                          %                           indt=unique(find(tautilde(:,1)<0));
+                          if isequal(gp.latent_opt.display, 'iter')
+                            fprintf('Bad cavity distributions for f at %.0f sites, increasing damping.\n', length(indt));
+                          end
+                          dfvec(indt,1)=0.5.*dfvec(indt,1);
+                          %                           dfvec(indt2,1)=0.1.*dfvec(indt2,1);
+                          if all(dfvec(indt,1)<0.1)
+                            dfvec(indt,1)=0;
+                          end
+                          %                           if all(dfvec(indt2,1)<0.1)
+                          %                             dfvec(indt2,1)=0;
+                          %                           end
+                          rej=length(indt);
+                          %                         end
+                          %                         df2=0.5.*df2;
+                          %                         if df2<0.05
+                          %                           df2=0;
+                          %                         end
+                          %                           tautilde(:,1)=tautilde_old(:,1)+dfvec(:,1).*deltatautilde(:,1);
+                          %                           nutilde(:,1)=nutilde_old(:,1)+dfvec(:,1).*deltanutilde(:,1);
+                          tautilde(indt,1)=tautilde_old(indt,1)+dfvec(indt,1).*deltatautilde(indt,1);
+                          nutilde(indt,1)=nutilde_old(indt,1)+dfvec(indt,1).*deltanutilde(indt,1);
+                          %                           tautilde(indt2,1)=tautilde_old(indt2,1)+dfvec(indt2,1).*deltatautilde(indt2,1);
+                          %                           nutilde(indt2,1)=nutilde_old(indt2,1)+dfvec(indt2,1).*deltanutilde(indt2,1);
+                          [mf(:,1), Sigm, tmp, L1t, L2t] = evaluate_q(nutilde(:,1), tautilde(:,1), C, display);
+                          if (all(dfvec(indt,1)==0)) && (isempty(L2t))
+                            break;
+                          end
+                          %                             rej=length(indt);
+                          %                           else
+                          %                             rej=0;
+                          %                           end
+                          %                           if df2==0 && any(1./diag(Sigm) - tautilde(:,1) < 0)
+                          %                             % Reset algorithm, increase damping
+                          %                             error('foo');
+                          %                           end
+                        end
+                        df=df0;
+                        df2=df2o;
+                      end
+                      if isempty(L2t) || any(1./diag(Sigm) - tautilde(:,1) < 0)
+                        tautilde=zeros(n,ns);
+                        nutilde=zeros(n,ns);
+                        muvec_i=zeros(n,ns);
+                        sigm2vec_i=ones(n,ns);
+                        logM0=-1e4;
+                        df0=0.8.*df0;
+                        df2o=0.8.*df2o;
+                        if isequal(display, 'iter')
+                          fprintf('Energy is inf, resetting tilted distribution for f & increasing damping.\n');
+                        end
+                        if df0<0.05 || df2o<0.05
+                          [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                          return
+                        end
+                        [mf(:,1), Sigm, tmp, L1t, L2t] = evaluate_q(nutilde(:,1), tautilde(:,1), C, display);
+                        
+                      end
+                      
+                      % Cseke & Heskes (2011) Marginal likelihood
+                      % psi(f) + psi(f_prior)
+                      term1=0.5*mf(:,1)'*(Sigm\mf(:,1)) - sum(log(diag(L1t))) ...
+                        - sum(log(diag(L2t)));
+                      
+                      % \sum_i logZ_i
+                      term2=sum(logM0);
+                      % sum_i psi(muvec_i,sigm2vec_i) - psi(mu_i, sigm2_i)
+                      term3=sum(0.5.*muvec_i(:,1).^2./sigm2vec_i(:,1)+0.5.*log(sigm2vec_i(:,1)) ...
+                        -0.5.*mf(:,1).^2./diag(Sigm)-0.5.*log(diag(Sigm)));
+                      
+                      logZep=-(term1+term2+term3);
+                      
+                      if (isinf(logZep) || (isnan(logZep) && iter>1) || ~isreal(logZep))
+                        % Reset algorithm, increase damping
+                        if isequal(display, 'iter')
+                          fprintf('Energy is inf, resetting tilted distributions for f & increasing damping.\n');
+                        end
+                        tautilde(:,1)=zeros(n,1);
+                        nutilde(:,1)=zeros(n,1);
+                        muvec_i(:,1)=zeros(n,1);
+                        sigm2vec_i(:,1)=ones(n,1);
+                        df0=0.9.*df0;
+                        df2o=0.9.*df2o;
+                        if df0<0.1 || df2o<0.1
+                          [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                          return
+                        end
+                        [mf(:,1), Sigm, tmp, L1t, L2t] = evaluate_q(nutilde(:,1), tautilde(:,1), C, display);
+                        logZep=0;
+                      end
+                      
+                      %if exist('dfvec','var') && ~all(dfvec(:,2)==0)
+                      if int_likparam
+                        if ~inputparam
+                          
+                          Sigm2=1./(tauprior+sum(tautilde(:,2)));
+                          mf(:,2)=Sigm2*(sum(nutilde(:,2)) + nuprior);
+                          
+                          if isequal(gp.latent_opt.parallel, 'on')
+                            % Check cavity distributions
+                            df2=df2o;
+                            while (Sigm2 < 0) || any(1./Sigm2 - tautilde(:,2) < 0)
+                              indt=find(deltatautilde(:,2)<0);
+                              if isequal(display, 'iter')
+                                fprintf('Bad cavity distributions for theta at %.0f sites, increasing damping.\n', length(indt));
+                              end
+                              df2=0.5.*df2;
+                              if df2<0.05
+                                df2=0;
+                              end
+                              tautilde(indt,2)=tautilde_old(indt,2)+df2.*deltatautilde(indt,2);
+                              nutilde(indt,2)=nutilde_old(indt,2)+df2.*deltanutilde(indt,2);
+                              Sigm2=(tauprior+sum(tautilde(:,2)))^-1;
+                              mf(:,2)=Sigm2*(sum(nutilde(:,2))+nuprior);
+                              if df2==0
+                                rej=length(indt);
+                              end
+                            end
+                            df2=df2o;
+                          end
+                          
+                          term1=(0.5.*mf(end,2)^2/Sigm2 + 0.5.*log(Sigm2)+0.5.*log(2*pi));
+                          %term2=sum(logM0);
+                          term2=0;
+                          term3=sum(0.5.*muvec_i(:,2).^2./sigm2vec_i(:,2) + ...
+                            0.5.*log(sigm2vec_i(:,2))+0.5.*log(2*pi) - term1);
+                          term4=0.5*(nuprior/tauprior)^2*tauprior - 0.5*log(tauprior) + 0.5*log(2*pi);
+                          logZep = logZep - (term1+term2+term3-term4);
+                          
+                          if (isinf(logZep) || (isnan(logZep) && iter>1) || ~isreal(logZep))
+                            % Reset algorithm, increase damping
+                            if isequal(display, 'iter')
+                              fprintf('Energy is inf, resetting tilted distributions for theta & increasing damping.\n');
+                            end
+                            tautilde(:,2)=zeros(n,1);
+                            nutilde(:,2)=zeros(n,1);
+                            muvec_i(:,2)=zeros(n,1);
+                            sigm2vec_i(:,2)=ones(n,1);
+                            Sigm2=1./(tauprior+sum(tautilde(:,2)));
+                            mf(:,2)=Sigm2*(sum(nutilde(:,2)) + nuprior);
+                            df0=0.9*df0;
+                            df=df0;
+                            df2o=0.9*df2o;
+                            df2=df2o;
+                          end
+                          
+                          
+                        else
+                          [mf(:,2), Sigm2, tmp, L12, L22] = evaluate_q(nutilde(:,2), tautilde(:,2), C2, display);
+                          if isempty(L12)
+                            [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                            return
+                          end
+                          df2=df2o;
+                          % Check that cavity distributions can be computed
+                          %                         while (any(tautilde(:,2) < 0) || notpositivedefinite) %&& size(deltatautilde,1)>1
+                          if isequal(gp.latent_opt.parallel, 'on')
+                            while (isempty(L22) || any(1./diag(Sigm2) - tautilde(:,2) < 0)) && df2>0
+                              if any(isnan(tautilde(:,2))) || any(isinf(tautilde(:,2)))
+                                indt=find(isinf(tautilde(:,2)) | isnan(tautilde(:,2)));
+                                tautilde(indt,:)=tautilde_old(indt,:);
+                              end
+                              indt=unique([find(dfvec(:,2).*deltatautilde(:,2)<0); find(deltatautilde(:,2)<0)]);
+                              if isequal(display, 'iter')
+                                fprintf('Bad cavity distributions for theta at %.0f sites, increasing damping.\n', length(indt));
+                              end
+                              %                                   df2=0.5.*df2;
+                              %                                   if df2<0.05
+                              df2=0;
+                              %                                   end
+                              tautilde(indt,2)=tautilde_old(indt,2)+df2.*deltatautilde(indt,2);
+                              nutilde(indt,2)=nutilde_old(indt,2)+df2.*deltanutilde(indt,2);
+                              [mf(:,2),Sigm2,tmp,L12,L22]=evaluate_q(nutilde(:,2),tautilde(:,2),C2,display);
+                              if df2==0
+                                rej=length(indt);
+                              end
+                            end
+                          end
+                          if (isempty(L22) || any(1./diag(Sigm2) - tautilde(:,2) < 0))
+                            [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                            return
+                          end
+                          df2=df2o;
+                          
+                          % Cseke & Heskes (2011) Marginal likelihood
+                          % psi(theta) + psi(theta_prior)
+                          term1=0.5*mf(:,2)'*(Sigm2\mf(:,2)) - sum(log(diag(L12))) ...
+                            - sum(log(diag(L22)));
+                          
+                          % sum_i psi(muvec_i,sigm2vec_i) - psi(mu_i, sigm2_i)
+                          term2=sum(0.5.*muvec_i(:,2).^2./sigm2vec_i(:,2)+0.5.*log(sigm2vec_i(:,2)) ...
+                            -0.5.*mf(:,2).^2./diag(Sigm2)-0.5.*log(diag(Sigm2)));
+                          
+                          logZep=logZep-(term1+term2);
+                          
+                          if (isinf(logZep) || (isnan(logZep) && iter>1) || ~isreal(logZep))
+                            % Reset algorithm, increase damping
+                            if isequal(display, 'iter')
+                              fprintf('Energy is inf, resetting tilted distributions for theta & increasing damping.\n');
+                            end
+                            tautilde(:,2)=zeros(n,1);
+                            nutilde(:,2)=zeros(n,1);
+                            muvec_i(:,2)=zeros(n,1);
+                            sigm2vec_i(:,2)=ones(n,1);
+                            df0=0.9.*df0;
+                            df2o=0.9.*df2o;
+                            [mf(:,2), Sigm2, tmp, L12 L22] = evaluate_q(nutilde(:,2), tautilde(:,2), C2, display);
+                            df=df0;
+                            df2=df2o;
+                          end
+                        end
+                      end
+                      %end
+                      if int_magnitude
+                        if ~inputmagnitude
+                          Sigm3=1./(tauprior_magnitude+sum(tautilde(:,ns)));
+                          mf(:,ns)=Sigm3*(sum(nutilde(:,ns)) + nuprior_magnitude);
+                          
+                          if isequal(gp.latent_opt.parallel, 'on')
+                            % Check cavity distributions
+                            df2=df2o;
+                            while (Sigm3 < 0) %|| any(1./Sigm3 - tautilde(:,ns) < 0)
+                              indt=find(tautilde(:,ns)<0);
+                              if isequal(display, 'iter')
+                                fprintf('Bad cavity distributions for phi at %.0f sites, increasing damping.\n', length(indt));
+                              end
+                              df2=0.5.*df2;
+                              if df2<0.05
+                                df2=0;
+                              end
+                              tautilde(indt,ns)=tautilde_old(indt,ns)+df2.*deltatautilde(indt,ns);
+                              nutilde(indt,ns)=nutilde_old(indt,ns)+df2.*deltanutilde(indt,ns);
+                              Sigm3=(tauprior_magnitude+sum(tautilde(:,ns)))^-1;
+                              mf(:,ns)=Sigm3*(sum(nutilde(:,ns))+nuprior_magnitude);
+                              if df2==0
+                                rej=length(indt);
+                              end
+                            end
+                            df2=df2o;
+                          end
+                          
+                          term1=(0.5.*mf(end,ns)^2/Sigm3 + 0.5.*log(Sigm3)+0.5.*log(2*pi));
+                          %term2=sum(logM0);
+                          term2=0;
+                          term3=sum(0.5.*muvec_i(:,ns).^2./sigm2vec_i(:,ns) + ...
+                            0.5.*log(sigm2vec_i(:,ns))+0.5.*log(2*pi) - term1);
+                          term4=0.5*(nuprior_magnitude/tauprior_magnitude)^2*tauprior_magnitude ...
+                            -0.5*log(tauprior_magnitude) + 0.5*log(2*pi);
+                          logZep = logZep - (term1+term2+term3-term4);
+                          
+                          if (isinf(logZep) || (isnan(logZep) && iter>1) || ~isreal(logZep))
+                            % Reset algorithm, increase damping
+                            if isequal(display, 'iter')
+                              fprintf('Energy is inf, resetting tilted distributions for phi & increasing damping.\n');
+                            end
+                            tautilde(:,ns)=zeros(n,1);
+                            nutilde(:,ns)=zeros(n,1);
+                            muvec_i(:,ns)=zeros(n,1);
+                            sigm2vec_i(:,ns)=ones(n,1);
+                            df0=0.9.*df0;
+                            df2o=0.9.*df2o;
+                            Sigm3=1./(tauprior_magnitude+sum(tautilde(:,ns)));
+                            mf(:,ns)=Sigm3*(sum(nutilde(:,ns)) + nuprior_magnitude);
+                            df=df0;
+                            df2=df2o;
+                          end
+                        else
+                          [mf(:,ns), Sigm3, tmp, L13, L23] = evaluate_q(nutilde(:,ns), tautilde(:,ns), C3, display);
+                          if isempty(L13)
+                            [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                            return
+                          end
+                          df2=df2o;
+                          % Check that cavity distributions can be computed
+                          %                         while (any(tautilde(:,2) < 0) || notpositivedefinite) %&& size(deltatautilde,1)>1
+                          if isequal(gp.latent_opt.parallel, 'on')
+                            while isempty(L23) || any(1./diag(Sigm3) - tautilde(:,ns) < 0)
+                              %                               if any(isnan(tautilde(:,ns))) || any(isinf(tautilde(:,ns)))
+                              %                                 error('foo');
+                              indt=find(isinf(tautilde(:,3)) | isnan(tautilde(:,3)));
+                              tautilde(indt,:)=tautilde_old(indt,:);
+                              nutilde(indt,:)=nutilde_old(indt,:);
+                              %                               else
+                              indt=find(tautilde(:,ns)<0);
+                              indt2=find(1./diag(Sigm3) - tautilde(:,ns) < 0);
+                              if isequal(display, 'iter')
+                                fprintf('Bad cavity distributions for phi at %.0f sites, increasing damping.\n', length(indt));
+                              end
+                              df2=0.5.*df2;
+                              if df2<0.05
+                                df2=0;
+                              end
+                              tautilde(indt,ns)=tautilde_old(indt,ns)+df2.*deltatautilde(indt,ns);
+                              nutilde(indt,ns)=nutilde_old(indt,ns)+df2.*deltanutilde(indt,ns);
+                              tautilde(indt2,ns)=tautilde_old(indt2,ns)+df2.*deltatautilde(indt2,ns);
+                              nutilde(indt2,ns)=nutilde_old(indt2,ns)+df2.*deltanutilde(indt2,ns);
+                              %                               end
+                              [mf(:,ns),Sigm3,tmp,L13,L23]=evaluate_q(nutilde(:,ns),tautilde(:,ns),C3,display);
+                              if df2==0
+                                rej=length(indt);
+                                if isempty(L23) || any(1./diag(Sigm3) - tautilde(:,ns) < 0)
+                                  L23=[];
+                                  break;
+                                end
+                              end
+                            end
+                          end
+                          if isempty(L23) && any(1./diag(Sigm3) - tautilde(:,ns) < 0)
+                            if isequal(display, 'iter')
+                              fprintf('Energy is inf, resetting tilted distributions for phi & increasing damping.\n');
+                            end
+                            tautilde(:,ns)=zeros(n,1);
+                            nutilde(:,ns)=zeros(n,1);
+                            muvec_i(:,ns)=zeros(n,1);
+                            sigm2vec_i(:,ns)=ones(n,1);
+                            df0=0.9.*df0;
+                            df2o=0.9.*df2o;
+                            if df0<0.01 || df2o<0.01
+                              [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                              return
+                            end
+                          end
+                          df2=df2o;
+                          
+                          % Cseke & Heskes (2011) Marginal likelihood
+                          % psi(theta) + psi(theta_prior)
+                          term1=0.5*mf(:,ns)'*(Sigm3\mf(:,ns)) - sum(log(diag(L13))) ...
+                            - sum(log(diag(L23)));
+                          
+                          % sum_i psi(muvec_i,sigm2vec_i) - psi(mu_i, sigm2_i)
+                          term2=sum(0.5.*muvec_i(:,ns).^2./sigm2vec_i(:,ns)+0.5.*log(sigm2vec_i(:,ns)) ...
+                            -0.5.*mf(:,ns).^2./diag(Sigm3)-0.5.*log(diag(Sigm3)));
+                          
+                          logZep=logZep-(term1+term2);
+                          
+                          if (isinf(logZep) || (isnan(logZep) && iter>1) || ~isreal(logZep))
+                            % Reset algorithm, increase damping
+                            if isequal(display, 'iter')
+                              fprintf('Energy is inf, resetting tilted distributions for phi & increasing damping.\n');
+                            end
+                            tautilde(:,ns)=zeros(n,1);
+                            nutilde(:,ns)=zeros(n,1);
+                            muvec_i(:,ns)=zeros(n,1);
+                            sigm2vec_i(:,ns)=ones(n,1);
+                            df0=0.9.*df0;
+                            df2o=0.9.*df2o;
+                            [mf(:,ns), Sigm3, tmp, L13 L23] = evaluate_q(nutilde(:,ns), tautilde(:,ns), C3, display);
+                            df=df0;
+                            df2=df2o;
+                          end
+                        end
+                      end
+                      
+%                       evec(iter)=logZep;
+%                       mlpd(iter)=sum(logM0);
+%                       if ns==3 && inputmagnitude
+%                         nuvec(iter,:)=[nutilde(10,:)];
+%                         tauvec(iter,:)=[tautilde(10,:)];
+%                         nuvec2(iter,:)=[nutilde(20,:)];
+%                         tauvec2(iter,:)=[tautilde(20,:)];
+%                         nuvec3(iter,:)=[nutilde(30,:)];
+%                         tauvec3(iter,:)=[tautilde(30,:)];
+%                       end
+                      iter=iter+1;
+                      if ismember(display, {'iter', 'on'})
+                        if exist('inputparam','var') && ~inputparam
+                          if ~int_magnitude || inputmagnitude
+                            fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, theta=%.5f, var(theta)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep), (mf(end,2)), Sigm2, rej);
+                          elseif ~int_likparam
+                            fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, phi=%.5f, var(phi)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep), (mf(end,2)), Sigm3, rej);
+                          else
+                            fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, theta=%.5f, var(theta)=%.5f, phi=%.5f, var(phi)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep),mf(end,2), Sigm2, mf(end,3), Sigm3,rej);
+                          end
+                        else
+                          if int_magnitude && ~inputmagnitude
+                            fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, phi=%.5f, var(phi)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep), mf(end,ns), Sigm3,rej);
+                          else
+                            fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep),rej);
+                          end
+                        end
+                      end
+                      B=1;
+                    else
+                      %                       % mean function used
+                      %                       % help variables
+                      %                       hBh = H'*B_m*H;
+                      %                       C_t = C + hBh;
+                      %                       CHb  = C\H'*b_m;
+                      %                       S   = diag(Stildesqr.^2);
+                      %                       %B = eye(n)+Stildesqroot*C*Stildesqroot;
+                      %                       B=bsxfun(@times,bsxfun(@times,Stildesqr,C),Stildesqr');
+                      %                       B(1:n+1:end)=B(1:n+1:end)+1;
+                      %                       %B_h = eye(n) + Stildesqroot*C_t*Stildesqroot;
+                      %                       B_h=bsxfun(@times,bsxfun(@times,Stildesqr,C_t),Stildesqr');
+                      %                       B_h(1:n+1:end)=B_h(1:n+1:end)+1;
+                      %                       % L to return, without the hBh term
+                      %                       [L,notpositivedefinite]=chol(B,'lower');
+                      %                       if notpositivedefinite
+                      %                         [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                      %                         return
+                      %                       end
+                      %                       % L for the calculation with mean term
+                      %                       [L_m,notpositivedefinite]=chol(B_h,'lower');
+                      %                       if notpositivedefinite
+                      %                         [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                      %                         return
+                      %                       end
+                      %
+                      %                       % Recompute the approximate posterior parameters
+                      %                       % parallel- and sequential-EP
+                      %
+                      %                       %V=(L_m\Stildesqroot)*C_t;
+                      %                       V=L_m\bsxfun(@times,Stildesqr,C_t);
+                      %                       Sigm=C_t-V'*V;
+                      %                       mf=Sigm*(CHb+nutilde);
+                      %
+                      %                       T=1./sigm2vec_i;
+                      %                       Cnutilde = (C_t - S^-1)*(S*H'*b_m-nutilde);
+                      %                       L2 = V*(S*H'*b_m-nutilde);
+                      %
+                      %                       Stildesqroot = diag(Stildesqr);
+                      %                       zz   = Stildesqroot*(L'\(L\(Stildesqroot*C)));
+                      %                       % inv(K + S^-1)*S^-1
+                      %                       Ks  = eye(size(zz)) - zz;
+                      %
+                      %                       % 5. term (1/2 element)
+                      %                       term5_1  = 0.5.*((nutilde'*S^-1)./(T.^-1+Stilde.^-1)')*(S^-1*nutilde);
+                      %                       % 2. term
+                      %                       term2    = 0.5.*((S*H'*b_m-nutilde)'*Cnutilde - L2'*L2);
+                      %                       % 4. term
+                      %                       term4    = 0.5*sum(log(1+tautilde.*sigm2vec_i));
+                      %                       % 1. term
+                      %                       term1    = -1.*sum(log(diag(L_m)));
+                      %                       % 3. term
+                      %                       term3    = sum(logM0);
+                      %                       % 5. term (2/2 element)
+                      %                       term5    = 0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                      %
+                      %                       logZep = -(term4+term1+term5_1+term5+term2+term3);
+                      %
+                      %                       iter=iter+1;
+                      
+                    end
+                  end
+
+                  convergence=max(abs(logM0_old-logM0))<tol && abs(logZep_old-logZep)<tol;
+                  
+                  if (iter==maxiter || convergence) && isequal(gp.latent_opt.display, 'final')
+                    if exist('inputparam','var') && ~inputparam
+                      if ~int_magnitude || inputmagnitude
+                        fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, theta=%.5f, var(theta)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep), (mf(end,2)), Sigm2, rej);
+                      elseif ~int_likparam
+                        fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, phi=%.5f, var(phi)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep), (mf(end,2)), Sigm3, rej);
+                      else
+                        fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, theta=%.5f, var(theta)=%.5f, phi=%.5f, var(phi)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep),mf(end,2), Sigm2, mf(end,3), Sigm3,rej);
+                      end
+                    else
+                      if int_magnitude && ~inputmagnitude
+                        fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, phi=%.5f, var(phi)=%.5f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep), mf(end,ns), Sigm3,rej);
+                      else
+                        fprintf('iter=%1.0f, mlpd=%.2f, dpd=%.3f, e=%.2f, de=%.3f, rejected updates=%.0f\n', iter, sum(logM0), abs(sum(logM0_old)-sum(logM0)),logZep, abs(logZep_old-logZep),rej);
+                      end
+                    end
+                  end
+                  
+                  if iter==maxiter && (abs((logZep_old-logZep)/logZep)>0.001)
+                    warning('maxiter reached, increase maxiter or tol');
+                    [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
+                end
+                
+%---------------% <--
+%---------------% Skip intendation   
+                else
+%---------------% Skip intendation
+%---------------% -->
+                
                 if ~isfield(gp, 'lik_mono')
                   [K,C] = gp_trcov(gp, x);
                 else
@@ -1049,8 +2492,14 @@ end
                   end
 %                   iter
                 end
+                
+%---------------% <--
+%---------------% Skip intendation   
+                end
+                
                 edata = logZep;
                 % Set something into La2
+                % La2 = B;
                 b = 0;
                 
                 % ============================================================
@@ -2661,7 +4110,50 @@ end
           otherwise
             error('Unknown optim method!');
         end
-                
+             
+        if exist('joint_mean_magnitude','var') && joint_mean_magnitude
+          param.mf=mf;
+          param.Sigm=Sigm;
+          param.C=C;
+          La2=1;
+          b=1;
+          eta=1;
+          logZ_i=logM0;
+        else
+          if (isfield(gp.lik, 'int_likparam') && gp.lik.int_likparam) || ...
+              (isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude)
+            [L, notpositivedefinite]=chol(Sigm);
+            if notpositivedefinite || ~isfinite(e)
+              [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+              return
+            end
+          end
+          if (isfield(gp.lik, 'int_likparam') && gp.lik.int_likparam)
+            [La2, notpositivedefinite]=chol(Sigm2);
+            if notpositivedefinite || ~isfinite(e)
+              [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+              return
+            end
+            if ~gp.lik.inputparam
+              param.mf2=mf(1,2);
+            else
+              param.mf2=mf(:,2);
+            end
+          end
+          if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude
+            if ~inputmagnitude
+              param.mf3=mf(1,ns);
+              param.La3=sqrt(Sigm3);
+            else
+              param.mf3=mf(:,ns);
+              [param.La3, notpositivedefinite]=chol(Sigm3);
+              if notpositivedefinite || ~isfinite(e)
+                [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
+                return
+              end
+            end
+          end
+        end
         % store values to struct param
         param.L = L;
         param.nutilde = nutilde;
@@ -2706,6 +4198,9 @@ end
     param.sigm2vec_i = NaN;
     param.logZ_i = NaN;    
     param.eta = NaN;
+    param.mf3=NaN;
+    param.La3=NaN;
+    param.mf2=NaN;
 %     ch=param;
 %     ch.e = e;
 %     ch.edata = edata;
@@ -2740,7 +4235,11 @@ if ~isempty(ii1)
   % Cholesky decomposition for the positive sites
   L1=(W1*W1').*K(ii1,ii1);
   L1(1:n1+1:end)=L1(1:n1+1:end)+1;
-  L1=chol(L1);
+  [L1, notpositivedefinite]=chol(L1);
+  if notpositivedefinite
+    L1=[];L2=[];lnZ_q=NaN;m_q=NaN;S_q=NaN;
+    return
+  end
   
   L(:,ii1) = bsxfun(@times,K(:,ii1),W1')/L1;
   

@@ -60,6 +60,7 @@ ip=iparser(ip,'addOptional','x', [], @(x) isnumeric(x) && isreal(x) && all(isfin
 ip=iparser(ip,'addOptional','y', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addParamValue','z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addParamValue','nv', [], @(x) isreal(x) && isscalar(x));
+ip=iparser(ip,'addParamValue','xv', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip=iparser(ip,'addParamValue','optimf', @fminscg, @(x) isa(x,'function_handle'));
 ip=iparser(ip,'addParamValue','opt', [], @isstruct);
 ip=iparser(ip,'addParamValue','optimize', 'off', @(x) ismember(x, {'on', 'off'}));

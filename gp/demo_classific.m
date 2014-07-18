@@ -12,7 +12,7 @@
 %
 %    The probability of y being one is assumed to be 
 %
-%      p(y=1|f) = 1 / (1+exp(-f))
+%      p(y=1|f) = normcdf(f)
 %
 %    The latent values f are given a zero mean Gaussian process
 %    prior. This implies that at the observed input locations

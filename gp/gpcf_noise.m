@@ -223,8 +223,12 @@ function DKff = gpcf_noise_cfg(gpcf, x, x2, mask, i1)
   DKff = {};
 
   if ~isempty(gpcf.p.noiseSigma2)
+    [n, m] =size(x);
+    n1=n+1;
+    D = sparse([],[],[],n,n,0);
+    D(1:n1:end)=D(1:n1:end)+gpcf.noiseSigma2;
     gpp=gpcf.p;
-    DKff{1}=gpcf.noiseSigma2;
+    DKff{1}=D;
   end
   if nargin==4
     % Use memory save option
@@ -359,7 +363,7 @@ function reccf = gpcf_noise_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_noise_pak;
     reccf.fh.unpak = @gpcf_noise_unpak;
-    reccf.fh.e = @gpcf_noise_lp;
+    reccf.fh.lp = @gpcf_noise_lp;
     reccf.fh.lpg = @gpcf_noise_lpg;
     reccf.fh.cfg = @gpcf_noise_cfg;
     reccf.fh.cov = @gpcf_noise_cov;
