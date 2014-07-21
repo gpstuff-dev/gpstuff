@@ -1,3 +1,40 @@
+2014-07-xx Version 4.5
+
+New features
+ - Input dependent noise and signal variance.
+
+   Tolvanen, V., Jylänki, P. and Vehtari, A. (2014). Approximate Inference for
+   Nonstationary Heteroscedastic Gaussian Process Regression. In Proceedings of IEEE
+   International Workshop on Machine Learning for Signal Processing, accepted for
+   publication. Preprint arXiv:1404.5443
+
+ - Sparse stochastic variational inference model.
+
+   Hensman, J., Fusi, N. and Lawrence, N. D. (2013). Gaussian processes
+   for big data. arXiv preprint arXiv:1309.6835.
+
+ - Option 'autoscale' in the gp_rnd.m to get split normal approximated samples from the
+   posterior predictive distribution of the latent variable.
+   
+   Geweke, J. (1989). Bayesian Inference in Econometric Models Using Monte Carlo
+   Integration. Econometrica, 57(6):1317-1339.
+   
+   Villani, M. and Larsson, R. (2006). The Multivariate Split Normal Distribution
+   and Asymmetric Principal Components Analysis. Communications in
+   Statistics - Theory and Methods, 35(6):1123-1140.
+
+Improvements
+ - New unit test environment using the Matlab built-in test framework (the old Xunit
+   package is still also supported).
+ - Precomputed demo results (including the figures) are now available in the folder
+   tests/realValues.
+ - New demos demonstrating new features etc.
+    - demo_epinf, demonstrating the input dependent noise and signal variance model
+    - demo_svi_regression, demo_svi_classification
+    - demo_modelcomparison2, demo_survival_comparison
+
+Several minor bugfixes
+
 2014-04-11 Version 4.4
 
 New features
