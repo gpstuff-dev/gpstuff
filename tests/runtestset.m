@@ -10,7 +10,7 @@ function log = runtestset(mode)
 %    Possible values for parameter MODE:
 %      'fast' - runs a selection of test taking about 2.5 min (default)
 %      'hour' - runs a selection of test taking about one hour
-%      'all'  - runs all the tests taking about 3.7 hours
+%      'all'  - runs all the tests taking about 5 hours
 %
 %    Can be used with both xUnit Test Framework package by Steve Eddins
 %    and the built-in Unit Testing Framework.
