@@ -1,11 +1,7 @@
 Last modified: 2014-05-16 09:58:33 EEST
 -----------------------------------------------------------------
 
-<<<<<<< HEAD
-GPstuff: Gaussian process models for Bayesian analysis 4.3.2
-=======
 GPstuff: Gaussian process models for Bayesian analysis 4.4
->>>>>>> origin/develop
 
 Maintainer: Aki Vehtari <aki.vehtari@aalto.fi>
 
@@ -89,12 +85,7 @@ Table of contents:
 3. CONTENTS
    
    The GPstuff packge contains the following subdirectories:
-<<<<<<< HEAD
    diag  dist  gp  mc  misc  optim  test_gpstuff  SuiteSparse
-=======
-   diag  dist  gp  mc  misc  optim  tests*  SuiteSparse*
-   (* not in Octave)
->>>>>>> origin/develop
 
    Each folder contains Contents.m, which summarizes the functions
    in the folder. 
@@ -104,19 +95,9 @@ Table of contents:
 
 4. TESTING THE INSTALLATION
 
-<<<<<<< HEAD
    Installation can be tested by running command run_tests, which
    runs specific demos and compares the computed results to pre-saved
-   results. 
-=======
-   Installation can be tested by running command runtestset('fast'), which
-   runs a collection of demos and compares the computed results to pre-saved
-   results. Running this takes about one hour and it requires Matlab version
-   2013b or greater for the unit test framework. Alternatively, the
-   'xunit' package can be used instead. The xunit package can be downloaded
-   from
-   http://www.mathworks.com/matlabcentral/fileexchange/22846-matlab-xunit-test-framework
->>>>>>> origin/develop
+   results.
 
 5. USER QUIDE (VERY SHORT)
 
