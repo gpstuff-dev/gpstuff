@@ -195,7 +195,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
               Covft = kstarstar - (V'*V);
             end
           else
-            % We may end up here if the likelihood is not log concace
+            % We may end up here if the likelihood is not log concave
             % For example Student-t likelihood
             V = L*diag(W);
             R = diag(W) - V'*V;

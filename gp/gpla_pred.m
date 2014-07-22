@@ -195,7 +195,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
               Varft = kstarstar - sum(V'.*V',2);
             end
           else
-            % We may end up here if the likelihood is not log concace
+            % We may end up here if the likelihood is not log concave
             % For example Student-t likelihood
             V = L*diag(W);
             R = diag(W) - V'*V;
