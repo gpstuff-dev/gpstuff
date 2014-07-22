@@ -1,4 +1,4 @@
-2014-07-xx Version 4.5
+2014-07-22 Version 4.5
 
 New features
  - Input dependent noise and signal variance.
