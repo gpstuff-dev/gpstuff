@@ -163,7 +163,11 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
         
         % Evaluate the mean
         if issparse(K_nf) && issparse(L)
-          deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z(p));
+          if isempty(z)
+            deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z);
+          else
+            deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z(p));
+          end
           Eft = K_nf(:,p)*deriv;
         else
           deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);

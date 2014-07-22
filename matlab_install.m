@@ -74,7 +74,7 @@ function matlab_install(SuiteSparse_path)
     S{4} = [PP '/mc']; 
     S{5} = [PP '/misc']; 
     S{6} = [PP '/optim']; 
-    S{7} = [PP '/xunit']; 
+    S{7} = [PP '/tests']; 
     
     fprintf ('\n The following paths have been added.  You may wish to add them\n') ;
     fprintf ('permanently, using the MATLAB pathtool command or copying the below\n') ;

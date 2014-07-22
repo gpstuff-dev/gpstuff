@@ -1,0 +1,4 @@
+Coal disaster data with EP integration over the latent values
+Redwood data with Laplace integration over the latent
+values and MAP estimate for the parameters
+Demo completed in 0.094 minutes

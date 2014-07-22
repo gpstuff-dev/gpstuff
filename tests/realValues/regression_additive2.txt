@@ -1,0 +1,20 @@
+Constant + linear covariance function
+ TolFun reached. Func-count 31. Final f(x)=103.189. Elapsed time 0.44
+Constant + squared exponential covariance function
+(w.r.t. the first input dimension) + linear (w.r.t.
+the second input dimension)
+ TolFun reached. Func-count 33. Final f(x)=54.0344. Elapsed time 0.82
+Additive squared exponential covariance function
+ TolFun reached. Func-count 35. Final f(x)=26.9207. Elapsed time 0.76
+Squared exponential covariance function
+ TolFun reached. Func-count 29. Final f(x)=30.6121. Elapsed time 0.46
+Additive neural network covariance function
+ TolFun reached. Func-count 33. Final f(x)=24.4157. Elapsed time 1.09
+Neural network covariance function
+ TolFun reached. Func-count 54. Final f(x)=24.2467. Elapsed time 1.23
+
+ gp hyperparameters: 
+ 
+   -3.1648    1.4213    0.5037   -2.9099
+
+Demo completed in 0.273 minutes

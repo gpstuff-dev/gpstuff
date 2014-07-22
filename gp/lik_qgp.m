@@ -312,7 +312,7 @@ function llg3 = lik_qgp_llg3(lik, y, f, param, z)
   end
 end
 
-function [logM_0, m_1, sigm2hati1] = lik_qgp_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+function [logM_0, m_1, sigm2hati1] = lik_qgp_tiltedMoments(lik, y, i1, sigma2_i, myy_i, z)
 %LIK_QGP_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
 %  Description
@@ -336,10 +336,16 @@ function [logM_0, m_1, sigm2hati1] = lik_qgp_tiltedMoments(lik, y, i1, sigm2_i, 
   sigm2hati1=zeros(size(yy));
   
   for i=1:length(i1)
+    if isscalar(sigma2_i)
+      sigma2_ii = sigma2_i;
+    else
+      sigma2_ii = sigma2_i(i);
+    end
+    
     % get a function handle of an unnormalized tilted distribution
     % (likelihood * cavity = Quantile-GP * Gaussian)
     % and useful integration limits
-    [tf,minf,maxf]=init_qgp_norm(yy(i),myy_i(i),sigm2_i(i),sigma2,tau);
+    [tf,minf,maxf]=init_qgp_norm(yy(i),myy_i(i),sigma2_ii,sigma2,tau);
     
     % Integrate with quadrature
     RTOL = 1.e-6;
@@ -354,12 +360,12 @@ function [logM_0, m_1, sigm2hati1] = lik_qgp_tiltedMoments(lik, y, i1, sigm2_i, 
     % If the second central moment is less than cavity variance
     % integrate more precisely. Theoretically for log-concave
     % likelihood should be sigm2hati1 < sigm2_i.
-    if sigm2hati1(i) >= sigm2_i(i)
+    if sigm2hati1(i) >= sigma2_ii
       ATOL = ATOL.^2;
       RTOL = RTOL.^2;
       [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
       sigm2hati1(i) = m_2 - m_1(i).^2;
-      if sigm2hati1(i) >= sigm2_i(i)
+      if sigm2hati1(i) >= sigma2_ii
         error('lik_qgp_tilted_moments: sigm2hati1 >= sigm2_i');
       end
     end

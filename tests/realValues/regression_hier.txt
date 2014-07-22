@@ -1,0 +1,54 @@
+1) Linear model with intercept and slope wrt time
+ TolFun reached. Func-count 19. Final f(x)=19.4149. Elapsed time 0.21
+2) Linear model with hierarchical intercept
+ TolFun reached. Func-count 25. Final f(x)=-37.2922. Elapsed time 0.46
+3) Linear model with hierarchical intercept and slope
+ TolFun reached. Func-count 33. Final f(x)=-46.4251. Elapsed time 0.77
+4) Nonlinear model with hierarchical intercept
+ TolFun reached. Func-count 40. Final f(x)=-45.8041. Elapsed time 0.95
+5) Non-linear hierarchical model 1 with MAP
+ TolFun reached. Func-count 88. Final f(x)=-77.8152. Elapsed time 3.28
+6) Non-linear hierarchical model 1 with IA
+ IA-CCD: finding the mode
+    Elapsed time 1.31 seconds
+ IA-CCD: computing Hessian using multiplication
+ IA-CCD: 147 points for 9 parameters
+ IA-CCD: autoscaling in 18 directions
+ IA-CCD: scaling minmax [0.63 1.43]
+ IA-CCD: evaluating density at 147 points
+    Elapsed time 1.92 seconds
+ IA-CCD: Total elapsed time 4.10 seconds
+7) Non-linear hierarchical model 2 with MAP
+ TolFun reached. Func-count 39. Final f(x)=-80.2512. Elapsed time 0.91
+8) Non-linear hierarchical model 2 with IA
+ IA-CCD: finding the mode
+ IA-CCD: computing Hessian using multiplication
+ IA-CCD: 45 points for 6 parameters
+ IA-CCD: autoscaling in 12 directions
+ IA-CCD: scaling minmax [0.84 1.26]
+ IA-CCD: evaluating density at 45 points
+ IA-CCD: Total elapsed time 1.25 seconds
+9) Non-linear hierarchical model 3 with IA
+ TolFun reached. Func-count 43. Final f(x)=-64.4989. Elapsed time 1.50
+ IA-CCD: finding the mode
+ IA-CCD: computing Hessian using multiplication
+ IA-CCD: 79 points for 7 parameters
+ IA-CCD: autoscaling in 14 directions
+ IA-CCD: scaling minmax [0.70 1.29]
+ IA-CCD: evaluating density at 79 points
+ IA-CCD: Total elapsed time 2.11 seconds
+10) Missing data example
+ TolFun reached. Func-count 49. Final f(x)=-4.10284. Elapsed time 0.99
+ IA-CCD: finding the mode
+ IA-CCD: computing Hessian using multiplication
+ IA-CCD: 79 points for 7 parameters
+ IA-CCD: autoscaling in 14 directions
+ IA-CCD: scaling minmax [0.64 1.33]
+ IA-CCD: evaluating density at 79 points
+ IA-CCD: Total elapsed time 1.00 seconds
+
+ gp hyperparameters: 
+ 
+   -0.1987   -3.4072    1.0782    0.4515   -3.4082   -4.7715   -4.8805
+
+Demo completed in 0.461 minutes
