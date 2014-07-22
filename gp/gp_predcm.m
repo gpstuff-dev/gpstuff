@@ -115,6 +115,7 @@ lp2 = zeros(nin,size(ind,1)); p = zeros(ng,size(ind,1));
 switch gp.latent_method
   case 'EP'
     switch fcorr
+      case 'tilted'
       case 'fact'
         [tmp, tmp, tmp, param] = gpep_e(gp_pak(gp), gp, x,y,'z',z);
         [tautilde, nutilde, muvec_i, sigm2vec_i] = ...
