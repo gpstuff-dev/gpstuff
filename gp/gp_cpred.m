@@ -134,7 +134,7 @@ if length(ind)==1
       case 'f'
         [Ef, Varf] = gp_pred(gp, x, y, xt, options);
       case 'mu'
-        prctmu = gp_predprctmu(gp, x, y, xt, options);
+        prctmu = denormdata(gp_predprctmu(gp, x, y, xt, options),nd.ymean,nd.ystd);
         Ef = prctmu; Varf = [];
       case 'cdf'
         cdf = gp_predcdf(gp, x, y, xt, options);
@@ -233,8 +233,8 @@ elseif length(ind)==2
           [Ef1, Varf1] = gp_pred(gp, x, y, xt1, options1);
           [Ef2, Varf2] = gp_pred(gp, x, y, xt2, options2);
         case 'mu'
-          prctmu1 = gp_predprctmu(gp, x, y, xt1, options1);
-          prctmu2 = gp_predprctmu(gp, x, y, xt2, options2);
+          prctmu1 = denormdata(gp_predprctmu(gp, x, y, xt1, options1),nd.ymean,nd.ystd);
+          prctmu2 = denormdata(gp_predprctmu(gp, x, y, xt2, options2),nd.ymean,nd.ystd);
       end
     else
       [Ef11,Ef12,Covf] = pred_coxph(gp,x,y,xt1, options1);
