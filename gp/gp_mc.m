@@ -122,7 +122,11 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %     end
 %   end
   
-  
+  if isfield(gp, 'lik_mono')
+    xv=gp.xv;
+    yv=round(gp.nvd./abs(gp.nvd));
+    yv=bsxfun(@times,yv,ones(size(xv,1),length(gp.nvd)));
+  end
   % Default samplers and some checking
   if isfield(gp,'latent_method') && isequal(gp.latent_method,'MCMC')
     % If no options structures, use SSLS as a default sampler for hyperparameters
@@ -622,8 +626,20 @@ function [record,ri,lrej,indrej,hmcrej,lik_hmcrej] = recappend(record, gp, x, y,
 
   % Record training error and rejects
   if isfield(gp,'latentValues')
-    elik = gp.lik.fh.ll(gp.lik, y, gp.latentValues, z);
-    [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = gp_e(gp_pak(gp), gp, x, gp.latentValues);
+    if isfield(gp, 'lik_mono')
+      % Monotonic GP
+      if isequal(gp.lik.type, 'Gaussian')
+        [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = gp_e(gp_pak(gp), gp, x, [y; gp.latentValues]);
+        elik = gp.lik_mono.fh.ll(gp.lik_mono, yv(:), gp.latentValues, z);
+      else
+        [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = gp_e(gp_pak(gp), gp, [x], gp.latentValues);
+        elik = gp.lik.fh.ll(gp.lik, y, gp.latentValues(1:size(x,1)), z);
+        elik = elik + gp.lik_mono.fh.ll(gp.lik_mono, yv(:), gp.latentValues(size(x,1)+1:end), z);
+      end
+    else
+      elik = gp.lik.fh.ll(gp.lik, y, gp.latentValues, z);
+      [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = gp_e(gp_pak(gp), gp, x, gp.latentValues);
+    end
     record.etr(ri,:) = record.e(ri,:) - elik;    
     % Set rejects 
     record.lrejects(ri,1)=lrej;
@@ -658,16 +674,21 @@ function e = gpmc_e(w, gp, x, y, f, z)
 
   e=0;
   if ~isempty(strfind(gp.infer_params, 'covariance'))
-    e=e+gp_e(w, gp, x, f, 'z', z);
+    if isfield(gp, 'lik_mono') && isequal(gp.lik.type,'Gaussian') ...
+      && isequal(gp.latent_method, 'MCMC')
+      e=e+gp_e(w, gp, x, [y; f], 'z', z);
+    else
+      e=e+gp_e(w, gp, x, f, 'z', z);
+    end
   end
   if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
       && ~isfield(gp.lik.fh,'trcov') ...
       && isfield(gp.lik.fh,'lp') && ~isequal(y,f)
     % Evaluate the contribution to the error from non-Gaussian likelihood
     % if latent method is MCMC
-    gp=gp_unpak(gp,w);
+    gp=gp_unpak(gp,w);    
     lik=gp.lik;
-    e=e-lik.fh.ll(lik,y,f,z)-lik.fh.lp(lik);
+    e=e-lik.fh.ll(lik,y,f,z)-lik.fh.lp(lik);    
   end
  
 end
@@ -676,7 +697,13 @@ function g = gpmc_g(w, gp, x, y, f, z)
 
   g=[];
   if ~isempty(strfind(gp.infer_params, 'covariance'))
-    g=[g gp_g(w, gp, x, f, 'z', z)];
+%     g=[g gp_g(w, gp, x, f, 'z', z)];
+    if isfield(gp, 'lik_mono') && isequal(gp.lik.type,'Gaussian') ...
+        && isequal(gp.latent_method, 'MCMC')
+      g=[g gp_g(w, gp, x, [y; f], 'z', z)];
+    else
+      g=[g gp_e(w, gp, x, f, 'z', z)];
+    end
   end
   if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
       && ~isfield(gp.lik.fh,'trcov') ...

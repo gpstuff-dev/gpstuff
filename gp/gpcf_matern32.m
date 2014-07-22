@@ -837,7 +837,7 @@ function reccf = gpcf_matern32_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_matern32_pak;
     reccf.fh.unpak = @gpcf_matern32_unpak;
-    reccf.fh.e = @gpcf_matern32_lp;
+    reccf.fh.lp = @gpcf_matern32_lp;
     reccf.fh.lpg = @gpcf_matern32_lpg;
     reccf.fh.cfg = @gpcf_matern32_cfg;
     reccf.fh.cov = @gpcf_matern32_cov;

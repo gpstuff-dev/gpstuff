@@ -222,7 +222,11 @@ switch gp.type
     if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'})
       %evaluate a = C\y;
       % -------------------
-      [tmp, C]=gp_trcov(gp,x);
+      if isfield(gp, 'lik_mono')
+        [K,C] = gp_dtrcov(gp, x, gp.xv);
+      else
+        [K, C] = gp_trcov(gp, x);
+      end
       
       if issparse(C)
         LD = ldlchol(C);
@@ -251,8 +255,15 @@ switch gp.type
         % Do the prediction in blocks to save memory
         xtind = (i1-1)*nblock+1:min(i1*nblock,nxt);
         xtind2 = xtind;
-        K=gp_cov(gp,x,xt(xtind,:),predcf);
-        if isfield(gp,'derivobs') && gp.derivobs==1
+        if isfield(gp, 'lik_mono')
+          %[K,C] = gp_dtrcov(gp, x, gp.xv);
+          K=gp_dcov(gp,x,xt(xtind,:),predcf)';
+          K(length(xtind)+1:end,:)=[];
+          K=K';
+        else
+          K=gp_cov(gp,x,xt(xtind,:),predcf);
+        end
+        if isfield(gp,'derivobs') && gp.derivobs==1 && ~isfield(gp,'lik_mono')
           for k2=2:nderobs
             xtind2 = [xtind2 xtind+length(xt)*(k2-1)];
           end
@@ -275,7 +286,11 @@ switch gp.type
         % Vector of diagonal elements of covariance matrix
         if nargout > 1
           
-          V = gp_trvar(gp,xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
+          if isfield(gp, 'lik_mono')
+            V = gp_trvar(rmfield(gp,'derivobs'),xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
+          else
+            V = gp_trvar(gp,xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
+          end
           if issparse(C)
             Varft(xtind2) = V - diag(K'*ldlsolve(LD,K));
           else

@@ -70,32 +70,26 @@
 % License.txt, included with the software, for details.
 
 
-% This file is organised in two parts:
+%% This file is organised in two parts:
 %  1) Mauna Loa data analysis with GP regression
 %  2) Drowning data analysis with Poisson likelihood
 
-%========================================================
-% PART 1 Mauna Loa data analysis with full GP model
-%========================================================
+%% PART 1 Mauna Loa data analysis with full GP model
 
 % Load the data
 S = which('demo_periodic');
 L = strrep(S,'demo_periodic.m','demodata/maunaloa_data.txt');
 
 data=load(L);
-y = data(:, 2:13);
-y=y';
+y = data(:, 2:13)';
 y=y(:);
 x = [1:1:length(y)]';
+xx=1958:1/12:(2005-1/12);
 x = x(y>0);
+xx = xx(y>0);
 y = y(y>0);
 avgy = mean(y);
 y = y-avgy;
-
-[n,nin] = size(x);
-% Now 'x' consist of the inputs and 'y' of the output. 
-% 'n' and 'nin' are the number of data points and the 
-% dimensionality of 'x' (the number of inputs).
 
 % First, we will do the inference without the periodic covariance function
 % (as in DEMO_REGRESSION2), then add the periodic term and compare the
@@ -106,15 +100,13 @@ y = y-avgy;
 % 
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise structures...
-gpcf1 = gpcf_sexp('lengthScale', 5.1, 'magnSigma2', 3);
-gpcf2 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 1);
-lik = lik_gaussian();
-
-% ... Then set the prior for the parameters of covariance functions...
-pl = prior_t('s2', 3);
+pl = prior_t('s2', 1000);
 pm = prior_sqrtunif();
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf1 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 3, ...
+                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 1, ...
+                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+lik = lik_gaussian();
 
 % ... Finally create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2}, 'jitterSigma2',1e-9);
@@ -133,19 +125,21 @@ gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % Make predictions. Below Eyt_full is the predictive mean and
 % Varyt_full the predictive variance.
-xt=[1:650]';
+xt=[1:660]';
+xxt=1958:1/12:(2013-1/12);
 
-[Eft_full, Varft_full, lpyt_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt, 'yt', ones(650,1));
+[Eft_full, Varft_full, lpyt_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt, 'yt', ones(660,1));
 
 % Plot the prediction and data
 figure;hold on
-plot(x,y,'.', 'MarkerSize',7)
-plot(xt,Eyt_full,'k', 'LineWidth', 2)
-plot(xt,Eyt_full-2.*sqrt(Varyt_full),'k--')
-plot(xt,Eyt_full+2.*sqrt(Varyt_full),'k--')
+plot(xxt,avgy+Eyt_full,'k', 'LineWidth', 2)
+plot(xxt,avgy+Eyt_full-2.*sqrt(Varyt_full),'k--')
+plot(xxt,avgy+Eyt_full+2.*sqrt(Varyt_full),'k--')
+plot(xx,avgy+y,'.', 'MarkerSize',7)
 axis tight
-caption1 = sprintf('GP with sexp+sexp+noise:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.lik.sigma2);
-title(caption1)
+fprintf('GP with sexp+sexp+noise:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f\n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.lik.sigma2);
+xlabel('Year')
+ylabel('CO2 concentration')
 legend('Data point', 'predicted mean', '2\sigma error', 'Location', 'NorthWest')
 
 % -------------------------------------------
@@ -162,21 +156,18 @@ legend('Data point', 'predicted mean', '2\sigma error', 'Location', 'NorthWest')
 % First create a set of covariance functions: a long term squared
 % exponential function, two short term ones, the periodic function and a
 % noise structure
-gpcf1 = gpcf_sexp('lengthScale', 67*12, 'magnSigma2', 66*66);
-gpcfp = gpcf_periodic('lengthScale', 1.3, 'magnSigma2', 2.4*2.4);
-gpcfp = gpcf_periodic(gpcfp, 'period', 12,'lengthScale_sexp', 90*12, 'decay', 1);
+pl1 = prior_t('s2', 100^2, 'nu', 3);
+pl2 = prior_t('s2', 10^2, 'nu', 3);
+pm = prior_sqrtt('s2', 10, 'nu', 3);
+pp = prior_t('s2', 10, 'nu', 4);
+gpcf1 = gpcf_sexp('lengthScale', 67*12, 'magnSigma2', 66*66,...
+                  'lengthScale_prior', pl1, 'magnSigma2_prior', pm);
+gpcfp = gpcf_periodic('lengthScale', 1.3, 'magnSigma2', 2.4*2.4,...
+                      'lengthScale_prior', pl2, 'magnSigma2_prior', pm,...
+                      'period', 12,'lengthScale_sexp', 90*12, 'decay', 1,...
+                      'lengthScale_sexp_prior', pl1, 'period_prior', pp);
 lik = lik_gaussian('sigma2', 0.3);
 gpcf2 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 2);
-
-% ... Then set the prior for the parameters of covariance functions...
-pl = prior_t('s2', 10, 'nu', 3);
-pn = prior_t('s2', 10, 'nu', 4);
-
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
-gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
-gpcfp = gpcf_periodic(gpcfp, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
-gpcfp = gpcf_periodic(gpcfp, 'lengthScale_sexp_prior', pl, 'period_prior', pn);
-lik = lik_gaussian(lik, 'sigma2_prior', pn);
 
 % ... Finally create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf1, gpcfp, gpcf2});
@@ -195,27 +186,28 @@ gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % Make predictions. Below Eft_full is the predictive mean and
 % Varft_full the predictive variance.
-xt=[1:650]';
+xt=[1:660]';
 
-[Eft_full, Varft_full, lpyt_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt, 'yt', ones(650,1));
+[Eft_full, Varft_full, lpyt_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt, 'yt', ones(660,1));
 
 % Plot the prediction and data
 figure;hold on
-plot(xt,Eyt_full,'k')
-plot(xt,Eyt_full-2.*sqrt(Varyt_full),'k--')
-plot(xt,Eyt_full+2.*sqrt(Varyt_full),'k--')
-plot(x,y,'.', 'MarkerSize',7)
+plot(xxt,avgy+Eyt_full,'k')
+plot(xxt,avgy+Eyt_full-2.*sqrt(Varyt_full),'k--')
+plot(xxt,avgy+Eyt_full+2.*sqrt(Varyt_full),'k--')
+plot(xx,avgy+y,'.', 'MarkerSize',7)
 axis tight
-caption1 = sprintf('GP sexp+periodic+sexp+noise:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f, p=%.2f, s_sexp^2 = %.2f, \n l_3= %.2f, s^2_3 = %.2f, \n l_4= %.2f, s^2_4 = %.2f, \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.cf{2}.period, gp.cf{2}.lengthScale_sexp, gp.cf{3}.lengthScale, gp.cf{3}.magnSigma2, gp.lik.sigma2);
-title(caption1)
+fprintf('GP sexp+periodic+sexp+noise:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f, p=%.2f, s_sexp^2 = %.2f, \n l_3= %.2f, s^2_3 = %.2f, \n s^2_{noise} = %.2f\n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.cf{2}.period, gp.cf{2}.lengthScale_sexp, gp.cf{3}.lengthScale, gp.cf{3}.magnSigma2, gp.lik.sigma2);
 legend('Data point', 'predicted mean', '2\sigma error','Location','NorthWest')
+xlabel('Year')
+ylabel('CO2 concentration')
 
 % Plot the latent components separately
-[Eft_full1, Varft_full1] = gp_pred(gp, x, y, x, 'predcf', 1);
-[Eft_full2, Varft_full2] = gp_pred(gp, x, y, x, 'predcf', [2 3]);
+[Eft_full1, Varft_full1] = gp_pred(gp, x, y, xt, 'predcf', 1);
+[Eft_full2, Varft_full2] = gp_pred(gp, x, y, xt, 'predcf', [2 3]);
 
 figure
-[AX, H1, H2] = plotyy(x, Eft_full2, x, Eft_full1);
+[AX, H1, H2] = plotyy(xxt, Eft_full2, xxt, Eft_full1);
 set(H2,'LineStyle','--')
 set(H2, 'LineWidth', 2)
 %set(H1, 'Color', 'k')
@@ -223,9 +215,7 @@ set(H1,'LineStyle','-')
 set(H1, 'LineWidth', 0.8)
 title('The long and short term latent component')
 
-%========================================================
-% PART 2 Drowning data analysis with FULL GP
-%========================================================
+%% PART 2 Drowning data analysis with FULL GP
 
 % Here we use a GP model with Poisson likelihood to analyse the
 % monthly Finnish drowning mortality data from 2002-2008. Finland,
@@ -268,32 +258,26 @@ x = [1:length(y)]';
 % the cyclic nature of the data. The period of the cycle is not
 % optimised as it is strongly believed to be exactly 12 months.
 
-gpcf1 = gpcf_sexp('lengthScale', [67], 'magnSigma2', 1);
-gpcfp = gpcf_periodic('lengthScale', [1.3], 'magnSigma2', 2.4*2.4,...
-    'period', 12,'lengthScale_sexp', 50, 'decay', 1);
-likn=gpcf_neuralnetwork('biasSigma2',10,'weightSigma2',3);
-gpcf2 = gpcf_sexp('lengthScale', [2], 'magnSigma2', 2);
-
-% ... Then set the prior for the parameters of covariance functions...
-pl = prior_t('s2', 1000, 'nu', 3);
-pm = prior_sqrtt('s2', 2, 'nu', 3);
+pl1 = prior_t('s2', 1000, 'nu', 3);
+pm = prior_sqrtt('s2', 4, 'nu', 3);
 pl2 = prior_t('s2', 5, 'nu', 3);
-pm2 = prior_sqrtt('s2', 3, 'nu', 3);
-ppl = prior_t('s2', 100, 'nu', 3);
-ppm = prior_sqrtt('s2', 1, 'nu', 3);
-pn = prior_t('s2', 10, 'nu', 4);
-ppp = prior_t('s2', 100, 'nu', 4);
-
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm2);
-likn = gpcf_neuralnetwork(likn, 'biasSigma2_prior', pn, 'weightSigma2_prior', ppp);
-gpcfp = gpcf_periodic(gpcfp, 'lengthScale_prior', ppl, 'magnSigma2_prior', ppm,  'lengthScale_sexp_prior', pl);
-lik = lik_gaussian(lik, 'sigma2_prior', pn);
+pmn = prior_sqrtt('s2', 100, 'nu', 4);
+gpcf1 = gpcf_sexp('lengthScale', 50, 'magnSigma2', 1,...
+                  'lengthScale_prior', pl1, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 2, ...
+                  'lengthScale_prior', pl2, 'magnSigma2_prior', pm);
+gpcfp = gpcf_periodic('lengthScale', 1, 'magnSigma2', 2.4*2.4,...
+    'period', 12,'lengthScale_sexp', 50, 'decay', 1,...
+                      'lengthScale_prior', pl1, 'magnSigma2_prior', pm,  ...
+                      'lengthScale_sexp_prior', pl1);
+gpcfnn=gpcf_neuralnetwork('biasSigma2',10,'weightSigma2',3,...
+                          'biasSigma2_prior', pmn, 'weightSigma2_prior', pmn);
+lik = lik_poisson();
 
 % ... Create the GP structure, Poisson likelihood with
 % Expectation Propagation as approximation method
 z=repmat(mean(y),length(y),1);
-gp = gp_set('lik', lik_poisson(), 'cf', {gpcf1,gpcfp,gpcf2,likn});
+gp = gp_set('lik', lik, 'cf', {gpcf1,gpcfp,gpcf2,gpcfnn});
 gp = gp_set(gp, 'latent_method', 'EP');
 
 % Set the options for the optimization

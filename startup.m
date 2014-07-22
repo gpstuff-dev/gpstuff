@@ -21,7 +21,7 @@ end
 %addpath([gpstuffroot 'mc'])
 %addpath([gpstuffroot 'misc'])
 %addpath([gpstuffroot 'optim'])
-%addpath([gpstuffroot 'xunit'])
+%addpath([gpstuffroot 'tests'])
 
 % If using Octave version of GPstuff, also add the following
 %addpath([gpstuffroot 'inputparser'])

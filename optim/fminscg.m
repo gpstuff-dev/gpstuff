@@ -180,6 +180,12 @@ while (j <= maxiter)
     sigma = sigma0/sqrt(kappa);
     xplus = x + sigma*d;
     [tmp,gplus] = fun(xplus);
+    while ((any(isinf(gplus)) || any(isnan(gplus)))) && ~isnan(fold)
+      sigma=2*sigma;
+      kappa=0.5.^2*kappa;
+      xplus=x+sigma*d;
+      [tmp,gplus] = fun(xplus);
+    end
     funcCount=funcCount+1;
     gradCount=gradCount+1;
     gamma = (d*(gplus' - gradnew'))/sigma;

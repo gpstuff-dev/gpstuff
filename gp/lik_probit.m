@@ -106,8 +106,12 @@ function ll = lik_probit_ll(lik, y, f, z)
   if ~isempty(find(abs(y)~=1))
     error('lik_probit: The class labels have to be {-1,1}')
   end
-  
-  p = y.*f;
+  if isfield(lik, 'nu')
+    nu=lik.nu;
+  else
+    nu=1;
+  end
+  p = y.*f/nu;
   ll = log(norm_cdf(p));
   if any(p<-10)
     % Asymptotic expansion of norm_cdf
@@ -253,12 +257,17 @@ function [logM_0, m_1, sigm2hati1] = lik_probit_tiltedMoments(lik, y, i1, sigm2_
   
   %normc_zi = 0.5.*erfc(-zi./sqrt(2)); % norm_cdf(zi)
   normc_zi = 0.5.*erfc(-zi./1.414213562373095); % norm_cdf(zi)
-  %normp_zi = exp(-0.5.*zi.^2-log(2.*pi)./2); %norm_pdf(zi)
-  normp_zi = exp(-0.5.*realpow(zi,2)-0.918938533204673); %norm_pdf(zi)
-  m_1=myy_i+(y(i1).*sigm2_i.*normp_zi)./(normc_zi.*nu.*a); % muhati1
-  sigm2hati1=sigm2_i-(sigm2_i.^2.*normp_zi)./((nu^2+sigm2_i).*normc_zi).*(zi+normp_zi./normc_zi); % sigm2hati1
   logM_0 = reallog(normc_zi);
+  if nargout > 1
+    %normp_zi = exp(-0.5.*zi.^2-log(2.*pi)./2); %norm_pdf(zi)
+    normp_zi = exp(-0.5.*realpow(zi,2)-0.918938533204673); %norm_pdf(zi)
+    m_1=myy_i+(y(i1).*sigm2_i.*normp_zi)./(normc_zi.*nu.*a); % muhati1
+    if nargout > 2
+      sigm2hati1=sigm2_i-(sigm2_i.^2.*normp_zi)./((nu^2+sigm2_i).*normc_zi).*(zi+normp_zi./normc_zi); % sigm2hati1
+    end
+  end
 end
+
 
 function [lpy, Ey, Vary] = lik_probit_predy(lik, Ef, Varf, yt, zt)
 %LIK_PROBIT_PREDY    Returns the predictive mean, variance and density of y
