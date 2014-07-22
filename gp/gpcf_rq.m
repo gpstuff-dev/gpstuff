@@ -920,7 +920,7 @@ function reccf = gpcf_rq_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_rq_pak;
     reccf.fh.unpak = @gpcf_rq_unpak;
-    reccf.fh.e = @gpcf_rq_lp;
+    reccf.fh.lp = @gpcf_rq_lp;
     reccf.fh.g = @gpcf_rq_g;
     reccf.fh.cov = @gpcf_rq_cov;
     reccf.fh.trcov  = @gpcf_rq_trcov;

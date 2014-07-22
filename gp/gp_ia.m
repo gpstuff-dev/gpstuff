@@ -241,7 +241,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       if ismember(opt.display,{'on','iter'}) && et > 1
         fprintf('    Elapsed time %.2f seconds\n',et);
       end
-      if any(eig(H))<0
+      if any(eig(H))<0 || any(~isreal(eig(H)))
         if ismember(opt.display,{'on','iter'});
           fprintf(' IA-%s: computing Hessian using finite difference\n',int_method);
         end
@@ -728,7 +728,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           Scale = (nu-2)./nu.*Sigma;
           LS=chol(Scale,'lower');
           
-          if opt.autoscale
+          if ismember(opt.autoscale,{'on' 'full'})
+            % Scaling of the covariance (see Geweke, 1989, Bayesian
+            % inference in econometric models using Monte Carlo integration
             if ismember(opt.display,{'on','iter'})
               fprintf(' IA-is_t: scaling of the covariance\n');
             end

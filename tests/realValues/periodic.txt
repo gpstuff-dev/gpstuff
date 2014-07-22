@@ -1,0 +1,52 @@
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in the objective function value was less than TolFun.
+  Iterations : 28
+  Function Count : 45
+  Minimum found : 582.4295
+  Intern Time : 0.02601 seconds
+  Total Time : 4.041 seconds
+GP with sexp+sexp+noise:  l_1= 478.42, s^2_1 = 1880.78, 
+ l_2= 2.31, s^2_2 = 5.90 
+ s^2_{noise} = 0.04
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1             567.966    
+     1           6           6              567.82     3.33254e-07
+     2          12          12             185.978       0.0087523
+     3          16          16             178.317      0.00684471
+     4          18          18             173.532             0.1
+     5          21          21             171.627            0.01
+     6          24          24             170.264       0.0345554
+     7          28          28             162.674       0.0543142
+     8          30          30             157.985        0.449478
+     9          31          31             157.794               1
+    10          33          33             157.073        0.385284
+    11          34          34             156.995               1
+    12          35          35             156.723               1
+    13          39          39             156.723       0.0651524
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Line search cannot find an acceptable point along the current search direction
+  Iterations : 14
+  Function Count : 56
+  Minimum found : 156.7227
+  Intern Time : 0.055458 seconds
+  Total Time : 9.9932 seconds
+GP sexp+periodic+sexp+noise:  l_1= 188.67, s^2_1 = 475.85, 
+ l_2= 1.34, s^2_2 = 5.90, p=12.00, s_sexp^2 = 1369.24, 
+ l_3= 4.05, s^2_3 = 0.17, 
+ s^2_{noise} = 0.04
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in the objective function value was less than TolFun.
+  Iterations : 20
+  Function Count : 29
+  Minimum found : 249.6466
+  Intern Time : 0.020682 seconds
+  Total Time : 6.6113 seconds
+
+ gp hyperparameters: 
+ 
+   -1.6168    3.9826   -0.3658   -0.0967    4.6499   -2.9567   -0.4466    3.2409    5.2019
+
+Demo completed in 0.366 minutes

@@ -119,7 +119,22 @@ switch gp.type
     
     if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'})
       % Evaluate covariance
-      [K, C] = gp_trcov(gp,x);
+      if isfield(gp, 'lik_mono')
+        [K,C] = gp_dtrcov(gp, x, gp.xv);
+%         if isequal(gp.lik.type, 'Gaussian')
+%           % Condition the derivatives on the observations
+%           cc=C(size(x,1)+1:end,size(x,1)+1:end);
+%           cy=C(size(x,1)+1:end,1:size(x,1));
+%           cyy=C(1:size(x,1),1:size(x,1));
+%           C=cc - cy*(cyy\cy');
+%           %C=0.5.*(C+C')+1e-10.*eye(size(C));
+%           meany=cy*(cyy\y(1:n));
+%           y=(y(n+1:end)-meany);
+%           n=length(y);
+%         end
+      else
+        [K, C] = gp_trcov(gp, x);
+      end
       
       
       if issparse(C)
@@ -236,42 +251,69 @@ switch gp.type
         else
           [n m]=size(x);
           %Case: input dimension is 1
-          if m==1
-
-            DKffa = gpcf.fh.cfg(gpcf, x);
-            DKdf = gpcf.fh.cfdg(gpcf, x);
-            DKdd = gpcf.fh.cfdg2(gpcf, x);
-            gprior_cf = -gpcf.fh.lpg(gpcf);
-
-            % DKff{1} -- d K / d magnSigma2
-            % DKff{2} -- d K / d lengthScale
-            DKffc{1} = [DKffa{1}, DKdf{1}'; DKdf{1}, DKdd{1}];
-            DKffc{2} = [DKffa{2}, DKdf{2}'; DKdf{2}, DKdd{2}];
-            np=2;
-            
-            %Case: input dimension is >1    
+          if isfield(gp, 'lik_mono')
+              savememory=0;
+              [n, m]=size(x);
+              DKffa = gpcf.fh.cfg(gpcf, x);
+              if ~isempty(DKffa)
+                DKdf = gpcf.fh.cfdg(gpcf, gp.xv, x);
+                DKdd = gpcf.fh.cfdg2(gpcf, gp.xv);
+                % Select monotonic dimensions
+                inds=[];
+                nvd=abs(gp.nvd);
+                for idd=1:length(gp.nvd)
+                  inds=[inds size(gp.xv,1)*(nvd(idd)-1)+1:size(gp.xv,1)*nvd(idd)];
+                end
+                for ijj=1:length(DKffa)
+                  DKdf{ijj}=DKdf{ijj}(inds,:);
+                  DKdd{ijj}=DKdd{ijj}(inds,inds);
+                end
+                
+                DKffc{1}=[DKffa{1} DKdf{1}';DKdf{1} DKdd{1}];
+                for i2=2:length(DKffa)
+                  DKffc{i2}=[DKffa{i2} DKdf{i2}';DKdf{i2} DKdd{i2}];
+                end
+              end
+              np=length(DKffa);
+              gprior_cf = -gpcf.fh.lpg(gpcf);
           else
-            DKffa = gpcf.fh.cfg(gpcf, x);
-            DKdf = gpcf.fh.cfdg(gpcf, x);
-            DKdd = gpcf.fh.cfdg2(gpcf, x);
-            gprior_cf = -gpcf.fh.lpg(gpcf);
-
-            %Check whether ARD method is in use (with gpcf_sexp)
-            Ard=length(gpcf.lengthScale);
-            
-            % DKff{1} - d K / d magnSigma2
-            % DKff{2:end} - d K / d lengthScale(1:end)
-            for i=1:2
-              DKffc{i}=[DKffa{i} DKdf{i}';DKdf{i} DKdd{i}];
-            end
-            
-            %If ARD is in use
-            if Ard>1
-              for i=2+1:2+Ard-1
+            if m==1
+              
+              DKffa = gpcf.fh.cfg(gpcf, x);
+              DKdf = gpcf.fh.cfdg(gpcf, x);
+              DKdd = gpcf.fh.cfdg2(gpcf, x);
+              gprior_cf = -gpcf.fh.lpg(gpcf);
+              
+              % DKff{1} -- d K / d magnSigma2
+              % DKff{2} -- d K / d lengthScale
+              DKffc{1} = [DKffa{1}, DKdf{1}'; DKdf{1}, DKdd{1}];
+              DKffc{2} = [DKffa{2}, DKdf{2}'; DKdf{2}, DKdd{2}];
+              np=2;
+              
+              %Case: input dimension is >1
+            else
+              DKffa = gpcf.fh.cfg(gpcf, x);
+              DKdf = gpcf.fh.cfdg(gpcf, x);
+              DKdd = gpcf.fh.cfdg2(gpcf, x);
+              gprior_cf = -gpcf.fh.lpg(gpcf);
+              
+              %Check whether ARD method is in use (with gpcf_sexp)
+              Ard=length(gpcf.lengthScale);
+              
+              % DKff{1} - d K / d magnSigma2
+              % DKff{2:end} - d K / d lengthScale(1:end)
+              for i=1:2
                 DKffc{i}=[DKffa{i} DKdf{i}';DKdf{i} DKdd{i}];
-              end  
+              end
+              
+              %If ARD is in use
+              if Ard>1
+                for i=2+1:2+Ard-1
+                  DKffc{i}=[DKffa{i} DKdf{i}';DKdf{i} DKdd{i}];
+                end
+              end
+              np=length(DKffc);
             end
-            np=length(DKffc);
           end
         end
         
@@ -343,6 +385,9 @@ switch gp.type
       gprior_lik = -gp.lik.fh.lpg(gp.lik);
       if ~isempty(gprior_lik)
         DCff = gp.lik.fh.cfg(gp.lik, x);
+        if isfield(gp, 'lik_mono') 
+          DCff{1}=diag(DCff{1}*[ones(size(x,1),1); zeros(size(gp.xv,1)*length(nvd),1)]);
+        end
         for i2 = 1:length(DCff)
           i1 = i1+1;
           if ~isfield(gp,'meanf')

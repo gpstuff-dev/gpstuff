@@ -285,10 +285,10 @@ function DKff = gpcf_sum_cfg(gpcf, x, x2, mask, i1)
     DKff = {};
     for i=i2
       cf = gpcf.cf{i};
-      if savememory
-        DK = cf.fh.cfg(cf, x, [], 1, i1(2));
+      if ~savememory
+        DK = cf.fh.cfg(cf, x, [], mask);
       else
-        DK = cf.fh.cfg(cf, x, [], 1);
+        DK = {cf.fh.cfg(cf, x, [], mask, i1(2))};
       end
       DKff = [DKff DK];
 
@@ -505,7 +505,7 @@ function reccf = gpcf_sum_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_sum_pak;
     reccf.fh.unpak = @gpcf_sum_unpak;
-    reccf.fh.e = @gpcf_sum_lp;
+    reccf.fh.lp = @gpcf_sum_lp;
     reccf.fh.lpg = @gpcf_sum_lpg;
     reccf.fh.cfg = @gpcf_sum_cfg;
     reccf.fh.cov = @gpcf_sum_cov;

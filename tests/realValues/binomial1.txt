@@ -1,0 +1,7 @@
+ TolFun reached. Func-count 37. Final f(x)=169.569. Elapsed time 1.02
+
+ gp hyperparameters: 
+ 
+   -0.7902   -1.0035
+
+Demo completed in 0.088 minutes

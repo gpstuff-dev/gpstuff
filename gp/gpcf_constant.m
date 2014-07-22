@@ -12,8 +12,8 @@ function gpcf = gpcf_constant(varargin)
 %    parameters altered with the specified values.
 %  
 %    Parameters for constant covariance function [default]
-%      constSigma2       - magnitude (squared) [0.1]
-%      constSigma2_prior - prior for constSigma2 [prior_logunif]
+%      constSigma2       - magnitude (squared) [.1]
+%      constSigma2_prior - prior for constSigma2 [prior_sqrtt]
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in
@@ -33,8 +33,8 @@ function gpcf = gpcf_constant(varargin)
   ip=inputParser;
   ip.FunctionName = 'GPCF_CONSTANT';
   ip.addOptional('gpcf', [], @isstruct);
-  ip.addParamValue('constSigma2',0.1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('constSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('constSigma2',.1, @(x) isscalar(x) && x>0);
+  ip.addParamValue('constSigma2_prior',prior_sqrtt(), @(x) isstruct(x) || isempty(x));
   ip.parse(varargin{:});
   gpcf=ip.Results.gpcf;
 

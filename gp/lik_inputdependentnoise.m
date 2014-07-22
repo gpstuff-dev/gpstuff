@@ -37,7 +37,7 @@ function lik = lik_inputdependentnoise(varargin)
 % Copyright (c) 2011 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
   ip=inputParser;
@@ -210,7 +210,8 @@ function lik = lik_inputdependentnoise(varargin)
     f1=f(1:n);
     f2=f((n+1):2*n);
     expf2=exp(f2);
-    expf2(isinf(expf2))=realmax;
+    expf2(expf2<eps)=eps;
+    expf2(expf2>1e6)=1e6;
     sigma2 = lik.sigma2;
     
     ll = sum(-0.5*log(2*pi.*sigma2.*expf2) - 1./(2.*sigma2.*expf2).*(y-f1).^2);
@@ -237,6 +238,8 @@ function lik = lik_inputdependentnoise(varargin)
     f1=f(1:n);
     f2=f((n+1):2*n);
     expf2 = exp(f2);
+    expf2(expf2<eps)=eps;
+    expf2(expf2>1e6)=1e6;
     sigma2 = lik.sigma2;
     
     switch param
@@ -249,7 +252,7 @@ function lik = lik_inputdependentnoise(varargin)
       case 'latent'
         
         llg1= (y-f1)./(sigma2*expf2);
-        llg2= -0.5+(y-f1).^2./(2.*expf2.*sigma2);
+        llg2= -0.5+(y-f1).^2./(2.*(expf2.*sigma2));
         
 %         llg1=(-y+f1)/(sqrt(2*pi).*(sigma2.*expf2).^(3/2)).*exp(-1/(2.*sigma2*expf2).*(y-f1).^2);
 %         llg2=-exp(f2-(y-f1).^2/(2.*expf2.*sigma2)).*sigma2/(2.*sqrt(2.*pi).*(expf2.*sigma2).^(3/2))+exp(-f2-(y-f1).^2/(2*expf2*sigma2)).*(y-f1).^2/(2.*sqrt(2.*pi.*expf2).*sigma2.^(3/2));
@@ -283,6 +286,8 @@ function lik = lik_inputdependentnoise(varargin)
     f2=f((n+1):2*n);
     sigma2 = lik.sigma2;
     expf2=exp(f2);
+    expf2(expf2<eps)=eps;
+    expf2(expf2>1e6)=1e6;
 
     switch param
       case 'param'
@@ -331,6 +336,8 @@ function lik = lik_inputdependentnoise(varargin)
     f1=f(1:n);
     f2=f((n+1):2*n);
     expf2=exp(f2);
+    expf2(expf2<eps)=eps;
+    expf2(expf2>1e6)=1e6;
     sigma2 = lik.sigma2;
     
     switch param
@@ -411,14 +418,18 @@ function lik = lik_inputdependentnoise(varargin)
     
     lpy = zeros(size(yt));
    
-    Ey=zeros(size(yt));
-    Vary=zeros(size(yt));
+    Ey=Ef1;
+    Vary=Varf1 + sigma2.*exp(Ef2+Varf2/2);
     
-    for i2=1:ntest
-      m1=Ef1(i2); m2=Ef2(i2);
-      s1=sqrt(Varf1(i2)); s2=sqrt(Varf2(i2));
-      pd=@(f1,f2) norm_pdf(yt(i2), f1, sqrt(sigma2.*exp(f2))).*norm_pdf(f1,Ef1(i2),sqrt(Varf1(i2))).*norm_pdf(f2,Ef2(i2),sqrt(Varf2(i2)));
-      lpy(i2) = log(dblquad(pd, m1-6.*s1, m1+6.*s1, m2-6.*s2, m2+6.*s2));
+    if ~isempty(yt)
+      for i2=1:ntest
+        m1=Ef1(i2); m2=Ef2(i2);
+        s1=sqrt(Varf1(i2)); s2=sqrt(Varf2(i2));
+        pd=@(f1,f2) norm_pdf(yt(i2), f1, sqrt(sigma2.*exp(f2))).*norm_pdf(f1,Ef1(i2),sqrt(Varf1(i2))).*norm_pdf(f2,Ef2(i2),sqrt(Varf2(i2)));
+        lpy(i2) = log(dblquad(pd, m1-6.*s1, m1+6.*s1, m2-6.*s2, m2+6.*s2));
+      end
+    else
+      lpy=[];
     end
 %     sigma2 = lik.sigma2;
 %     Ef1=Ef(1:ntest);

@@ -1,0 +1,20 @@
+Assign inducing inputs by clustering
+iter=1/150, e=-808.661, mlpd=-0.005028, rmse=0.0876, de=Inf
+iter=11/150, e=1629.256, mlpd=1.342, rmse=0.01702, de=0.66157
+iter=21/150, e=1639.370, mlpd=1.353, rmse=0.01592, de=1.2634
+iter=31/150, e=1645.651, mlpd=1.355, rmse=0.01475, de=0.021756
+iter=41/150, e=1650.062, mlpd=1.358, rmse=0.01431, de=0.60755
+iter=51/150, e=1652.194, mlpd=1.354, rmse=0.01441, de=0.11118
+iter=61/150, e=1654.720, mlpd=1.358, rmse=0.01389, de=0.67713
+iter=71/150, e=1655.572, mlpd=1.357, rmse=0.01393, de=0.81669
+iter=81/150, e=1656.827, mlpd=1.363, rmse=0.01338, de=0.1468
+iter=91/150, e=1658.018, mlpd=1.363, rmse=0.01346, de=0.83858
+iter=101/150, e=1659.082, mlpd=1.363, rmse=0.01372, de=0.57241
+iter=111/150, e=1659.448, mlpd=1.36, rmse=0.01344, de=0.063448
+iter=121/150, e=1660.973, mlpd=1.363, rmse=0.01323, de=0.39169
+iter=131/150, e=1661.593, mlpd=1.362, rmse=0.01294, de=0.46857
+iter=141/150, e=1662.264, mlpd=1.362, rmse=0.01275, de=0.027579
+Iteration limit 150 reached while optimising the parameters
+Final values:
+e=1661.834, mlpd=1.363, rmse=0.01333
+Demo completed in 0.740 minutes

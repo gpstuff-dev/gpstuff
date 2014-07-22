@@ -85,6 +85,9 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   elseif numel(gp.jitterSigma2)>1
     fh_pred=@gpmc_jpred;
   elseif isfield(gp,'latent_method')
+    if strcmp(gp.latent_method, 'SVI')
+      error('GP_JPRED not implemnted for SVI')
+    end
     fh_pred=gp.fh.jpred;
   else
     error('Logical error by coder of this function!')
@@ -116,6 +119,11 @@ ip.addParamValue('predcf', [], @(x) isempty(x) || ...
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}))
+
+% Add z and zt for compatibility although not used
+ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
+
 ip.parse(gp, x, y, varargin{:});
 xt=ip.Results.xt;
 yt=ip.Results.yt;
@@ -375,7 +383,7 @@ switch gp.type
     Lav = Cv_ff-Qv_ff;   % 1 x f, Vector of diagonal elements
                          % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
     iLaKfu = zeros(size(K_fu));  % f x u,
-    n=size(x,1)
+    n=size(x,1);
     for i=1:n
         iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
     end

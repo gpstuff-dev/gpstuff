@@ -172,6 +172,9 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
     % Non-Gaussian likelihood with MCMC sampling of latents. The latent
     % variables should be used in place of observations
     lv = gp.latentValues';
+    if isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian')
+      lv = [repmat(y, 1, size(lv,2)); lv];
+    end
   end
 
   if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')
@@ -211,7 +214,13 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
         warning('gp_mc: Some of the Varf elements are less than or equal to zero. Those are set to 1e-12.') 
       end
       if nargout >= 4
-        [lpy(:,i1), Eyt, Varyt] = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
+        if isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian')
+          Eyt=Ef(:,i1);
+          Varyt=Varf(:,i1)+Gp.lik.sigma2;
+          lpy(:,i1)=norm_lpdf(yt, Eyt, sqrt(Varyt));
+        else
+          [lpy(:,i1), Eyt, Varyt] = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
+        end
         if ~isempty(Eyt)
           Ey(:,i1)=Eyt;
           Vary(:,i1)=Varyt(:);

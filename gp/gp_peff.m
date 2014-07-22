@@ -95,7 +95,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
             Lav2 = Cv_ff-Qv_ff;
 
             iLaKfu = zeros(size(K_fu));  % f x u,
-            n=size(x,1)
+            n = size(x,1);
             for i=1:n
                 iLaKfu(i,:) = K_fu(i,:)./Lav2(i);  % f x u
             end

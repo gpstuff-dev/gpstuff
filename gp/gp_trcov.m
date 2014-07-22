@@ -57,9 +57,13 @@ if ~(isfield(gp,'derivobs') && gp.derivobs)
       end
       for i=1:length(predcf)
         gpcf = gp.cf{predcf(i)};
+        if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude
+          if ~isfield(gp,'comp_cf') || (isfield(gp,'comp_cf') && sum(gp.comp_cf{1}==predcf(i)))
+            gpcf.magnSigma2=1;
+          end            
+        end
         K = K + gpcf.fh.trcov(gpcf, x1);
       end
-
       if ~isempty(gp.jitterSigma2)
         if issparse(K)
           K = K + sparse(1:n,1:n,gp.jitterSigma2,n,n);

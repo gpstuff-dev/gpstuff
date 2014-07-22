@@ -112,9 +112,9 @@ function prctmus = gp_predprctmu(gp, x, y, varargin)
     end
     if isfield(gp.lik.fh,'trcov')
       % Gaussian likelihood
-      prctmus = prctile(sampft, prct, 2);
+      prctmus = prctile(sampft', prct)';
     else
-      prctmus = prctile(gp.lik.fh.invlink(gp.lik, sampft, zt), prct, 2);
+      prctmus = prctile(gp.lik.fh.invlink(gp.lik, sampft, zt)', prct)';
     end
   else  
     % single GP 

@@ -321,9 +321,9 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask, i1)
     for i=i3
       cf = gpcf.cf{i};
       if ~savememory
-        DK = cf.fh.cfg(cf, x,x2);
+        DK = cf.fh.cfg(cf, x, [], 1);
       else
-        DK = {cf.fh.cfg(cf,x,x2,[],i1(2))};
+        DK = {cf.fh.cfg(cf, x, [], 1, i1(2))};
       end
       
       CC = 1;
@@ -578,7 +578,7 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_prod_pak;
     reccf.fh.unpak = @gpcf_prod_unpak;
-    reccf.fh.e = @gpcf_prod_lp;
+    reccf.fh.lp = @gpcf_prod_lp;
     reccf.fh.lpg = @gpcf_prod_lpg;
     reccf.fh.cfg = @gpcf_prod_cfg;
     reccf.fh.cov = @gpcf_prod_cov;

@@ -14,7 +14,12 @@ function [H,b,B,Hs] = mean_prep(gp,x,xs)
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
-  
+
+  if ~isfield(gp,'meanf')
+    % No mean functions
+    H=0;b=0;B=0;Hs=0;
+    return
+  end
 
 % Prepare variables
   Hapu = cell(1,length(gp.meanf));

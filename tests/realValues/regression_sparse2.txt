@@ -1,0 +1,14 @@
+Full GP
+ TolFun reached. Func-count 35. Final f(x)=51.3654. Elapsed time 0.26
+FIC GP
+ TolX reached. Func-count 118. Final f(x)=53.087. Elapsed time 1.25
+VAR GP
+ TolX reached. Func-count 8. Final f(x)=206.564. Elapsed time 0.09
+DTC GP
+ TolX reached. Func-count 8. Final f(x)=48.5384. Elapsed time 0.08
+
+ gp hyperparameters: 
+ 
+    1.6935   -0.6707   -2.9350
+
+Demo completed in 0.034 minutes
