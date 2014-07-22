@@ -3,7 +3,7 @@
 New features
  - Input dependent noise and signal variance.
 
-   Tolvanen, V., Jylänki, P. and Vehtari, A. (2014). Approximate Inference for
+   Tolvanen, V., Jylänki, P. and Vehtari, A. (2014). Expectation Propagation for
    Nonstationary Heteroscedastic Gaussian Process Regression. In Proceedings of IEEE
    International Workshop on Machine Learning for Signal Processing, accepted for
    publication. Preprint arXiv:1404.5443
