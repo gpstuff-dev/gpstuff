@@ -24,7 +24,7 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, varargin)
 %                  for ith case. 
 %      fcorr     - Method used for latent marginal posterior corrections. 
 %                  Default is 'off'. Possible methods are 'fact' for EP
-%                  and either 'fact' or 'cm2' for Laplace. If method is
+%                  and either 'fact', 'cm2' or 'lr' for Laplace. If method is
 %                  'on', 'fact' is used for EP and 'cm2' for Laplace.
 %      autoscale - determines if the samples are drawn from split-normal
 %                  approximation in the case of non-gaussian likelihood.
@@ -66,9 +66,7 @@ ip.addParamValue('predcf', [], @(x) isempty(x) || ...
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.addParamValue('nsamp', 1, @(x) isreal(x) && isscalar(x))
-ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'fact','cm2','off','on'}))
-ip.addParamValue('autoscale', 'off', @(x) ismember(x,{'on' 'off'}));
-ip.addParamValue('n_scale',50, @(x) isnumeric(x) && floor(x)>0);
+ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'fact','cm2','off','on','lr'}))
 if numel(varargin)==0 || isnumeric(varargin{1})
   % inputParser should handle this, but it doesn't
   ip.parse(gp, x, y, varargin{:});

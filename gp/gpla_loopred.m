@@ -233,11 +233,14 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
 
       % latent posterior
       [f, sigm2ii] = gpla_pred(gp, x, y, 'z', z, 'tstind', [], 'fcorr', fcorr);
+      % remove the jitter variance (see sigm2_t below)
+      sigm2ii  = sigm2ii-gp.jitterSigma2;
       
       % "site parameters"
       W        = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
       deriv    = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
-      sigm2_t  = 1./W;
+      % add the jitter variance (see sigm2ii above)
+      sigm2_t  = 1./W+gp.jitterSigma2;
       mu_t     = f + sigm2_t.*deriv;
       
       % "cavity parameters"
