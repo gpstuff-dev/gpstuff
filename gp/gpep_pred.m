@@ -94,7 +94,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-  ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}))
+  ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', ...
+                   'cm2', 'fact', 'on','lr'}))
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
     ip.parse(gp, x, y, varargin{:});

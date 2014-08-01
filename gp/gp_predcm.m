@@ -114,9 +114,13 @@ lp2 = zeros(nin,size(ind,1)); p = zeros(ng,size(ind,1));
 
 switch gp.latent_method
   case 'EP'
+    
+    if isequal(fcorr, 'lr')
+        [Efloo,Varfloo]=gpep_loopred(gp,x,y,'z',z);
+    end
+    
     switch fcorr
-      case 'tilted'
-      case 'fact'
+      case {'fact', 'lr'}
         [tmp, tmp, tmp, param] = gpep_e(gp_pak(gp), gp, x,y,'z',z);
         [tautilde, nutilde, muvec_i, sigm2vec_i] = ...
               deal(param.tautilde, param.nutilde, param.muvec_i, param.sigm2vec_i);
@@ -148,7 +152,12 @@ switch gp.latent_method
 %             Z_p = exp(logM0)*sqrt(2*pi)*sqrt(sigm2vec_i(ind(i1))+1./tautilde(ind(i1)))*exp(0.5*(muvec_i(ind(i1))-nutilde(ind(i1))./tautilde(ind(i1))).^2/(sigm2vec_i(ind(i1))+1./tautilde(ind(i1))));
             
             % Function handle to marginal distribution without any fcorr parameters
-            fh_p = @(f) (arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f)) - norm_lpdf(f, nutilde(ind(i1))/tautilde(ind(i1)), 1/sqrt(tautilde(ind(i1)))) + norm_lpdf(f,Ef(ind(i1)),sqrt(cii));
+            if isequal(fcorr, 'fact')
+                cav = @(f) norm_lpdf(f,Ef(ind(i1)),sqrt(cii)) - norm_lpdf(f, nutilde(ind(i1))/tautilde(ind(i1)), 1/sqrt(tautilde(ind(i1))));
+            else
+                cav = @(f) norm_lpdf(f, Efloo(ind(i1)), sqrt(Varfloo(ind(i1))));
+            end
+            fh_p = @(f) (arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f)) + cav(f);
           else
             inds=1:n;
             cii = Varf2(ind(i1));
