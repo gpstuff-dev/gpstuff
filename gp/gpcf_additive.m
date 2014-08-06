@@ -12,8 +12,8 @@ function gpcf = gpcf_additive(varargin)
 %      max_deg      - maximum order of interaction (must be less or equal
 %                     to the number of covariance functions N) [2]
 %      sigma2       - 1D array of length max_deg defining the variance for
-%                     each order of interaction [ones]
-%      sigma2_prior - cell array of priors for sigma2 [prior_logunif]
+%                     each order of interaction [0.1*ones]
+%      sigma2_prior - prior for sigma2 [prior_logunif]
 %
 %    For example N = 3, max_deg = 2:
 %      k1 = CF_1 + CF_2 + CF_3
@@ -36,64 +36,108 @@ function gpcf = gpcf_additive(varargin)
   ip.FunctionName = 'GPCF_ADDITIVE';
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('cf',[], @iscell);
-  ip.addParamValue('max_deg', 0, @isscalar);
+  ip.addParamValue('max_deg', 2, @(x) isscalar(x) && isnumeric(x) ...
+                                      && x>0 && mod(x,1) == 0);
+  ip.addParamValue('sigma2', [], @(x) isnumeric(x) && isvector(x) && all(x>0));
+  ip.addParamValue('sigma2_prior', prior_logunif(), ...
+                   @(x) isstruct(x) || isempty(x))
   ip.parse(varargin{:});
   gpcf=ip.Results.gpcf;
 
   if isempty(gpcf)
     init=true;
-    gpcf.type = 'gpcf_prod';
+    gpcf.type = 'gpcf_additive';
   else
-    if ~isfield(gpcf,'type') && ~isequal(gpcf.type,'gpcf_prod')
+    if ~isfield(gpcf,'type') && ~isequal(gpcf.type,'gpcf_additive')
       error('First argument does not seem to be a valid covariance function structure')
     end
     init=false;
   end
   
+  % Initialize parameters
+  
+  % Kernels
   if init || ~ismember('cf',ip.UsingDefaults)
-    % Initialize parameters
-    gpcf.cf = {};
-    cfs=ip.Results.cf;
-    if ~isempty(cfs)
-      for i = 1:length(cfs)
-        gpcf.cf{i} = cfs{i};
-      end
-    else
-      error('At least one covariance function has to be given in cf');
+    if length(ip.Results.cf) < 2
+      error('At least two covariance functions has to be given in cf');
     end
+    gpcf.cf = ip.Results.cf;
+  end
+  ncf = length(gpcf.cf);
+  
+  % Max degree
+  if init || ~ismember('max_deg',ip.UsingDefaults)
+    if ip.Results.max_deg <= ncf
+      gpcf.max_deg = ip.Results.max_deg;
+    else
+      warning('max_deg in additive kernel can not be greater than number of dimensions, max_deg truncated.');
+      gpcf.max_deg = ncf;
+    end
+  end
+  
+  % Degree variances
+  if init || ~ismember('sigma2',ip.UsingDefaults)
+    if isempty(ip.Results.sigma2)
+      gpcf.sigma2 = 0.1*ones(1,ncf);
+    elseif length(ip.Results.sigma2) == ncf
+      gpcf.sigma2 = ip.Results.sigma2;
+    else
+      error('Wrong number of elements in degree variance parameter vector sigma2')
+    end
+    % Ensure the right direction
+    if size(gpcf.sigma2,1) ~= 1
+      gpcf.sigma2 = gpcf.sigma2';
+    end
+  end
+  
+  % Degree variance priors
+  if init || ~ismember('sigma2_prior',ip.UsingDefaults)
+    gpcf.p.sigma2 = ip.Results.sigma2_prior;
   end
   
   if init
     % Set the function handles to the subfunctions
-    gpcf.fh.pak = @gpcf_prod_pak;
-    gpcf.fh.unpak = @gpcf_prod_unpak;
-    gpcf.fh.lp = @gpcf_prod_lp;
-    gpcf.fh.lpg = @gpcf_prod_lpg;
-    gpcf.fh.cfg = @gpcf_prod_cfg;
-    gpcf.fh.ginput = @gpcf_prod_ginput;
-    gpcf.fh.cov = @gpcf_prod_cov;
-    gpcf.fh.trcov  = @gpcf_prod_trcov;
-    gpcf.fh.trvar  = @gpcf_prod_trvar;
-    gpcf.fh.recappend = @gpcf_prod_recappend;
-    gpcf.fh.cf2ss = @gpcf_prod_cf2ss;
+    gpcf.fh.pak = @gpcf_additive_pak;
+    gpcf.fh.unpak = @gpcf_additive_unpak;
+    gpcf.fh.lp = @gpcf_additive_lp;
+    gpcf.fh.lpg = @gpcf_additive_lpg;
+    gpcf.fh.cfg = @gpcf_additive_cfg;
+    gpcf.fh.ginput = @gpcf_additive_ginput;
+    gpcf.fh.cov = @gpcf_additive_cov;
+    gpcf.fh.trcov  = @gpcf_additive_trcov;
+    gpcf.fh.trvar  = @gpcf_additive_trvar;
+    gpcf.fh.recappend = @gpcf_additive_recappend;
+    gpcf.fh.cf2ss = @gpcf_additive_cf2ss;
   end
 
 end
 
-function [w, s, h] = gpcf_prod_pak(gpcf)
-%GPCF_PROD_PAK  Combine GP covariance function parameters into one vector
+function [w, s, h] = gpcf_additive_pak(gpcf)
+%GPCF_ADDITIVE_PAK  Combine GP covariance function parameters into one vector
 %
 %  Description
-%    W = GPCF_PROD_PAK(GPCF, W) loops through all the covariance
+%    W = GPCF_ADDITIVE_PAK(GPCF, W) loops through all the covariance
 %    functions and packs their parameters into one vector as
 %    described in the respective functions. This is a mandatory 
 %    subfunction used for example in energy and gradient computations.
 %
 %  See also
-%    GPCF_PROD_UNPAK
+%    GPCF_ADDITIVE_UNPAK
   
   ncf = length(gpcf.cf);
   w = []; s = {}; h=[];
+  
+  if ~isempty(gpcf.p.sigma2)
+    w = [w log(gpcf.sigma2)];
+    s = [s; sprintf('log(additive.sigma2 x %d)',numel(gpcf.sigma2))];
+    h = [h ones(1,numel(gpcf.sigma2))];
+    % Hyperparameters of lengthScale
+    [wh, sh, hh] = gpcf.p.sigma2.fh.pak(gpcf.p.sigma2);
+    sh=strcat(repmat('prior-', size(sh,1),1),sh);
+    w = [w wh];
+    s = [s; sh];
+    h = [h 1+hh];
+  end
   
   for i=1:ncf
     cf = gpcf.cf{i};
@@ -104,20 +148,30 @@ function [w, s, h] = gpcf_prod_pak(gpcf)
   end
 end
 
-function [gpcf, w] = gpcf_prod_unpak(gpcf, w)
-%GPCF_PROD_UNPAK  Sets the covariance function parameters into
+function [gpcf, w] = gpcf_additive_unpak(gpcf, w)
+%GPCF_ADDITIVE_UNPAK  Sets the covariance function parameters into
 %                 the structures
 %
 %  Description
-%    [GPCF, W] = GPCF_PROD_UNPAK(GPCF, W) loops through all the
+%    [GPCF, W] = GPCF_ADDITIVE_UNPAK(GPCF, W) loops through all the
 %    covariance functions and unpacks their parameters from W to
 %    each covariance function structure. This is a mandatory 
 %    subfunction used for example in energy and gradient computations.
 % 
 %  See also
-%    GPCF_PROD_PAK
+%    GPCF_ADDITIVE_PAK
 %
   ncf = length(gpcf.cf);
+  
+  if ~isempty(gpcf.p.sigma2)
+    i1=1;
+    i2=length(gpcf.sigma2);
+    gpcf.sigma2 = exp(w(i1:i2));
+    w = w(i2+1:end);
+    % Hyperparameters of lengthScale
+    [p, w] = gpcf.p.sigma2.fh.unpak(gpcf.p.sigma2, w);
+    gpcf.p.sigma2 = p;
+  end
   
   for i=1:ncf
     cf = gpcf.cf{i};
@@ -127,17 +181,17 @@ function [gpcf, w] = gpcf_prod_unpak(gpcf, w)
 
 end
 
-function lp = gpcf_prod_lp(gpcf)
-%GPCF_PROD_LP  Evaluate the log prior of covariance function parameters
+function lp = gpcf_additive_lp(gpcf)
+%GPCF_ADDITIVE_LP  Evaluate the log prior of covariance function parameters
 %
 %  Description
-%    LP = GPCF_PROD_LP(GPCF, X, T) takes a covariance function
+%    LP = GPCF_ADDITIVE_LP(GPCF, X, T) takes a covariance function
 %    structure GPCF and returns log(p(th)), where th collects the
 %    parameters. This is a mandatory subfunction used for example 
 %    in energy computations.
 %
 %  See also
-%    GPCF_PROD_PAK, GPCF_PROD_UNPAK, GPCF_PROD_LPG, GP_E
+%    GPCF_ADDITIVE_PAK, GPCF_ADDITIVE_UNPAK, GPCF_ADDITIVE_LPG, GP_E
   
   lp = 0;
   ncf = length(gpcf.cf);
@@ -148,18 +202,18 @@ function lp = gpcf_prod_lp(gpcf)
   
 end
 
-function lpg = gpcf_prod_lpg(gpcf)
-%GPCF_PROD_LPG  Evaluate gradient of the log prior with respect
+function lpg = gpcf_additive_lpg(gpcf)
+%GPCF_ADDITIVE_LPG  Evaluate gradient of the log prior with respect
 %               to the parameters.
 %
 %  Description
-%    LPG = GPCF_PROD_LPG(GPCF) takes a covariance function
+%    LPG = GPCF_ADDITIVE_LPG(GPCF) takes a covariance function
 %    structure GPCF and returns LPG = d log (p(th))/dth, where th
 %    is the vector of parameters. This is a mandatory subfunction 
 %    used for example in gradient computations.
 %
 %  See also
-%    GPCF_PROD_PAK, GPCF_PROD_UNPAK, GPCF_PROD_LP, GP_G
+%    GPCF_ADDITIVE_PAK, GPCF_ADDITIVE_UNPAK, GPCF_ADDITIVE_LP, GP_G
   lpg = [];
   ncf = length(gpcf.cf);
   
@@ -171,32 +225,32 @@ function lpg = gpcf_prod_lpg(gpcf)
 
 end
 
-function DKff = gpcf_prod_cfg(gpcf, x, x2, mask, i1)
-%GPCF_PROD_CFG  Evaluate gradient of covariance function
+function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
+%GPCF_ADDITIVE_CFG  Evaluate gradient of covariance function
 %               with respect to the parameters.
 %
 %  Description
-%    DKff = GPCF_PROD_CFG(GPCF, X) takes a covariance function
+%    DKff = GPCF_ADDITIVE_CFG(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X) with
 %    respect to th (cell array with matrix elements). This is a 
 %    mandatory subfunction used in gradient computations.
 %
-%    DKff = GPCF_PROD_CFG(GPCF, X, X2) takes a covariance
+%    DKff = GPCF_ADDITIVE_CFG(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to th (cell array with matrix
 %    elements). This subfunction is needed when using sparse 
 %    approximations (e.g. FIC).
 %
-%    DKff = GPCF_PROD_CFG(GPCF, X, [], MASK) takes a covariance
+%    DKff = GPCF_ADDITIVE_CFG(GPCF, X, [], MASK) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the diagonal of gradients of covariance matrix
 %    Kff = k(X,X2) with respect to th (cell array with matrix
 %    elements). This subfunction is needed when using sparse 
 %    approximations (e.g. FIC).
 %
-%    DKff = GPCF_PROD_CFG(GPCF, X, X2, [], i) takes a covariance
+%    DKff = GPCF_ADDITIVE_CFG(GPCF, X, X2, [], i) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
@@ -204,7 +258,7 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask, i1)
 %    memory save option in gp_set.
 %
 %  See also
-%    GPCF_PROD_PAK, GPCF_PROD_UNPAK, GPCF_PROD_LP, GP_G
+%    GPCF_ADDITIVE_PAK, GPCF_ADDITIVE_UNPAK, GPCF_ADDITIVE_LP, GP_G
 
   [n, m] =size(x);
   ncf = length(gpcf.cf);
@@ -358,26 +412,26 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask, i1)
 end
 
 
-function DKff = gpcf_prod_ginput(gpcf, x, x2, i1)
-%GPCF_PROD_GINPUT  Evaluate gradient of covariance function with 
+function DKff = gpcf_additive_ginput(gpcf, x, x2, i1)
+%GPCF_ADDITIVE_GINPUT  Evaluate gradient of covariance function with 
 %                  respect to x
 %
 %  Description
-%    DKff = GPCF_PROD_GINPUT(GPCF, X) takes a covariance function
+%    DKff = GPCF_ADDITIVE_GINPUT(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X) with
 %    respect to X (cell array with matrix elements). This subfunction 
 %    is needed when computing gradients with respect to inducing 
 %    inputs in sparse approximations.
 %
-%    DKff = GPCF_PROD_GINPUT(GPCF, X, X2) takes a covariance
+%    DKff = GPCF_ADDITIVE_GINPUT(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to X (cell array with matrix elements).
 %    This subfunction is needed when computing gradients with 
 %    respect to inducing inputs in sparse approximations.
 %
-%    DKff = GPCF_PROD_GINPUT(GPCF, X, X2, i) takes a covariance
+%    DKff = GPCF_ADDITIVE_GINPUT(GPCF, X, X2, i) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2), or k(X,X) if X2 is empty, with respect to ith
@@ -386,7 +440,7 @@ function DKff = gpcf_prod_ginput(gpcf, x, x2, i1)
 %    gp_set.
 %
 %  See also
-%    GPCF_PROD_PAK, GPCF_PROD_UNPAK, GPCF_PROD_LP, GP_G
+%    GPCF_ADDITIVE_PAK, GPCF_ADDITIVE_UNPAK, GPCF_ADDITIVE_LP, GP_G
   
   [n, m] =size(x);
 
@@ -484,11 +538,11 @@ function DKff = gpcf_prod_ginput(gpcf, x, x2, i1)
 end
 
 
-function C = gpcf_prod_cov(gpcf, x1, x2)
-%GP_PROD_COV  Evaluate covariance matrix between two input vectors
+function C = gpcf_additive_cov(gpcf, x1, x2)
+%GP_ADDITIVE_COV  Evaluate covariance matrix between two input vectors
 %
 %  Description         
-%    C = GP_PROD_COV(GP, TX, X) takes in covariance function of a
+%    C = GP_ADDITIVE_COV(GP, TX, X) takes in covariance function of a
 %    Gaussian process GP and two matrixes TX and X that contain
 %    input vectors to GP. Returns covariance matrix C. Every
 %    element ij of C contains covariance between inputs i in TX
@@ -497,7 +551,7 @@ function C = gpcf_prod_cov(gpcf, x1, x2)
 %
 %
 %  See also
-%    GPCF_PROD_TRCOV, GPCF_PROD_TRVAR, GP_COV, GP_TRCOV
+%    GPCF_ADDITIVE_TRCOV, GPCF_ADDITIVE_TRVAR, GP_COV, GP_TRCOV
   
   if isempty(x2)
     x2=x1;
@@ -519,11 +573,11 @@ function C = gpcf_prod_cov(gpcf, x1, x2)
   end        
 end
 
-function C = gpcf_prod_trcov(gpcf, x)
-%GP_PROD_TRCOV     Evaluate training covariance matrix of inputs
+function C = gpcf_additive_trcov(gpcf, x)
+%GP_ADDITIVE_TRCOV     Evaluate training covariance matrix of inputs
 %
 %  Description
-%    C = GP_PROD_TRCOV(GP, TX) takes in covariance function of a
+%    C = GP_ADDITIVE_TRCOV(GP, TX) takes in covariance function of a
 %    Gaussian process GP and matrix TX that contains training
 %    input vectors. Returns covariance matrix C. Every element ij
 %    of C contains covariance between inputs i and j in TX. This 
@@ -531,7 +585,7 @@ function C = gpcf_prod_trcov(gpcf, x)
 %    energy computations.
 %
 %  See also
-%    GPCF_PROD_COV, GPCF_PROD_TRVAR, GP_COV, GP_TRCOV
+%    GPCF_ADDITIVE_COV, GPCF_ADDITIVE_TRVAR, GP_COV, GP_TRCOV
   ncf = length(gpcf.cf);
   
   % evaluate the individual covariance functions
@@ -542,18 +596,18 @@ function C = gpcf_prod_trcov(gpcf, x)
   end
 end
 
-function C = gpcf_prod_trvar(gpcf, x)
-% GP_PROD_TRVAR     Evaluate training variance vector
+function C = gpcf_additive_trvar(gpcf, x)
+% GP_ADDITIVE_TRVAR     Evaluate training variance vector
 %
 %  Description
-%    C = GP_PROD_TRVAR(GPCF, TX) takes in covariance function of
+%    C = GP_ADDITIVE_TRVAR(GPCF, TX) takes in covariance function of
 %    a Gaussian process GPCF and matrix TX that contains training
 %    inputs. Returns variance vector C. Every element i of C
 %    contains variance of input i in TX. This is a mandatory 
 %    subfunction used for example in prediction and energy computations.
 %
 %  See also
-%    GPCF_PROD_COV, GP_COV, GP_TRCOV
+%    GPCF_ADDITIVE_COV, GP_COV, GP_TRCOV
 
 
   ncf = length(gpcf.cf);
@@ -566,11 +620,11 @@ function C = gpcf_prod_trvar(gpcf, x)
   end
 end
 
-function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
+function reccf = gpcf_additive_recappend(reccf, ri, gpcf)
 %RECAPPEND  Record append
 %
 %  Description
-%    RECCF = GPCF_PROD_RECAPPEND(RECCF, RI, GPCF) takes a
+%    RECCF = GPCF_ADDITIVE_RECAPPEND(RECCF, RI, GPCF) takes a
 %    covariance function record structure RECCF, record index RI
 %    and covariance function structure GPCF with the current MCMC
 %    samples of the parameters. Returns RECCF which contains all
@@ -592,15 +646,15 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
     end
     
     % Set the function handles
-    reccf.fh.pak = @gpcf_prod_pak;
-    reccf.fh.unpak = @gpcf_prod_unpak;
-    reccf.fh.lp = @gpcf_prod_lp;
-    reccf.fh.lpg = @gpcf_prod_lpg;
-    reccf.fh.cfg = @gpcf_prod_cfg;
-    reccf.fh.cov = @gpcf_prod_cov;
-    reccf.fh.trcov  = @gpcf_prod_trcov;
-    reccf.fh.trvar  = @gpcf_prod_trvar;
-    reccf.fh.recappend = @gpcf_prod_recappend;
+    reccf.fh.pak = @gpcf_additive_pak;
+    reccf.fh.unpak = @gpcf_additive_unpak;
+    reccf.fh.lp = @gpcf_additive_lp;
+    reccf.fh.lpg = @gpcf_additive_lpg;
+    reccf.fh.cfg = @gpcf_additive_cfg;
+    reccf.fh.cov = @gpcf_additive_cov;
+    reccf.fh.trcov  = @gpcf_additive_trcov;
+    reccf.fh.trvar  = @gpcf_additive_trvar;
+    reccf.fh.recappend = @gpcf_additive_recappend;
   else
     % Append to the record
     
@@ -613,8 +667,8 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
   end
 end
 
-function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_prod_cf2ss(gpcf)
-%GPCF_PROD_CF2SS Convert the covariance function to state space form
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_additive_cf2ss(gpcf)
+%GPCF_ADDITIVE_CF2SS Convert the covariance function to state space form
 %
 %  Description
 %    Convert the sum of two covariance functions to the corresponding
@@ -648,7 +702,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_prod_cf2ss(gpcf)
   
   % Return model matrices, derivatives and parameter information
   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
-      cf_prod_to_ss(cf2ssvect);
+      cf_additive_to_ss(cf2ssvect);
   
 end
 
