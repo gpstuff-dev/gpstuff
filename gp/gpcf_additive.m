@@ -79,7 +79,7 @@ function gpcf = gpcf_additive(varargin)
   if init || ~ismember('sigma2',ip.UsingDefaults)
     if isempty(ip.Results.sigma2)
       gpcf.sigma2 = 0.1*ones(1,ncf);
-    elseif length(ip.Results.sigma2) == ncf
+    elseif length(ip.Results.sigma2) == gpcf.max_deg
       gpcf.sigma2 = ip.Results.sigma2;
     else
       error('Wrong number of elements in degree variance parameter vector sigma2')
@@ -93,6 +93,11 @@ function gpcf = gpcf_additive(varargin)
   % Degree variance priors
   if init || ~ismember('sigma2_prior',ip.UsingDefaults)
     gpcf.p.sigma2 = ip.Results.sigma2_prior;
+  end
+  
+  % Ensure sigma2 matches max_deg
+  if length(gpcf.sigma2) ~= gpcf.max_deg
+    error('Parameters sigma2 and max_deg sizes does not match')
   end
   
   if init
@@ -565,12 +570,79 @@ function C = gpcf_additive_cov(gpcf, x1, x2)
 
   ncf = length(gpcf.cf);
   
-  % evaluate the individual covariance functions
-  C = 1;
-  for i=1:ncf
-    cf = gpcf.cf{i};
-    C = C.*cf.fh.cov(cf, x1, x2);
-  end        
+  if m1~=ncf 
+    error('input dimension does not match with number of additive kernels')
+  end
+  
+  r = gpcf.max_deg;
+  
+  if r == 1
+    % Only one degree
+    C = 0;
+    for d = 1:ncf
+      cf = gpcf.cf{d};
+      C = C + cf.fh.cov(cf, x1(:,d), x2(:,d));
+    end
+    C = C.*gpcf.sigma2(1);
+  
+  elseif r == 2
+    % Only two degrees
+    zs = zeros(n1,n2,ncf);
+    for d = 1:ncf
+      cf = gpcf.cf{d};
+      zs(:,:,d) = cf.fh.cov(cf, x1(:,d), x2(:,d));
+    end
+    C = 0;
+    for i1 = 1:ncf-1
+      for i2 = i1+1:ncf
+        C = C + zs(:,:,i1).*zs(:,:,i2);
+      end
+    end
+    C = C.*gpcf.sigma2(2);
+    C = C + sum(zs,3).*gpcf.sigma2(1);
+    
+  elseif r > 2
+    % Over two degrees ... use Newton-Girard formulae
+    zs = zeros(n1,n2,ncf);
+    for d = 1:ncf
+      cf = gpcf.cf{d};
+      zs(:,:,d) = cf.fh.cov(cf, x1(:,d), x2(:,d));
+    end
+    sk = zeros(n1,n2,r);
+    sk(:,:,1) = sum(zs,3);
+    for i = 2:r
+      sk(:,:,i) = sum(zs.^i, 3);
+    end
+    clear zs
+    es = zeros(n1,n2,r);
+    es(:,:,1) = sk(:,:,1);
+    for i = 2:r
+      presign = true;
+      for k = 1:i-1
+        if presign
+          es(:,:,i) = es(:,:,i) + es(:,:,i-k).*sk(:,:,k);
+          presign = false;
+        else
+          es(:,:,i) = es(:,:,i) - es(:,:,i-k).*sk(:,:,k);
+          presign = true;
+        end
+      end
+      if presign
+        es(:,:,i) = es(:,:,i) + sk(:,:,i);
+      else
+        es(:,:,i) = es(:,:,i) - sk(:,:,i);
+      end
+      es(:,:,i) = es(:,:,i)./i;
+    end
+    for i = 1:r
+      es(:,:,i) = es(:,:,i).*gpcf.sigma2(i);
+    end
+    C = sum(es,3);
+    
+  else
+    error('Invalid max_deg parameter')
+  end
+       
 end
 
 function C = gpcf_additive_trcov(gpcf, x)
@@ -586,13 +658,82 @@ function C = gpcf_additive_trcov(gpcf, x)
 %
 %  See also
 %    GPCF_ADDITIVE_COV, GPCF_ADDITIVE_TRVAR, GP_COV, GP_TRCOV
+  
+  [n,m]=size(x);
+
   ncf = length(gpcf.cf);
   
-  % evaluate the individual covariance functions
-  C = 1;
-  for i=1:ncf
-    cf = gpcf.cf{i};
-    C = C.*cf.fh.trcov(cf, x);
+  if m~=ncf 
+    error('input dimension does not match with number of additive kernels')
+  end
+  
+  r = gpcf.max_deg;
+  
+  if r == 1
+    % Only one degree
+    C = 0;
+    for d = 1:ncf
+      cf = gpcf.cf{d};
+      C = C + cf.fh.trcov(cf, x(:,d));
+    end
+    C = C.*gpcf.sigma2(1);
+  
+  elseif r == 2
+    % Only two degrees
+    zs = zeros(n,n,ncf);
+    for d = 1:ncf
+      cf = gpcf.cf{d};
+      zs(:,:,d) = cf.fh.trcov(cf, x(:,d));
+    end
+    C = 0;
+    for i1 = 1:ncf-1
+      for i2 = i1+1:ncf
+        C = C + zs(:,:,i1).*zs(:,:,i2);
+      end
+    end
+    C = C.*gpcf.sigma2(2);
+    C = C + sum(zs,3).*gpcf.sigma2(1);
+    
+  elseif r > 2
+    % Over two degrees ... use Newton-Girard formulae
+    zs = zeros(n,n,ncf);
+    for d = 1:ncf
+      cf = gpcf.cf{d};
+      zs(:,:,d) = cf.fh.trcov(cf, x(:,d));
+    end
+    sk = zeros(n,n,r);
+    sk(:,:,1) = sum(zs,3);
+    for i = 2:r
+      sk(:,:,i) = sum(zs.^i, 3);
+    end
+    clear zs
+    es = zeros(n,n,r);
+    es(:,:,1) = sk(:,:,1);
+    for i = 2:r
+      presign = true;
+      for k = 1:i-1
+        if presign
+          es(:,:,i) = es(:,:,i) + es(:,:,i-k).*sk(:,:,k);
+          presign = false;
+        else
+          es(:,:,i) = es(:,:,i) - es(:,:,i-k).*sk(:,:,k);
+          presign = true;
+        end
+      end
+      if presign
+        es(:,:,i) = es(:,:,i) + sk(:,:,i);
+      else
+        es(:,:,i) = es(:,:,i) - sk(:,:,i);
+      end
+      es(:,:,i) = es(:,:,i)./i;
+    end
+    for i = 1:r
+      es(:,:,i) = es(:,:,i).*gpcf.sigma2(i);
+    end
+    C = sum(es,3);
+    
+  else
+    error('Invalid max_deg parameter')
   end
 end
 
@@ -610,14 +751,83 @@ function C = gpcf_additive_trvar(gpcf, x)
 %    GPCF_ADDITIVE_COV, GP_COV, GP_TRCOV
 
 
+  [n,m]=size(x);
+
   ncf = length(gpcf.cf);
   
-  % evaluate the individual covariance functions
-  C = 1;
-  for i=1:ncf
-    cf = gpcf.cf{i};
-    C = C.*cf.fh.trvar(cf, x);
+  if m~=ncf 
+    error('input dimension does not match with number of additive kernels')
   end
+  
+  r = gpcf.max_deg;
+  
+  if r == 1
+    % Only one degree
+    C = 0;
+    for d = 1:ncf
+      cf = gpcf.cf{d};
+      C = C + cf.fh.trvar(cf, x(:,d));
+    end
+    C = C.*gpcf.sigma2(1);
+  
+  elseif r == 2
+    % Only two degrees
+    zs = zeros(n,ncf);
+    for d = 1:ncf
+      cf = gpcf.cf{d};
+      zs(:,d) = cf.fh.trvar(cf, x(:,d));
+    end
+    C = 0;
+    for i1 = 1:ncf-1
+      for i2 = i1+1:ncf
+        C = C + zs(:,i1).*zs(:,i2);
+      end
+    end
+    C = C.*gpcf.sigma2(2);
+    C = C + sum(zs,2).*gpcf.sigma2(1);
+    
+  elseif r > 2
+    % Over two degrees ... use Newton-Girard formulae
+    zs = zeros(n,ncf);
+    for d = 1:ncf
+      cf = gpcf.cf{d};
+      zs(:,d) = cf.fh.trvar(cf, x(:,d));
+    end
+    sk = zeros(n,r);
+    sk(:,1) = sum(zs,2);
+    for i = 2:r
+      sk(:,i) = sum(zs.^i, 2);
+    end
+    clear zs
+    es = zeros(n,r);
+    es(:,1) = sk(:,1);
+    for i = 2:r
+      presign = true;
+      for k = 1:i-1
+        if presign
+          es(:,i) = es(:,i) + es(:,i-k).*sk(:,k);
+          presign = false;
+        else
+          es(:,i) = es(:,i) - es(:,i-k).*sk(:,k);
+          presign = true;
+        end
+      end
+      if presign
+        es(:,i) = es(:,i) + sk(:,i);
+      else
+        es(:,i) = es(:,i) - sk(:,i);
+      end
+      es(:,i) = es(:,i)./i;
+    end
+    for i = 1:r
+      es(:,i) = es(:,i).*gpcf.sigma2(i);
+    end
+    C = sum(es,2);
+    
+  else
+    error('Invalid max_deg parameter')
+  end
+  
 end
 
 function reccf = gpcf_additive_recappend(reccf, ri, gpcf)
