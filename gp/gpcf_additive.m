@@ -846,9 +846,11 @@ function reccf = gpcf_additive_recappend(reccf, ri, gpcf)
   
   if nargin == 2
     % Initialize the record
-    reccf.type = 'gpcf_prod';
+    reccf.type = 'gpcf_additive';
 
     % Initialize parameters
+    reccf.sigma2=[];
+    
     ncf = length(ri.cf);
     for i=1:ncf
       cf = ri.cf{i};
@@ -865,8 +867,21 @@ function reccf = gpcf_additive_recappend(reccf, ri, gpcf)
     reccf.fh.trcov  = @gpcf_additive_trcov;
     reccf.fh.trvar  = @gpcf_additive_trvar;
     reccf.fh.recappend = @gpcf_additive_recappend;
+    reccf.p=[];
+    reccf.p.sigma2=[];
+    if isfield(ri.p,'sigma2') && ~isempty(ri.p.sigma2)
+      reccf.p.sigma2 = ri.p.sigma2;
+    end
+    
   else
     % Append to the record
+    gpp = gpcf.p;
+    
+    % record sigma2
+    reccf.sigma2(ri,:) = gpcf.sigma2;
+    if isfield(gpp,'sigma2') && ~isempty(gpp.sigma2)
+      reccf.p.sigma2 = gpp.sigma2.fh.recappend(reccf.p.sigma2, ri, gpcf.p.sigma2);
+    end
     
     % Loop over all of the covariance functions
     ncf = length(gpcf.cf);
