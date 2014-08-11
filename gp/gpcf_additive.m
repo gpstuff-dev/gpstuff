@@ -712,7 +712,8 @@ function DKff = gpcf_additive_ginput(gpcf, x, x2, i1)
 %    GPCF_ADDITIVE_PAK, GPCF_ADDITIVE_UNPAK, GPCF_ADDITIVE_LP, GP_G
   
   [n, m] =size(x);
-
+  r = gpcf.max_deg;
+  
   if nargin==4
     % Use memory save option
     savememory=1;
@@ -734,9 +735,10 @@ function DKff = gpcf_additive_ginput(gpcf, x, x2, i1)
     ncf = length(gpcf.cf);
     
     % evaluate the individual covariance functions
+    zs = zeros(n,n,ncf);
     for i=1:ncf
       cf = gpcf.cf{i};
-      C{i} = cf.fh.trcov(cf, x);
+      zs(:,:,i) = cf.fh.trcov(cf, x);
     end
     
     % Evaluate the gradients
@@ -753,12 +755,14 @@ function DKff = gpcf_additive_ginput(gpcf, x, x2, i1)
       else
         DK = cf.fh.ginput(cf, x, [], i1);
       end
-
-      CC = 1;
-      for kk = ind(ind~=i)
-        CC = CC.*C{kk};
-      end
       
+      CC = gpcf.sigma2(1).*ones(n,n);
+      if r > 1
+        es = degrees(r-1, zs, ind(ind~=i));
+        for j = 2:r
+          CC = CC + gpcf.sigma2(j).*es(:,:,j-1);
+        end
+      end      
       for j = 1:length(DK)
         DKff{j} = DKff{j} + DK{j}.*CC;
       end
@@ -773,9 +777,10 @@ function DKff = gpcf_additive_ginput(gpcf, x, x2, i1)
     ncf = length(gpcf.cf);
     
     % evaluate the individual covariance functions
+    zs = zeros(n,n,ncf);
     for i=1:ncf
       cf = gpcf.cf{i};
-      C{i} = cf.fh.cov(cf, x, x2);
+      zs(:,:,i) = cf.fh.cov(cf, x, x2);
     end
     
     % Evaluate the gradients
@@ -793,11 +798,13 @@ function DKff = gpcf_additive_ginput(gpcf, x, x2, i1)
         DK = cf.fh.ginput(cf, x, x2, i1);
       end
       
-      CC = 1;
-      for kk = ind(ind~=i)
-        CC = CC.*C{kk};
-      end
-      
+      CC = gpcf.sigma2(1).*ones(n,n);
+      if r > 1
+        es = degrees(r-1, zs, ind(ind~=i));
+        for j = 2:r
+          CC = CC + gpcf.sigma2(j).*es(:,:,j-1);
+        end
+      end      
       for j = 1:length(DK)
         DKff{j} = DKff{j} + DK{j}.*CC;
       end
