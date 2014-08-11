@@ -244,6 +244,159 @@ function lpg = gpcf_additive_lpg(gpcf)
 
 end
 
+
+
+function es = degrees(r, zs, inds)
+% DEGREEs - Internal function used to calculate the covariance degree
+% components e_k(z_inds(1), ..., z_inds(n))
+%
+%   Parameters:
+%     r    - max degree
+%     zs   - all the covariances of the underlying kernels
+%     inds - indexes of the used kernels (empty means all)
+%
+%   N.B. Here all Cs and inds are given instead using slicing because the
+%   latter is memory inefficient. Compare the memory usage in the
+%   following:
+%
+%     inds = 1:100;
+%     zs = rand(1000,1000,100);
+%     
+%     % Memory inefficient
+%     t = sum(zs(:,:,inds(inds~=13)),3);
+%
+%     % Memory efficient
+%     t = zeros(1000,1000);
+%     for i = inds(inds~=13)
+%       t = t + zs(:,:,i);
+%     end
+%     
+  
+  if isempty(inds)
+    
+    ncf = size(zs,3);
+    
+    if r == 1
+      % Only one degree (implemented here for completeness)
+      es = sum(zs,3);
+
+    elseif r == 2
+      % Only two degrees (implemented here for completeness)
+      es = zeros(size(zs,1),size(zs,2),r);
+      es(:,:,1) = sum(zs,3);
+      for i1 = 1:ncf-1
+        for i2 = i1+1:ncf
+          es(:,:,2) = es(:,:,2) + zs(:,:,i1).*zs(:,:,i2);
+        end
+      end
+
+    elseif r > 2
+      % Over two degrees ... use Newton-Girard formulae
+      sk = zeros(size(zs,1),size(zs,2),r);
+      sk(:,:,1) = sum(zs,3);
+      for i = 2:r
+        sk(:,:,i) = sum(zs.^i, 3);
+      end
+      es = zeros(size(zs,1),size(zs,2),r);
+      es(:,:,1) = sk(:,:,1);
+      for i = 2:r
+        presign = true;
+        for k = 1:i-1
+          if presign
+            es(:,:,i) = es(:,:,i) + es(:,:,i-k).*sk(:,:,k);
+            presign = false;
+          else
+            es(:,:,i) = es(:,:,i) - es(:,:,i-k).*sk(:,:,k);
+            presign = true;
+          end
+        end
+        if presign
+          es(:,:,i) = es(:,:,i) + sk(:,:,i);
+        else
+          es(:,:,i) = es(:,:,i) - sk(:,:,i);
+        end
+        es(:,:,i) = es(:,:,i)./i;
+      end
+
+    else
+      error('Invalid max_deg parameter')
+    end
+  
+  else
+    % Use only selected kernels
+    
+    % Check direction
+    if r > length(inds)
+      error('Invalid max degree relative to inds')
+    end
+    if size(inds,1) ~= 1
+      inds = inds';
+      if size(inds,1) ~= 1
+        error('Invalid parameter inds')
+      end
+    end
+    
+    if r == 1
+      % Only one degree
+      es = 0;
+      for i = inds
+        es = es + zs(:,:,i);
+      end
+
+    elseif r == 2
+      % Only two degrees
+      es = zeros(size(zs,1),size(zs,2),r);
+      for i = inds
+        es(:,:,1) = es(:,:,1) + zs(:,:,i);
+      end
+      for i1 = 1:length(inds)-1
+        for i2 = i1+1:length(inds)
+          es(:,:,2) = es(:,:,2) + zs(:,:,inds(i1)).*zs(:,:,inds(i2));
+        end
+      end
+
+    elseif r > 2
+      % Over two degrees ... use Newton-Girard formulae
+      sk = zeros(size(zs,1),size(zs,2),r);
+      for i = inds
+        sk(:,:,1) = sk(:,:,1) + zs(:,:,i);
+      end
+      for i = 2:r
+        for j = inds
+          sk(:,:,i) = sk(:,:,i) + zs(:,:,j).^i;
+        end
+      end
+      es = zeros(size(zs,1),size(zs,2),r);
+      es(:,:,1) = sk(:,:,1);
+      for i = 2:r
+        presign = true;
+        for k = 1:i-1
+          if presign
+            es(:,:,i) = es(:,:,i) + es(:,:,i-k).*sk(:,:,k);
+            presign = false;
+          else
+            es(:,:,i) = es(:,:,i) - es(:,:,i-k).*sk(:,:,k);
+            presign = true;
+          end
+        end
+        if presign
+          es(:,:,i) = es(:,:,i) + sk(:,:,i);
+        else
+          es(:,:,i) = es(:,:,i) - sk(:,:,i);
+        end
+        es(:,:,i) = es(:,:,i)./i;
+      end
+
+    else
+      error('Invalid max_deg parameter')
+    end
+    
+  end
+  
+end
+
+
+
 function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
 %GPCF_ADDITIVE_CFG  Evaluate gradient of covariance function
 %               with respect to the parameters.
@@ -281,30 +434,35 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
 
   [n, m] =size(x);
   ncf = length(gpcf.cf);
+  r = gpcf.max_deg;
 
   DKff = {};
 
   if nargin==5
     % Use memory save option
     savememory=1;
-    i3=0;
+    i3 = zeros(1,ncf);
     for k=1:ncf
       % Number of hyperparameters for each covariance function
-      cf=gpcf.cf{k};
-      i3(k)=cf.fh.cfg(cf,[],[],[],0);
+      cf = gpcf.cf{k};
+      i3(k) = cf.fh.cfg(cf,[],[],[],0);
     end
     if i1==0
       % Return number of hyperparameters
-      DKff=sum(i3);
+      DKff = sum(i3) + gpcf.max_deg;
       return
     end
-    % Help indices
-    i3=cumsum(i3);
-    ind=find(cumsum(i3 >= i1)==1);
-    if ind>1
-      i1=[ind i1-i3(ind-1)];
-    else
-      i1=[ind i1];
+    if i1 > gpcf.max_deg
+      i1 = i1 - gpcf.max_deg;
+      % The parameter belongs to one of the underlying kernels
+      % Now i1 is [kernel_index, param_index_in_that_kernel]
+      i3=cumsum(i3);
+      ind=find(cumsum(i3 >= i1)==1);
+      if ind>1
+        i1=[ind i1-i3(ind-1)];
+      else
+        i1=[ind i1];
+      end
     end
   else
     savememory=0;
@@ -317,37 +475,69 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
 
   % evaluate the gradient for training covariance
   if nargin == 2 || (isempty(x2) && isempty(mask))
-        
+    
     % evaluate the individual covariance functions
+    zs = zeros(n,n,ncf);
     for i=1:ncf
       cf = gpcf.cf{i};
-      C{i} = cf.fh.trcov(cf, x);
+      zs(:,:,i) = cf.fh.trcov(cf, x);
     end
     
     % Evaluate the gradients
     ind = 1:ncf;
-    DKff = {};
+    
     if ~savememory
-      i3=1:ncf;
-    else
-      i3=i1(1);
-    end
-    for i=i3
-      cf = gpcf.cf{i};
-      if ~savememory
-        DK = cf.fh.cfg(cf, x);
-      else
-        DK = {cf.fh.cfg(cf,x,[],[],i1(2))};
+      
+      DKff = {};
+      
+      % Order variances sigma2
+      es = degrees(r, zs, []);
+      for i = 1:r
+        % dlog(p) ... See NOTE above
+        DKff{end+1} = gpcf.sigma2(i).*es(:,:,i);
       end
       
-      CC = 1;
-      for kk = ind(ind~=i)
-        CC = CC.*C{kk};
+      % Subkernel hyperparameters
+      for i=1:ncf
+        cf = gpcf.cf{i};
+        DK = cf.fh.cfg(cf, x);
+        
+        CC = gpcf.sigma2(1).*ones(n,n);
+        if r > 1
+          es = degrees(r-1, zs, ind(ind~=i));
+          for j = 2:r
+            CC = CC + gpcf.sigma2(j).*es(:,:,j-1);
+          end
+        end
+        for j = 1:length(DK)
+          DKff{end+1} = DK{j}.*CC;
+        end
       end
-      for j = 1:length(DK)
-        DKff{end+1} = DK{j}.*CC;
+      
+    else
+      if length(i1) == 1
+        % Order variance sigma2
+        es = degrees(i1, zs, []);
+        % dlog(p) ... See NOTE above
+        DKff = gpcf.sigma2(i1).*es(:,:,end);
+      else
+        
+        cf = gpcf.cf{i1(1)};
+        DK = cf.fh.cfg(cf,x,[],[],i1(2));
+
+        CC = gpcf.sigma2(1).*ones(n,n);
+        if r > 1
+          es = degrees(r-1, zs, ind(ind~=i1(1)));
+          for j = 2:r
+            CC = CC + gpcf.sigma2(j).*es(:,:,j-1);
+          end
+        end
+        DKff = DK.*CC;
+        
       end
+      
     end
+    
     
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
   elseif nargin == 3 || isempty(mask)
@@ -356,37 +546,67 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
     end
         
     % evaluate the individual covariance functions
+    zs = zeros(size(x,1),size(x2,1),ncf);
     for i=1:ncf
       cf = gpcf.cf{i};
-      C{i} = cf.fh.cov(cf, x, x2);
+      zs(:,:,i) = cf.fh.cov(cf, x, x2);
     end
     
     % Evaluate the gradients
     ind = 1:ncf;
-    DKff = {};
+    
     if ~savememory
-      i3=1:ncf;
-    else
-      i3=i1(1);
-    end
-    for i=i3
-      cf = gpcf.cf{i};
-      if ~savememory
+      
+      DKff = {};
+      
+      % Order variances sigma2
+      es = degrees(r, zs, []);
+      for i = 1:r
+        % dlog(p) ... See NOTE above
+        DKff{end+1} = gpcf.sigma2(i).*es(:,:,i);
+      end
+      
+      % Subkernel hyperparameters
+      for i=1:ncf
+        cf = gpcf.cf{i};
         DK = cf.fh.cfg(cf, x,x2);
+        
+        CC = gpcf.sigma2(1).*ones(n,n);
+        if r > 1
+          es = degrees(r-1, zs, ind(ind~=i));
+          for j = 2:r
+            CC = CC + gpcf.sigma2(j).*es(:,:,j-1);
+          end
+        end
+        for j = 1:length(DK)
+          DKff{end+1} = DK{j}.*CC;
+        end
+      end
+      
+    else
+      if length(i1) == 1
+        % Order variance sigma2
+        es = degrees(i1, zs, []);
+        % dlog(p) ... See NOTE above
+        DKff = gpcf.sigma2(i1).*es(:,:,end);
       else
-        DK = {cf.fh.cfg(cf,x,x2,[],i1(2))};
-      end
-      
-      CC = 1;
-      for kk = ind(ind~=i)
-        CC = CC.*C{kk};
-      end
-      
-      for j = 1:length(DK)
-        DKff{end+1} = DK{j}.*CC;
-      end
-    end
+        
+        cf = gpcf.cf{i1(1)};
+        DK = cf.fh.cfg(cf,x,x2,[],i1(2));
 
+        CC = gpcf.sigma2(1).*ones(n,n);
+        if r > 1
+          es = degrees(r-1, zs, ind(ind~=i1(1)));
+          for j = 2:r
+            CC = CC + gpcf.sigma2(j).*es(:,:,j-1);
+          end
+        end
+        DKff = DK.*CC;
+        
+      end
+      
+    end
+    
     
     
     % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
@@ -394,40 +614,70 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
   elseif nargin == 4 || nargin == 5
     
     % evaluate the individual covariance functions
+    zs = zeros(size(x,1),ncf);
     for i=1:ncf
       cf = gpcf.cf{i};
-      C{i} = cf.fh.trvar(cf, x);
+      zs(:,i) = cf.fh.trvar(cf, x);
     end
     
     % Evaluate the gradients
     ind = 1:ncf;
-    DKff = {};
+    
     if ~savememory
-      i3=1:ncf;
-    else
-      i3=i1(1);
-    end
-    for i=i3
-      cf = gpcf.cf{i};
-      if ~savememory
+      
+      DKff = {};
+      
+      % Order variances sigma2
+      es = degrees(r, zs, []);
+      for i = 1:r
+        % dlog(p) ... See NOTE above
+        DKff{end+1} = gpcf.sigma2(i).*es(:,:,i);
+      end
+      
+      % Subkernel hyperparameters
+      for i=1:ncf
+        cf = gpcf.cf{i};
         DK = cf.fh.cfg(cf, x, [], 1);
+        
+        CC = gpcf.sigma2(1).*ones(n,n);
+        if r > 1
+          es = degrees(r-1, zs, ind(ind~=i));
+          for j = 2:r
+            CC = CC + gpcf.sigma2(j).*es(:,:,j-1);
+          end
+        end
+        for j = 1:length(DK)
+          DKff{end+1} = DK{j}.*CC;
+        end
+      end
+      
+    else
+      if length(i1) == 1
+        % Order variance sigma2
+        es = degrees(i1, zs, []);
+        % dlog(p) ... See NOTE above
+        DKff = gpcf.sigma2(i1).*es(:,:,end);
       else
-        DK = {cf.fh.cfg(cf, x, [], 1, i1(2))};
+        
+        cf = gpcf.cf{i1(1)};
+        DK = cf.fh.cfg(cf, x, [], 1, i1(2));
+
+        CC = gpcf.sigma2(1).*ones(n,n);
+        if r > 1
+          es = degrees(r-1, zs, ind(ind~=i1(1)));
+          for j = 2:r
+            CC = CC + gpcf.sigma2(j).*es(:,:,j-1);
+          end
+        end
+        DKff = DK.*CC;
+        
       end
       
-      CC = 1;
-      for kk = ind(ind~=i)
-        CC = CC.*C{kk};
-      end
-      
-      for j = 1:length(DK)
-        DKff{end+1} = DK{j}.*CC;
-      end
     end
+    
+    
   end
-  if savememory
-    DKff=DKff{1};
-  end
+  
 end
 
 
