@@ -168,7 +168,7 @@ function [gpcf, w] = gpcf_additive_unpak(gpcf, w)
 %
   ncf = length(gpcf.cf);
   
-  if ~isempty(gpcf.p.sigma2)
+  if isfield(gpcf.p,'sigma2') && ~isempty(gpcf.p.sigma2)
     i1=1;
     i2=length(gpcf.sigma2);
     gpcf.sigma2 = exp(w(i1:i2));
@@ -199,6 +199,12 @@ function lp = gpcf_additive_lp(gpcf)
 %    GPCF_ADDITIVE_PAK, GPCF_ADDITIVE_UNPAK, GPCF_ADDITIVE_LPG, GP_E
   
   lp = 0;
+  gpp = gpcf.p;
+
+  if isfield(gpp,'sigma2') && ~isempty(gpp.sigma2)
+    lp = lp +gpp.sigma2.fh.lp(gpcf.sigma2, gpp.sigma2) +sum(log(gpcf.sigma2));
+  end
+  
   ncf = length(gpcf.cf);
   for i=1:ncf
     cf = gpcf.cf{i};
@@ -219,10 +225,18 @@ function lpg = gpcf_additive_lpg(gpcf)
 %
 %  See also
 %    GPCF_ADDITIVE_PAK, GPCF_ADDITIVE_UNPAK, GPCF_ADDITIVE_LP, GP_G
-  lpg = [];
-  ncf = length(gpcf.cf);
   
   % Evaluate the gradients
+  lpg = [];
+  gpp=gpcf.p;
+  
+  if isfield(gpp,'sigma2') && ~isempty(gpp.sigma2)
+    lll = length(gpcf.sigma2);
+    lpgs = gpp.sigma2.fh.lpg(gpcf.sigma2, gpp.sigma2);
+    lpg = [lpg lpgs(1:lll).*gpcf.sigma2+1 lpgs(lll+1:end)];
+  end
+  
+  ncf = length(gpcf.cf);
   for i=1:ncf
     cf = gpcf.cf{i};
     lpg=[lpg cf.fh.lpg(cf)];
