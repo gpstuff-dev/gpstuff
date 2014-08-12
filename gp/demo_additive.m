@@ -26,8 +26,8 @@ fun = @(x) 0.5*sum(sin(2*(x+0.4)),2);
 % Generate toy data (similar to the reference)
 n1 = 11;
 n2 = 11;
-x = [[ 0.5*rand(n1,1)-2  ;    4*rand(n2,1)-2 ] , ...
-     [   4*rand(n1,1)-2  ;  0.5*rand(n2,1)-2 ]];
+x = [[ 0.5*rand(n1,1)-2  ,    4*rand(n1,1)-2 ] ; ...
+     [   4*rand(n2,1)-2  ,  0.5*rand(n2,1)-2 ]];
 y = fun(x);
 [X1,X2] = meshgrid(linspace(-2,2,151),linspace(-2,2,151));
 xt = [X1(:), X2(:)];
