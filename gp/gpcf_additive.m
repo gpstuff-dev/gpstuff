@@ -1142,6 +1142,9 @@ function reccf = gpcf_additive_recappend(reccf, ri, gpcf)
     reccf.fh.trcov  = @gpcf_additive_trcov;
     reccf.fh.trvar  = @gpcf_additive_trvar;
     reccf.fh.recappend = @gpcf_additive_recappend;
+    
+    % Set other
+    reccf.max_deg = ri.max_deg;
     reccf.p=[];
     reccf.p.sigma2=[];
     if isfield(ri.p,'sigma2') && ~isempty(ri.p.sigma2)
