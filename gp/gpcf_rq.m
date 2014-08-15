@@ -26,6 +26,8 @@ function gpcf = gpcf_rq(varargin)
 %      selectedVariables - vector defining which inputs are used [all]
 %                          selectedVariables is shorthand for using
 %                          metric_euclidean with corresponding components
+%      kalman_rq_deg     - Degree of approximation in type 'KALMAN' [6]
+%      kalman_se_deg     - Degree of approximation in type 'KALMAN' [6]
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in
@@ -36,6 +38,7 @@ function gpcf = gpcf_rq(varargin)
 %
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen, Aki Vehtari
+% Copyright (c) 2014 Arno Solin
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -61,6 +64,8 @@ function gpcf = gpcf_rq(varargin)
                    @(x) isstruct(x) || isempty(x));
   ip.addParamValue('selectedVariables',[], @(x) isempty(x) || ...
                    (isvector(x) && all(x>0)));
+  ip.addParamValue('kalman_rq_deg',6, @(x) isscalar(x) && mod(x,1)==0);
+  ip.addParamValue('kalman_se_deg',6, @(x) isscalar(x) && mod(x,1)==0);
   ip.parse(varargin{:});
   gpcf=ip.Results.gpcf;
 
@@ -83,6 +88,12 @@ function gpcf = gpcf_rq(varargin)
   end
   if init || ~ismember('alpha',ip.UsingDefaults)
     gpcf.alpha = ip.Results.alpha;
+  end
+  if init || ~ismember('kalman_rq_deg',ip.UsingDefaults)
+    gpcf.kalman_rq_deg = ip.Results.kalman_rq_deg;
+  end
+  if init || ~ismember('kalman_se_deg',ip.UsingDefaults)
+    gpcf.kalman_se_deg = ip.Results.kalman_se_deg;
   end
 
   % Initialize prior structure
@@ -165,6 +176,7 @@ function gpcf = gpcf_rq(varargin)
     gpcf.fh.trcov  = @gpcf_rq_trcov;
     gpcf.fh.trvar  = @gpcf_rq_trvar;
     gpcf.fh.recappend = @gpcf_rq_recappend;
+    gpcf.fh.cf2ss = @gpcf_rq_cf2ss;
   end
 
 end
@@ -443,7 +455,7 @@ function DKff = gpcf_rq_cfg(gpcf, x, x2, mask, i1)
   %           DKff{3} = d Kff / d lengthscale
   % NOTE! Here we have already taken into account that the parameters
   % are transformed through log() and thus dK/dlog(p) = p * dK/dp
-  % (or loglog gor alpha)
+  % (or loglog for alpha)
 
   % evaluate the gradient for training covariance
   if nargin == 2 || (isempty(x2) && isempty(mask))
@@ -963,4 +975,43 @@ function reccf = gpcf_rq_recappend(reccf, ri, gpcf)
     end
     
   end
+end
+
+
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_rq_cf2ss(gpcf,x)
+%GPCF_RQ_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the covariance function to state space form such that
+%    the process can be described by the stochastic differential equation
+%    of the form: 
+%      df(t)/dt = F f(t) + L w(t),
+%    where w(t) is a white noise process. The observation model now 
+%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
+%
+% References:
+%    Arno Solin and Simo Sarkka (2014). Gaussian quadratures for state 
+%    space approximation of scale mixtures of squared exponential 
+%    covariance functions. Proceedings of IEEE International Workshop 
+%    on Machine Learning for Signal Processing (MLSP). Reims, France.
+%
+
+  % Check arguments
+  if nargin < 2, x = []; end
+
+  % Return model matrices, derivatives and parameter information
+  [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...
+      cf_rq_to_ss(gpcf.magnSigma2,gpcf.lengthScale, ...
+                  gpcf.alpha,gpcf.kalman_rq_deg,gpcf.kalman_se_deg);
+  
+  % Check which parameters are optimized
+  if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end
+  if isempty(gpcf.p.lengthScale), ind(2) = false; else ind(2) = true; end
+  if isempty(gpcf.p.alpha), ind(3) = false; else ind(3) = true; end
+  
+  % Return only those derivatives that are needed
+  dF    = dF(:,:,ind);
+  dQc   = dQc(:,:,ind);
+  dPinf = dPinf(:,:,ind);
+  
 end
