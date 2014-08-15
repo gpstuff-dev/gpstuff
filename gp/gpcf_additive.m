@@ -83,7 +83,7 @@ function gpcf = gpcf_additive(varargin)
   % Degree variances
   if init || ~ismember('sigma2',ip.UsingDefaults)
     if isempty(ip.Results.sigma2)
-      gpcf.sigma2 = 0.1*ones(1,ncf);
+      gpcf.sigma2 = 0.1*ones(1,gpcf.max_deg);
     elseif length(ip.Results.sigma2) == gpcf.max_deg
       gpcf.sigma2 = ip.Results.sigma2;
     else
