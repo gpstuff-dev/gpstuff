@@ -1299,7 +1299,7 @@ switch gp.type
     %
     %  [3] Simo Sarkka (2006). Recursive Bayesian inference on stochastic
     %      differential equations. Doctoral dissertation, Helsinki 
-    %      University of Technology, Filand.
+    %      University of Technology, Finland.
     %
     
     % Ensure that this is a purely temporal problem
@@ -1313,14 +1313,19 @@ switch gp.type
     % Initialize model matrices
     F   = []; L     = []; Qc = [];
     H   = []; Pinf  = []; dF = [];
-    dQc = []; dPinf = [];    
+    dQc = []; dPinf = []; isstable = true; 
 
     % For each covariance function
     for j=1:length(gp.cf)
         
       % Form correpsonding state space model for this covariance function
-      [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
-        
+      try
+        [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf,p] = gp.cf{j}.fh.cf2ss(gp.cf{j},x);
+      catch
+        gdata = nan*w; gprior = nan*w; g = nan*w;
+        return 
+      end
+
       % Stack model
       F  = blkdiag(F,jF);
       L  = blkdiag(L,jL);
@@ -1337,6 +1342,10 @@ switch gp.type
         dPinf   = mblk(dPinf, jdPinf);
           
       end
+
+      % Set options
+      isstable = isfield(p,'stationary') && (isstable && p.stationary);
+      
     end
     
     % Number of partial derivatives (not including R)
@@ -1360,15 +1369,11 @@ switch gp.type
       dPinf(:,:,nparam) = zeros(size(Pinf));
         
     else
-        
+      
       % Noise magnitude is not optimized
       dR = zeros(1,1,nparam);
       
     end
-    
-    % Run filter for evaluating the marginal likelihood:
-    % (this is for stable models; see the Matrix fraction decomposition 
-    % versionfor other models. However, this should do for now. ~Arno)
     
     % Sort values
     [x,ind] = sort(x(:));
@@ -1389,9 +1394,11 @@ switch gp.type
     dm = zeros(n,nparam);
     dP = dPinf;
     dt = -inf;
+    QC = L*Qc*L';
     
     % Allocate space for expm results
     AA  = zeros(2*n,2*n,nparam);
+    AAA = zeros(4*n,4*n,nparam);
     
     % Loop over all observations
     for k=1:steps
@@ -1417,7 +1424,7 @@ switch gp.type
                   dF(:,:,j) F];
               
             % Solve the matrix exponential
-            AA(:,:,j) = expm(FF*dt);
+            AA(:,:,j) = expm2(FF*dt);
               
           end
           
@@ -1426,23 +1433,68 @@ switch gp.type
           mm      = foo(1:n,:);
           dm(:,j) = foo(n+(1:n),:);
           
-          % The discrete-time dynamical model
-          if (j==1)
-            A  = AA(1:n,1:n,j);
-            Q  = Pinf - A*Pinf*A';
-            PP = A*P*A' + Q;
+          if isstable
+
+            % For stable systems we can use the method by Davison,
+            % which simplifies everything (and speeds things up).
+  
+            % The discrete-time dynamical model
+            if (j==1)
+              A  = AA(1:n,1:n,j);
+              Q  = Pinf - A*Pinf*A';
+              PP = A*P*A' + Q;
+            end
+          
+            % The derivatives of A and Q
+            dA = AA(n+1:end,1:n,j);
+            %dQ = dPinf(:,:,j) - dA*Pinf*A' - A*dPinf(:,:,j)*A' - A*Pinf*dA';
+            dAPinfAt = dA*Pinf*A';
+            dQ = dPinf(:,:,j) - dAPinfAt - A*dPinf(:,:,j)*A' - dAPinfAt';
+          
+            % The derivatives of P
+            %dP(:,:,j) = dA*P*A' + A*dP(:,:,j)*A' + A*P*dA' + dQ;
+            dAPAt = dA*P*A';
+            dP(:,:,j) = dAPAt + A*dP(:,:,j)*A' + dAPAt' + dQ;
+
+          else
+
+            % The more general way for closed-form integration of 
+            % the covariance by matrix fraction decomposition.
+
+            % Should we recalculate the matrix exponential?
+            if abs(dt-dt_old) > 1e-9
+      
+              % Define W and G
+              W = L*dQc(:,:,j)*L';
+              G = dF(:,:,j);      
+              
+              % The second matrix for the matrix factor decomposition
+              FFF = [F  QC   Z   Z; 
+                     Z  -F'  Z   Z;
+                     G  W    F   QC;
+                     Z  -G'  Z   -F'];
+         
+              % Solve the matrix exponential
+              AAA(:,:,j) = expm2(FFF*dt);
+          
+            end
+           
+            % Solve using matrix fraction decomposition
+            foo = AAA(:,:,j)*[P; eye(size(P)); dP(:,:,j); Z];
+      
+            % Pick the parts
+            C  = foo(    (1:n),:);
+            D  = foo(  n+(1:n),:);
+            dC = foo(2*n+(1:n),:);
+            dD = foo(3*n+(1:n),:);
+      
+            % The prediction step covariance
+            if j==1, PP = C/D; end
+      
+            % Sove dP for j (C/D == P_{k|k-1})
+            dP(:,:,j) = (dC - PP*dD)/D;
+
           end
-          
-          % The derivatives of A and Q
-          dA = AA(n+1:end,1:n,j);
-          %dQ = dPinf(:,:,j) - dA*Pinf*A' - A*dPinf(:,:,j)*A' - A*Pinf*dA';
-          dAPinfAt = dA*Pinf*A';
-          dQ = dPinf(:,:,j) - dAPinfAt - A*dPinf(:,:,j)*A' - dAPinfAt';
-          
-          % The derivatives of P
-          %dP(:,:,j) = dA*P*A' + A*dP(:,:,j)*A' + A*P*dA' + dQ;
-          dAPAt = dA*P*A';
-          dP(:,:,j) = dAPAt + A*dP(:,:,j)*A' + dAPAt' + dQ;
       end
       
       % Set predicted m and P
@@ -1531,8 +1583,14 @@ switch gp.type
     end
     
     % Log-transformation
-    gdata = gdata.*exp(w);
-    
+    [w,ws] = gp_pak(gp);
+    ind = strncmpi(ws,'log(',4) & ~strncmpi(ws,'log(log(',8);
+    gdata(ind) = gdata(ind).*exp(w(ind));
+
+    % Log-log-transformation
+    ind = strncmpi(ws,'log(log(',8);
+    gdata(ind) = gdata(ind).*exp(w(ind)+exp(w(ind)));
+
   otherwise
     error('Unknown type of Gaussian process!')
 end
