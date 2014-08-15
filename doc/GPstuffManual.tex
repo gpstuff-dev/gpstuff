@@ -10,7 +10,7 @@
 \usepackage{bm}
 \usepackage{subfigure}
 \usepackage{url}
-\usepackage{natbib}
+%\usepackage{natbib}
 \usepackage{longtable}
 \usepackage{enumitem}
 \usepackage[width=.9\textwidth]{caption}
@@ -3139,7 +3139,7 @@ e.g.,][]{Sarkka+Solin+Hartikainen:2013}. They are given as:
   \mathbf{Q}_k &= \int_{0}^{\Delta t_k} 
     \mathbf{\Phi}(\Delta t_k-\tau)
     \mathbf{L} \mathbf{Q}_\mathrm{c} \mathbf{L}^\mathrm{T} 
-    \mathbf{\Phi}(\Delta t_k-\tau)^ \mathrm{d} \tau,
+    \mathbf{\Phi}(\Delta t_k-\tau)^\mathrm{T} \, \mathrm{d} \tau,
 \end{align}
 %
 where $\Delta t_k = t_{k+1}-t_k$. The iteration is started form the stationary
@@ -3165,15 +3165,21 @@ references):
 \begin{description}[labelindent=\parindent]
   \item[Constant] 
     covariance function.
+  \item[Noise] 
+    covariance function.
+  \item[Linear] 
+    covariance function.
   \item[Exponential] 
     (Ornstein-Uhlenbeck) covariance function.
   \item[Mat\'ern] 
     covariance function (for $\nu=3/2$ and $\nu=5/2$).
   \item[Squared exponential] 
     covariance function \citep[as presented in][]{Hartikainen+Sarkka:2010}.
-  \item[Periodic covariance] 
-    function both with and without decay (quasi-periodicity) 
+  \item[Periodic] 
+    covariance function both with and without decay (quasi-periodicity) 
     \citep[as presented in][]{Solin+Sarkka:2014}.
+  \item[Rational quadratic] 
+    covariance function \citep[as presented in][]{Solin+Sarkka:2014-MLSP}.
   \item[Sums and products] 
     of covariance functions \citep[as given in][]{Solin+Sarkka:2014}.
 \end{description}
