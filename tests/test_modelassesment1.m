@@ -51,57 +51,57 @@ end
 
 function testDICAll(testCase)
   verifyVarsEqual(testCase, getName(), {'DIC2'}, {@nans2zero}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testDICLatent(testCase)
   verifyVarsEqual(testCase, getName(), {'DIC_latent'}, {@nans2zero}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testPeffLatentMarginalized(testCase)
   verifyVarsEqual(testCase, getName(), {'p_eff'}, {@nans2zero}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testPeffAll(testCase)
   verifyVarsEqual(testCase, getName(), {'p_eff2'}, {@nans2zero}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testPeffLatent(testCase)
   verifyVarsEqual(testCase, getName(), {'p_eff_latent'}, {@nans2zero}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testPeffLatent2(testCase)
   verifyVarsEqual(testCase, getName(), {'p_eff_latent2'}, {@nans2zero}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testLogPredDensity10foldCV(testCase)
   verifyVarsEqual(testCase, getName(), {'mlpd_cv'}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testMeanSquaredError10foldCV(testCase)
   verifyVarsEqual(testCase, getName(), {'rmse_cv'}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testLogPredDensityLOOPRED(testCase)
   verifyVarsEqual(testCase, getName(), {'mlpd_loo'}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testMeanSquaredErrorLOOPRED(testCase)
   verifyVarsEqual(testCase, getName(), {'rmse_loo'}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 function testWAIC(testCase)
   verifyVarsEqual(testCase, getName(), {'WAICV','WAICG'}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.2, 'RelTolRange', 0.05)
 end
 
 

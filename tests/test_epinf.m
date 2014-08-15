@@ -1,11 +1,11 @@
-function test_suite = test_modelassesment2
+function test_suite = test_epinf
 
 %   Run specific demo, save values and compare the results to the expected.
 %   Works for both xUnit Test Framework package by Steve Eddins and for
 %   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
-%     TEST_ALL, DEMO_MODELASSESMENT2
+%     TEST_ALL, DEMO_EPINF
 %
 % Copyright (c) 2011-2012 Ville Tolvanen
 % Copyright (c) 2014 Tuomas Sivula
@@ -44,60 +44,16 @@ function testRunDemo(testCase)
   rundemo(getName())
 end
 
-function testDICParameters(testCase)
-  verifyVarsEqual(testCase, getName(), {'DIC'}, @nans2zero, ...
-    'RelTolElement', 0.2, 'RelTolRange', 0.05)
-end
-
-function testDICAll(testCase)
-  verifyVarsEqual(testCase, getName(), {'DIC2'}, @nans2zero, ...
-    'RelTolElement', 0.2, 'RelTolRange', 0.05)
-end
-
-function testDICLatent(testCase)
-  verifyVarsEqual(testCase, getName(), {'DIC_latent'}, @nans2zero, ...
-    'RelTolElement', 0.2, 'RelTolRange', 0.05)
-end
-
-% function testPeffLatentMarginalized(testCase)
-%   verifyVarsEqual(testCase, getName(), {'p_eff'}, @nans2zero, ...
-%     'AbsTol', 0.5)
-% end
-
-function testPeffLatent(testCase)
-  verifyVarsEqual(testCase, getName(), {'p_eff_latent'}, @nans2zero, ...
-    'AbsTol', 0.6)
-end
-
-function testPeffLatent2(testCase)
-  verifyVarsEqual(testCase, getName(), {'p_eff_latent2'}, @nans2zero, ...
-    'AbsTol', 1.4)
-end
-
-function testLogPredDensity10foldCV(testCase)
-  verifyVarsEqual(testCase, getName(), {'mlpd_cv'}, ...
-    'RelTolElement', 0.2, 'RelTolRange', 0.05)
-end
-
-function testLogPredDensityLOOPRED(testCase)
-  verifyVarsEqual(testCase, getName(), {'mlpd_loo'}, ...
-    'RelTolElement', 0.2, 'RelTolRange', 0.05)
-end
-
-function testWAIC(testCase)
-  verifyVarsEqual(testCase, getName(), {'WAIC'}, ...
-    'RelTolElement', 0.2, 'RelTolRange', 0.05)
+function testPredictiveMeanAndVariance(testCase)
+  % Test predictive mean, variance and density
+  verifyVarsEqual(testCase, getName(), ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
 end
 
 
 % ------------------------
 %     Helper functions
 % ------------------------
-
-function x = nans2zero(x)
-  % Helperfunction to replace NaNs in an array by zeroes.
-  x(isnan(x)) = 0;
-end
 
 function testCase = setup
   % Helper function to suply empty array into variable testCase as an

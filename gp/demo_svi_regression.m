@@ -6,7 +6,7 @@
 %    made synthetically in two dimensions using sinusoidal functions.
 %
 %  See also
-%    DEMO_BINOMIAL_APC
+%    DEMO_SVI_CLASSIFIC
 %
 %  References:
 %    Hensman, J., Fusi, N. and Lawrence, N. D. (2013). Gaussian processes

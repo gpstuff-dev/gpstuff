@@ -32,7 +32,7 @@
 %    detailed treatment.
 %
 %  See also
-%    DEMO_CLASSIFIC
+%    DEMO_SVI_REGRESSION, DEMO_CLASSIFIC
 %
 %
 %  References:

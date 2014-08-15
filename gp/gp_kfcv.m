@@ -222,7 +222,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
                    ismember(x,{'on' 'off' 'iter' 'fold'}))
   ip.addParamValue('save_results', false, @(x) islogical(x))
   ip.addParamValue('folder', [], @(x) ischar(x) )
-  ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
+  ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on', 'lr'}));
   ip.addParamValue('joint', 'off', @(x) ismember(x, {'off', 'on'}));
   ip.parse(gp, x, y, varargin{:});
   z=ip.Results.z;
@@ -241,7 +241,11 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   folder = ip.Results.folder;
   fcorr = ip.Results.fcorr;
   joint = ip.Results.joint;
-
+  if isequal(joint, 'off')
+      joint=false;
+  else
+      joint=true;
+  end
   [n,nin] = size(x);
   gp_orig = gp;
 

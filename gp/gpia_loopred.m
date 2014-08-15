@@ -58,7 +58,16 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_loopred(gp_array, x, y, varargin)
 
   nGP = numel(gp_array);
   n=size(x,1);
-
+  
+  P_TH = zeros(1,nGP);
+  Efts = zeros(n,nGP);
+  Varfts = zeros(n,nGP);
+  lpyts = zeros(n,nGP);
+  if nargout > 3
+    Eyts = zeros(n,nGP);
+    Varyts = zeros(n,nGP);
+  end
+  
   for i1=1:nGP
     Gp=gp_array{i1};
     P_TH(1,i1) = Gp.ia_weight;
@@ -67,7 +76,13 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_loopred(gp_array, x, y, varargin)
     if nargout <= 3
       [Efts(:,i1), Varfts(:,i1), lpyts(:,i1)] = gp_loopred(Gp, x, y, 'z', z);
     else
-      [Efts(:,i1), Varfts(:,i1), lpyts(:,i1), Eyts(:,i1), Varyts(:,i1)] = gp_loopred(Gp, x, y, 'z', z);
+      [Efts(:,i1), Varfts(:,i1), lpyts(:,i1), Eyts_temp, Varyts_temp] = gp_loopred(Gp, x, y, 'z', z);
+      if ~isempty(Eyts_temp)
+        Eyts(:,i1) = Eyts_temp;
+      end
+      if ~isempty(Varyts_temp)
+        Varyts(:,i1) = Varyts_temp;
+      end
     end
   end
 
