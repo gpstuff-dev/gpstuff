@@ -1,5 +1,5 @@
 function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_sum_to_ss(cf2ss)  
-%CF_SUM_TO_SS - Sum of several state space models
+%% CF_SUM_TO_SS - Sum of several state space models
 %
 % Syntax:
 %   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_sum_to_ss(cf2ss)
@@ -33,10 +33,14 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_sum_to_ss(cf2ss)
 % Copyright:
 %   2012-2014   Arno Solin
 %   2013-2014   Jukka Koskenranta
-
+%
 %   This software is distributed under the GNU General Public
 %   License (version 3 or later); please refer to the file
 %   License.txt, included with the software, for details.
+%
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
 
 %% Sums of two state space models by stacking the models
 
@@ -51,12 +55,15 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_sum_to_ss(cf2ss)
   dPinf  = [];
   params = {};
   
+  % Initialize
+  params.stationary = true;
+  
   % Stack state space models
   for k=1:length(cf2ss)    
     
     % Form ss model j
     if nargout > 5
-        [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf] = cf2ss{k}();
+        [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf,jparams] = cf2ss{k}();
     else
         [jF,jL,jQc,jH,jPinf] = cf2ss{k}();
     end
@@ -75,8 +82,12 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_sum_to_ss(cf2ss)
       dQc = mblk(dQc,jdQc);
       dPinf = mblk(dPinf,jdPinf);
       
+      % Parameters
+      params.stationary = params.stationary & jparams.stationary;
+
     end    
   end
+
 end
 
 function C = mblk(A,B)
