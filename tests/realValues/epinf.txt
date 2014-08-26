@@ -1,0 +1,35 @@
+Optimise the input-dependent model
+  Iteration  Func-count      f(x)      Lambda
+      0          1          783.75    
+      1          3         783.714       10
+      2          5         783.705        5
+      3          7         783.705      2.5
+      4          8         783.705       10
+      5         10         783.703       10
+      6         12         783.703        5
+      7         13         783.703       20
+ TolFun reached. Func-count 13. Final f(x)=783.703. Elapsed time 4600.79
+mlpd input-dependent: -0.99
+Optimise the normal gaussian model
+  Iteration  Func-count      f(x)      Lambda
+      0          1          2984.2    
+      1          3         1408.89       10
+      2          5         937.085        5
+      3          7         837.594      2.5
+      4          9         828.249     1.25
+      5         11         827.869    0.625
+      6         13         827.834    0.312
+      7         15         827.818    0.156
+      8         17         827.811   0.0781
+      9         19         827.796   0.0391
+     10         21         827.795   0.0195
+     11         23         827.795   0.00977
+     12         25         827.795   0.00488
+ TolFun reached. Func-count 25. Final f(x)=827.795. Elapsed time 1.47
+mlpd gaussian: -1.12
+
+ gp hyperparameters: 
+ 
+    0.1823   -2.4816   -0.3657   -1.3494    1.0286   -0.2708
+
+Demo completed in 76.727 minutes

@@ -60,6 +60,7 @@ ip.addOptional('x', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addOptional('y', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('nv', [], @(x) isreal(x) && isscalar(x))
+ip.addParamValue('xv', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
 ip.addParamValue('opt', [], @isstruct)
 ip.addParamValue('optimize', 'off', @(x) ismember(x, {'on', 'off'}));

@@ -85,6 +85,9 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   elseif numel(gp.jitterSigma2)>1
     fh_pred=@gpmc_jpred;
   elseif isfield(gp,'latent_method')
+    if strcmp(gp.latent_method, 'SVI')
+      error('GP_JPRED not implemnted for SVI')
+    end
     fh_pred=gp.fh.jpred;
   else
     error('Logical error by coder of this function!')
@@ -116,6 +119,11 @@ ip.addParamValue('predcf', [], @(x) isempty(x) || ...
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}))
+
+% Add z and zt for compatibility although not used
+ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
+
 ip.parse(gp, x, y, varargin{:});
 xt=ip.Results.xt;
 yt=ip.Results.yt;
@@ -375,7 +383,7 @@ switch gp.type
     Lav = Cv_ff-Qv_ff;   % 1 x f, Vector of diagonal elements
                          % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
     iLaKfu = zeros(size(K_fu));  % f x u,
-    n=size(x,1)
+    n=size(x,1);
     for i=1:n
         iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
     end
@@ -883,18 +891,19 @@ switch gp.type
     R = gp.lik.sigma2;
     
     % Initialize model matrices
-    F    = [];
-    L    = [];
-    Qc   = [];
-    H    = [];
-    Hs   = [];
-    Pinf = [];
-    
+    F        = [];
+    L        = [];
+    Qc       = [];
+    H        = [];
+    Hs       = [];
+    Pinf     = [];
+    isstable = true;
+     
     % For each covariance function
     for j=1:length(gp.cf)
  
       % Form state-space model from the gp.cf{j}
-      [jF,jL,jQc,jH,jPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
+      [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf,p] = gp.cf{j}.fh.cf2ss(gp.cf{j},xall);
     
       % Make Hs according to requested covariance components
       if isempty(predcf) || any(predcf==j)
@@ -909,6 +918,9 @@ switch gp.type
       Qc   = blkdiag(Qc,jQc);
       H    = [H jH];    
       Pinf = blkdiag(Pinf,jPinf);
+      
+      % Set options
+      isstable = isfield(p,'stationary') && (isstable && p.stationary);
       
     end    
           
@@ -941,8 +953,19 @@ switch gp.type
           A(:,:,k) = A(:,:,k-1);
           Q(:,:,k) = Q(:,:,k-1);
         else
-          A(:,:,k)  = expm(F*dt);
-          Q(:,:,k)  = Pinf - A(:,:,k)*Pinf*A(:,:,k)';
+          % Discrete-time solution
+          if isstable
+            % Only for stable systems
+            A(:,:,k) = expm2(F*dt);
+            Q(:,:,k) = Pinf - A(:,:,k)*Pinf*A(:,:,k)';
+          else
+            % Closed-form integration of covariance
+            % by matrix fraction decomposition
+            A(:,:,k) = expm2(F*dt);
+            Phi      = [F L*Qc*L'; zeros(size(F,1)) -F'];
+            AB       = expm2(Phi*dt)*[zeros(size(F,1));eye(size(F,1))];
+            Q(:,:,k) = AB(1:size(F,1),:)/AB((size(F,1)+1):(2*size(F,1)),:);
+          end
         end
         
         % Prediction step

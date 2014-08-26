@@ -10,7 +10,7 @@
 \usepackage{bm}
 \usepackage{subfigure}
 \usepackage{url}
-\usepackage{natbib}
+%\usepackage{natbib}
 \usepackage{longtable}
 \usepackage{enumitem}
 \usepackage[width=.9\textwidth]{caption}
@@ -129,7 +129,7 @@
 
 \begin{abstract}%   <- trailing '%' for backward compatibility of .sty file
   Gaussian processes (GP) are powerful tools for probabilistic
-  modeling purposes. They can be used to define prior distributions
+  modeling purposes. They can be used to define prior distributions 
   over latent functions in hierarchical Bayesian models. The prior
   over functions is defined implicitly by the mean and covariance
   function, which determine the smoothness and variability of the
@@ -1378,9 +1378,11 @@ The returned value \texttt{pc} corresponds to corrected marginal posterior for t
 In this section, we desribe other likelihood functions, which
 factorize so that each factor depend only on single latent value.
  
-\subsection{Robust regression with Student-$t$ observation model}
+\subsection{Robust regression}
 
-A commonly used observation model in the GP regression is the Gaussian
+\subsubsection{Student-$t$ observation model}
+
+A commonly used observation model in the GP regression is the Gaussian 
 distribution. This is convenient since the marginal likelihood is
 analytically tractable. However, a known limitation with the Gaussian
 observation model is its non-robustness, due which outlying
@@ -1405,7 +1407,7 @@ U_i & \sim \text{Inv-}\chi^2(\nu, \tau^2), \label{eq_scale_mixture_2}
 where each observation has its own noise variance $\alpha U_i$ that is
 $\text{Inv-}\chi^2$ distributed
 \citep{Neal:1997,Gelman+etal+BDA3:2013}. The degrees of freedom $\nu$
-corresponds to the degrees of freedom in the Student-$t$ distribution
+corresponds to the degrees of freedom in the Student-$t$ distribution 
 and $\alpha\tau$ corresponds to $\sigma_t$.
 
 \begin{figure}
@@ -1433,7 +1435,19 @@ approximation and MCMC \citep[as described
 by][]{Vanhatalo+Jylanki+Vehtari:2009,Jylanki+Vanhatalo+Vehtari:2011}.
 These are demonstrated in \code{demo\_regression\_robust}.
 
+\subsubsection{Laplace observation model}
 
+Besides the Student-T observation model, Laplace distribution is another robust alternative to the normal 
+Gaussian observation model
+%
+\begin{equation}
+ \y | \f, \sigma  \sim \prod_{i=1}^n \left( 2\sigma \right)^{-1} \exp \left( -\frac{|y_i - f_i|}{\sigma} \right),
+\end{equation}
+%
+where $\sigma$ is the scale parameter of the Laplace distribution. 
+
+In \pkg{GPstuff}, the Laplace observation model implementation is in \code{lik\_laplace}. It should be noted that since the Laplace distribution is 
+not differentiable with respect to $\f$ in the mode, only EP approximation or MCMC can be used for inference. 
 \subsection{Count data}\label{sec_spatial_demo1}
 
 Count data are observed in applications. One such common application
@@ -3125,7 +3139,7 @@ e.g.,][]{Sarkka+Solin+Hartikainen:2013}. They are given as:
   \mathbf{Q}_k &= \int_{0}^{\Delta t_k} 
     \mathbf{\Phi}(\Delta t_k-\tau)
     \mathbf{L} \mathbf{Q}_\mathrm{c} \mathbf{L}^\mathrm{T} 
-    \mathbf{\Phi}(\Delta t_k-\tau)^ \mathrm{d} \tau,
+    \mathbf{\Phi}(\Delta t_k-\tau)^\mathrm{T} \, \mathrm{d} \tau,
 \end{align}
 %
 where $\Delta t_k = t_{k+1}-t_k$. The iteration is started form the stationary
@@ -3151,15 +3165,21 @@ references):
 \begin{description}[labelindent=\parindent]
   \item[Constant] 
     covariance function.
+  \item[Noise] 
+    covariance function.
+  \item[Linear] 
+    covariance function.
   \item[Exponential] 
     (Ornstein-Uhlenbeck) covariance function.
   \item[Mat\'ern] 
     covariance function (for $\nu=3/2$ and $\nu=5/2$).
   \item[Squared exponential] 
     covariance function \citep[as presented in][]{Hartikainen+Sarkka:2010}.
-  \item[Periodic covariance] 
-    function both with and without decay (quasi-periodicity) 
+  \item[Periodic] 
+    covariance function both with and without decay (quasi-periodicity) 
     \citep[as presented in][]{Solin+Sarkka:2014}.
+  \item[Rational quadratic] 
+    covariance function \citep[as presented in][]{Solin+Sarkka:2014-MLSP}.
   \item[Sums and products] 
     of covariance functions \citep[as given in][]{Solin+Sarkka:2014}.
 \end{description}
@@ -3359,10 +3379,10 @@ where $BU_t$ is Bayes training utility
 \begin{align}
   BU_t = \frac{1}{n} \sum_{i=1}^n \log p(y_i|D,M_k) 
 \end{align}
-and $GU_g$ is Gibbs generalization utility
+and $GU_t$ is Gibbs training utility
 \begin{align}
-  GU_g = \int p_t(\tilde{y}) \int p(\theta|D,M_k) \log
-  p(\tilde{y}|\theta,M_k) d\theta d\tilde{y} 
+  GU_t = \frac{1}{n} \sum_{i=1}^n \int \log
+  p(y_i|\theta,M_k)  p(\theta|D,M_k) d\theta
 \end{align}
 WAIC can also be given as a functional variance form 
 \begin{align}
@@ -3722,7 +3742,7 @@ features in GPstuff, GPML and FBM.
     Poisson & x & LA/EP/MCMC & MCMC \\
     Gaussian scale mixture & MCMC &  & MCMC\\
     Student-$t$ & x & LA/VB/MCMC & \\
-    Laplacian &  & EP/VB/MCMC & \\
+    Laplacian & x & EP/VB/MCMC & \\
     mixture of likelihoods &   &  LA/EP/MCMC  & \\
     sech-squared, uniform for classification &  & x & \\
     derivative observations & for sexp covf only &  & \\

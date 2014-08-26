@@ -1,0 +1,15 @@
+Checking gradient ...
+
+   analytic   diffs     delta
+
+   -6.7439   -6.7439    0.0000
+    2.1897    2.1897   -0.0000
+   -2.3321   -2.3321   -0.0000
+
+ TolFun reached. Func-count 19. Final f(x)=16.4578. Elapsed time 0.19
+
+ gp hyperparameters: 
+ 
+    1.6749   -0.3565   -1.4619
+
+Demo completed in 0.009 minutes

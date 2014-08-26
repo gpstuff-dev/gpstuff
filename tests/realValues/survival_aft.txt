@@ -1,0 +1,43 @@
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1              1685.5    
+     1           3           3             1677.24     0.000815125
+     2           5           5             1669.25        0.295997
+     3           7           7             1661.47        0.204233
+     4           9           9             1658.18        0.139274
+     5          12          12             1656.38       0.0470118
+     6          14          14             1655.37        0.425986
+     7          16          16              1654.6        0.201154
+     8          17          17             1654.34               1
+     9          18          18             1654.17               1
+    10          19          19             1654.17               1
+    11          20          20             1654.17               1
+    12          21          21             1654.17               1
+    13          22          22             1654.17               1
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 14
+  Function Count : 23
+  Minimum found : 1654.1655
+  Intern Time : 0.045501 seconds
+  Total Time : 16.0997 seconds
+ IA-CCD: computing Hessian using multiplication
+    Elapsed time 13.39 seconds
+ IA-CCD: 81 points for 8 parameters
+ IA-CCD: autoscaling in 16 directions
+ IA-CCD: scaling minmax [0.77 1.22]
+    Elapsed time 6.22 seconds
+ IA-CCD: evaluating density at 81 points
+    Elapsed time 27.19 seconds
+ IA-CCD: Total elapsed time 46.87 seconds
+
+ans =
+
+  -1.6292e+03
+
+
+ gp hyperparameters: 
+ 
+   -0.5933   -0.7558   -0.2888    0.6951    2.0332   -0.4531    0.5524   -0.0853
+
+Demo completed in 6.724 minutes

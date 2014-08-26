@@ -119,7 +119,22 @@ switch gp.type
     
     if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'})
       % Evaluate covariance
-      [K, C] = gp_trcov(gp,x);
+      if isfield(gp, 'lik_mono')
+        [K,C] = gp_dtrcov(gp, x, gp.xv);
+%         if isequal(gp.lik.type, 'Gaussian')
+%           % Condition the derivatives on the observations
+%           cc=C(size(x,1)+1:end,size(x,1)+1:end);
+%           cy=C(size(x,1)+1:end,1:size(x,1));
+%           cyy=C(1:size(x,1),1:size(x,1));
+%           C=cc - cy*(cyy\cy');
+%           %C=0.5.*(C+C')+1e-10.*eye(size(C));
+%           meany=cy*(cyy\y(1:n));
+%           y=(y(n+1:end)-meany);
+%           n=length(y);
+%         end
+      else
+        [K, C] = gp_trcov(gp, x);
+      end
       
       
       if issparse(C)
@@ -236,42 +251,69 @@ switch gp.type
         else
           [n m]=size(x);
           %Case: input dimension is 1
-          if m==1
-
-            DKffa = gpcf.fh.cfg(gpcf, x);
-            DKdf = gpcf.fh.cfdg(gpcf, x);
-            DKdd = gpcf.fh.cfdg2(gpcf, x);
-            gprior_cf = -gpcf.fh.lpg(gpcf);
-
-            % DKff{1} -- d K / d magnSigma2
-            % DKff{2} -- d K / d lengthScale
-            DKffc{1} = [DKffa{1}, DKdf{1}'; DKdf{1}, DKdd{1}];
-            DKffc{2} = [DKffa{2}, DKdf{2}'; DKdf{2}, DKdd{2}];
-            np=2;
-            
-            %Case: input dimension is >1    
+          if isfield(gp, 'lik_mono')
+              savememory=0;
+              [n, m]=size(x);
+              DKffa = gpcf.fh.cfg(gpcf, x);
+              if ~isempty(DKffa)
+                DKdf = gpcf.fh.cfdg(gpcf, gp.xv, x);
+                DKdd = gpcf.fh.cfdg2(gpcf, gp.xv);
+                % Select monotonic dimensions
+                inds=[];
+                nvd=abs(gp.nvd);
+                for idd=1:length(gp.nvd)
+                  inds=[inds size(gp.xv,1)*(nvd(idd)-1)+1:size(gp.xv,1)*nvd(idd)];
+                end
+                for ijj=1:length(DKffa)
+                  DKdf{ijj}=DKdf{ijj}(inds,:);
+                  DKdd{ijj}=DKdd{ijj}(inds,inds);
+                end
+                
+                DKffc{1}=[DKffa{1} DKdf{1}';DKdf{1} DKdd{1}];
+                for i2=2:length(DKffa)
+                  DKffc{i2}=[DKffa{i2} DKdf{i2}';DKdf{i2} DKdd{i2}];
+                end
+              end
+              np=length(DKffa);
+              gprior_cf = -gpcf.fh.lpg(gpcf);
           else
-            DKffa = gpcf.fh.cfg(gpcf, x);
-            DKdf = gpcf.fh.cfdg(gpcf, x);
-            DKdd = gpcf.fh.cfdg2(gpcf, x);
-            gprior_cf = -gpcf.fh.lpg(gpcf);
-
-            %Check whether ARD method is in use (with gpcf_sexp)
-            Ard=length(gpcf.lengthScale);
-            
-            % DKff{1} - d K / d magnSigma2
-            % DKff{2:end} - d K / d lengthScale(1:end)
-            for i=1:2
-              DKffc{i}=[DKffa{i} DKdf{i}';DKdf{i} DKdd{i}];
-            end
-            
-            %If ARD is in use
-            if Ard>1
-              for i=2+1:2+Ard-1
+            if m==1
+              
+              DKffa = gpcf.fh.cfg(gpcf, x);
+              DKdf = gpcf.fh.cfdg(gpcf, x);
+              DKdd = gpcf.fh.cfdg2(gpcf, x);
+              gprior_cf = -gpcf.fh.lpg(gpcf);
+              
+              % DKff{1} -- d K / d magnSigma2
+              % DKff{2} -- d K / d lengthScale
+              DKffc{1} = [DKffa{1}, DKdf{1}'; DKdf{1}, DKdd{1}];
+              DKffc{2} = [DKffa{2}, DKdf{2}'; DKdf{2}, DKdd{2}];
+              np=2;
+              
+              %Case: input dimension is >1
+            else
+              DKffa = gpcf.fh.cfg(gpcf, x);
+              DKdf = gpcf.fh.cfdg(gpcf, x);
+              DKdd = gpcf.fh.cfdg2(gpcf, x);
+              gprior_cf = -gpcf.fh.lpg(gpcf);
+              
+              %Check whether ARD method is in use (with gpcf_sexp)
+              Ard=length(gpcf.lengthScale);
+              
+              % DKff{1} - d K / d magnSigma2
+              % DKff{2:end} - d K / d lengthScale(1:end)
+              for i=1:2
                 DKffc{i}=[DKffa{i} DKdf{i}';DKdf{i} DKdd{i}];
-              end  
+              end
+              
+              %If ARD is in use
+              if Ard>1
+                for i=2+1:2+Ard-1
+                  DKffc{i}=[DKffa{i} DKdf{i}';DKdf{i} DKdd{i}];
+                end
+              end
+              np=length(DKffc);
             end
-            np=length(DKffc);
           end
         end
         
@@ -343,6 +385,9 @@ switch gp.type
       gprior_lik = -gp.lik.fh.lpg(gp.lik);
       if ~isempty(gprior_lik)
         DCff = gp.lik.fh.cfg(gp.lik, x);
+        if isfield(gp, 'lik_mono') 
+          DCff{1}=diag(DCff{1}*[ones(size(x,1),1); zeros(size(gp.xv,1)*length(nvd),1)]);
+        end
         for i2 = 1:length(DCff)
           i1 = i1+1;
           if ~isfield(gp,'meanf')
@@ -1254,7 +1299,7 @@ switch gp.type
     %
     %  [3] Simo Sarkka (2006). Recursive Bayesian inference on stochastic
     %      differential equations. Doctoral dissertation, Helsinki 
-    %      University of Technology, Filand.
+    %      University of Technology, Finland.
     %
     
     % Ensure that this is a purely temporal problem
@@ -1268,14 +1313,19 @@ switch gp.type
     % Initialize model matrices
     F   = []; L     = []; Qc = [];
     H   = []; Pinf  = []; dF = [];
-    dQc = []; dPinf = [];    
+    dQc = []; dPinf = []; isstable = true; 
 
     % For each covariance function
     for j=1:length(gp.cf)
         
       % Form correpsonding state space model for this covariance function
-      [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
-        
+      try
+        [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf,p] = gp.cf{j}.fh.cf2ss(gp.cf{j},x);
+      catch
+        gdata = nan*w; gprior = nan*w; g = nan*w;
+        return 
+      end
+
       % Stack model
       F  = blkdiag(F,jF);
       L  = blkdiag(L,jL);
@@ -1292,6 +1342,10 @@ switch gp.type
         dPinf   = mblk(dPinf, jdPinf);
           
       end
+
+      % Set options
+      isstable = isfield(p,'stationary') && (isstable && p.stationary);
+      
     end
     
     % Number of partial derivatives (not including R)
@@ -1315,15 +1369,11 @@ switch gp.type
       dPinf(:,:,nparam) = zeros(size(Pinf));
         
     else
-        
+      
       % Noise magnitude is not optimized
       dR = zeros(1,1,nparam);
       
     end
-    
-    % Run filter for evaluating the marginal likelihood:
-    % (this is for stable models; see the Matrix fraction decomposition 
-    % versionfor other models. However, this should do for now. ~Arno)
     
     % Sort values
     [x,ind] = sort(x(:));
@@ -1344,9 +1394,11 @@ switch gp.type
     dm = zeros(n,nparam);
     dP = dPinf;
     dt = -inf;
+    QC = L*Qc*L';
     
     % Allocate space for expm results
     AA  = zeros(2*n,2*n,nparam);
+    AAA = zeros(4*n,4*n,nparam);
     
     % Loop over all observations
     for k=1:steps
@@ -1372,7 +1424,7 @@ switch gp.type
                   dF(:,:,j) F];
               
             % Solve the matrix exponential
-            AA(:,:,j) = expm(FF*dt);
+            AA(:,:,j) = expm2(FF*dt);
               
           end
           
@@ -1381,23 +1433,68 @@ switch gp.type
           mm      = foo(1:n,:);
           dm(:,j) = foo(n+(1:n),:);
           
-          % The discrete-time dynamical model
-          if (j==1)
-            A  = AA(1:n,1:n,j);
-            Q  = Pinf - A*Pinf*A';
-            PP = A*P*A' + Q;
+          if isstable
+
+            % For stable systems we can use the method by Davison,
+            % which simplifies everything (and speeds things up).
+  
+            % The discrete-time dynamical model
+            if (j==1)
+              A  = AA(1:n,1:n,j);
+              Q  = Pinf - A*Pinf*A';
+              PP = A*P*A' + Q;
+            end
+          
+            % The derivatives of A and Q
+            dA = AA(n+1:end,1:n,j);
+            %dQ = dPinf(:,:,j) - dA*Pinf*A' - A*dPinf(:,:,j)*A' - A*Pinf*dA';
+            dAPinfAt = dA*Pinf*A';
+            dQ = dPinf(:,:,j) - dAPinfAt - A*dPinf(:,:,j)*A' - dAPinfAt';
+          
+            % The derivatives of P
+            %dP(:,:,j) = dA*P*A' + A*dP(:,:,j)*A' + A*P*dA' + dQ;
+            dAPAt = dA*P*A';
+            dP(:,:,j) = dAPAt + A*dP(:,:,j)*A' + dAPAt' + dQ;
+
+          else
+
+            % The more general way for closed-form integration of 
+            % the covariance by matrix fraction decomposition.
+
+            % Should we recalculate the matrix exponential?
+            if abs(dt-dt_old) > 1e-9
+      
+              % Define W and G
+              W = L*dQc(:,:,j)*L';
+              G = dF(:,:,j);      
+              
+              % The second matrix for the matrix factor decomposition
+              FFF = [F  QC   Z   Z; 
+                     Z  -F'  Z   Z;
+                     G  W    F   QC;
+                     Z  -G'  Z   -F'];
+         
+              % Solve the matrix exponential
+              AAA(:,:,j) = expm2(FFF*dt);
+          
+            end
+           
+            % Solve using matrix fraction decomposition
+            foo = AAA(:,:,j)*[P; eye(size(P)); dP(:,:,j); Z];
+      
+            % Pick the parts
+            C  = foo(    (1:n),:);
+            D  = foo(  n+(1:n),:);
+            dC = foo(2*n+(1:n),:);
+            dD = foo(3*n+(1:n),:);
+      
+            % The prediction step covariance
+            if j==1, PP = C/D; end
+      
+            % Sove dP for j (C/D == P_{k|k-1})
+            dP(:,:,j) = (dC - PP*dD)/D;
+
           end
-          
-          % The derivatives of A and Q
-          dA = AA(n+1:end,1:n,j);
-          %dQ = dPinf(:,:,j) - dA*Pinf*A' - A*dPinf(:,:,j)*A' - A*Pinf*dA';
-          dAPinfAt = dA*Pinf*A';
-          dQ = dPinf(:,:,j) - dAPinfAt - A*dPinf(:,:,j)*A' - dAPinfAt';
-          
-          % The derivatives of P
-          %dP(:,:,j) = dA*P*A' + A*dP(:,:,j)*A' + A*P*dA' + dQ;
-          dAPAt = dA*P*A';
-          dP(:,:,j) = dAPAt + A*dP(:,:,j)*A' + dAPAt' + dQ;
       end
       
       % Set predicted m and P
@@ -1486,8 +1583,14 @@ switch gp.type
     end
     
     % Log-transformation
-    gdata = gdata.*exp(w);
-    
+    [w,ws] = gp_pak(gp);
+    ind = strncmpi(ws,'log(',4) & ~strncmpi(ws,'log(log(',8);
+    gdata(ind) = gdata(ind).*exp(w(ind));
+
+    % Log-log-transformation
+    ind = strncmpi(ws,'log(log(',8);
+    gdata(ind) = gdata(ind).*exp(w(ind)+exp(w(ind)));
+
   otherwise
     error('Unknown type of Gaussian process!')
 end

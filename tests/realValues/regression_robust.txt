@@ -1,0 +1,143 @@
+
+gp = 
+
+            type: 'FULL'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-09
+              fh: [1x1 struct]
+
+Gaussian noise model and MAP estimate for parameters
+ TolFun reached. Func-count 23. Final f(x)=27.0141. Elapsed time 0.18
+
+S1 =
+
+length-scale: 1.066, magnSigma2: 5.420  
+
+
+Scale mixture Gaussian (~=Student-t) noise model                
+using MCMC integration over the latent values and parameters    
+ Using SLS sampler for hyperparameters
+ cycle  etr      slsrej  
+   20  -38.105  sls  
+   40  -51.018  sls  
+   60  -54.371  sls  
+   80  -54.989  sls  
+  100  -61.803  sls  
+  120  -65.385  sls  
+  140  -50.697  sls  
+  160  -64.071  sls  
+  180  -47.628  sls  
+  200  -53.372  sls  
+  220  -55.422  sls  
+  240  -55.152  sls  
+  260  -59.509  sls  
+  280  -45.947  sls  
+  300  -53.208  sls  
+
+S2 =
+
+length-scale: 1.051, magnSigma2: 7.908 
+
+
+Student-t noise model using Laplace integration over the 
+latent values and MAP estimate for the parameters        
+ TolFun reached. Func-count 27. Final f(x)=-24.079. Elapsed time 1.10
+
+S3 =
+
+length-scale: 1.047, magnSigma2: 3.092 
+
+
+Student-t noise model using EP integration over the
+latent values and MAP estimate for parameters      
+  Iteration  Func-count      f(x)      Lambda
+      0          1          5.0753    
+      1          3       -0.390577       10
+      2          5        -20.2665        5
+      3          7        -21.8841      2.5
+      4          9        -23.5458     1.25
+      5         11        -23.9733    0.625
+      6         13        -24.8948    0.312
+      7         15           -25.2    0.156
+      8         17        -25.3813   0.0781
+      9         19        -25.4289   0.0391
+     10         21        -25.5223   0.0195
+     11         23        -25.5358   0.00977
+     12         25        -25.6001   0.00488
+     13         27         -25.619   0.00244
+     14         29        -25.6518   0.00122
+     15         31        -25.6526   0.00061
+ TolFun reached. Func-count 31. Final f(x)=-25.6526. Elapsed time 17.56
+
+S4 =
+
+length-scale: 1.040, magnSigma2: 2.920 
+
+
+Student-t noise model with nu= 4 and using MCMC integration
+over the latent values and parameters                      
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      lslsn
+   20  -194.741  7.0e+00  
+   40  -247.772  9.0e+00  
+   60  -263.046  9.0e+00  
+   80  -286.524  4.0e+00  
+  100  -284.345  9.0e+00  
+  120  -283.511  8.0e+00  
+  140  -281.262  7.0e+00  
+  160  -293.818  1.2e+01  
+  180  -294.601  1.6e+01  
+  200  -302.074  8.0e+00  
+  220  -303.498  8.0e+00  
+  240  -303.258  1.0e+01  
+  260  -308.047  1.6e+01  
+  280  -313.108  8.0e+00  
+  300  -308.032  1.2e+01  
+  320  -307.147  1.2e+01  
+  340  -313.006  9.0e+00  
+  360  -315.498  1.0e+01  
+  380  -309.592  1.1e+01  
+  400  -309.290  1.1e+01  
+
+S5 =
+
+length-scale: 0.761, magnSigma2: 2.366 
+
+
+Student-t noise model with nu=4 using Laplace integration over
+the latent values and MAP estimate for the parameters         
+ TolFun reached. Func-count 19. Final f(x)=-14.9305. Elapsed time 0.51
+
+S6 =
+
+length-scale: 1.040, magnSigma2: 3.095 
+
+
+Student-t noise model with nu=4 using EP integration over
+the latent values and MAP estimate for parameters        
+  Iteration  Func-count      f(x)      Lambda
+      0          1          5.0753    
+      1          3       -0.138385       10
+      2          5        -13.6439        5
+      3          7        -14.0719      2.5
+      4          9        -14.1846     1.25
+      5         11        -14.8554    0.625
+      6         13        -15.1515    0.312
+      7         15        -15.1629    0.156
+      8         17        -15.1788   0.0781
+      9         19        -15.1794   0.0391
+ TolFun reached. Func-count 19. Final f(x)=-15.1794. Elapsed time 7.74
+
+S7 =
+
+length-scale: 1.033, magnSigma2: 2.966 
+
+
+
+ gp hyperparameters: 
+ 
+    1.0871    0.0321   -4.6357
+
+Demo completed in 1.327 minutes

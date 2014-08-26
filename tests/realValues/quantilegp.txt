@@ -1,0 +1,108 @@
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      
+   10  -655.948  
+   20  -814.127  
+   30  -793.237  
+   40  -811.429  
+   50  -790.802  
+   60  -795.628  
+   70  -799.446  
+   80  -790.804  
+   90  -790.947  
+  100  -793.979  
+  110  -819.661  
+  120  -810.312  
+  130  -806.862  
+  140  -799.911  
+  150  -802.424  
+  160  -809.855  
+  170  -803.488  
+  180  -802.406  
+  190  -814.197  
+  200  -815.736  
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      
+   10  -835.532  
+   20  -876.538  
+   30  -873.323  
+   40  -873.999  
+   50  -866.677  
+   60  -865.850  
+   70  -862.013  
+   80  -861.627  
+   90  -881.933  
+  100  -882.073  
+  110  -879.486  
+  120  -858.539  
+  130  -857.283  
+  140  -859.148  
+  150  -874.396  
+  160  -874.116  
+  170  -872.306  
+  180  -873.092  
+  190  -864.090  
+  200  -869.966  
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      
+   10  -674.260  
+   20  -782.390  
+   30  -785.058  
+   40  -777.811  
+   50  -775.691  
+   60  -781.468  
+   70  -780.819  
+   80  -778.977  
+   90  -762.236  
+  100  -775.296  
+  110  -776.123  
+  120  -767.543  
+  130  -755.555  
+  140  -748.529  
+  150  -742.941  
+  160  -743.832  
+  170  -743.400  
+  180  -751.381  
+  190  -736.308  
+  200  -742.827  
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1             330.216    
+     1           2           2             265.558       0.0138401
+     2           4           4             212.146        0.497238
+     3           7           7             211.176       0.0434884
+     4           8           8             210.956               1
+     5           9           9             210.917               1
+     6          10          10             210.913               1
+     7          11          11             210.913               1
+     8          12          12             210.913               1
+     9          13          13             210.913               1
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Line search cannot find an acceptable point along the current search direction
+  Iterations : 10
+  Function Count : 18
+  Minimum found : 210.9131
+  Intern Time : 0.012145 seconds
+  Total Time : 46.1157 seconds
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1             331.846    
+     1           2           2             266.315       0.0137365
+     2           4           4             212.334        0.467987
+     3           7           7             208.034            0.05
+     4           9           9             207.787        0.305239
+     5          10          10             207.776               1
+     6          11          11             207.774               1
+     7          12          12             207.774               1
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 8
+  Function Count : 14
+  Minimum found : 207.7743
+  Intern Time : 0.009385 seconds
+  Total Time : 45.9901 seconds
+
+ gp hyperparameters: 
+ 
+         0         0   -0.6931
+
+Demo completed in 2.888 minutes

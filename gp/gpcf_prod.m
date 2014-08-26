@@ -597,7 +597,7 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
   end
 end
 
-function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_prod_cf2ss(gpcf)
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_prod_cf2ss(gpcf,x)
 %GPCF_PROD_CF2SS Convert the covariance function to state space form
 %
 %  Description
@@ -612,18 +612,21 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_prod_cf2ss(gpcf)
 %    Conference on Artifcial Intelligence and Statistics (AISTATS 2014).
 %
 
+  % Check arguments
+  if nargin < 2, x = []; end
+
   % Vector of function handles of conversion functions 
   % from covariance functions to state space 
   cf2ssvect = cell(length(gpcf.cf),1);
   for k = 1:length(gpcf.cf)
      
       % Initial function handle 
-      fh = @(x) gpcf.cf{k}.fh.cf2ss(gpcf.cf{k});
+      fh = @(y) gpcf.cf{k}.fh.cf2ss(gpcf.cf{k},x);
       
       % Deal with the periodic (deterministic) covariance function
       % as a special case
       if isequal(gpcf.cf{k}.type,'gpcf_periodic') && gpcf.cf{k}.decay == 0
-        cf2ssvect{k} = @(x) cf2ss_periodicprod(fh);
+        cf2ssvect{k} = @(y) cf2ss_periodicprod(fh);
       else
         cf2ssvect{k} = fh;
       end

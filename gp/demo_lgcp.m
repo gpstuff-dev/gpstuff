@@ -41,12 +41,18 @@
 % =====================================
 fprintf(['Coal disaster data with EP integration over the latent values\n'])
 
-figure
 % Coal disaster data
 S = which('demo_lgcp');
 L = strrep(S,'demo_lgcp.m','demodata/coal.txt');
-x=load(L);
-lgcp(x,[1850:1963]','gpcf',@gpcf_exp)
+x = load(L);
+xt = (1850:1963)';
+[p1,pq1] = lgcp(x,xt,'gpcf',@gpcf_exp);
+
+figure()
+hp=patch([xt; xt(end:-1:1)],[pq1(:,1); pq1(end:-1:1,2)],[.9 .9 .9]);
+set(hp,'edgecolor',[.9 .9 .9])
+xlim([min(x) max(x)])
+line(xt,p1,'linewidth',2);
 line([x x],[5 5.3],'color','k')
 line(xlim,[5.15 5.15],'color','k')
 xlim([1850 1963])
@@ -60,11 +66,28 @@ ylabel('Intensity')
 % =====================================
 fprintf(['Redwood data with Laplace integration over the latent\n' ...
          'values and MAP estimate for the parameters\n'])
-figure
+
+% Redwood data
 S = which('demo_lgcp');
 L = strrep(S,'demo_lgcp.m','demodata/redwoodfull.txt');
 x=load(L);
-lgcp(x,'range',[0 1 0 1],'latent_method','Laplace','gridn',20)
+x1min=min(x(:,1));x1max=max(x(:,1));
+x2min=min(x(:,2));x2max=max(x(:,2));
+[xt1,xt2]=meshgrid(linspace(x1min,x1max,100),...
+                   linspace(x2min,x2max,100));
+xt=[xt1(:) xt2(:)];
+p2 = lgcp(x,xt,'range',[0 1 0 1],'latent_method','Laplace','gridn',20);
+
+figure()
+G=zeros(size(xt1));
+G(:)=p2;
+pcolor(xt1,xt2,G);
+shading flat
+colormap('jet')
+cx=caxis;
+cx(1)=0;
+caxis(cx);
+colorbar
 h=line(x(:,1),x(:,2),'marker','.','linestyle','none','color','k','markersize',10);
 colorbar
 axis square

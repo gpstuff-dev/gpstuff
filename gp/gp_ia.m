@@ -241,7 +241,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       if ismember(opt.display,{'on','iter'}) && et > 1
         fprintf('    Elapsed time %.2f seconds\n',et);
       end
-      if any(eig(H))<0
+      if any(eig(H))<0 || any(~isreal(eig(H)))
         if ismember(opt.display,{'on','iter'});
           fprintf(' IA-%s: computing Hessian using finite difference\n',int_method);
         end

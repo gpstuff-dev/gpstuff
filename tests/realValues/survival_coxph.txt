@@ -1,0 +1,40 @@
+  Iteration  Func-count      f(x)      Lambda
+      0          1          592.79    
+      1          3          586.41     21.6
+      2          5         585.087     21.6
+      3          7         572.396     10.8
+      4          9          569.02     5.41
+      5         11         568.097     2.71
+      6         13         567.164     1.35
+      7         15          567.04    0.676
+      8         17         566.904    0.338
+      9         19         566.673    0.169
+     10         21         566.665   0.0846
+ TolFun reached. Func-count 21. Final f(x)=566.665. Elapsed time 58.25
+
+ans =
+
+  -5.9203e+03
+
+Evaluating the CV utility. The inference method is MAP.
+ The CV-fold number: 1/10 
+ The CV-fold number: 2/10 
+ The CV-fold number: 3/10 
+ The CV-fold number: 4/10 
+ The CV-fold number: 5/10 
+ The CV-fold number: 6/10 
+ The CV-fold number: 7/10 
+ The CV-fold number: 8/10 
+ The CV-fold number: 9/10 
+ The CV-fold number: 10/10 
+
+ans =
+
+ -546.5010
+
+
+ gp hyperparameters: 
+ 
+   -0.6744   -0.3888   -0.6922   -1.1005   -1.3187   -1.5066    0.4186    0.9045   -0.9993    0.4694
+
+Demo completed in 15.805 minutes

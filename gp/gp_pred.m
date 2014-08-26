@@ -101,7 +101,7 @@ ip.addParamValue('predcf', [], @(x) isempty(x) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)&x>=0))
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
+ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on', 'lr'}));
 if numel(varargin)==0 || isnumeric(varargin{1})
   % inputParser should handle this, but it doesn't
   ip.parse(gp, x, y, varargin{:});
@@ -222,7 +222,11 @@ switch gp.type
     if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'})
       %evaluate a = C\y;
       % -------------------
-      [tmp, C]=gp_trcov(gp,x);
+      if isfield(gp, 'lik_mono')
+        [K,C] = gp_dtrcov(gp, x, gp.xv);
+      else
+        [K, C] = gp_trcov(gp, x);
+      end
       
       if issparse(C)
         LD = ldlchol(C);
@@ -251,8 +255,15 @@ switch gp.type
         % Do the prediction in blocks to save memory
         xtind = (i1-1)*nblock+1:min(i1*nblock,nxt);
         xtind2 = xtind;
-        K=gp_cov(gp,x,xt(xtind,:),predcf);
-        if isfield(gp,'derivobs') && gp.derivobs==1
+        if isfield(gp, 'lik_mono')
+          %[K,C] = gp_dtrcov(gp, x, gp.xv);
+          K=gp_dcov(gp,x,xt(xtind,:),predcf)';
+          K(length(xtind)+1:end,:)=[];
+          K=K';
+        else
+          K=gp_cov(gp,x,xt(xtind,:),predcf);
+        end
+        if isfield(gp,'derivobs') && gp.derivobs==1 && ~isfield(gp,'lik_mono')
           for k2=2:nderobs
             xtind2 = [xtind2 xtind+length(xt)*(k2-1)];
           end
@@ -275,7 +286,11 @@ switch gp.type
         % Vector of diagonal elements of covariance matrix
         if nargout > 1
           
-          V = gp_trvar(gp,xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
+          if isfield(gp, 'lik_mono')
+            V = gp_trvar(rmfield(gp,'derivobs'),xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
+          else
+            V = gp_trvar(gp,xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
+          end
           if issparse(C)
             Varft(xtind2) = V - diag(K'*ldlsolve(LD,K));
           else
@@ -882,18 +897,19 @@ switch gp.type
     R = gp.lik.sigma2;
     
     % Initialize model matrices
-    F    = [];
-    L    = [];
-    Qc   = [];
-    H    = [];
-    Hs   = [];
-    Pinf = [];
+    F        = [];
+    L        = [];
+    Qc       = [];
+    H        = [];
+    Hs       = [];
+    Pinf     = [];
+    isstable = true;
     
     % For each covariance function
     for j=1:length(gp.cf)
  
       % Form state-space model from the gp.cf{j}
-      [jF,jL,jQc,jH,jPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
+      [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf,p] = gp.cf{j}.fh.cf2ss(gp.cf{j},xall);
     
       % Make Hs according to requested covariance components
       if isempty(predcf) || any(predcf==j)
@@ -908,6 +924,9 @@ switch gp.type
       Qc   = blkdiag(Qc,jQc);
       H    = [H jH];    
       Pinf = blkdiag(Pinf,jPinf);
+
+      % Set options
+      isstable = isfield(p,'stationary') && (isstable && p.stationary);
       
     end
           
@@ -939,8 +958,19 @@ switch gp.type
           A(:,:,k) = A(:,:,k-1);
           Q(:,:,k) = Q(:,:,k-1);
         else
-          A(:,:,k) = expm(F*dt);
-          Q(:,:,k) = Pinf - A(:,:,k)*Pinf*A(:,:,k)';
+          % Discrete-time solution
+          if isstable
+            % Only for stable systems
+            A(:,:,k) = expm2(F*dt);
+            Q(:,:,k) = Pinf - A(:,:,k)*Pinf*A(:,:,k)';
+          else
+            % Closed-form integration of covariance
+            % by matrix fraction decomposition
+            A(:,:,k) = expm2(F*dt);
+            Phi      = [F L*Qc*L'; zeros(size(F,1)) -F'];
+            AB       = expm2(Phi*dt)*[zeros(size(F,1));eye(size(F,1))];
+            Q(:,:,k) = AB(1:size(F,1),:)/AB((size(F,1)+1):(2*size(F,1)),:);
+          end
         end
         
         % Prediction step
