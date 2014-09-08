@@ -145,14 +145,11 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   end
   
   nGP = numel(gp_array);
-  
-  for i1=1:nGP
-  end
 
   % Make predictions with different models in gp_array
   for i1=1:nGP
     P_TH(:,i1) = gp_array{i1}.ia_weight;
-    if isempty(yt)
+    if nargout <= 2
       [Efts(:,i1), Covfts(:,:,i1)]=gp_jpred(gp_array{i1},x,y,xt,options);            
     else
       [Efts(:,i1), Covfts(:,:,i1), ljpyts(i1), Eyts(:,i1), Covyts(:,:,i1)]=gp_jpred(gp_array{i1},x,y,xt, options);
