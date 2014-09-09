@@ -67,6 +67,8 @@ ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.addParamValue('nsamp', 1, @(x) isreal(x) && isscalar(x))
 ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'fact','cm2','off','on','lr'}))
+ip.addParamValue('autoscale', 'off', @(x) ismember(x,{'on' 'off'}));
+ip.addParamValue('n_scale',50, @(x) isnumeric(x) && floor(x)>0);
 if numel(varargin)==0 || isnumeric(varargin{1})
   % inputParser should handle this, but it doesn't
   ip.parse(gp, x, y, varargin{:});
