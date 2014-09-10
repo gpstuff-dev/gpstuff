@@ -61,6 +61,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   every repeat'th iteration, default 0.
 %       repeat    - number of subiterations in HMC.
 %                   Default is 10.
+%       cache     - tells whether gpla_e or gpep_e cache memory is used
+%                   seperately for each sample in a case of non-gaussian
+%                   likelihood ('on','off'). Cache enabled consumes more
+%                   memory but prevents possible recalculations in the
+%                   future. Default 'on'.
 %       
 %  References
 %
@@ -114,6 +119,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip.addParamValue('opt_optim', [], @isstruct)
   ip.addParamValue('opt_hmc', [], @isstruct);
   ip.addParamValue('persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
+  ip.addParamValue('cache', 'on', @(x) ischar(x) && ismember(x,{'on','off'}));
   ip.addParamValue('display', 'on', @(x) islogical(x) || isreal(x) || ...
                    ismember(x,{'on' 'off' 'iter'}))
   if numel(varargin)==0 || isnumeric(varargin{1})
@@ -160,6 +166,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       opt.display='off';
     end
   end
+  use_cache = strcmp(ip.Results.cache, 'on');
   % pass these forward
   options=struct();
   if ~isempty(ip.Results.yt);options.yt=ip.Results.yt;end
@@ -197,7 +204,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   tall=tic;
   
   % Ensure initialisation of new memory for the first sample
-  if isfield(gp, 'latent_method')
+  if isfield(gp, 'latent_method') && use_cache
     if strcmp(gp.latent_method, 'Laplace')
       gp = gpla_e('init', gp);
     elseif strcmp(gp.latent_method, 'EP')
@@ -308,7 +315,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           gp_array{end+1} = gp;
           
           % Initialise new memory for next sample
-          if isfield(gp, 'latent_method')
+          if isfield(gp, 'latent_method') && use_cache
             if strcmp(gp.latent_method, 'Laplace')
               gp = gpla_e('init', gp);
             elseif strcmp(gp.latent_method, 'EP')
@@ -353,7 +360,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                   end
                                   
                   % Initialise new memory for next sample
-                  if isfield(gp, 'latent_method')
+                  if isfield(gp, 'latent_method') && use_cache
                     if strcmp(gp.latent_method, 'Laplace')
                       gp = gpla_e('init', gp);
                     elseif strcmp(gp.latent_method, 'EP')
@@ -394,7 +401,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                   end
                   
                   % Initialise new memory for next sample
-                  if isfield(gp, 'latent_method')
+                  if isfield(gp, 'latent_method') && use_cache
                     if strcmp(gp.latent_method, 'Laplace')
                       gp = gpla_e('init', gp);
                     elseif strcmp(gp.latent_method, 'EP')
@@ -592,7 +599,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             if ismember(opt.display,{'iter'}),fprintf('%d ',i1);end
             gp = gp_unpak(gp,th(i1,:));
             
-            if isfield(gp, 'latent_method')
+            if isfield(gp, 'latent_method') && use_cache
               if strcmp(gp.latent_method, 'Laplace')
                 gp = gpla_e('init', gp);
               elseif strcmp(gp.latent_method, 'EP')
@@ -856,7 +863,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               fh_p(gp_array{j},x,y,xt,options);
         end
         
-        if isfield(gp, 'latent_method')
+        if isfield(gp, 'latent_method') && use_cache
           if strcmp(gp.latent_method, 'Laplace')
             gp = gpla_e('init', gp);
           elseif strcmp(gp.latent_method, 'EP')
@@ -917,7 +924,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           hmc_rstate.mom = [];
         end
         
-        if isfield(gp, 'latent_method')
+        if isfield(gp, 'latent_method') && use_cache
           if strcmp(gp.latent_method, 'Laplace')
             gp = gpla_e('init', gp);
           elseif strcmp(gp.latent_method, 'EP')
@@ -967,7 +974,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         end
         
         % Initialise new memory for next sample
-        if isfield(gp, 'latent_method')
+        if isfield(gp, 'latent_method') && use_cache
           if strcmp(gp.latent_method, 'Laplace')
             gp = gpla_e('init', gp);
           elseif strcmp(gp.latent_method, 'EP')
