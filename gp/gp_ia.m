@@ -65,7 +65,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   seperately for each sample in a case of non-gaussian
 %                   likelihood ('on','off'). Cache enabled consumes more
 %                   memory but prevents possible recalculations in the
-%                   future. Default 'on'.
+%                   future. Default 'off'.
 %       
 %  References
 %
@@ -119,7 +119,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip.addParamValue('opt_optim', [], @isstruct)
   ip.addParamValue('opt_hmc', [], @isstruct);
   ip.addParamValue('persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
-  ip.addParamValue('cache', 'on', @(x) ischar(x) && ismember(x,{'on','off'}));
+  ip.addParamValue('cache', 'off', @(x) ischar(x) && ismember(x,{'on','off'}));
   ip.addParamValue('display', 'on', @(x) islogical(x) || isreal(x) || ...
                    ismember(x,{'on' 'off' 'iter'}))
   if numel(varargin)==0 || isnumeric(varargin{1})
