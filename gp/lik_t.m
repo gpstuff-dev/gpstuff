@@ -395,6 +395,9 @@ function [logM_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, my
   tol = 1e-8;
   nu = lik.nu;
   sigma2 = lik.sigma2;
+  
+  logM_0 = zeros(length(i1),1);
+  
   for i=i1
 
     yy = y(i);
