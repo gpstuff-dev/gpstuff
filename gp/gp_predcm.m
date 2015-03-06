@@ -211,7 +211,11 @@ switch gp.latent_method
     
     [tmp, tmp, tmp, param] = gpla_e(gp_pak(gp), gp, x,y,'z',z);
     f_mode = param.f;
-    ll = arrayfun(@(f,yy) gplik.fh.ll(gplik, yy, f, z), f_mode, y);
+    if ~isempty(z)
+      ll = arrayfun(@(f,yy, zz) gplik.fh.ll(gplik, yy, f, zz), f_mode, y, z);
+    else
+      ll = arrayfun(@(f,yy) gplik.fh.ll(gplik, yy, f, z), f_mode, y);
+    end
     llg = gplik.fh.llg(gplik, y, f_mode, 'latent', z);
     llg2 = gplik.fh.llg2(gplik, y, f_mode, 'latent', z);
     K_ff = gp_trcov(gp, x);
