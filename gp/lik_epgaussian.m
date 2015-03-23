@@ -8,7 +8,7 @@ function lik = lik_epgaussian(varargin)
 %  See also
 %    GP_SET, LIK_*
 %
-
+%
 % Copyright (c) 2013 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
