@@ -1,4 +1,4 @@
-function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt,ind,varargin)
+function [Ef, Varf, xtnn, xt1, xt2] = gp_cpred(gp,x,y,xt,ind,varargin)
 %GP_CPRED Conditional predictions using specific covariates
 %
 %  Description
