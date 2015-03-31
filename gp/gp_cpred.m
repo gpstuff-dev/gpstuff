@@ -51,11 +51,13 @@ ip.addParamValue('method', 'median', @(x)  ismember(x, {'median', 'mean' 'mode'}
 ip.addParamValue('plot', 'off', @(x)  ismember(x, {'on', 'off'}))
 ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('target', 'mu', @(x) ismember(x,{'f','mu','cdf'}))
+ip.addParamValue('prct', [5 50 95], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('normdata', struct(), @(x) isempty(x) || isstruct(x))
 ip.parse(gp, x, y, xt, ind, varargin{:});
 zt=ip.Results.zt;
 options=struct();
 options.predcf=ip.Results.predcf;
+options.prct=ip.Results.prct;
 options.tstind=ip.Results.tstind;
 method = ip.Results.method;
 vars = ip.Results.var;
