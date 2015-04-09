@@ -59,7 +59,7 @@ ye=1-leukemiadata(:,2); % event indicator, ye = 0 for uncensored event
 x0=leukemiadata(:,5:8);
 x=x0;
 [n, m]=size(x);
-% transform white blood cell count (wbc), which highly skewed
+% transform white blood cell count (wbc), which has highly skewed
 % distribution with zeros for measurements below measurement accuracy
 x(:,3)=log10(x(:,3)+0.3);
 % normalize continuous covariates 
