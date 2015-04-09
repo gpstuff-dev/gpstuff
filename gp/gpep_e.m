@@ -811,7 +811,7 @@ end
                           if int_magnitude
                             if inputmagnitude
                               dSigm=[dSigm diag(Sigm3)];
-                              if joint_mean_magnitude
+                              if exist('joint_mean_magnitude', 'var') && joint_mean_magnitude
                                 dSigm=[dSigm Sigm4];
                               end
                             else
