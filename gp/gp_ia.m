@@ -1205,6 +1205,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   end
 
   function vv = hessianMultiplication(w0, v)
+  % Pearlmutter, B. A. (1994). Fast exact multiplication by the
+  % Hessian. Neural computation, 6(1), 147-160.
     if size(w0) ~= size(v)
       v = v';
     end
