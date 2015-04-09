@@ -245,7 +245,7 @@ function [logM_0, m_1, sigm2hati1] = lik_poisson_tiltedMoments(lik, y, i1, sigma
     RTOL = 1.e-6;
     ATOL = 1.e-10;
     [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-    if isnan(m_0)
+    if isnan(m_0)||m_0<realmin
       logM_0=NaN;
       return
     end
