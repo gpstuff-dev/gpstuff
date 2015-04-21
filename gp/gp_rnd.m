@@ -109,6 +109,16 @@ if isempty(xt)
   end
 end
 
+if iscell(gp)
+    gplatmet=gp{1}.latent_method;
+else
+    gplatmet=gp.latent_method;
+end
+if ~strcmp(gplatmet, 'Laplace') && strcmp(autoscale,'on')
+    % autoscale is applicable only with Laplace
+    autoscale='off';
+end
+
 sampyt=[];
 if isstruct(gp) && numel(gp.jitterSigma2)==1
   % Single GP
@@ -146,9 +156,6 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
       %    Autoscale on
       % ------------------
       
-      if strcmp(gp.latent_method, 'EP')
-        error('Autoscale is not compatible with EP, use Laplace instead.');
-      end
       if isfield(gp,'meanf')
         error('Mean functions not implemented for autoscale in GP_RND');
       end
@@ -589,4 +596,3 @@ elseif iscell(gp)
     end
   end
 end
-
