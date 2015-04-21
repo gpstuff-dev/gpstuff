@@ -290,8 +290,8 @@ switch gp.type
               DKffc{2} = [DKffa{2}, DKdf{2}'; DKdf{2}, DKdd{2}];
               np=2;
               
-              %Case: input dimension is >1
             else
+              %Case: input dimension is >1
               DKffa = gpcf.fh.cfg(gpcf, x);
               DKdf = gpcf.fh.cfdg(gpcf, x);
               DKdd = gpcf.fh.cfdg2(gpcf, x);
