@@ -4015,6 +4015,46 @@ covariance function
   k(\x_i,\x_j)= \sigma^2 + \mathbf{x}_i^{\text{T}}\Sigma \mathbf{x}_j.
 \end{equation}
 
+\subsection*{Michelis-Menten covariance function  (\code{gpcf\_linearMichelismenten})}
+
+The Michelis-Menten functional form (equivalently Type-II functional
+response or Monod form, \citep{Kot:2001}) is given by
+\begin{equation}
+h(x) = bx / (a + x)
+\end{equation}
+where $b$ is asymptote of the function and $a$ the half-saturation 
+point defining at which point the function is half of the asymptotic 
+level. By giving a zero mean Gaussian prior for asymptote, $b \sim N(0, \sigma^2)$
+the prior for $h(x)$ is $h(x) \sim N(0, H(x)H(x)^{\text{T}}\sigma^2)$ where 
+$H(x) = [x_1/(a + x_1, ... , x_n/(a + x_n]^{\text{T}}$. Hence, the 
+covariance function related to the Michelis-Menten mean function in case of $D$
+ inputs is 
+\begin{equation}\label{cf_linearMichelismenten}
+k(\x_i,\x_j)= H(\x_i)\Sigma H(\x_j)^{\text{T}},
+\end{equation}
+where the diagonal matrix
+$\Sigma=\text{diag}(\sigma_1^2,\ldots,\sigma_D^2)$ contains the
+prior variances of the $b_d$ terms. 
+
+\subsection*{Logistic mean covariance function  (\code{gpcf\_linearMichelismenten})}
+
+The logistic functional form is given by
+\begin{equation}
+h(x) = w (\mathrm{logit}^{-1}(ax + b) - 0.5) 
+\end{equation}
+where $w$ is the weight of the mean function, $b$ is the intercept of the linear part 
+and $a$ regression coefficient of linear part. By giving a zero mean Gaussian prior 
+for weight, $w \sim N(0, \sigma^2)$
+the prior for $h(x)$ is $h(x) \sim N(0, H(x)H(x)^{\text{T}}\sigma^2)$ where 
+$H(x) = [h(x_1), ... , h(x_n)]^{\text{T}}$. Hence, the covariance function related 
+to the logistic mean function in case of $D$ inputs is 
+\begin{equation}\label{cf_linearMichelismenten}
+k(\x_i,\x_j)= H(\x_i)\Sigma H(\x_j)^{\text{T}},
+\end{equation}
+where the diagonal matrix
+$\Sigma=\text{diag}(\sigma_1^2,\ldots,\sigma_D^2)$ contains the
+prior variances of the $b_d$ terms. 
+
 \subsection*{Piecewise polynomial functions (\code{gpcf\_ppcsX})}
 
 The piecewise polynomial functions are the only compactly supported

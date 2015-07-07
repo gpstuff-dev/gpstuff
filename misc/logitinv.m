@@ -5,7 +5,7 @@ function u = logitinv(v)
 %    U = LOGITINV(V) computes the inverse of the logit
 %    transformation of U
 %
-%      U = 1./(1 + EXP(V))
+%      U = 1./(1 + EXP(-V))
 %  
 %  See also LOGIT
 %
