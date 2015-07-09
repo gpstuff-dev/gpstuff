@@ -204,8 +204,13 @@ try
   
   % Save all figures into the desired folder
   for i = setdiff(get(0,'children'), run_demo_data.orig_figs)'
-    filename = [run_demo_data.mode 'Values/' ...
-      run_demo_data.name '_fig' num2str(i.Number) '.fig'];
+    if isprop(i, 'Number')
+      filename = [run_demo_data.mode 'Values/' ...
+        run_demo_data.name '_fig' num2str(i.Number) '.fig'];
+    else
+      filename = [run_demo_data.mode 'Values/' ...
+        run_demo_data.name '_fig' num2str(i) '.fig'];
+    end
     % First save the figure hidden
     saveas(i,filename)
     % Then change the visible-flag on
