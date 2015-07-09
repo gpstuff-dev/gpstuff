@@ -2,12 +2,12 @@
 
 Maintainer: Aki Vehtari <aki.vehtari@aalto.fi>
 
-**If you use GPstuff (or otherwise refer to it), use the following reference:**
+**If you use GPstuff (or otherwise refer to it), use the following reference:
   Jarno Vanhatalo, Jaakko Riihimäki, Jouni Hartikainen, Pasi Jylänki,
   Ville Tolvanen, and Aki Vehtari (2013). GPstuff: Bayesian Modeling
   with Gaussian Processes. Journal of Machine Learning Research,
-  14(Apr):1175-1179. 
-  Available at http://jmlr.csail.mit.edu/papers/v14/vanhatalo13a.html
+  14(Apr):1175-1179.** 
+  Available at <http://jmlr.csail.mit.edu/papers/v14/vanhatalo13a.html>
 
 This software is distributed under the GNU General Public Licence
 (version 3 or later); please refer to the file Licence.txt,
@@ -31,7 +31,7 @@ parts have been coded in C.
 
 The code for GPstuff can be found in subfolders. The SuiteSparse
 folder contains an exact copy of the SuiteSparse v3.4 toolbox by Tim
-Davis: http://www.cise.ufl.edu/research/sparse/SuiteSparse/current/SuiteSparse/
+Davis: <http://www.cise.ufl.edu/research/sparse/SuiteSparse/current/SuiteSparse/>
 The SuiteSparse is needed when using compactly supported covariance
 functions.
 
