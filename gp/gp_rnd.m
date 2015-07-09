@@ -109,15 +109,18 @@ if isempty(xt)
   end
 end
 
-if iscell(gp)
-    gplatmet=gp{1}.latent_method;
-else
-    gplatmet=gp.latent_method;
+if isfield(gp, 'latent_method')
+  if iscell(gp)
+      gplatmet=gp{1}.latent_method;
+  else
+      gplatmet=gp.latent_method;
+  end
+  if ~strcmp(gplatmet, 'Laplace') && strcmp(autoscale,'on')
+      % autoscale is applicable only with Laplace
+      autoscale='off';
+  end
 end
-if ~strcmp(gplatmet, 'Laplace') && strcmp(autoscale,'on')
-    % autoscale is applicable only with Laplace
-    autoscale='off';
-end
+
 
 sampyt=[];
 if isstruct(gp) && numel(gp.jitterSigma2)==1
