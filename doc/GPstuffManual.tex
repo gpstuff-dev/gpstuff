@@ -158,7 +158,7 @@ Gaussian process, Bayesian hierarchical model, nonparametric Bayes
 \section{Introduction}
 
 This work reviews a free open source toolbox \pkg{GPstuff} (version
-4.4) which implements a collection of inference methods and tools for
+4.5) which implements a collection of inference methods and tools for
 inference for various Gaussian process (GP) models. The toolbox is
 compatible with Unix and Windows \proglang{MATLAB} \citep{MATLAB:2010}
 (r2009b or later, earlier versions may work, but has not been tested
@@ -3210,7 +3210,7 @@ There are various means to assess the goodness of the model and its
 predictive performance. For an extensive review of the predictive
 performance assessment methods see \citet{Vehtari+Ojanen:2012} and for
 a shorter review comparing cross-validation, DIC and WAIC see
-\citet{Gelman+Hwang+Vehtari:2013}. \pkg{GPstuff} provides four basic
+\citet{Gelman+Hwang+Vehtari:2014}. \pkg{GPstuff} provides four basic
 approaches: marginal likelihood, cross-validation, deviance
 information criterion (DIC) and widely applicable information
 criterion (WAIC).
@@ -3241,14 +3241,14 @@ By repeating this for every point in the training data, we get a
 collection of leave-one-out cross-validation (LOO-CV) predictive
 densities.
 %
-For discussion of Bayeasian cross-validation see \citet{Vehtari+Lampinen:2002,Vehtari+Ojanen:2012,Gelman+Hwang+Vehtari:2013}.
+For discussion of Bayesian cross-validation see \citet{Vehtari+Lampinen:2002,Vehtari+Ojanen:2012,Gelman+Hwang+Vehtari:2014} and for comparison of fast approximations for latent Gaussian variable models see \citet{Vehtari+etal:2014}.
 
 For GP with given hyperparameters the LOO-CV predictions can be
 computed in case of Gaussian likelihood using an analytical
 solution \citep{Sundararajan+Keerthi:2001a} and in case of
 non-Gaussian likelihood using EP approximation
 \citep{Opper+Winther:2000,Rasmussen+Williams:2006} or Laplace
-approximation using linear response approach (in preparation),
+approximation using linear response approach \citep{Vehtari+etal:2014},
 which have been implemented in \code{gp\_loopred}.
 %
 % where $\bar{c}_i$ denotes the $i$th diagonal entry of $C^{-1}$,
@@ -3725,7 +3725,7 @@ features in GPstuff, GPML and FBM.
     & GPstuff & GPML & FBM \\
     \textbf{Covariance functions} &  &  & \\
     \hline
-    number of elementary functions & 13 & 10 & 4 \\
+    number of elementary functions & 16 & 10 & 4 \\
     sums of elements, masking of inputs  & x & x & x \\
     delta distance & x & & x \\
     products, positive scaling of elements & x & x &  \\    
@@ -3793,7 +3793,7 @@ features in GPstuff, GPML and FBM.
     average predictive comparison & x &  & 
   \end{tabular}
   \normalsize
-  \caption{The comparison of features in GPstuff (v4.4), GPML (v3.2) and FBM (2004-11-10)
+  \caption{The comparison of features in GPstuff (v4.5), GPML (v3.2) and FBM (2004-11-10)
     toolboxes. In case of model blocks the notation x means that it
     can be inferred with any inference method (EP, LA (Laplace), MCMC and
     in case of GPML also with VB). In case of sparse approximations,
@@ -4865,3 +4865,8 @@ related functions. To start see functions with name starting
 
 \end{document}
 
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
