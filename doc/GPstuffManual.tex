@@ -4036,7 +4036,7 @@ where the diagonal matrix
 $\Sigma=\text{diag}(\sigma_1^2,\ldots,\sigma_D^2)$ contains the
 prior variances of the $b_d$ terms. 
 
-\subsection*{Logistic mean covariance function  (\code{gpcf\_linearMichelismenten})}
+\subsection*{Logistic mean covariance function  (\code{gpcf\_linearLogistic})}
 
 The logistic functional form is given by
 \begin{equation}
@@ -4048,7 +4048,7 @@ for weight, $w \sim N(0, \sigma^2)$
 the prior for $h(x)$ is $h(x) \sim N(0, H(x)H(x)^{\text{T}}\sigma^2)$ where 
 $H(x) = [h(x_1), ... , h(x_n)]^{\text{T}}$. Hence, the covariance function related 
 to the logistic mean function in case of $D$ inputs is 
-\begin{equation}\label{cf_linearMichelismenten}
+\begin{equation}\label{cf_linearlinearLogistic}
 k(\x_i,\x_j)= H(\x_i)\Sigma H(\x_j)^{\text{T}},
 \end{equation}
 where the diagonal matrix
