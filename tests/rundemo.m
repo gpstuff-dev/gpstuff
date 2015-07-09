@@ -214,7 +214,9 @@ try
     % First save the figure hidden
     saveas(i,filename)
     % Then change the visible-flag on
-    f=load(filename,'-mat');
+    % Note that the field hgM_070000 present in some newer Matlab versions
+    % is discarded.
+    f=load(filename,'-mat','hgS_070000');
     n=fieldnames(f);
     f.(n{1}).properties.Visible='on';
     save(filename,'-struct','f')
