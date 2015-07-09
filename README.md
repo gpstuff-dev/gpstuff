@@ -1,20 +1,22 @@
-**GPstuff: Gaussian process models for Bayesian analysis**
+# GPstuff: Gaussian process models for Bayesian analysis
 
 Maintainer: Aki Vehtari <aki.vehtari@aalto.fi>
 
-**If you use GPstuff (or otherwise refer to it), use the following reference:
+## REFERENCE
+
+**If you use GPstuff (or otherwise refer to it), use the following reference:**
   Jarno Vanhatalo, Jaakko Riihimäki, Jouni Hartikainen, Pasi Jylänki,
   Ville Tolvanen, and Aki Vehtari (2013). GPstuff: Bayesian Modeling
   with Gaussian Processes. Journal of Machine Learning Research,
-  14(Apr):1175-1179.** 
-  Available at <http://jmlr.csail.mit.edu/papers/v14/vanhatalo13a.html>
+  14(Apr):1175-1179.
+  (Available at <http://jmlr.csail.mit.edu/papers/v14/vanhatalo13a.html>)
 
-This software is distributed under the GNU General Public Licence
-(version 3 or later); please refer to the file Licence.txt,
-included with the software, for details.
+## HOME PAGE
 
-INTRODUCTION
----------------
+Additional information and illustrations of the features can be found at
+<http://becs.aalto.fi/en/research/bayes/gpstuff/> and <http://arxiv.org/abs/1206.5754>
+
+## INTRODUCTION
 
 The GPstuff toolbox is a versatile collection of Gaussian process
 models and computational tools required for inference. The tools
@@ -35,8 +37,7 @@ Davis: <http://www.cise.ufl.edu/research/sparse/SuiteSparse/current/SuiteSparse/
 The SuiteSparse is needed when using compactly supported covariance
 functions.
 
-INSTALLING THE TOOLBOX
-----------------------
+## INSTALLING THE TOOLBOX
 
 If Matlab or Octave is started in the  directory of GPstuff,
 `startup.m` script will add GPstuff subdirectories to the
@@ -67,8 +68,7 @@ need to compile them first. There are two ways to do that:
    * The function `matlab_install` compiles the mex-files and prints on
      the screen, which directories should be added to Matlab paths. 
     
-CONTENTS
---------
+## CONTENTS
    
 The GPstuff packge contains the following subdirectories:
 diag  dist  gp  mc  misc  optim  tests*  SuiteSparse*
@@ -80,8 +80,7 @@ in the folder.
 The 'gp' folder contains the main functionalities and demonstration
 programs. Other folders contain additional help functions.
 
-TESTING THE INSTALLATION
-------------------------
+## TESTING THE INSTALLATION
 
 Installation can be tested by running command `runtestset('fast')`, which
 runs a collection of demos and compares the computed results to pre-saved
@@ -91,8 +90,7 @@ xunit' package can be used instead. The xunit package can be downloaded
 from
 http://www.mathworks.com/matlabcentral/fileexchange/22846-matlab-xunit-test-framework
 
-USER GUIDE (VERY SHORT)
------------------------
+## USER GUIDE (VERY SHORT)
 
 It easiest to learn to use the package by running the demos. It is
 advisable to open the demo files in text editor and run them line
@@ -130,8 +128,16 @@ consist of separate blocks, which are:
     - GP_IA - Hyperparameter integration approximations
     - GP_PRED - Predictions with Gaussian Process
 
-JMLR DISCLAIMER
----------------
+See more in [User guide](http://arxiv.org/abs/1206.5754)
+
+## LICENSE
+
+This software is distributed under the GNU General Public Licence
+(version 3 or later); please refer to the file Licence.txt,
+included with the software, for details.
+
+
+## JMLR DISCLAIMER
 
    THIS SOURCE CODE IS SUPPLIED \AS IS" WITHOUT WARRANTY OF ANY KIND, AND
    ITS AUTHOR AND THE JOURNAL OF MACHINE LEARNING RESEARCH (JMLR) AND
