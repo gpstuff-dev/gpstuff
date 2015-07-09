@@ -26,7 +26,7 @@ function gpcf = gpcf_additive(varargin)
 %
 %  References:
 %    Duvenaud, D. K., Nickisch, H., & Rasmussen, C. E. (2011). Additive
-%    gaussian processes. In Advances in neural information processing
+%    Gaussian processes. In Advances in neural information processing
 %    systems (pp. 226-234).
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
