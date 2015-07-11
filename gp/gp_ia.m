@@ -13,10 +13,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %      int_method - the method used for integration
 %                    'CCD' for circular composite design (default)
 %                    'grid' for grid search along principal axes
-%                    'is_normal' for importance sampling using Gaussian
-%                      approximation at the mode
-%                    'is_t'for importance sampling using Student's t
-%                     approximation at the mode
+%                    'is_normal' for very good importance sampling
+%                      using Gaussian approximation at the mode
+%                    'is_t'for very good importance sampling using
+%                     Student's t approximation at the mode
 %                    'hmc' for hybrid Monte Carlo sampling (started at the
 %                    mode)
 %       validate  - perform some checks to investigate approximation error.
@@ -76,6 +76,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %    Jarno Vanhatalo, Ville Pietiläinen and Aki Vehtari (2010). 
 %    Approximate inference for disease mapping with sparse Gaussian
 %    processes. Statistics in Medicine, 29(15):1580-1607.
+%
+%    Aki Vehtari and Andrew Gelman (2015). Very good importance
+%    sampling. arXiv preprint arXiv:1507.02646.
 %
 % Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
@@ -717,6 +720,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       P0 =  -fh_e(w,gp,x,y,options);
       
       N = opt.nsamples;
+      p_th=zeros(N,1);
+      p_th_appr=zeros(N,1);
       
       switch int_method
         case 'is_normal'
@@ -724,10 +729,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           L=chol(Sigma,'lower');
           if opt.qmc
             th  = repmat(w,N,1)+(L*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
-            p_th_appr = mnorm_pdf(th, w, Sigma);
+            p_th_appr = mnorm_lpdf(th, w, Sigma);
           else
             th = repmat(w,N,1) + randn(N, length(w))*L';
-            p_th_appr = mnorm_pdf(th, w, Sigma);
+            p_th_appr = mnorm_lpdf(th, w, Sigma);
           end
           
           if opt.qmc
@@ -771,7 +776,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 end
                 
               end
-              p_th_appr(i3) = exp(-C-.5*e(i3,:)*e(i3,:)');
+              p_th_appr(i3) = (-C-.5*e(i3,:)*e(i3,:)');
               th(i3,:)=w+(LS*eta(i3,:)')';
             end
           end
@@ -789,7 +794,6 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               fprintf(' IA-is_t: scaling of the covariance\n');
             end
             th=zeros(N,nParam);
-            p_th_appr=zeros(N,nParam);
             delta = -6:.5:6;
             for i0 = 1 : nParam
               ttt = zeros(1,nParam);
@@ -798,8 +802,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 phat = exp(-fh_e(w+(delta(i1)*LS*ttt')',gp,x,y,options));
                 
                 fi(i1) = nu^(-.5).*abs(delta(i1)).*(((exp(P0)/phat)^(2/(nu+nParam))-1).^(-.5));
-                rel(i1) = (exp(-fh_e(w+(delta(i1)*LS*ttt')',gp,x,y,options)))/ ...
-                          mt_pdf((delta(i1)*LS*ttt')', Scale, nu);%TODO: inline!
+                rel(i1) = exp(-fh_e(w+(delta(i1)*LS*ttt')',gp,x,y,options) ...
+                              -mt_lpdf((delta(i1)*LS*ttt')', Scale, nu));%TODO: inline!
               end
               
               q(i0) = max(fi(delta>0));
@@ -829,7 +833,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                   C = C  -log(q(i2));
                 end
               end
-              p_th_appr(i3) = exp(C - ((nu+nParam)/2)*log(1+sum((e(i3,:)./sqrt(chi)).^2)));
+              p_th_appr(i3) = (C - ((nu+nParam)/2)*log(1+sum((e(i3,:)./sqrt(chi)).^2)));
               th(i3,:)=w+(LS*eta(i3,:)')';
             end
           else
@@ -841,7 +845,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               th = repmat(w,N,1) + ( LS * randn(nParam, N).*sqrt(nu./chi2) )';
             end
             
-            p_th_appr = mt_pdf(th - repmat(w,N,1), Sigma, nu);%TODO: inline!
+            p_th_appr = mt_lpdf(th - repmat(w,N,1), Sigma, nu);%TODO: inline!
           
           end
       end
@@ -879,20 +883,19 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           fprintf('    Elapsed time %.2f seconds\n',et);
         end
       end
-      % Convert densities from the log-space and normalize them
-      p_th = exp(p_th-max(p_th));
-      p_th = p_th/sum(p_th);
-      
-      % (Scaled) Densities of the samples in the approximation of the
-      % target distribution
-      p_th_appr = p_th_appr/sum(p_th_appr);
-      
-      % Importance weights for the samples
-      iw = p_th(:)./p_th_appr(:);
-      iw = iw/sum(iw);
+      % log importance ratios
+      lw=p_th-p_th_appr;
+      % compute VGIS smoothed log weights given raw log importance ratios
+      [lw,vgk]=vgislw(lw);
+      vgk
+      if vgk>0.5&vgk<1
+          warning('VGIS Pareto k estimate between 0.5 and 1 (%.1f)',vgk)
+      elseif vgk>1
+          warning('VGIS Pareto k estimate greater than 1 (%.1f)',vgk)
+      end
       
       % Return the importance weights
-      P_TH = iw;
+      P_TH = exp(lw);
       
     case {'hmc'}
       
@@ -1134,6 +1137,15 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     for i1 = 1 : size(x,1);
       p(i1) = gamma((nu+1)/2) ./ gamma(nu/2) .* nu^(d/2) .* pi^(d/2) ...
               .* det(Sigma)^(-.5) .* (1+(1/nu) .* (x(i1,:))*inv(Sigma)*(x(i1,:))')^(-.5*(nu+d));
+    end
+  end
+  
+  function lp = mt_lpdf(x,Sigma,nu)
+    d = length(Sigma);
+    lp=zeros(size(x,1),1);
+    for i1 = 1 : size(x,1);
+      lp(i1) = gammaln((nu+1)/2) - gammaln(nu/2) + d/2*log(nu) + d/2*log(pi) ...
+              - .5*log(det(Sigma)) + (-.5*(nu+d)).*log(1+(1/nu) .* (x(i1,:))*inv(Sigma)*(x(i1,:))');
     end
   end
 
