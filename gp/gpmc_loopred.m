@@ -30,15 +30,34 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpmc_loopred(gp, x, y, varargin)
 %    method MCMC, LOO-posterior of the hyperparameters and latent
 %    values is approximated using importance sampling. 
 %
+%    To stabilise the importance sampling, Very good importance
+%    sampling (VGIS) smoothing is used.  Unlike basic IS, VGIS
+%    estimate has always finite variance and mean, but if raw
+%    importance ratios have infinite variance (Pareto k between 0.5
+%    and 1) the convergence to true value is slower and if raw
+%    importance ratios have non-existing mean (Pareto k greater than
+%    1) the the estimate can't converge to true value. Warning is
+%    shown if any of the Pareto k's is greater than 0.5. Even if the
+%    k's are larger than 0.5 or 1, the average (or sum) of the LOO
+%    predictive quantities can be quite accurate. See Vehtari & Gelman
+%    (2015) and Vehtari, Gelman & Gabry (2015) for more information.
+%
 %  References:
 %    Aki Vehtari and Jouko Lampinen (2002). Bayesian model
 %    assessment and comparison using cross-validation predictive
 %    densities. Neural Computation, 14(10):2439-2468.
 %
+%    Aki Vehtari and Andrew Gelman (2015). Very good importance
+%    sampling. arXiv preprint arXiv:1507.02646.
+%
+%    Aki Vehtari, Andrew Gelman and Jonah Gabry (2015). Efficient
+%    implementation of leave-one-out cross-validation and WAIC for
+%    evaluating fitted Bayesian models.
+%
 %  See also
 %   GP_LOOPRED, GP_MC, GP_PRED
 %
-% Copyright (c) 2012 Aki Vehtari
+% Copyright (c) 2012-2015 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -98,22 +117,24 @@ if isequal(is,'off')
 else
   % log importance sampling weights
   lw=-lpyts;
-  % normalize weights
-  for i2=1:n
-    % this works even when lw have large magnitudes
-    lw(i2,:)=lw(i2,:)-sumlogs(lw(i2,:));
-  end
+  % compute VGIS smoothed log weights given raw log weights
+  [lw,vgk]=vgislw(lw');lw=lw';
   % importance sampling weights
   w=exp(lw);
-  % check the effective sample size
-  m_eff=1./sum(w.^2,2);
-  if min(m_eff)<n/10
-    mn=sum(m_eff<(n/10));
-    if mn==1
-      warning(sprintf('For %d data point the effective sample size in IS is less than n/10',mn))
-    else
-      warning(sprintf('For %d data points the effective sample size in IS is less than n/10',mn))
-    end
+  % check whether the variance and mean of the raw importance ratios is finite
+  % VGIS has always finite variance and mean, but if raw importance
+  % ratios have infinite variance the convergence to true value is
+  % slower and if raw importance ratios have non-existing mean the the
+  % estimate can't converge to true value
+  vkn1=sum(vgk>=0.5&vgk<1);
+  vkn2=sum(vgk>=1);
+  n=numel(vgk);
+  if vkn1>0&vkn2==0
+      warning('%d (%.0f%%) VGIS Pareto k estimates between 0.5 and 1',vkn1,vkn1/n*100)
+  elseif vkn1==0&vkn2>0
+      warning('%d (%.0f%%) VGIS Pareto k estimates greater than 1',vkn2,vkn2/n*100)
+  elseif vkn1>0&vkn2>0
+      warning('%d (%.0f%%) VGIS Pareto k estimates between 0.5 and 1\n     and %d (%.0f%%) VGIS Pareto k estimates greater than 1',vkn1,vkn1/n*100,vkn2,vkn2/n*100)
   end
 end
 
@@ -121,7 +142,7 @@ end
 Eft = sum(Efts.*w, 2);
 Varft = sum(Varfts.*w,2) + sum(bsxfun(@minus,Efts,Eft).^2.*w,2);
 if nargout > 2
-  lpyt = log(sum(exp(lpyts+lw),2)); % same as lpy=log(sum(exp(lpys).*w,2));
+  lpyt = sumlogs(lpyts+lw,2); % same as lpyt=log(sum(exp(lpyts).*w,2));
   if nargout > 3
     Eyt = sum(Eyts.*w,2);
     Varyt = sum(Varyts.*w,2) + sum(bsxfun(@minus,Eyts,Eyt).^2.*w,2);

@@ -1,3 +1,29 @@
+2015-07-09 Version 4.6
+
+New features
+ - Use Very Good Importance Sampling for importance sampling
+   leave-one-out cross-validation (gpmc_loopred.m) and for importance
+   sampling part of the logistic Gaussian process density estimation
+   (lgpdens.m)
+   - Aki Vehtari and Andrew Gelman (2015). Very good importance
+     sampling. arXiv preprint arXiv:1507.02646.
+   - Aki Vehtari, Andrew Gelman and Jonah Gabry (2015). Efficient
+     implementation of leave-one-out cross-validation and WAIC for
+     evaluating fitted Bayesian models.
+
+ - New covariance functions
+    - gpcf_additive creates a mixture over products of kernels for each dimension
+      Reference: Duvenaud, D. K., Nickisch, H., & Rasmussen, C. E. (2011).
+      Additive Gaussian processes. In Advances in neural information
+      processing systems, pp. 226-234.
+    - gpcf_linearLogistic corresponds to logistic mean function 
+    - gpcf_linearMichelismenten correpsonds Michelis Menten mean function 
+
+Improvements
+ - faster EP moment calculation for lik_logit
+
+Several minor bugfixes
+
 2014-07-22 Version 4.5
 
 New features
