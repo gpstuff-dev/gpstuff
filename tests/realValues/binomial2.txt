@@ -7,12 +7,13 @@ EP+grid approximation       IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
  IA-grid: evaluated density at 30 points
- IA-grid: Total elapsed time 1.16 seconds
+    Elapsed time 1.03 seconds
+ IA-grid: Total elapsed time 1.23 seconds
 Elapsed time 5s
-MCMC approximation         Elapsed time 164s
+MCMC approximation         Elapsed time 194s
 
  gp hyperparameters: 
  
     4.3811    2.3256
 
-Demo completed in 2.881 minutes
+Demo completed in 3.367 minutes
