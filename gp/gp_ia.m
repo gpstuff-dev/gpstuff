@@ -13,10 +13,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %      int_method - the method used for integration
 %                    'CCD' for circular composite design (default)
 %                    'grid' for grid search along principal axes
-%                    'is_normal' for very good importance sampling
-%                      using Gaussian approximation at the mode
-%                    'is_t'for very good importance sampling using
-%                     Student's t approximation at the mode
+%                    'is_normal' for Pareto smoothed importance sampling
+%                      (PSIS) using (split) normal approximation at the mode
+%                    'is_t'for Pareto smoothed importance sampling
+%                      (PSIS) using (split) t approximation at the mode
 %                    'hmc' for hybrid Monte Carlo sampling (started at the
 %                    mode)
 %       validate  - perform some checks to investigate approximation error.
@@ -35,6 +35,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   parameter space according to Hessian at the mode.
 %                   Default is TRUE.
 %       autoscale - tells whether automatic scaling is used in CCD and is_*
+%                   In case of importance sampling, scaling produces split
+%                   normal or split t proposal distribution.
 %                   - 'off' no automatic scaling
 %                   - 'on' (default) automatic scaling along main axes
 %                   - 'full' automatic scaling in each design direction
@@ -68,6 +70,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   future. Default 'off'.
 %       
 %  References
+%    Geweke, J. (1989).  Bayesian inference in econometric models using
+%    Monte Carlo integration. Econometrica 57:1317-1339.
 %
 %    Rue, H., Martino, S., and Chopin, N. (2009). Approximate Bayesian
 %    inference for latent Gaussian models by using integrated nested
@@ -77,11 +81,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %    Approximate inference for disease mapping with sparse Gaussian
 %    processes. Statistics in Medicine, 29(15):1580-1607.
 %
-%    Aki Vehtari and Andrew Gelman (2015). Very good importance
+%    Aki Vehtari and Andrew Gelman (2015). Pareto smoothed importance
 %    sampling. arXiv preprint arXiv:1507.02646.
 %
 % Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
-% Copyright (c) 2010,2012 Aki Vehtari
+% Copyright (c) 2010,2012,2015 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % Licence (version 3 or later); please refer to the file
@@ -898,13 +902,12 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       end
       % log importance ratios
       lw=p_th-p_th_appr;
-      % compute VGIS smoothed log weights given raw log importance ratios
-      [lw,vgk]=vgislw(lw);
-      vgk
-      if vgk>0.5&vgk<1
-          warning('VGIS Pareto k estimate between 0.5 and 1 (%.1f)',vgk)
-      elseif vgk>1
-          warning('VGIS Pareto k estimate greater than 1 (%.1f)',vgk)
+      % compute Pareto smoothed log weights given raw log importance ratios
+      [lw,pk]=psislw(lw);
+      if pk>0.5&pk<1
+          warning('PSIS Pareto k estimate between 0.5 and 1 (%.1f)',pk)
+      elseif pk>1
+          warning('PSIS Pareto k estimate greater than 1 (%.1f)',pk)
       end
       
       % Return the importance weights
