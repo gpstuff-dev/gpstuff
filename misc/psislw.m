@@ -81,6 +81,7 @@ end
 %     disp(ksi)
 % end
 
+end
 
 function x = gpinv(p,k,sigma)
 x = NaN(size(p));
