@@ -30,24 +30,24 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpmc_loopred(gp, x, y, varargin)
 %    method MCMC, LOO-posterior of the hyperparameters and latent
 %    values is approximated using importance sampling. 
 %
-%    To stabilise the importance sampling, Very good importance
-%    sampling (VGIS) smoothing is used.  Unlike basic IS, VGIS
-%    estimate has always finite variance and mean, but if raw
-%    importance ratios have infinite variance (Pareto k between 0.5
-%    and 1) the convergence to true value is slower and if raw
-%    importance ratios have non-existing mean (Pareto k greater than
-%    1) the the estimate can't converge to true value. Warning is
-%    shown if any of the Pareto k's is greater than 0.5. Even if the
-%    k's are larger than 0.5 or 1, the average (or sum) of the LOO
-%    predictive quantities can be quite accurate. See Vehtari & Gelman
-%    (2015) and Vehtari, Gelman & Gabry (2015) for more information.
+%    To stabilise the importance sampling, Pareto smoothed importance
+%    sampling (PSIS) is used.  Unlike basic IS, PSIS estimate has
+%    always finite variance and mean, but if raw importance ratios
+%    have infinite variance (Pareto k between 0.5 and 1) the
+%    convergence to true value is slower and if raw importance ratios
+%    have non-existing mean (Pareto k greater than 1) the the estimate
+%    can't converge to true value. Warning is shown if any of the
+%    Pareto k's is greater than 0.5. Even if the k's are larger than
+%    0.5 or 1, the average (or sum) of the LOO predictive quantities
+%    can be quite accurate. See Vehtari & Gelman (2015) and Vehtari,
+%    Gelman & Gabry (2015) for more information.
 %
 %  References:
 %    Aki Vehtari and Jouko Lampinen (2002). Bayesian model
 %    assessment and comparison using cross-validation predictive
 %    densities. Neural Computation, 14(10):2439-2468.
 %
-%    Aki Vehtari and Andrew Gelman (2015). Very good importance
+%    Aki Vehtari and Andrew Gelman (2015). Pareto smoothed importance
 %    sampling. arXiv preprint arXiv:1507.02646.
 %
 %    Aki Vehtari, Andrew Gelman and Jonah Gabry (2015). Efficient
@@ -117,24 +117,24 @@ if isequal(is,'off')
 else
   % log importance sampling weights
   lw=-lpyts;
-  % compute VGIS smoothed log weights given raw log weights
-  [lw,vgk]=vgislw(lw');lw=lw';
+  % compute Pareto smoothed log weights given raw log weights
+  [lw,pk]=psislw(lw');lw=lw';
   % importance sampling weights
   w=exp(lw);
   % check whether the variance and mean of the raw importance ratios is finite
-  % VGIS has always finite variance and mean, but if raw importance
+  % PSIS weights have always finite variance and mean, but if raw importance
   % ratios have infinite variance the convergence to true value is
   % slower and if raw importance ratios have non-existing mean the the
   % estimate can't converge to true value
-  vkn1=sum(vgk>=0.5&vgk<1);
-  vkn2=sum(vgk>=1);
-  n=numel(vgk);
+  vkn1=sum(pk>=0.5&pk<1);
+  vkn2=sum(pk>=1);
+  n=numel(pk);
   if vkn1>0&vkn2==0
-      warning('%d (%.0f%%) VGIS Pareto k estimates between 0.5 and 1',vkn1,vkn1/n*100)
+      warning('%d (%.0f%%) PSIS Pareto k estimates between 0.5 and 1',vkn1,vkn1/n*100)
   elseif vkn1==0&vkn2>0
-      warning('%d (%.0f%%) VGIS Pareto k estimates greater than 1',vkn2,vkn2/n*100)
+      warning('%d (%.0f%%) PSIS Pareto k estimates greater than 1',vkn2,vkn2/n*100)
   elseif vkn1>0&vkn2>0
-      warning('%d (%.0f%%) VGIS Pareto k estimates between 0.5 and 1\n     and %d (%.0f%%) VGIS Pareto k estimates greater than 1',vkn1,vkn1/n*100,vkn2,vkn2/n*100)
+      warning('%d (%.0f%%) PSIS Pareto k estimates between 0.5 and 1\n     and %d (%.0f%%) PSIS Pareto k estimates greater than 1',vkn1,vkn1/n*100,vkn2,vkn2/n*100)
   end
 end
 

@@ -59,7 +59,8 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
 %    for logistic Gaussian process density estimation and
 %    regression. Bayesian analysis, 9:425-448
 %
-% Copyright (c) 2011-2013 Jaakko Riihimäki and Aki Vehtari
+% Copyright (c) 2011-2013,2015 Aki Vehtari
+% Copyright (c) 2011-2013 Jaakko Riihimäki
 % Copyright (c) 2013 Enrique Lelo de Larrea Andrade
 
 % This software is distributed under the GNU General Public
@@ -261,12 +262,12 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           
           lws=lqs-lqq;
           lws(isnan(lws)|isinf(lws))=-Inf;
-          % compute VGIS smoothed log weights given raw log importance weights
-          [lws,vgk]=vgislw(lws);
-          if vgk>0.5&vgk<1
-              warning('VGIS Pareto k estimate between 0.5 and 1 (%.1f)',vgk)
-          elseif vgk>1
-              warning('VGIS Pareto k estimate greater than 1 (%.1f)',vgk)
+          % compute Pareto smoothed log weights given raw log importance weights
+          [lws,pk]=psislw(lws);
+          if pk>0.5&pk<1
+              warning('PSIS Pareto k estimate between 0.5 and 1 (%.1f)',pk)
+          elseif pk>1
+              warning('PSIS Pareto k estimate greater than 1 (%.1f)',pk)
           end
           % importance sampling weights
           ws=exp(lws);
@@ -423,12 +424,12 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           
           % log importance weights for the samples
           lws = lp_th(:) - lp_th_appr(:);
-          % compute VGIS smoothed log weights given raw log importance weights
-          [lws,vgk]=vgislw(lws);
-          if vgk>0.5&vgk<1
-              warning('VGIS Pareto k estimate between 0.5 and 1 (%.1f)',vgk)
-          elseif vgk>1
-              warning('VGIS Pareto k estimate greater than 1 (%.1f)',vgk)
+          % compute Pareto smoothed log weights given raw log importance weights
+          [lws,pk]=psislw(lws);
+          if pk>0.5&pk<1
+              warning('PSIS Pareto k estimate between 0.5 and 1 (%.1f)',pk)
+          elseif pk>1
+              warning('PSIS Pareto k estimate greater than 1 (%.1f)',pk)
           end
           % importance sampling weights
           ws=exp(lws);
