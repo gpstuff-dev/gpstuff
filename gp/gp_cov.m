@@ -51,8 +51,8 @@ else
     Kfd = -1.*Kdf; 
     C = [Kff Kfd; Kdf Kdd{1}];
 
-    % Input dimension is >1
   else
+    % Input dimension is >1
     [n,m]=size(x1);
     [n2,m2]=size(x2);                  
 

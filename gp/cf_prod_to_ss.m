@@ -1,5 +1,5 @@
 function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_prod_to_ss(cf2ss)
-%CF_PROD_TO_SS - Product of several state space models
+%% CF_PROD_TO_SS - Product of several state space models
 %
 % Syntax:
 %   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_prod_to_ss(cf2ss)
@@ -45,7 +45,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_prod_to_ss(cf2ss)
 % Copyright:
 %   2012-2014   Arno Solin
 %   2013-2014   Jukka Koskenranta
-
+%
 %   This software is distributed under the GNU General Public
 %   License (version 3 or later); please refer to the file
 %   License.txt, included with the software, for details.
@@ -61,13 +61,15 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_prod_to_ss(cf2ss)
   dF     = [];
   dQc    = [];
   dPinf  = [];
-  params = {};
+  
+  % Initialize
+  params.stationary = true;
 
   % Loop through all models
   for j = 1:length(cf2ss)
       
     % Set up the jth state space model
-    [Fj,Lj,Qcj,Hj,Pinfj,dFj,dQcj,dPinfj] = cf2ss{j}();
+    [Fj,Lj,Qcj,Hj,Pinfj,dFj,dQcj,dPinfj,paramsj] = cf2ss{j}();
 
     % Make derivative model
     dF    = dskron(F,dF,Fj,dFj);
@@ -80,6 +82,9 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_prod_to_ss(cf2ss)
     Qc   = kron(Qc,Qcj);
     Pinf = kron(Pinf,Pinfj);
     H    = kron(H,Hj);
+    
+    % Parameters
+    params.stationary = params.stationary & paramsj.stationary;
     
   end
 

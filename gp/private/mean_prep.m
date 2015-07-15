@@ -86,7 +86,7 @@ function [H,b,B,Hs] = mean_prep(gp,x,xs)
       else
           if length(gp.meanf{i}.B)>1 && length(gp.meanf{i}.B{i})==1
               for j=1:meanf_dim(i,2)
-                  B(i1+j-1,i1+j-1)=gp.meanf{i}.B(j);
+                  B(i1+j-1,i1+j-1)=gp.meanf{i}.B{j};
                   i1=i1+1;
               end
           elseif length(gp.meanf{i}.B)>1 && length(gp.meanf{i}.B{i})>1

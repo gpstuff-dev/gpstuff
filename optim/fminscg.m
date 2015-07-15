@@ -127,6 +127,12 @@ end
 
 sigma0 = 1.0e-4;
 [fold,gradold] = fun(x); % Initial function value and gradient
+if isnan(fold)
+  error('Initial function value is NaN')
+end
+if isnan(gradold)
+  error('Initial gradient is NaN')
+end
 funcCount=1;
 gradCount=1;
 gradnew = gradold;

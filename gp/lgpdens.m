@@ -57,9 +57,10 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
 %
 %    Jaakko Riihimäki and Aki Vehtari (2014). Laplace approximation
 %    for logistic Gaussian process density estimation and
-%    regression. Bayesian analysis, in press.
+%    regression. Bayesian analysis, 9:425-448
 %
-% Copyright (c) 2011-2013 Jaakko Riihimäki and Aki Vehtari
+% Copyright (c) 2011-2013,2015 Aki Vehtari
+% Copyright (c) 2011-2013 Jaakko Riihimäki
 % Copyright (c) 2013 Enrique Lelo de Larrea Andrade
 
 % This software is distributed under the GNU General Public
@@ -261,7 +262,14 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           
           lws=lqs-lqq;
           lws(isnan(lws)|isinf(lws))=-Inf;
-          
+          % compute Pareto smoothed log weights given raw log importance weights
+          [lws,pk]=psislw(lws);
+          if pk>0.5&pk<1
+              warning('PSIS Pareto k estimate between 0.5 and 1 (%.1f)',pk)
+          elseif pk>1
+              warning('PSIS Pareto k estimate greater than 1 (%.1f)',pk)
+          end
+          % importance sampling weights
           ws=exp(lws);
           % Skare, O., Bolviken, E., and Holden, L. (2003). Improved
           % sampling-importance resampling and reduced bias importance
@@ -269,13 +277,6 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           % 30}, 719--737.
           ws=ws./(sum(ws)-ws);
           ws=ws./sum(ws);
-          
-          if (1/sum(ws.^2))<200
-            warning('The effective sample size of importance sampling is small (less than 200). Soft tresholding large weights')
-            % has similar effect as resampling without replacement, but allows use of all samples
-            ws=logitinv(ws*size(qr,1)*.02)*2-1;
-            ws=ws./sum(ws);
-          end
           
         end
         qjr=exp(qr)';
@@ -421,28 +422,23 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           en = 0.5*MNM + Econst;
           lp_th = -en' + ll';
           
-          % Importance weights for the samples
+          % log importance weights for the samples
           lws = lp_th(:) - lp_th_appr(:);
-          % subtract maximum before exp to avoid overflow
-          ws = exp(lws - max(lws));
+          % compute Pareto smoothed log weights given raw log importance weights
+          [lws,pk]=psislw(lws);
+          if pk>0.5&pk<1
+              warning('PSIS Pareto k estimate between 0.5 and 1 (%.1f)',pk)
+          elseif pk>1
+              warning('PSIS Pareto k estimate greater than 1 (%.1f)',pk)
+          end
+          % importance sampling weights
+          ws=exp(lws);
           % Skare, O., Bolviken, E., and Holden, L. (2003). Improved
           % sampling-importance resampling and reduced bias importance
           % sampling. {\em Scandivanian Journal of Statistics} {\bf
           % 30}, 719--737.
           ws=ws./(sum(ws)-ws);
           ws=ws./sum(ws);
-          
-          % Kong, A., Liu, J. S., and Wong, W. H. (1996). Sequential imputations
-          % and Bayesian missing data problems. {\em Journal of the
-          % American Statistical Association} {\bf 89}, 278--288.
-          ess = 1/sum(ws.^2);
-          
-          if ess < 200;            
-            warning('The effective sample size of importance sampling is small (less than 200). Soft tresholding large weights')
-            % has similar effect as resampling without replacement, but allows use of all samples
-            ws=logitinv(ws*size(th,1)*.02)*2-1;
-            ws=ws./sum(ws);
-          end
           
           qr = th;
           
