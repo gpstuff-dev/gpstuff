@@ -2,7 +2,7 @@
 
 New features
 
- - Use Very Good Importance Sampling (Vehtari & Gelman, 2015) for 
+ - Use Pareto smoothed importance sampling (Vehtari & Gelman, 2015) for 
    - importance sampling leave-one-out cross-validation
      (gpmc_loopred.m)
    - importance sampling integration over hyperparameters
@@ -10,7 +10,7 @@ New features
    - importance sampling part of the logistic Gaussian process density
      estimation (lgpdens.m)
    - references:
-      - Aki Vehtari and Andrew Gelman (2015). Very good importance
+      - Aki Vehtari and Andrew Gelman (2015). Pareto smoothed importance
         sampling. arXiv preprint arXiv:1507.02646.
       - Aki Vehtari, Andrew Gelman and Jonah Gabry (2015). Efficient
         implementation of leave-one-out cross-validation and WAIC for
