@@ -1,5 +1,5 @@
 function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss (magnSigma2, lengthScale, N)
-%CF_SE_TO_SS - Squared exponential covariance functions to state space
+% CF_SE_TO_SS - Squared exponential covariance functions to state space
 %
 % Syntax:
 %   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss(magnSigma2, lengthScale, N)
@@ -80,7 +80,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss (magnSigma2, lengthSc
 % Copyright:
 %   2012-2014   Arno Solin
 %   2013-2014   Jukka Koskenranta
-
+%
 %  This software is distributed under the GNU General Public
 %  License (version 3 or later); please refer to the file
 %  License.txt, included with the software, for details.
@@ -195,6 +195,9 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_se_to_ss (magnSigma2, lengthSc
 
   % Only return if requested
   if nargout > 8
+    
+    % Stationarity
+    pa.stationary = true;
     
     % Input parameter information
     pa.in{1}.name = 'magnSigma2';   pa.in{1}.default = 1; pa.in{1}.opt = true;

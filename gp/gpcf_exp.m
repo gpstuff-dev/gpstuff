@@ -873,7 +873,7 @@ function reccf = gpcf_exp_recappend(reccf, ri, gpcf)
   end
 end
 
-function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_exp_cf2ss(gpcf)
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_exp_cf2ss(gpcf,x)
 %GPCF_EXP_CF2SS Convert the covariance function to state space form
 %
 %  Description
@@ -890,6 +890,9 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_exp_cf2ss(gpcf)
 %    filtering and smoothing. IEEE Signal Processing Magazine,
 %    30(4):51-61.
 %
+
+  % Check arguments
+  if nargin < 2, x = []; end
 
   % Return model matrices, derivatives and parameter information
   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = ...

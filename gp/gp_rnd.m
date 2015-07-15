@@ -24,7 +24,7 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, varargin)
 %                  for ith case. 
 %      fcorr     - Method used for latent marginal posterior corrections. 
 %                  Default is 'off'. Possible methods are 'fact' for EP
-%                  and either 'fact' or 'cm2' for Laplace. If method is
+%                  and either 'fact', 'cm2' or 'lr' for Laplace. If method is
 %                  'on', 'fact' is used for EP and 'cm2' for Laplace.
 %      autoscale - determines if the samples are drawn from split-normal
 %                  approximation in the case of non-gaussian likelihood.
@@ -66,9 +66,10 @@ ip=iparser(ip,'addParamValue','predcf', [], @(x) isempty(x) || ...
 ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
 ip=iparser(ip,'addParamValue','nsamp', 1, @(x) isreal(x) && isscalar(x));
-ip=iparser(ip,'addParamValue','fcorr', 'off', @(x) ismember(x, {'fact','cm2','off','on'}));
-ip=iparser(ip,'addParamValue','autoscale', 'off', @(x) ismember(x,{'on' 'off'}));
-ip=iparser(ip,'addParamValue','n_scale',50, @(x) isnumeric(x) && floor(x)>0);
+ip=iparser(ip,'addParamValue','fcorr', 'off', @(x) ismember(x, {'fact','cm2','off','on','lr'}));
+ip=iparser(ip,'addParamValue','autoscale', 'on', @(x) (islogical(x) && isscalar(x))|| ...
+                 ismember(x,{'on' 'off' 'full'}));
+ip=iparser(ip,'addParamValue','n_scale',50, @(x) isnumeric(x) && x>=0);
 if numel(varargin)==0 || isnumeric(varargin{1})
   % inputParser should handle this, but it doesn't
   ip=iparser(ip,'parse',gp, x, y, varargin{:});
@@ -109,6 +110,19 @@ if isempty(xt)
   end
 end
 
+if isfield(gp, 'latent_method')
+  if iscell(gp)
+      gplatmet=gp{1}.latent_method;
+  else
+      gplatmet=gp.latent_method;
+  end
+  if ~strcmp(gplatmet, 'Laplace') && strcmp(autoscale,'on')
+      % autoscale is applicable only with Laplace
+      autoscale='off';
+  end
+end
+
+
 sampyt=[];
 if isstruct(gp) && numel(gp.jitterSigma2)==1
   % Single GP
@@ -146,9 +160,6 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
       %    Autoscale on
       % ------------------
       
-      if strcmp(gp.latent_method, 'EP')
-        error('Autoscale is not compatible with EP, use Laplace instead.');
-      end
       if isfield(gp,'meanf')
         error('Mean functions not implemented for autoscale in GP_RND');
       end
@@ -589,4 +600,3 @@ elseif iscell(gp)
     end
   end
 end
-

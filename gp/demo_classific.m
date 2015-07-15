@@ -3,7 +3,7 @@
 %  Description
 %    The demonstration program is based on synthetic two class data
 %    used by B.D. Ripley (Pattern Recognition and Neural Networks,
-%    1996}. The data consists of 2-dimensional vectors that are
+%    1996). The data consists of 2-dimensional vectors that are
 %    divided into two classes, labeled 0 or 1. Each class has a
 %    bimodal distribution generated from equal mixtures of Gaussian
 %    distributions with identical covariance matrices. A Bayesian

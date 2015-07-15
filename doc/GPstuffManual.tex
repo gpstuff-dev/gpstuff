@@ -10,7 +10,7 @@
 \usepackage{bm}
 \usepackage{subfigure}
 \usepackage{url}
-\usepackage{natbib}
+%\usepackage{natbib}
 \usepackage{longtable}
 \usepackage{enumitem}
 \usepackage[width=.9\textwidth]{caption}
@@ -158,7 +158,7 @@ Gaussian process, Bayesian hierarchical model, nonparametric Bayes
 \section{Introduction}
 
 This work reviews a free open source toolbox \pkg{GPstuff} (version
-4.4) which implements a collection of inference methods and tools for
+4.5) which implements a collection of inference methods and tools for
 inference for various Gaussian process (GP) models. The toolbox is
 compatible with Unix and Windows \proglang{MATLAB} \citep{MATLAB:2010}
 (r2009b or later, earlier versions may work, but has not been tested
@@ -3139,7 +3139,7 @@ e.g.,][]{Sarkka+Solin+Hartikainen:2013}. They are given as:
   \mathbf{Q}_k &= \int_{0}^{\Delta t_k} 
     \mathbf{\Phi}(\Delta t_k-\tau)
     \mathbf{L} \mathbf{Q}_\mathrm{c} \mathbf{L}^\mathrm{T} 
-    \mathbf{\Phi}(\Delta t_k-\tau)^ \mathrm{d} \tau,
+    \mathbf{\Phi}(\Delta t_k-\tau)^\mathrm{T} \, \mathrm{d} \tau,
 \end{align}
 %
 where $\Delta t_k = t_{k+1}-t_k$. The iteration is started form the stationary
@@ -3165,15 +3165,21 @@ references):
 \begin{description}[labelindent=\parindent]
   \item[Constant] 
     covariance function.
+  \item[Noise] 
+    covariance function.
+  \item[Linear] 
+    covariance function.
   \item[Exponential] 
     (Ornstein-Uhlenbeck) covariance function.
   \item[Mat\'ern] 
     covariance function (for $\nu=3/2$ and $\nu=5/2$).
   \item[Squared exponential] 
     covariance function \citep[as presented in][]{Hartikainen+Sarkka:2010}.
-  \item[Periodic covariance] 
-    function both with and without decay (quasi-periodicity) 
+  \item[Periodic] 
+    covariance function both with and without decay (quasi-periodicity) 
     \citep[as presented in][]{Solin+Sarkka:2014}.
+  \item[Rational quadratic] 
+    covariance function \citep[as presented in][]{Solin+Sarkka:2014-MLSP}.
   \item[Sums and products] 
     of covariance functions \citep[as given in][]{Solin+Sarkka:2014}.
 \end{description}
@@ -3204,7 +3210,7 @@ There are various means to assess the goodness of the model and its
 predictive performance. For an extensive review of the predictive
 performance assessment methods see \citet{Vehtari+Ojanen:2012} and for
 a shorter review comparing cross-validation, DIC and WAIC see
-\citet{Gelman+Hwang+Vehtari:2013}. \pkg{GPstuff} provides four basic
+\citet{Gelman+Hwang+Vehtari:2014}. \pkg{GPstuff} provides four basic
 approaches: marginal likelihood, cross-validation, deviance
 information criterion (DIC) and widely applicable information
 criterion (WAIC).
@@ -3235,14 +3241,14 @@ By repeating this for every point in the training data, we get a
 collection of leave-one-out cross-validation (LOO-CV) predictive
 densities.
 %
-For discussion of Bayeasian cross-validation see \citet{Vehtari+Lampinen:2002,Vehtari+Ojanen:2012,Gelman+Hwang+Vehtari:2013}.
+For discussion of Bayesian cross-validation see \citet{Vehtari+Lampinen:2002,Vehtari+Ojanen:2012,Gelman+Hwang+Vehtari:2014} and for comparison of fast approximations for latent Gaussian variable models see \citet{Vehtari+etal:2014}.
 
 For GP with given hyperparameters the LOO-CV predictions can be
 computed in case of Gaussian likelihood using an analytical
 solution \citep{Sundararajan+Keerthi:2001a} and in case of
 non-Gaussian likelihood using EP approximation
 \citep{Opper+Winther:2000,Rasmussen+Williams:2006} or Laplace
-approximation using linear response approach (in preparation),
+approximation using linear response approach \citep{Vehtari+etal:2014},
 which have been implemented in \code{gp\_loopred}.
 %
 % where $\bar{c}_i$ denotes the $i$th diagonal entry of $C^{-1}$,
@@ -3253,19 +3259,18 @@ If set of hyperparameters have been obtained using \code{gp\_mc} or
 \code{gp\_ia} LOO-posterior can be approximated using importance
 sampling or weighting
 \citep{Gelfand+Dey+Chang:1992,Vehtari+Lampinen:2002}, which is also
-implemented in \code{gp\_loopred}. We use an integrated approach
-proposed by \citet[][p. 40]{Vehtari:2001} where leave-one-out
+implemented in \code{gp\_loopred}. We use an integrated following \citet[][p. 40]{Vehtari:2001} where leave-one-out
 predictive densities given hyperparameters
 \begin{equation}
 p(y_i|x_i,D_{-i},\vartheta)=\int
 p(y_i|f_i,\vartheta)p(f_i|x_i,D_{-i},\vartheta)df_i 
 \end{equation}
 are obtained using the analytic solution, or the Laplace or EP
-approximation as mentioned above. Thus the importance weighting is
-made only for the hyperparameters. This reduces the variance of
-importance sampling estimate significantly making it useful in
-practice. With these approximations LOO-CV is very fast to compute in
-GPstuff.
+approximation as mentioned above \citep[see
+also][]{Held+Schrodle+Rue:2010}. Thus the importance weighting is made
+only for the hyperparameters. This reduces the variance of importance
+sampling estimate significantly making it useful in practice. With
+these approximations LOO-CV is very fast to compute in GPstuff.
 
 LOO-CV in GPstuff does not currently work for some multilatent
 models. In such case or if there is reason to doubt the reliability of
@@ -3720,7 +3725,7 @@ features in GPstuff, GPML and FBM.
     & GPstuff & GPML & FBM \\
     \textbf{Covariance functions} &  &  & \\
     \hline
-    number of elementary functions & 13 & 10 & 4 \\
+    number of elementary functions & 16 & 10 & 4 \\
     sums of elements, masking of inputs  & x & x & x \\
     delta distance & x & & x \\
     products, positive scaling of elements & x & x &  \\    
@@ -3737,7 +3742,7 @@ features in GPstuff, GPML and FBM.
     Poisson & x & LA/EP/MCMC & MCMC \\
     Gaussian scale mixture & MCMC &  & MCMC\\
     Student-$t$ & x & LA/VB/MCMC & \\
-    Laplacian &  & EP/VB/MCMC & \\
+    Laplacian & x & EP/VB/MCMC & \\
     mixture of likelihoods &   &  LA/EP/MCMC  & \\
     sech-squared, uniform for classification &  & x & \\
     derivative observations & for sexp covf only &  & \\
@@ -3788,7 +3793,7 @@ features in GPstuff, GPML and FBM.
     average predictive comparison & x &  & 
   \end{tabular}
   \normalsize
-  \caption{The comparison of features in GPstuff (v4.4), GPML (v3.2) and FBM (2004-11-10)
+  \caption{The comparison of features in GPstuff (v4.5), GPML (v3.2) and FBM (2004-11-10)
     toolboxes. In case of model blocks the notation x means that it
     can be inferred with any inference method (EP, LA (Laplace), MCMC and
     in case of GPML also with VB). In case of sparse approximations,
@@ -4009,6 +4014,46 @@ covariance function
 \begin{equation}\label{cf_linear2}
   k(\x_i,\x_j)= \sigma^2 + \mathbf{x}_i^{\text{T}}\Sigma \mathbf{x}_j.
 \end{equation}
+
+\subsection*{Michelis-Menten covariance function  (\code{gpcf\_linearMichelismenten})}
+
+The Michelis-Menten functional form (equivalently Type-II functional
+response or Monod form, \citep{Kot:2001}) is given by
+\begin{equation}
+h(x) = bx / (a + x)
+\end{equation}
+where $b$ is asymptote of the function and $a$ the half-saturation 
+point defining at which point the function is half of the asymptotic 
+level. By giving a zero mean Gaussian prior for asymptote, $b \sim N(0, \sigma^2)$
+the prior for $h(x)$ is $h(x) \sim N(0, H(x)H(x)^{\text{T}}\sigma^2)$ where 
+$H(x) = [x_1/(a + x_1, ... , x_n/(a + x_n]^{\text{T}}$. Hence, the 
+covariance function related to the Michelis-Menten mean function in case of $D$
+ inputs is 
+\begin{equation}\label{cf_linearMichelismenten}
+k(\x_i,\x_j)= H(\x_i)\Sigma H(\x_j)^{\text{T}},
+\end{equation}
+where the diagonal matrix
+$\Sigma=\text{diag}(\sigma_1^2,\ldots,\sigma_D^2)$ contains the
+prior variances of the $b_d$ terms. 
+
+\subsection*{Logistic mean covariance function  (\code{gpcf\_linearLogistic})}
+
+The logistic functional form is given by
+\begin{equation}
+h(x) = w (\mathrm{logit}^{-1}(ax + b) - 0.5) 
+\end{equation}
+where $w$ is the weight of the mean function, $b$ is the intercept of the linear part 
+and $a$ regression coefficient of linear part. By giving a zero mean Gaussian prior 
+for weight, $w \sim N(0, \sigma^2)$
+the prior for $h(x)$ is $h(x) \sim N(0, H(x)H(x)^{\text{T}}\sigma^2)$ where 
+$H(x) = [h(x_1), ... , h(x_n)]^{\text{T}}$. Hence, the covariance function related 
+to the logistic mean function in case of $D$ inputs is 
+\begin{equation}\label{cf_linearlinearLogistic}
+k(\x_i,\x_j)= H(\x_i)\Sigma H(\x_j)^{\text{T}},
+\end{equation}
+where the diagonal matrix
+$\Sigma=\text{diag}(\sigma_1^2,\ldots,\sigma_D^2)$ contains the
+prior variances of the $b_d$ terms. 
 
 \subsection*{Piecewise polynomial functions (\code{gpcf\_ppcsX})}
 
@@ -4820,3 +4865,8 @@ related functions. To start see functions with name starting
 
 \end{document}
 
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

@@ -1639,8 +1639,8 @@ end
                   % reduce step size by half
                   a = (a_old+a)/2;                                  
                   f = B'*(B*a);
-                  for i=1:length(ind)
-                    f(ind{i}) = Labl{i}*a(ind{i}) + f(ind{i}) ;
+                  for i2=1:length(ind)
+                    f(ind{i2}) = Labl{i2}*a(ind{i2}) + f(ind{i2}) ;
                   end
                   W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
                   lp = gp.lik.fh.ll(gp.lik, y, f, z);

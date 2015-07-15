@@ -13,10 +13,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %      int_method - the method used for integration
 %                    'CCD' for circular composite design (default)
 %                    'grid' for grid search along principal axes
-%                    'is_normal' for importance sampling using Gaussian
-%                      approximation at the mode
-%                    'is_t'for importance sampling using Student's t
-%                     approximation at the mode
+%                    'is_normal' for very good importance sampling
+%                      using Gaussian approximation at the mode
+%                    'is_t'for very good importance sampling using
+%                     Student's t approximation at the mode
 %                    'hmc' for hybrid Monte Carlo sampling (started at the
 %                    mode)
 %       validate  - perform some checks to investigate approximation error.
@@ -61,6 +61,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   every repeat'th iteration, default 0.
 %       repeat    - number of subiterations in HMC.
 %                   Default is 10.
+%       cache     - tells whether gpla_e or gpep_e cache memory is used
+%                   seperately for each sample in a case of non-gaussian
+%                   likelihood ('on','off'). Cache enabled consumes more
+%                   memory but prevents possible recalculations in the
+%                   future. Default 'off'.
 %       
 %  References
 %
@@ -71,6 +76,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %    Jarno Vanhatalo, Ville Pietiläinen and Aki Vehtari (2010). 
 %    Approximate inference for disease mapping with sparse Gaussian
 %    processes. Statistics in Medicine, 29(15):1580-1607.
+%
+%    Aki Vehtari and Andrew Gelman (2015). Very good importance
+%    sampling. arXiv preprint arXiv:1507.02646.
 %
 % Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
@@ -114,6 +122,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip=iparser(ip,'addParamValue','opt_optim', [], @isstruct);
   ip=iparser(ip,'addParamValue','opt_hmc', [], @isstruct);
   ip=iparser(ip,'addParamValue','persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
+  ip=iparser(ip,'addParamValue','cache', 'off', @(x) ischar(x) && ismember(x,{'on','off'}));
   ip=iparser(ip,'addParamValue','display', 'on', @(x) islogical(x) || isreal(x) || ...
                    ismember(x,{'on' 'off' 'iter'}));
   if numel(varargin)==0 || isnumeric(varargin{1})
@@ -160,6 +169,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       opt.display='off';
     end
   end
+  use_cache = strcmp(ip.Results.cache, 'on');
   % pass these forward
   options=struct();
   if ~isempty(ip.Results.yt);options.yt=ip.Results.yt;end
@@ -208,7 +218,16 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   end
 
   tall=tic;
-    
+  
+  % Ensure initialisation of new memory for the first sample
+  if isfield(gp, 'latent_method') && use_cache
+    if strcmp(gp.latent_method, 'Laplace')
+      gp = gpla_e('init', gp);
+    elseif strcmp(gp.latent_method, 'EP')
+      gp = gpep_e('init', gp);
+    end
+  end
+  
   % ===============================
   % Find the mode of the parameters
   % ===============================
@@ -311,6 +330,15 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           gp = gp_unpak(gp,w);
           gp_array{end+1} = gp;
           
+          % Initialise new memory for next sample
+          if isfield(gp, 'latent_method') && use_cache
+            if strcmp(gp.latent_method, 'Laplace')
+              gp = gpla_e('init', gp);
+            elseif strcmp(gp.latent_method, 'EP')
+              gp = gpep_e('init', gp);
+            end
+          end
+          
           while ~isempty(candidates)
             % Repeat until there are no parameters with high enough
             % density that are not checked yet
@@ -334,7 +362,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                   % use value only if not NaN
                   p_th(end+1) = ptest;
                   th(end+1,:) = w_p;
-                  gp_array{end+1} = gp;
+                  gp_array{end+1} = gp;                  
                   if ~isempty(xt)
                     % predictions if needed
                     [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
@@ -346,6 +374,16 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                   if (p_th(1)-p_th(end))<opt.threshold
                     candidates(end+1,:) = candidates(1,:)+pos;
                   end
+                                  
+                  % Initialise new memory for next sample
+                  if isfield(gp, 'latent_method') && use_cache
+                    if strcmp(gp.latent_method, 'Laplace')
+                      gp = gpla_e('init', gp);
+                    elseif strcmp(gp.latent_method, 'EP')
+                      gp = gpep_e('init', gp);
+                    end
+                  end
+                    
                 end
                 
                 % Put the recently studied point to the checked list
@@ -377,6 +415,16 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                   if (p_th(1)-p_th(end))<opt.threshold
                     candidates(end+1,:) = candidates(1,:)+neg;
                   end
+                  
+                  % Initialise new memory for next sample
+                  if isfield(gp, 'latent_method') && use_cache
+                    if strcmp(gp.latent_method, 'Laplace')
+                      gp = gpla_e('init', gp);
+                    elseif strcmp(gp.latent_method, 'EP')
+                      gp = gpep_e('init', gp);
+                    end
+                  end
+                  
                 end
               end
               
@@ -557,15 +605,24 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           gp = gp_unpak(gp,th(1,:));
           gp_array{1} = gp;
           % density
-          if exist('l0')
+          if exist('l0','var')
             p_th(1) = l0;
           else
             p_th(1) = -fh_e(th(1,:),gp,x,y,options);
-          end            
+          end
           if ismember(opt.display,{'iter'}),fprintf('lp=%.2f\n',p_th(1));end
           for i1 = 2:size(th,1)
             if ismember(opt.display,{'iter'}),fprintf('%d ',i1);end
             gp = gp_unpak(gp,th(i1,:));
+            
+            if isfield(gp, 'latent_method') && use_cache
+              if strcmp(gp.latent_method, 'Laplace')
+                gp = gpla_e('init', gp);
+              elseif strcmp(gp.latent_method, 'EP')
+                gp = gpep_e('init', gp);
+              end
+            end
+            
             gp_array{i1} = gp;
             % density
             p_th(i1) = -fh_e(th(i1,:),gp,x,y,options);
@@ -676,6 +733,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       P0 =  -fh_e(w,gp,x,y,options);
       
       N = opt.nsamples;
+      p_th=zeros(N,1);
+      p_th_appr=zeros(N,1);
       
       switch int_method
         case 'is_normal'
@@ -683,10 +742,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           L=chol(Sigma,'lower');
           if opt.qmc
             th  = repmat(w,N,1)+(L*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
-            p_th_appr = mnorm_pdf(th, w, Sigma);
+            p_th_appr = mnorm_lpdf(th, w, Sigma);
           else
             th = repmat(w,N,1) + randn(N, length(w))*L';
-            p_th_appr = mnorm_pdf(th, w, Sigma);
+            p_th_appr = mnorm_lpdf(th, w, Sigma);
           end
           
           if opt.qmc
@@ -730,7 +789,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 end
                 
               end
-              p_th_appr(i3) = exp(-C-.5*e(i3,:)*e(i3,:)');
+              p_th_appr(i3) = (-C-.5*e(i3,:)*e(i3,:)');
               th(i3,:)=w+(LS*eta(i3,:)')';
             end
           end
@@ -748,7 +807,6 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               fprintf(' IA-is_t: scaling of the covariance\n');
             end
             th=zeros(N,nParam);
-            p_th_appr=zeros(N,nParam);
             delta = -6:.5:6;
             for i0 = 1 : nParam
               ttt = zeros(1,nParam);
@@ -757,8 +815,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 phat = exp(-fh_e(w+(delta(i1)*LS*ttt')',gp,x,y,options));
                 
                 fi(i1) = nu^(-.5).*abs(delta(i1)).*(((exp(P0)/phat)^(2/(nu+nParam))-1).^(-.5));
-                rel(i1) = (exp(-fh_e(w+(delta(i1)*LS*ttt')',gp,x,y,options)))/ ...
-                          mt_pdf((delta(i1)*LS*ttt')', Scale, nu);%TODO: inline!
+                rel(i1) = exp(-fh_e(w+(delta(i1)*LS*ttt')',gp,x,y,options) ...
+                              -mt_lpdf((delta(i1)*LS*ttt')', Scale, nu));%TODO: inline!
               end
               
               q(i0) = max(fi(delta>0));
@@ -788,7 +846,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                   C = C  -log(q(i2));
                 end
               end
-              p_th_appr(i3) = exp(C - ((nu+nParam)/2)*log(1+sum((e(i3,:)./sqrt(chi)).^2)));
+              p_th_appr(i3) = (C - ((nu+nParam)/2)*log(1+sum((e(i3,:)./sqrt(chi)).^2)));
               th(i3,:)=w+(LS*eta(i3,:)')';
             end
           else
@@ -800,7 +858,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               th = repmat(w,N,1) + ( LS * randn(nParam, N).*sqrt(nu./chi2) )';
             end
             
-            p_th_appr = mt_pdf(th - repmat(w,N,1), Sigma, nu);%TODO: inline!
+            p_th_appr = mt_lpdf(th - repmat(w,N,1), Sigma, nu);%TODO: inline!
           
           end
       end
@@ -813,7 +871,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       end
       tic
       for j = 1 : N
-        gp_array{j}=gp_unpak(gp,th(j,:));
+        gp_array{j} = gp_unpak(gp,th(j,:));
         % density
         p_th(j) = -fh_e(th(j,:),gp_array{j},x,y,options);
         if ~isempty(xt)
@@ -821,6 +879,15 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           [Ef_grid(j,:), Varf_grid(j,:)]=...
               fh_p(gp_array{j},x,y,xt,options);
         end
+        
+        if isfield(gp, 'latent_method') && use_cache
+          if strcmp(gp.latent_method, 'Laplace')
+            gp = gpla_e('init', gp);
+          elseif strcmp(gp.latent_method, 'EP')
+            gp = gpep_e('init', gp);
+          end
+        end
+        
       end
       et=toc;
       if ismember(opt.display,{'on','iter'})
@@ -829,20 +896,19 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           fprintf('    Elapsed time %.2f seconds\n',et);
         end
       end
-      % Convert densities from the log-space and normalize them
-      p_th = exp(p_th-max(p_th));
-      p_th = p_th/sum(p_th);
-      
-      % (Scaled) Densities of the samples in the approximation of the
-      % target distribution
-      p_th_appr = p_th_appr/sum(p_th_appr);
-      
-      % Importance weights for the samples
-      iw = p_th(:)./p_th_appr(:);
-      iw = iw/sum(iw);
+      % log importance ratios
+      lw=p_th-p_th_appr;
+      % compute VGIS smoothed log weights given raw log importance ratios
+      [lw,vgk]=vgislw(lw);
+      vgk
+      if vgk>0.5&vgk<1
+          warning('VGIS Pareto k estimate between 0.5 and 1 (%.1f)',vgk)
+      elseif vgk>1
+          warning('VGIS Pareto k estimate greater than 1 (%.1f)',vgk)
+      end
       
       % Return the importance weights
-      P_TH = iw;
+      P_TH = exp(lw);
       
     case {'hmc'}
       
@@ -874,6 +940,13 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           hmc_rstate.mom = [];
         end
         
+        if isfield(gp, 'latent_method') && use_cache
+          if strcmp(gp.latent_method, 'Laplace')
+            gp = gpla_e('init', gp);
+          elseif strcmp(gp.latent_method, 'EP')
+            gp = gpep_e('init', gp);
+          end
+        end
         
         hmcrej = 0;
         for l=1:opt.repeat
@@ -915,6 +988,16 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           fprintf(' %.1e  ',hmcrej);
           fprintf('\n');
         end
+        
+        % Initialise new memory for next sample
+        if isfield(gp, 'latent_method') && use_cache
+          if strcmp(gp.latent_method, 'Laplace')
+            gp = gpla_e('init', gp);
+          elseif strcmp(gp.latent_method, 'EP')
+            gp = gpep_e('init', gp);
+          end
+        end
+        
       end
       P_TH = p_th(:)./length(p_th);
   end
@@ -1067,6 +1150,15 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     for i1 = 1 : size(x,1);
       p(i1) = gamma((nu+1)/2) ./ gamma(nu/2) .* nu^(d/2) .* pi^(d/2) ...
               .* det(Sigma)^(-.5) .* (1+(1/nu) .* (x(i1,:))*inv(Sigma)*(x(i1,:))')^(-.5*(nu+d));
+    end
+  end
+  
+  function lp = mt_lpdf(x,Sigma,nu)
+    d = length(Sigma);
+    lp=zeros(size(x,1),1);
+    for i1 = 1 : size(x,1);
+      lp(i1) = gammaln((nu+1)/2) - gammaln(nu/2) + d/2*log(nu) + d/2*log(pi) ...
+              - .5*log(det(Sigma)) + (-.5*(nu+d)).*log(1+(1/nu) .* (x(i1,:))*inv(Sigma)*(x(i1,:))');
     end
   end
 

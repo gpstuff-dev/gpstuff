@@ -24,6 +24,7 @@ function gpcf = gpcf_noise(varargin)
 %
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2014 Arno Solin
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -72,6 +73,7 @@ function gpcf = gpcf_noise(varargin)
     gpcf.fh.trcov  = @gpcf_noise_trcov;
     gpcf.fh.trvar  = @gpcf_noise_trvar;
     gpcf.fh.recappend = @gpcf_noise_recappend;
+    gpcf.fh.cf2ss = @gpcf_noise_cf2ss;
   end        
 
 end
@@ -387,4 +389,42 @@ function reccf = gpcf_noise_recappend(reccf, ri, gpcf)
       reccf.p.noiseSigma2 = gpp.noiseSigma2.fh.recappend(reccf.p.noiseSigma2, ri, gpcf.p.noiseSigma2);
     end
   end
+end
+
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_noise_cf2ss(gpcf, x)
+%GPCF_NOISE_CF2SS Convert the covariance function to state space form
+%
+%  Description
+%    Convert the covariance function to state space form such that
+%    the process can be described by the stochastic differential equation
+%    of the form:
+%      df(t)/dt = F f(t) + L w(t),
+%    where w(t) is a white noise process. The observation model now 
+%    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
+%
+
+  % Check inputs
+  if nargin<2, x=[]; end
+
+  % Define the model
+  F      = -inf; 
+  L      = 1; 
+  Qc     = gpcf.noiseSigma2; 
+  H      = 1;
+  Pinf   = gpcf.noiseSigma2;
+  dF     = 0;
+  dQc    = 1;
+  dPinf  = 1;
+
+  % Set params
+  params.stationary = true;
+  
+  % Check which parameters are optimized
+  if isempty(gpcf.p.noiseSigma2), ind(1) = false; else ind(1) = true; end
+  
+  % Return only those derivatives that are needed
+  dF    = dF(:,:,ind);
+  dQc   = dQc(:,:,ind);
+  dPinf = dPinf(:,:,ind);
+  
 end
