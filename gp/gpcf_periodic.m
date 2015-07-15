@@ -1115,7 +1115,7 @@ function reccf = gpcf_periodic_recappend(reccf, ri, gpcf)
   end
 end
 
-function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_periodic_cf2ss(gpcf)
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_periodic_cf2ss(gpcf,x)
 %GPCF_PERIODIC_CF2SS Convert the covariance function to state space form
 %
 %  Description
@@ -1126,7 +1126,8 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_periodic_cf2ss(gpcf)
 %    where w(t) is a white noise process. The observation model now 
 %    corresponds to y_k = H f(t_k) + r_k, where r_k ~ N(0,sigma2).
 
-  % Apply default kalman parameters 
+  % Check arguments
+  if nargin < 2, x = []; end
   
   % Check if kalman_deg is given
   if isfield(gpcf,'kalman_deg')
@@ -1160,7 +1161,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_periodic_cf2ss(gpcf)
       
       % Balance matrices for numerical stability
       [F,L,Qc,H,Pinf,dF,dQc,dPinf] = ...
-        ss_balance(F,L,Qc,H,Pinf,dF,dQc,dPinf);
+          ss_balance(F,L,Qc,H,Pinf,dF,dQc,dPinf);
       
       % Check optimized parameters
       if isempty(gpcf.p.magnSigma2), ind(1) = false; else ind(1) = true; end

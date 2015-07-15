@@ -1,5 +1,5 @@
 function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_periodic_to_ss(magnSigma2, lengthScale, period, N, valid)
-%CF_PERIODIC_TO_SS - Convert periodic covariance functions to continuous state space
+%% CF_PERIODIC_TO_SS - Convert periodic covariance functions to continuous state space
 %
 % Syntax:
 %   [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = 
@@ -60,7 +60,7 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_periodic_to_ss(magnSigma2, len
 %
 % Copyright:
 %   2012-2014 Arno Solin
-
+%
 %  This software is distributed under the GNU General Public
 %  License (version 3 or later); please refer to the file
 %  License.txt, included with the software, for details.
@@ -153,6 +153,9 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = cf_periodic_to_ss(magnSigma2, len
 
   % Only return if requested
   if nargout > 8
+    
+    % Stationarity
+    pa.stationary = true;
     
     % Input parameter information
     pa.in{1}.name = 'magnSigma2';   pa.in{1}.default = 1;     pa.in{1}.opt = true;

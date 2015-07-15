@@ -196,7 +196,7 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
           Eft_zm=K_nf*(nutilde-z*nutilde);              % The mean, zero mean GP    
           Ks = eye(size(z)) - z;                       % inv(K + S^-1)*S^-1                    
           Ksy = Ks*nutilde;
-          [RB RAR] = mean_predf(gp,x,xt,K_nf',Ks,Ksy,'EP',Stildesqroot.^2);
+          [RB, RAR] = mean_jpredf(gp,x,xt,K_nf',Ks,Ksy,'EP',Stildesqroot.^2);
           
           Eft = Eft_zm + RB;        % The mean
         end

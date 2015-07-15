@@ -525,18 +525,19 @@ switch gp.type
     R = gp.lik.sigma2;
     
     % Initialize model matrices
-    F    = [];
-    L    = [];
-    Qc   = [];
-    H    = [];
-    Pinf = [];
+    F        = [];
+    L        = [];
+    Qc       = [];
+    H        = [];
+    Pinf     = [];
+    isstable = true;
     
     % For each covariance function
     for j=1:length(gp.cf)
  
       % Form state-space model from the gp.cf{j}
       try
-        [jF,jL,jQc,jH,jPinf] = gp.cf{j}.fh.cf2ss(gp.cf{j});
+        [jF,jL,jQc,jH,jPinf,jdF,jdQc,jdPinf,p] = gp.cf{j}.fh.cf2ss(gp.cf{j},x);
       catch
         [edata, eprior, e] = set_output_for_notpositivedefinite;
         return 
@@ -548,6 +549,9 @@ switch gp.type
       Qc   = blkdiag(Qc,jQc);
       H    = [H jH];    
       Pinf = blkdiag(Pinf,jPinf);
+
+      % Set options
+      isstable = isfield(p,'stationary') && (isstable && p.stationary);
       
     end
     
@@ -567,11 +571,23 @@ switch gp.type
         
       % Solve A using the method by Davison
       if (k>1)
-            
-        % Discrete-time solution (only for stable systems)
+
+        % Time-step
         dt = x(k)-x(k-1);
-        A  = expm(F*dt);
-        Q  = Pinf - A*Pinf*A';
+
+        % Discrete-time solution
+        if isstable
+          % Only for stable systems
+          A = expm2(F*dt);
+          Q = Pinf - A*Pinf*A';
+        else
+          % Closed-form integration of covariance
+          % by matrix fraction decomposition
+          A   = expm2(F*dt);
+          Phi = [F L*Qc*L'; zeros(size(F,1)) -F'];
+          AB  = expm2(Phi*dt)*[zeros(size(F,1));eye(size(F,1))];
+          Q   = AB(1:size(F,1),:)/AB((size(F,1)+1):(2*size(F,1)),:);
+        end
         
         % Prediction step
         m = A * m;

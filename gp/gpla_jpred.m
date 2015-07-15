@@ -97,7 +97,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0));
   ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
-  ip=iparser(ip,'addParamValue','fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}))
+  ip=iparser(ip,'addParamValue','fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on','lr'}))
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
     ip=iparser(ip,'parse',gp, x, y, varargin{:});
@@ -206,7 +206,7 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, varargin)
               Covft = kstarstar - (V'*V);
             end
           else
-            % We may end up here if the likelihood is not log concace
+            % We may end up here if the likelihood is not log concave
             % For example Student-t likelihood
             V = L*diag(W);
             R = diag(W) - V'*V;

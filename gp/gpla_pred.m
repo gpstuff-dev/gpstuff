@@ -95,7 +95,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
   ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
   ip=iparser(ip,'addParamValue','fcorr', 'off', @(x) ismember(x, {'off', ...
-                   'cm2', 'fact', 'on'}));
+                   'cm2', 'fact', 'on','lr'}));
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
     ip=iparser(ip,'parse',gp, x, y, varargin{:});
@@ -199,7 +199,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
               Varft = kstarstar - sum(V'.*V',2);
             end
           else
-            % We may end up here if the likelihood is not log concace
+            % We may end up here if the likelihood is not log concave
             % For example Student-t likelihood
             V = L*diag(W);
             R = diag(W) - V'*V;

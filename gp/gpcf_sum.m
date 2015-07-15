@@ -524,7 +524,7 @@ function reccf = gpcf_sum_recappend(reccf, ri, gpcf)
   end
 end
 
-function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_sum_cf2ss(gpcf)
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_sum_cf2ss(gpcf,x)
 %GPCF_SUM_CF2SS Convert the covariance function to state space form
 %
 %  Description
@@ -532,11 +532,14 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_sum_cf2ss(gpcf)
 %    sum of two state space models.
 %
 
+  % Check arguments
+  if nargin < 2, x = []; end
+
   % Vector of function handles of conversion functions 
   % from covariance functions to state space 
   cf2ssvect = cell(length(gpcf.cf),1);
   for k = 1:length(gpcf.cf)
-      cf2ssvect{k} = @(x) gpcf.cf{k}.fh.cf2ss(gpcf.cf{k});
+      cf2ssvect{k} = @(y) gpcf.cf{k}.fh.cf2ss(gpcf.cf{k},x);
   end
   
   % Return model matrices, derivatives and parameter information

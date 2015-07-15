@@ -10,6 +10,10 @@ function lik = lik_logit(varargin)
 %      p(y|f) = || i=1 1/(1 + exp(-y_i*f_i) )
 %    where f is the latent value vector.
 %  
+%    LIK = LIK_LOGIT('moment_method',METHOD) can be used to select
+%      moment_method  - 'gh' 32 point Gauss-Hermite (default)
+%                       or 'agk' adaptive Gauss-Kronord.
+%  
 %  See also
 %    GP_SET, LIK_*
 %
@@ -23,6 +27,7 @@ function lik = lik_logit(varargin)
   ip=inputParser;
   ip.FunctionName = 'LIK_LOGIT';
   ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','moment_method','gh', @(x) ismember(x,{'gh' 'agk'}));
   ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
 
@@ -35,6 +40,10 @@ function lik = lik_logit(varargin)
     end
     init=false;
   end
+  % using Gibbs or not
+  if init || ~ismember('moment_method',ip.UsingDefaults)
+    lik.moment_method = ip.Results.moment_method;
+  end
 
   if init
     % Set the function handles to the subfunctions
@@ -44,7 +53,14 @@ function lik = lik_logit(varargin)
     lik.fh.llg = @lik_logit_llg;    
     lik.fh.llg2 = @lik_logit_llg2;
     lik.fh.llg3 = @lik_logit_llg3;
-    lik.fh.tiltedMoments = @lik_logit_tiltedMoments;
+    switch lik.moment_method
+      case 'agk'
+        % adaptive Gauss-Kronord
+        lik.fh.tiltedMoments = @lik_logit_tiltedMoments;
+      otherwise
+        % 32 point Gauss-Hermite
+        lik.fh.tiltedMoments = @lik_logit_tiltedMoments_gh;
+    end
     lik.fh.predy = @lik_logit_predy;
     lik.fh.invlink = @lik_logit_invlink;
     lik.fh.recappend = @lik_logit_recappend;
@@ -177,6 +193,56 @@ function llg3 = lik_logit_llg3(lik, y, f, param, z)
   llg3 = -PI.*(1-PI).*(1-2*PI);        
 end
 
+function [logM_0, m_1, sigm2hati1, m_3, m_4] = lik_logit_tiltedMoments_gh(lik, y, i1, sigma2_i, myy_i, z)
+%LIK_LOGIT_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
+%
+%  Description
+%    [M_0, M_1, M2] = LIK_LOGIT_TILTEDMOMENTS(LIK, Y, I, S2, MYY)
+%    takes a likelihood structure LIK, class labels Y, index I
+%    and cavity variance S2 and mean MYY. Returns the zeroth
+%    moment M_0, mean M_1 and variance M_2 of the posterior
+%    marginal (see Rasmussen and Williams (2006): Gaussian
+%    processes for Machine Learning, page 55). This subfunction 
+%    is needed when using EP for inference with non-Gaussian 
+%    likelihoods.
+%
+%  See also
+%    GPEP_E
+  
+% don't check this here, because this function is called so often by EP
+%  if ~isempty(find(abs(y)~=1))
+%    error('lik_logit: The class labels have to be {-1,1}')
+%  end
+
+% Use 32 point Gauss-Hermite quadrature
+% http://en.wikipedia.org/wiki/Gauss%E2%80%93Hermite_quadrature
+% fewer points might be sufficient, but this is more safe
+  xhermite=[-7.12581390983 -6.40949814928 -5.81222594946 -5.27555098664 -4.77716450334 -4.30554795347 -3.85375548542 -3.41716749282 -2.99249082501 -2.57724953773 -2.16949918361 -1.76765410946 -1.37037641095 -0.97650046359 -0.584978765436 -0.194840741569 0.194840741569 0.584978765436 0.97650046359 1.37037641095 1.76765410946 2.16949918361 2.57724953773 2.99249082501 3.41716749282 3.85375548542 4.30554795347 4.77716450334 5.27555098664 5.81222594946 6.40949814928 7.12581390983];
+  whermite=[7.31067642754e-023 9.23173653482e-019 1.19734401957e-015 4.21501019491e-013 5.93329148347e-011 4.09883215841e-009 1.5741677944e-007 3.65058512533e-006 5.41658405999e-005 0.000536268365495 0.00365489032677 0.0175534288315 0.0604581309559 0.151269734077 0.277458142303 0.375238352593 0.375238352593 0.277458142303 0.151269734077 0.0604581309559 0.0175534288315 0.00365489032677 0.000536268365495 5.41658405999e-005 3.65058512533e-006 1.5741677944e-007 4.09883215841e-009 5.93329148347e-011 4.21501019491e-013 1.19734401957e-015 9.23173653482e-019 7.31067642754e-023];
+  yy=y(i1);
+  xtransformed=bsxfun(@plus,bsxfun(@times,sqrt(2*sigma2_i),xhermite),myy_i);
+  h=exp(-log(1+exp(bsxfun(@times,-yy,xtransformed))));
+  wh=bsxfun(@times,whermite,h);
+  m_0=nansum(wh,2)/sqrt(pi);
+  if any(isnan(m_0))
+    logM_0=NaN;
+    m_1=NaN;
+    m_2=NaN;
+    return
+  end
+  logM_0 = log(m_0);
+  if nargout>1
+    whx=bsxfun(@times,wh,xtransformed);
+    m_1=sum(whx,2)/sqrt(pi)./m_0;
+    if nargout>2
+      whx2=bsxfun(@times,whx,xtransformed);
+      m_2=sum(whx2,2)/sqrt(pi)./m_0;
+      sigm2hati1 = m_2 - m_1.^2;
+      trouble=sigm2hati1 >= sigma2_i;
+      sigm2hati1(trouble)=sigma2_i(trouble)-eps*10;
+    end
+  end
+end
 
 function [logM_0, m_1, sigm2hati1, m_3, m_4] = lik_logit_tiltedMoments(lik, y, i1, sigma2_i, myy_i, z)
 %LIK_LOGIT_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
@@ -199,6 +265,7 @@ function [logM_0, m_1, sigm2hati1, m_3, m_4] = lik_logit_tiltedMoments(lik, y, i
 %    error('lik_logit: The class labels have to be {-1,1}')
 %  end
   
+% Use adaptive Gauss-Kronord quadrature
   yy = y(i1);
   logM_0=zeros(size(yy));
   m_1=zeros(size(yy));
@@ -478,7 +545,14 @@ function reclik = lik_logit_recappend(reclik, ri, lik)
     reclik.fh.llg = @lik_logit_llg;    
     reclik.fh.llg2 = @lik_logit_llg2;
     reclik.fh.llg3 = @lik_logit_llg3;
-    reclik.fh.tiltedMoments = @lik_logit_tiltedMoments;
+    switch ri.moment_method
+      case 'agk'
+        % adaptive Gauss-Kronord
+        reclik.fh.tiltedMoments = @lik_logit_tiltedMoments;
+      otherwise
+        % 32 point Gauss-Hermite
+        reclik.fh.tiltedMoments = @lik_logit_tiltedMoments_gh;
+    end
     reclik.fh.predy = @lik_logit_predy;
     reclik.fh.invlink = @lik_logit_invlink;
     reclik.fh.recappend = @lik_logit_recappend;

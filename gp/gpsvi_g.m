@@ -36,10 +36,16 @@ ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('gpsvi_e_param', [], @isstruct)
+ip.addParamValue('gpsvi_e_param', [], @(p) isstruct(p) || isnan(p))
 ip.parse(w, gp, x, y, varargin{:});
 z = ip.Results.z;
 param = ip.Results.gpsvi_e_param;
+if ~isstruct(param)
+  g = nan;
+  gdata = nan;
+  gprior = nan;
+  return
+end
 
 %   gp = gp_unpak(gp, w);       % unpak the parameters
 ncf = length(gp.cf);

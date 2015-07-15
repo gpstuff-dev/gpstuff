@@ -50,7 +50,7 @@ ip=iparser(ip,'addOptional','xt', [], @(x) isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addParamValue','ind', 1, @(x) isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addParamValue','ng', 50, @(x) isreal(x) && all(isfinite(x(:))) && x > 1);
-ip=iparser(ip,'addParamValue','fcorr', 'on', @(x) ismember(x, {'fact', 'cm2', 'on'}));
+ip=iparser(ip,'addParamValue','fcorr', 'on', @(x) ismember(x, {'fact', 'cm2', 'on','lr'}));
 ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
 if rem(size(varargin,2), 2) == 0
@@ -113,8 +113,13 @@ lp2 = zeros(nin,size(ind,1)); p = zeros(ng,size(ind,1));
 
 switch gp.latent_method
   case 'EP'
+    
+    if isequal(fcorr, 'lr')
+        [Efloo,Varfloo]=gpep_loopred(gp,x,y,'z',z);
+    end
+    
     switch fcorr
-      case 'fact'
+      case {'fact', 'lr'}
         [tmp, tmp, tmp, param] = gpep_e(gp_pak(gp), gp, x,y,'z',z);
         [tautilde, nutilde, muvec_i, sigm2vec_i] = ...
               deal(param.tautilde, param.nutilde, param.muvec_i, param.sigm2vec_i);
@@ -146,7 +151,12 @@ switch gp.latent_method
 %             Z_p = exp(logM0)*sqrt(2*pi)*sqrt(sigm2vec_i(ind(i1))+1./tautilde(ind(i1)))*exp(0.5*(muvec_i(ind(i1))-nutilde(ind(i1))./tautilde(ind(i1))).^2/(sigm2vec_i(ind(i1))+1./tautilde(ind(i1))));
             
             % Function handle to marginal distribution without any fcorr parameters
-            fh_p = @(f) (arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f)) - norm_lpdf(f, nutilde(ind(i1))/tautilde(ind(i1)), 1/sqrt(tautilde(ind(i1)))) + norm_lpdf(f,Ef(ind(i1)),sqrt(cii));
+            if isequal(fcorr, 'fact')
+                cav = @(f) norm_lpdf(f,Ef(ind(i1)),sqrt(cii)) - norm_lpdf(f, nutilde(ind(i1))/tautilde(ind(i1)), 1/sqrt(tautilde(ind(i1))));
+            else
+                cav = @(f) norm_lpdf(f, Efloo(ind(i1)), sqrt(Varfloo(ind(i1))));
+            end
+            fh_p = @(f) (arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f)) + cav(f);
           else
             inds=1:n;
             cii = Varf2(ind(i1));
@@ -193,17 +203,24 @@ switch gp.latent_method
           lp(:,i1) = lp(:,i1)-max(lp(:,i1));
           lp2(:,i1) = lp2(:,i1)-max(lp2(:,i1));
         end
-      case 'cm2'
-        error('Cant use cm2 fcorr with EP, use fact');
+      otherwise
+        error('Invalid method for EP, use fact');
     end
   case 'Laplace'
     
     [tmp, tmp, tmp, param] = gpla_e(gp_pak(gp), gp, x,y,'z',z);
     f_mode = param.f;
-    ll = arrayfun(@(f,yy) gplik.fh.ll(gplik, yy, f, z), f_mode, y);
+    if ~isempty(z)
+      ll = arrayfun(@(f,yy, zz) gplik.fh.ll(gplik, yy, f, zz), f_mode, y, z);
+    else
+      ll = arrayfun(@(f,yy) gplik.fh.ll(gplik, yy, f, z), f_mode, y);
+    end
     llg = gplik.fh.llg(gplik, y, f_mode, 'latent', z);
     llg2 = gplik.fh.llg2(gplik, y, f_mode, 'latent', z);
     K_ff = gp_trcov(gp, x);
+    if isequal(fcorr, 'lr')
+        [Efloo,Varfloo]=gpla_loopred(gp,x,y,'z',z,'method','lrs');
+    end
     
     switch fcorr
       case 'fact'
@@ -274,7 +291,7 @@ switch gp.latent_method
           lp2(:,i1) = lp2(:,i1)-max(lp2(:,i1));
         end
         
-      case 'cm2'
+      case {'cm2', 'lr'}
         % Loop through grid indices
         for i1=1:size(ind,1)
           fvec = fvecm(:,i1);
@@ -287,8 +304,14 @@ switch gp.latent_method
             end
             
             % Function handle to marginal distribution without any fcorr parameters
-            t_tilde = @(f) (ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
-            fh_p = @(f) (arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f)) - t_tilde(f) + norm_lpdf(f,Ef(ind(i1)),sqrt(cii));
+            if isequal(fcorr, 'cm2')
+%                t_tilde(f) = @(f) (ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
+                cav = @(f) norm_lpdf(f,Ef(ind(i1)),sqrt(cii)) - (ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
+            else
+                cav = @(f) norm_lpdf(f, Efloo(ind(i1)), sqrt(Varfloo(ind(i1))));
+            end
+            fh_p = @(f) arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f) + cav(f);
+%             fh_p = @(f) (arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f)) - t_tilde(f) + norm_lpdf(f,Ef(ind(i1)),sqrt(cii));
           else
             cii = Varf2(ind(i1));
             fh_p = @(f) norm_lpdf(f,Ef2(ind(i1)),sqrt(cii));
@@ -361,7 +384,7 @@ for i1=1:length(ind)
   % Interpolate correction to these grid points 
   % using piecewise cubic Hermite interpolation
   fvec2 = fvecm2(:,i1);
-  lc(:,i1)=lc(:,i1)-lc(5,i1);
+  lc(:,i1)=lc(:,i1)-lc(6,i1);
   
   % Check that the corrected distribution has decreasing tails
   lctmp=lc(:,i1);
@@ -405,6 +428,9 @@ for i1=1:length(ind)
   pc(:,i1) = pc(:,i1)./trapz(fvec2, pc(:,i1));
   c(:,i1) = pc(:,i1)./p(:,i1);
   
+end
+if isequal(fcorr, 'lr')
+    pc=p;
 end
 end
 

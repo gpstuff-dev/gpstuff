@@ -94,7 +94,7 @@ ip=iparser(ip,'addParamValue','predcf', [], @(x) isempty(x) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)&x>0));
 ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
-ip=iparser(ip,'addParamValue','fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
+ip=iparser(ip,'addParamValue','fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on','lr'}));
 if numel(varargin)==0 || isnumeric(varargin{1})
   % inputParser should handle this, but it doesn't
   ip=iparser(ip,'parse',gp, x, y, varargin{:});

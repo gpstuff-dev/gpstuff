@@ -23,8 +23,8 @@ function gpcf = gpcf_constant(varargin)
 %    GP_SET, GPCF_*, PRIOR_*, MEAN_*
 %
 % Copyright (c) 2007-2010 Jarno Vanhatalo
-% Copyright (c) 2010      Jaakko Riihimaki, Aki Vehtari
-% Copyright (c) 2014      Arno Solin
+% Copyright (c) 2010 Jaakko Riihimaki, Aki Vehtari
+% Copyright (c) 2014 Arno Solin
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -628,7 +628,7 @@ function reccf = gpcf_constant_recappend(reccf, ri, gpcf)
   end
 end
 
-function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_constant_cf2ss(gpcf)
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_constant_cf2ss(gpcf,x)
 %GPCF_CONSTANT_CF2SS Convert the covariance function to state space form
 %
 %  Description
@@ -641,6 +641,9 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_constant_cf2ss(gpcf)
 %
 %
 
+  % Check inputs
+  if nargin<2, x=[]; end
+
   % Define the model
   F      = 0; 
   L      = 1; 
@@ -650,7 +653,9 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_constant_cf2ss(gpcf)
   dF     = 0;
   dQc    = 0;
   dPinf  = 1;
-  params = {};
+
+  % Set params
+  params.stationary = true;
   
   % Check which parameters are optimized
   if isempty(gpcf.p.constSigma2), ind(1) = false; else ind(1) = true; end

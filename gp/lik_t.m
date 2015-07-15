@@ -393,8 +393,9 @@ function [logM_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, my
   tol = 1e-8;
   nu = lik.nu;
   sigma2 = lik.sigma2;
-
-
+  
+  logM_0 = zeros(length(i1),1);
+  
   for i=i1
 
     yy = y(i);
@@ -1021,13 +1022,13 @@ function [lpy, Ey, Vary] = lik_t_predy(lik, Ef, Varf, y, z)
   
   
   lpy = zeros(length(y),1);
-  if (size(Ef,2) > 1) && (size(Ef,2) > 1) && size(yt,2) == 1
+  if (size(Ef,2) > 1) && (size(Ef,2) > 1) && size(y,2) == 1
     % Approximate integral with sum of grid points when using corrected
     % marginal posterior
     for i2=1:length(y)
       py = t_pdf(y(i2), nu, Ef(i2,:), sigma);
-      pf = Varf(i1,:)./sum(Varf(i1,:));
-      lpy(i1) = log(sum(py.*pf));
+      pf = Varf(i2,:)./sum(Varf(i2,:));
+      lpy(i2) = log(sum(py.*pf));
     end
   else
     for i2 = 1:length(y)

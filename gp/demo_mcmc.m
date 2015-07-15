@@ -170,7 +170,7 @@ w1_sls=gp_pak(rgp);
 clear('opt','sls_opt')
 
 % -----------------------
-% Adaptice slice sampling
+% Adaptive slice sampling
 % -----------------------
 fprintf('Sampling of hyperparameters with Shrinking Rank Slice sampler.\n')
 

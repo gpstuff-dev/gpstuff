@@ -56,7 +56,6 @@ function [e, edata, eprior, param] = gpep_e(w, gp, varargin)
 %      = GPEP_E(w, gp, x, y, options)
 %    returns many useful quantities produced by EP algorithm.
 %
-
 % Copyright (c) 2007  Jaakko Riihimäki
 % Copyright (c) 2007-2010  Jarno Vanhatalo
 % Copyright (c) 2010 Heikki Peura
@@ -804,7 +803,7 @@ end
                           if int_magnitude
                             if inputmagnitude
                               dSigm=[dSigm diag(Sigm3)];
-                              if joint_mean_magnitude
+                              if exist('joint_mean_magnitude', 'var') && joint_mean_magnitude
                                 dSigm=[dSigm Sigm4];
                               end
                             else
