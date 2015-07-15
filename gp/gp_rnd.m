@@ -413,7 +413,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
       % Scaling using the Cholesky factorisation could possibly be done
       % sparsely but the directions would be different (not split-norm).
       % Thus full matrices has to be used.
-      [V, D] = svd(full(Covf));
+      [V, D, ~] = svd(full(Covf));
       T = real(V) * sqrt(real(D)); % Ensuring the real
 
       L = chol(K,'lower');
