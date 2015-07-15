@@ -80,3 +80,23 @@ end
 %     warning('Following indeces have estimated tail index k>1');
 %     disp(ksi)
 % end
+
+
+function x = gpinv(p,k,sigma)
+x = NaN(size(p));
+if sigma <= 0
+  return
+end
+ok = (p>0) & (p<1);
+if abs(k) < eps
+  x(ok) = -log1p(-p(ok));
+else
+  x(ok) = expm1(-k * log1p(-p(ok))) ./ k;
+end
+x = sigma*x;
+if ~all(ok)
+  x(p==0) = 0;
+  x(p==1 & k>=0) = Inf;
+  x(p==1 & k<0) = -sigma/k;
+end
+end
