@@ -473,7 +473,7 @@ function DKff = gpcf_linearLogistic_cfg(gpcf, x, x2, mask, i1)
     if size(x,2) ~= size(x2,2)
       error('gpcf_linearLogistic -> _ghyper: The number of columns in x and x2 has to be the same. ')
     end
-
+    error('gpcf_linearLogistic -> _ghyper: "nargin == 3 || isempty(mask)" not implemented')
     if isfield(gpcf, 'selectedVariables')
       if ~isempty(gpcf.p.coeffSigma2)
         if length(gpcf.coeffSigma2) == 1
@@ -504,7 +504,7 @@ function DKff = gpcf_linearLogistic_cfg(gpcf, x, x2, mask, i1)
     % Evaluate: DKff{1}    = d mask(Kff,I) / d coeffSigma2
     %           DKff{2...} = d mask(Kff,I) / d coeffSigma2
   elseif nargin == 4 || nargin == 5
-    
+    error('gpcf_linearLogistic -> _ghyper: "nargin == 4 || nargin == 5" not implemented')
     if isfield(gpcf, 'selectedVariables')
       if ~isempty(gpcf.p.coeffSigma2)
         if length(gpcf.coeffSigma2) == 1
@@ -701,12 +701,12 @@ function reccf = gpcf_linearLogistic_recappend(reccf, ri, gpcf)
       reccf.p.coeffSigma2 = gpp.coeffSigma2.fh.recappend(reccf.p.coeffSigma2, ri, gpcf.p.coeffSigma2);
     end
 
-        reccf.a(ri,:)=gpcf.a;
+    reccf.a(ri,:)=gpcf.a;
     if isfield(gpp,'a') && ~isempty(gpp.a)
       reccf.p.a = gpp.a.fh.recappend(reccf.p.a, ri, gpcf.p.a);
     end
 
-        reccf.b(ri,:)=gpcf.b;
+    reccf.b(ri,:)=gpcf.b;
     if isfield(gpp,'b') && ~isempty(gpp.b)
       reccf.p.b = gpp.b.fh.recappend(reccf.p.b, ri, gpcf.p.b);
     end

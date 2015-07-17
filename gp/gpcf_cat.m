@@ -290,7 +290,7 @@ function C = gpcf_cat_cov(gpcf, x1, x2, varargin)
     end
   end
   C=double(C);
-  
+  C = sparse(C);
 end
 
 function C = gpcf_cat_trcov(gpcf, x)
@@ -321,7 +321,7 @@ function C = gpcf_cat_trcov(gpcf, x)
     end
   end
   C=double(C);
-  
+  C = sparse(C);
 end
 
 function C = gpcf_cat_trvar(gpcf, x)
