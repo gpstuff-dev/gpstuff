@@ -52,7 +52,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpmc_loopred(gp, x, y, varargin)
 %
 %    Aki Vehtari, Andrew Gelman and Jonah Gabry (2015). Efficient
 %    implementation of leave-one-out cross-validation and WAIC for
-%    evaluating fitted Bayesian models.
+%    evaluating fitted Bayesian models. arXiv preprint arXiv:1507.04544.
 %
 %  See also
 %   GP_LOOPRED, GP_MC, GP_PRED
