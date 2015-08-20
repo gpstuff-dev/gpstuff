@@ -14,7 +14,7 @@ Maintainer: Aki Vehtari <aki.vehtari@aalto.fi>
 ## HOME PAGE
 
 Additional information and illustrations of the features can be found at
-<http://becs.aalto.fi/en/research/bayes/gpstuff/> and <http://arxiv.org/abs/1206.5754>
+<http://research.cs.aalto.fi/pml/software/gpstuff/> and <http://arxiv.org/abs/1206.5754>
 
 ## INTRODUCTION
 
