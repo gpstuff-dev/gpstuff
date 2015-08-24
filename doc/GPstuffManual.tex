@@ -102,7 +102,7 @@
 \title{Bayesian Modeling with Gaussian Processes using the
    \pkg{GPstuff} Toolbox}
 
-\date{2014}
+\date{2015}
 
 \author{\name Jarno Vanhatalo\thanks{Work done mainly while at the
     Department of Biomedical
@@ -113,11 +113,11 @@
   \name Jaakko Riihim\"aki\thanks{Not anymore in Aalto University} \email { } \\
   \name Jouni Hartikainen$^{\dagger}$ \email { } \\
   \name Pasi Jyl\"anki$^{\dagger}$ \email { } \\
-  \name Ville Tolvanen \email ville.tolvanen@aalto.fi \\
+  \name Ville Tolvanen$^{\dagger}$ \email { } \\
   \name Aki Vehtari\thanks{Corresponding author} \email aki.vehtari@aalto.fi \\
-  \addr Department of Biomedical Engineering and Computational Science\\
+  \addr Helsinki Institute for Information Technology HIIT, Department of Computuer Science\\
   Aalto University School of Science\\
-  P.O. Box 12200, FI-00076 Aalto, Finland}
+  P.O. Box 15400, FI-00076 Aalto, Finland}
 %\author{Jarno Vanhatalo, Jaakko Riihim{\"a}ki, Jouni Hartikainen, Pasi Jyl{\"a}nki,
 %  Ville Tolvanen and Aki Vehtari}
 %\author{Jarno Vanhatalo\\University of Helsinki\\Aalto University
@@ -141,7 +141,7 @@
   with Linux and Windows \proglang{MATLAB} and Octave.  It includes,
   among others, various inference methods, sparse approximations and
   tools for model assessment. In this work, we review these tools and
-  demonstrate the use of \pkg{GPstuff} in several models.\\ Last updated 2014-04-11.
+  demonstrate the use of \pkg{GPstuff} in several models.\\ Last updated 2015-07-15.
 \end{abstract}
 
 \begin{keywords}
@@ -158,7 +158,7 @@ Gaussian process, Bayesian hierarchical model, nonparametric Bayes
 \section{Introduction}
 
 This work reviews a free open source toolbox \pkg{GPstuff} (version
-4.4) which implements a collection of inference methods and tools for
+4.6) which implements a collection of inference methods and tools for
 inference for various Gaussian process (GP) models. The toolbox is
 compatible with Unix and Windows \proglang{MATLAB} \citep{MATLAB:2010}
 (r2009b or later, earlier versions may work, but has not been tested
@@ -3210,7 +3210,7 @@ There are various means to assess the goodness of the model and its
 predictive performance. For an extensive review of the predictive
 performance assessment methods see \citet{Vehtari+Ojanen:2012} and for
 a shorter review comparing cross-validation, DIC and WAIC see
-\citet{Gelman+Hwang+Vehtari:2013}. \pkg{GPstuff} provides four basic
+\citet{Gelman+Hwang+Vehtari:2014}. \pkg{GPstuff} provides four basic
 approaches: marginal likelihood, cross-validation, deviance
 information criterion (DIC) and widely applicable information
 criterion (WAIC).
@@ -3241,14 +3241,14 @@ By repeating this for every point in the training data, we get a
 collection of leave-one-out cross-validation (LOO-CV) predictive
 densities.
 %
-For discussion of Bayeasian cross-validation see \citet{Vehtari+Lampinen:2002,Vehtari+Ojanen:2012,Gelman+Hwang+Vehtari:2013}.
+For discussion of Bayesian cross-validation see \citet{Vehtari+Lampinen:2002,Vehtari+Ojanen:2012,Gelman+Hwang+Vehtari:2014} and for comparison of fast approximations for latent Gaussian variable models see \citet{Vehtari+etal:2014}.
 
 For GP with given hyperparameters the LOO-CV predictions can be
 computed in case of Gaussian likelihood using an analytical
 solution \citep{Sundararajan+Keerthi:2001a} and in case of
 non-Gaussian likelihood using EP approximation
 \citep{Opper+Winther:2000,Rasmussen+Williams:2006} or Laplace
-approximation using linear response approach (in preparation),
+approximation using linear response approach \citep{Vehtari+etal:2014},
 which have been implemented in \code{gp\_loopred}.
 %
 % where $\bar{c}_i$ denotes the $i$th diagonal entry of $C^{-1}$,
@@ -3259,7 +3259,7 @@ If set of hyperparameters have been obtained using \code{gp\_mc} or
 \code{gp\_ia} LOO-posterior can be approximated using importance
 sampling or weighting
 \citep{Gelfand+Dey+Chang:1992,Vehtari+Lampinen:2002}, which is also
-implemented in \code{gp\_loopred}. We use an integrated following \citet[][p. 40]{Vehtari:2001} where leave-one-out
+implemented in \code{gp\_loopred}. We use an integrated approach following \citet[][p. 40]{Vehtari:2001} where leave-one-out
 predictive densities given hyperparameters
 \begin{equation}
 p(y_i|x_i,D_{-i},\vartheta)=\int
@@ -3270,7 +3270,10 @@ approximation as mentioned above \citep[see
 also][]{Held+Schrodle+Rue:2010}. Thus the importance weighting is made
 only for the hyperparameters. This reduces the variance of importance
 sampling estimate significantly making it useful in practice. With
-these approximations LOO-CV is very fast to compute in GPstuff.
+these approximations LOO-CV is very fast to compute in GPstuff. We
+also use Pareto smoothed importance sampling
+\citep{Vehtari+Gelman:2015,Vehtari+Gelman+Gabry:2015} to further
+reduce the variance of the estimate.
 
 LOO-CV in GPstuff does not currently work for some multilatent
 models. In such case or if there is reason to doubt the reliability of
@@ -3725,7 +3728,7 @@ features in GPstuff, GPML and FBM.
     & GPstuff & GPML & FBM \\
     \textbf{Covariance functions} &  &  & \\
     \hline
-    number of elementary functions & 13 & 10 & 4 \\
+    number of elementary functions & 16 & 10 & 4 \\
     sums of elements, masking of inputs  & x & x & x \\
     delta distance & x & & x \\
     products, positive scaling of elements & x & x &  \\    
@@ -3793,7 +3796,7 @@ features in GPstuff, GPML and FBM.
     average predictive comparison & x &  & 
   \end{tabular}
   \normalsize
-  \caption{The comparison of features in GPstuff (v4.4), GPML (v3.2) and FBM (2004-11-10)
+  \caption{The comparison of features in GPstuff (v4.5), GPML (v3.2) and FBM (2004-11-10)
     toolboxes. In case of model blocks the notation x means that it
     can be inferred with any inference method (EP, LA (Laplace), MCMC and
     in case of GPML also with VB). In case of sparse approximations,
@@ -4036,7 +4039,7 @@ where the diagonal matrix
 $\Sigma=\text{diag}(\sigma_1^2,\ldots,\sigma_D^2)$ contains the
 prior variances of the $b_d$ terms. 
 
-\subsection*{Logistic mean covariance function  (\code{gpcf\_linearMichelismenten})}
+\subsection*{Logistic mean covariance function  (\code{gpcf\_linearLogistic})}
 
 The logistic functional form is given by
 \begin{equation}
@@ -4048,7 +4051,7 @@ for weight, $w \sim N(0, \sigma^2)$
 the prior for $h(x)$ is $h(x) \sim N(0, H(x)H(x)^{\text{T}}\sigma^2)$ where 
 $H(x) = [h(x_1), ... , h(x_n)]^{\text{T}}$. Hence, the covariance function related 
 to the logistic mean function in case of $D$ inputs is 
-\begin{equation}\label{cf_linearMichelismenten}
+\begin{equation}\label{cf_linearlinearLogistic}
 k(\x_i,\x_j)= H(\x_i)\Sigma H(\x_j)^{\text{T}},
 \end{equation}
 where the diagonal matrix
@@ -4865,3 +4868,8 @@ related functions. To start see functions with name starting
 
 \end{document}
 
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

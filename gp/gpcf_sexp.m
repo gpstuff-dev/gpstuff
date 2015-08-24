@@ -543,7 +543,11 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask, i1)
       if ~isempty(gpcf.p.magnSigma2)
         i=i+1;
       end
-      if ~isempty(gpcf.p.lengthScale)
+      if isfield(gpcf,'metric')
+        if ~isempty(gpcf.metric.p.lengthScale)
+          i=i+length(gpcf.metric.lengthScale);
+        end
+      elseif ~isempty(gpcf.p.lengthScale)
         i=i+length(gpcf.lengthScale);
       end
       DKff=i;

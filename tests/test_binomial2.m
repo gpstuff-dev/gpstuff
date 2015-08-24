@@ -48,7 +48,7 @@ function testPredictiveMeanAndVarianceLaplace(testCase)
   % Test predictive mean and variance for Laplace
   verifyVarsEqual(testCase, getName(), ...
     {'Eft_la','Varft_la','Eft_la_sampled','Varft_la_sampled'}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.1, 'RelTolRange', 0.05)
   % Test prediction for pbetapositive
   verifyVarsEqual(testCase, getName(), {'pbetapositive_la'}, ...
     'AbsTol', 0.01)
@@ -58,7 +58,7 @@ function testPredictiveMeanAndVarianceEP(testCase)
   % Test predictive mean and variance for EP
   verifyVarsEqual(testCase, getName(), ...
     {'Eft_ep','Varft_ep','Eft_ep_sampled','Varft_ep_sampled'}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.1, 'RelTolRange', 0.05)
   % Test prediction for pbetapositive
   verifyVarsEqual(testCase, getName(), {'pbetapositive_ep'}, ...
     'AbsTol', 0.01)
@@ -67,7 +67,7 @@ end
 function testPredictiveMeanMCMC(testCase)
   % Test predictive mean for the MCMC samples
   verifyVarsEqual(testCase, getName(), {'Eft_mcmc'}, ...
-    'RelTolElement', 0.1, 'RelTolRange', 0.04)
+    'RelTolElement', 0.1, 'RelTolRange', 0.05)
   % Test prediction for pbetapositive
   verifyVarsEqual(testCase, getName(), {'pbetapositive_mcmc'}, ...
     'AbsTol', 0.01)

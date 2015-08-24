@@ -46,9 +46,9 @@ end
 
 function testDerivatesRegression(testCase)
   verifyVarsEqual(testCase, getName(), {'derivs'}, @(x)x{1}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.05, 'RelTolRange', 0.01, 'AbsTol', 0.4)
   verifyVarsEqual(testCase, getName(), {'derivs'}, @(x)x{2}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+    'RelTolElement', 0.05, 'RelTolRange', 0.01, 'AbsTol', 0.4)
 end
 
 function testDerivatesLaplace(testCase)

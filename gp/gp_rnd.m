@@ -109,15 +109,18 @@ if isempty(xt)
   end
 end
 
-if iscell(gp)
-    gplatmet=gp{1}.latent_method;
-else
-    gplatmet=gp.latent_method;
+if isfield(gp, 'latent_method')
+  if iscell(gp)
+      gplatmet=gp{1}.latent_method;
+  else
+      gplatmet=gp.latent_method;
+  end
+  if ~strcmp(gplatmet, 'Laplace') && strcmp(autoscale,'on')
+      % autoscale is applicable only with Laplace
+      autoscale='off';
+  end
 end
-if ~strcmp(gplatmet, 'Laplace') && strcmp(autoscale,'on')
-    % autoscale is applicable only with Laplace
-    autoscale='off';
-end
+
 
 sampyt=[];
 if isstruct(gp) && numel(gp.jitterSigma2)==1
@@ -409,7 +412,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
       % Scaling using the Cholesky factorisation could possibly be done
       % sparsely but the directions would be different (not split-norm).
       % Thus full matrices has to be used.
-      [V, D] = svd(full(Covf));
+      [V, D, ~] = svd(full(Covf));
       T = real(V) * sqrt(real(D)); % Ensuring the real
 
       L = chol(K,'lower');

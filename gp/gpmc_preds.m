@@ -238,7 +238,12 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
         [Ef(:,i1), Varf(:,:,i1), lpy(:,i1), Ey(:,i1), Vary(:,:,i1)] = gp_pred(Gp, x, y, xt, options); 
       end
     end            
-  end    
-  Varf=squeeze(Varf);
-  Vary=squeeze(Vary);
+  end
+  if ndims(Varf) == 3
+    Varf=permute(Varf,[1 3 2]);
+    Vary=permute(Vary,[1 3 2]);
+  else
+    Varf=squeeze(Varf);
+    Vary=squeeze(Vary);
+  end
 end
