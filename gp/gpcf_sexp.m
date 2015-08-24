@@ -1088,12 +1088,18 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2, i1)
         DKff{ii1} = -K.*dist.*gdist{ii1};
       end
     else
-      if length(gpcf.lengthScale) == 1
-        % In the case of an isotropic SEXP
-        s = repmat(1./gpcf.lengthScale.^2, 1, m);
-      else
-        s = 1./gpcf.lengthScale.^2;
-      end
+        s = zeros(1, m);
+        if isfield(gpcf,'selectedVariables')
+            s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
+        else
+            s(1:m) = 1./gpcf.lengthScale.^2;
+        end
+%       if length(gpcf.lengthScale) == 1
+%         % In the case of an isotropic SEXP
+%         s = repmat(1./gpcf.lengthScale.^2, 1, m);
+%       else
+%         s = 1./gpcf.lengthScale.^2;
+%       end
       for j = 1:n
         for i=i1
           DK = zeros(size(K));
@@ -1119,12 +1125,18 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2, i1)
         DKff{ii1}   = -K.*dist.*gdist{ii1};
       end
     else 
-      if length(gpcf.lengthScale) == 1
-        % In the case of an isotropic SEXP
-        s = repmat(1./gpcf.lengthScale.^2, 1, m);
-      else
-        s = 1./gpcf.lengthScale.^2;
-      end
+        s = zeros(1, m);
+        if isfield(gpcf,'selectedVariables')
+            s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
+        else
+            s(1:m) = 1./gpcf.lengthScale.^2;
+        end
+%       if length(gpcf.lengthScale) == 1
+%         % In the case of an isotropic SEXP
+%         s = repmat(1./gpcf.lengthScale.^2, 1, m);
+%       else
+%         s = 1./gpcf.lengthScale.^2;
+%       end
       
       for j = 1:n
         for i=i1
@@ -1177,12 +1189,18 @@ function [DKff, DKff1, DKff2]  = gpcf_sexp_ginput2(gpcf, x, x2)
   if isfield(gpcf,'metric')
     error('Metric doesnt work with grad.obs')
   else
-    if length(gpcf.lengthScale) == 1
-      % In the case of an isotropic SEXP
-      s = repmat(1./gpcf.lengthScale.^2, 1, m);
-    else
-      s = 1./gpcf.lengthScale.^2;
-    end
+      s = zeros(1, m);
+      if isfield(gpcf,'selectedVariables')
+          s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
+      else
+          s(1:m) = 1./gpcf.lengthScale.^2;
+      end
+%     if length(gpcf.lengthScale) == 1
+%       % In the case of an isotropic SEXP
+%       s = repmat(1./gpcf.lengthScale.^2, 1, m);
+%     else
+%       s = 1./gpcf.lengthScale.^2;
+%     end
 
     for i=1:m
       DK2 = s(i).^2.*bsxfun(@minus,x(:,i),x2(:,i)').^2.*K;
