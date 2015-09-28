@@ -73,7 +73,7 @@ while i1 < maxiter && improv>1e-6
     fmin = min( fx(x) );
     
     % Calculate EI and posterior of the function for visualization purposes
-    EI = expectedImprovement_eg(xl, gp, x, a, invC, fmin);
+    EI = expectedimprovement_eg(xl, gp, x, a, invC, fmin);
     [Ef,Varf] = gp_pred(gp, x, y, xl); 
 
     % optimize acquisition function
@@ -81,13 +81,13 @@ while i1 < maxiter && improv>1e-6
     %    Improvement since Matlab optimizers seek for functions minimum
     % Here we use multiple starting points for the optimization so that we
     % don't chrash into suboptimal mode
-    fh_eg = @(x_new) expectedImprovement_eg(x_new, gp, x, a, invC, fmin); % The function handle to the Expected Improvement function
+    fh_eg = @(x_new) expectedimprovement_eg(x_new, gp, x, a, invC, fmin); % The function handle to the Expected Improvement function
     indbest = find(y == fmin);
     xstart = [linspace(0.5,9.5,5) x(indbest)+0.1*randn(1,2)];
     for s1=1:length(xstart)
         x_new(s1) = optimf(fh_eg, xstart(s1), [], [], [], [], lb, ub, [], opt);
     end
-    EIs = expectedImprovement_eg(x_new(:), gp, x, a, invC, fmin);    
+    EIs = expectedimprovement_eg(x_new(:), gp, x, a, invC, fmin);    
     x_new = x_new( find(EIs==min(EIs),1) ); % pick up the point where Expected Improvement is maximized
         
     % put new sample point to the list of evaluation points
@@ -136,7 +136,7 @@ Z = reshape(fx(xl),100,100);
 cfc = gpcf_constant('constSigma2',10,'constSigma2_prior', prior_fixed);
 cfse = gpcf_sexp('lengthScale',[1 1]);
 cfl = gpcf_linear('coeffSigma2', 10); 
-cfl2 = gpcf_linear2('coeffSigma2', 10);
+cfl2 = gpcf_squared('coeffSigma2', 10);
 lik = lik_gaussian('sigma2', 0.001, 'sigma2_prior', prior_fixed);
 gp = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik);
 
@@ -171,7 +171,7 @@ while i1 < maxiter && improv>1e-6
     
     % Calculate EI and the posterior of the function for visualization
     [Ef,Varf] = gp_pred(gp, x, y, xl);
-    EI = expectedImprovement_eg(xl, gp, x, a, invC, fmin);
+    EI = expectedimprovement_eg(xl, gp, x, a, invC, fmin);
 
     % optimize acquisition function
     %  * Note! Opposite to the standard notation we minimize negative Expected
@@ -182,9 +182,9 @@ while i1 < maxiter && improv>1e-6
     % Here we use multiple starting points for the optimization so that we
     % don't chrash into suboptimal mode of acquisition function
     if mod(i1,5)==0  % Do just exploration by finding the maimum variance location
-        fh_eg = @(x_new) expectedVariance_eg(x_new, gp, x, [], invC);
+        fh_eg = @(x_new) expectedvariance_eg(x_new, gp, x, [], invC);
     else
-        fh_eg = @(x_new) expectedImprovement_eg(x_new, gp, x, a, invC, fmin);
+        fh_eg = @(x_new) expectedimprovement_eg(x_new, gp, x, a, invC, fmin);
     end
     indbest = find(y == fmin);
     nstarts = 10;
@@ -193,7 +193,7 @@ while i1 < maxiter && improv>1e-6
         x_new(s1,:) = optimf(fh_eg, xstart(s1,:), [], [], [], [], lb, ub, [], opt);
     end
     xnews = x_new;
-    EIs = expectedImprovement_eg(x_new, gp, x, a, invC, fmin);
+    EIs = expectedimprovement_eg(x_new, gp, x, a, invC, fmin);
     x_new = x_new( find(EIs==min(EIs),1), : ); % pick up the point where Expected Improvement is maximized
         
     % put new sample point to the list of evaluation points
@@ -256,7 +256,7 @@ Zc2(~isnan(Zc2))=1; Zc2 = reshape(Zc2,100,100);
 cfc = gpcf_constant('constSigma2',10,'constSigma2_prior', prior_fixed);
 cfse = gpcf_sexp('lengthScale',[1 1]);
 cfl = gpcf_linear('coeffSigma2', 10); 
-cfl2 = gpcf_linear2('coeffSigma2', 10);
+cfl2 = gpcf_squared('coeffSigma2', 10);
 lik = lik_gaussian('sigma2', 0.001, 'sigma2_prior', prior_fixed);
 % GP model for objective function
 gp1 = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik);
@@ -324,7 +324,7 @@ while i1 < maxiter && improv>1e-6
     % Calculate EI and the posterior of the functions for visualization
     if ~isempty(x)
         [Ef,Varf] = gp_pred(gp, x, y, xl);
-        EI = expectedImprovement_eg(xl, gp, x, a, invC, fmin, const1, const2);
+        EI = expectedimprovement_eg(xl, gp, x, a, invC, fmin, const1, const2);
     else
         Ef = zeros(size(xl,1),1);
         Varf = zeros(size(xl,1),1);
@@ -342,9 +342,9 @@ while i1 < maxiter && improv>1e-6
     % Here we use multiple starting points for the optimization so that we
     % don't chrash into suboptimal mode of acquisition function
     if mod(i1,5)==0  %Do just exploration by finding the maimum variance location        
-        fh_eg = @(x_new) expectedVariance_eg(x_new, gp, x, [], invC);
+        fh_eg = @(x_new) expectedvariance_eg(x_new, gp, x, [], invC);
     else
-        fh_eg = @(x_new) expectedImprovement_eg(x_new, gp, x, a, invC, fmin, const1, const2);
+        fh_eg = @(x_new) expectedimprovement_eg(x_new, gp, x, a, invC, fmin, const1, const2);
     end
     nstarts = 10;
     xstart = [repmat(lb,nstarts,1) + repmat(ub-lb,nstarts,1).*rand(nstarts,2) ]; %; repmat(x(indbest,:),2,1)+0.1*randn(2,size(x,2))
