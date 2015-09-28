@@ -516,9 +516,9 @@ elseif isstruct(gp) && numel(gp.jitterSigma2)>1
     nsampi = length(sampind);
     if nsampi>0
       Gp = take_nth(gp,i1);
-%       if isfield(Gp,'latent_method') && isequal(Gp.latent_method,'MCMC')
-%         Gp = rmfield(Gp,'latent_method');
-%       end
+      if isfield(Gp,'latent_method') && isequal(Gp.latent_method,'MCMC')
+        Gp = rmfield(Gp,'latent_method');
+      end
       if isfield(gp, 'latentValues') && ~isempty(gp.latentValues)
         % Non-Gaussian likelihood. The latent variables should be used in
         % place of observations
