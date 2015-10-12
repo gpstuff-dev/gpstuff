@@ -1,4 +1,4 @@
-function [EI, EIg] = expectedImprovement_eg(x_new, gp, x, a, invC, fmin, varargin)
+function [EI, EIg] = expectedimprovement_eg(x_new, gp, x, a, invC, fmin, varargin)
 % expectedImprovement_eg    Calculate the negative expected improvement and
 %                           its gradient for use in Bayesian optimization
 %

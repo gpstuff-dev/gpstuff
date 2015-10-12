@@ -1,4 +1,4 @@
-function [e, g] = expectedVariance_eg(x_new, gp, x, ~, invC, varargin)
+function [e, g] = expectedvariance_eg(x_new, gp, x, ~, invC, varargin)
 % expectedVariance_eg    Calculate the negative expected variance and its
 %                        gradient  
 %

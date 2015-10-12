@@ -141,7 +141,7 @@
   with Linux and Windows \proglang{MATLAB} and Octave.  It includes,
   among others, various inference methods, sparse approximations and
   tools for model assessment. In this work, we review these tools and
-  demonstrate the use of \pkg{GPstuff} in several models.\\ Last updated 2015-07-15.
+  demonstrate the use of \pkg{GPstuff} in several models.\\ Last updated 2015-10-12.
 \end{abstract}
 
 \begin{keywords}
@@ -3508,6 +3508,27 @@ $\sigma^{-2}\mb{I}$ is replaced by $\mb{W}$ in the case of Laplace
 approximation and $\tilde{\mb{\Sigma}}^{-1}$ in the case of EP.
 
 
+\section{Bayesian optimization}
+
+Bayesian optimization is a sequential design strategy for global optimization of black-box functions \citep[e.g.,][]{Jones+Schonlau+Welch:1998}. The objective function is given a GP prior and after running the objective function the prior is updated to form a posterior conditional to the function runs so far. An acquisition function, which depends on the posterior for the objective function, is used to decide what the next query point should be. The Bayesian optimization is illustrated by \code{demo\_bayesoptimization}.
+
+More specifically, assume we have run the objective function $n$ times providing us the data $\{f_i,\x_i\}_{i=1}^n$ where $f_i$ corresponds to the function value at input location $\x_i$. We give a (zero mean) GP prior for the objective function $f(x) \sim GP(0, k(\x, \x'))$ and calculate the posterior distribution for the objective function $f(x)| \y,\mb{X} \sim GP(\mu_f^\text{p}(x), k^\text{p}_f(x,x'))$ where $\mu_f^\text{p}(x)$ and $k^\text{p}_f(x,x')$ are the posterior mean and covariance functions summarized in equation \eqref{eq_conditional_ftilde_given_f} and paragraph below it. Next we need an acquisition function $a(\x) : \Re^d\rightarrow \Re$ which determines the next point to be evaluated via an optimization $\x_{\text{next}} = \argmax_{\x} a(x)$. Several acquisition functions have been proposed and here we consider the \emph{expected improvement}. Let $f_{\text{min}} = \min(f_1,..., f_n)$ be the current best function value. The improvement from the current best at the point $\x$ is $I(\x) = \max(f_{\text{min}} - f(\x), 0)$ where $f(\x)$ is a random variable. Hence, the expected improvement at the point $\x$ is \citep{Jones+Schonlau+Welch:1998}
+%
+\begin{align}
+\E[I(\x)]&=\E[\max(f_{\text{min}} - f(\x), 0)] \\
+& = (f_{\text{min}}-\mu_f^\text{p}(x))\Phi\left( \frac{f_{\text{min}}-\mu_f^\text{p}(x)}{\sqrt{k^\text{p}_f(x,x')}} \right) + \sqrt{k^\text{p}_f(x,x')}\phi\left( \frac{f_{\text{min}}-\mu_f^\text{p}(x)}{\sqrt{k^\text{p}_f(x,x')}}\right),
+\end{align}
+%
+where $\Phi(\cdot)$ and $\phi(\cdot)$ denote, respectively, the standard Gaussian cumulative distribution and the density functions. The gradient of the expected improvement with respect to $\x$ can be solved analytically which enables gradient based optimization of this acquisition function. Since Matlab optimizers seek for the function minimum we use negative expected improvement in \pkg{GPstuff}. Moreover, in the two dimensional example in \code{demo\_bayesoptimization} we demonstrate also how the exploration of the search space can be improved by alternating between searching for the maximum expected improvement and the maximum posterior variance (every fifth iteration in the demo).
+
+\citet{Gelbart+Snoek+Adams:2014} treat Bayesian optimization under unknown constraints. There the problem is to find the optimum of the objective function while fulfilling a set of unknown functional constraints at the same time. \pkg{GPstuff} allows constraint functions of type $f:\Re^d\rightarrow \Re$ with lower and upper limits. Let us denote $c$ constraint functions and the corresponding lower and upper limits by $f_1^\text{c},...,f_c^\text{c}$, $l_1^\text{c},..., l_c^\text{c}$ and $u_1^\text{c},..., u_c^\text{c}$. We give a (zero mean) GP prior for each of the constraint functions so that $f_k^\text{c} \sim GP(0, k_{f_k^\text{c}}(\x,\x'))$. After evaluating the constraint functions at training points $\x^\text{c}_{k,1},...,\x^\text{c}_{k,n_k}$ we can  calculate the posterior for each of the constraint functions. Note that the training set for each constraint and objective function can be different. After calculating the posterior of all the constraint functions and the objective function, the expected improvement under constraints (EIC) can be calculated as
+%
+\begin{align}
+\text{EIC}&=\E[I(\x)]\prod_{k=1}^c\text{Pr} \left(l_k^\text{c}< f_k^\text{c}(\x)<u_k^\text{c} \right) \\
+& = \E[I(\x)]\prod_{k=1}^c \left( \Phi\left( \frac{u_{k^\text{c}}-\mu_{f_k^\text{c}}^\text{p}(x)}{\sqrt{k^\text{p}_{f_k^\text{c}}(x,x')}}  \right) - \Phi\left( \frac{l_{k^\text{c}}-\mu_{f_k^\text{c}}^\text{p}(x)}{\sqrt{k^\text{p}_{f_k^\text{c}}(x,x')}}  \right)\right).
+\end{align}
+%
+We can again use gradient based optimization to find the maximum of EIC. In \pkg{GPstuff} both negative EI and negative EIC are implemented in \code{expectedimprovement\_eg.m}.
 
 \section{Adding new features in the toolbox}\label{sec_adding_new_features}
 
