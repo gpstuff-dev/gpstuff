@@ -19,6 +19,9 @@ function h = gp_plot(gp, x, y, varargin)
 %    OPTIONS is optional parameter-value pair
 %      target - option for choosing what is computed 'mu' (default)
 %               or 'f'
+%      normdata - a structure with fields xmean, xstd, ymean, and ystd
+%               to allow plotting in the original data scale (see
+%               functions normdata and denormdata)
 %      predcf - an index vector telling which covariance functions are 
 %               used for prediction. Default is all (1:gpcfn). 
 %               See additional information below.
@@ -179,13 +182,13 @@ switch m
     end
   case 2
     subplot(2,2,1);
-    gp_cpred(gp,x,y,xt,1,'z',z,'zt',zt,'target',target,'plot','on');
+    gp_cpred(gp,x,y,xt,1,'z',z,'zt',zt,'target',target,'plot','on',varargin{:});
     xlabel('x1')
     subplot(2,2,2);
-    gp_cpred(gp,x,y,xt,2,'z',z,'zt',zt,'target',target,'plot','on');
+    gp_cpred(gp,x,y,xt,2,'z',z,'zt',zt,'target',target,'plot','on',varargin{:});
     xlabel('x2')
     subplot(2,1,2);
-    gp_cpred(gp,x,y,xt,[1 2],'z',z,'zt',zt,'target',target,'plot','on','tr',1e9);
+    gp_cpred(gp,x,y,xt,[1 2],'z',z,'zt',zt,'target',target,'plot','on','tr',1e9,varargin{:});
     axis square
     xlabel('x1')
     ylabel('x2')
