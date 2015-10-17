@@ -14,7 +14,7 @@
 %  References:
 %    Jones, D., Schonlau, M., & Welch, W. (1998). Efficient global
 %    optimization of expensive black-box functions. Journal of Global
-%    Optimization, 13(4), 455–492. doi:10.1023/a:1008306431147  
+%    Optimization, 13(4), 455-492. doi:10.1023/a:1008306431147  
 %
 %    Michael A. Gelbart, Jasper Snoek, and Ryan P. Adams
 %    (2014). Bayesian Optimization with Unknown Constraints.
