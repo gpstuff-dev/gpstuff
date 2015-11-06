@@ -1,19 +1,19 @@
-function gpcf = gpcf_linear2(varargin)
-%GPCF_LINEAR2  Create a squared (dot product) covariance function
+function gpcf = gpcf_squared(varargin)
+%GPCF_SQUARED  Create a squared (dot product) covariance function
 %
 %  Description
-%    GPCF = GPCF_linear2('PARAM1',VALUE1,'PARAM2,VALUE2,...) creates
+%    GPCF = GPCF_SQUARED('PARAM1',VALUE1,'PARAM2,VALUE2,...) creates
 %    a squared (dot product) covariance function structure in which
 %    the named parameters have the specified values. Any unspecified
 %    parameters are set to default values. The squared covariance function
 %    corresponds to x.^2 mean function and the respective covariance matrix
-%    is given as C = x*diag(gpcf.coeffSigma2)*(x');
+%    is given as C = x.^2*diag(gpcf.coeffSigma2)*(x'.^2);
 %
-%    GPCF = GPCF_linear2(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    GPCF = GPCF_SQUARED(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %    modify a covariance function structure with the named
 %    parameters altered with the specified values.
 %  
-%    Parameters for linear2 (dot product) covariance function
+%    Parameters for squared (dot product) covariance function
 %      coeffSigma2       - prior variance for regressor coefficients [10]
 %                          This can be either scalar corresponding
 %                          to a common prior variance or vector
@@ -39,7 +39,7 @@ function gpcf = gpcf_linear2(varargin)
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'GPCF_linear2';
+  ip.FunctionName = 'GPCF_SQUARED';
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('coeffSigma2',10, @(x) isvector(x) && all(x>0));
   ip.addParamValue('coeffSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
@@ -49,9 +49,9 @@ function gpcf = gpcf_linear2(varargin)
 
   if isempty(gpcf)
     init=true;
-    gpcf.type = 'gpcf_linear2';
+    gpcf.type = 'gpcf_squared';
   else
-    if ~isfield(gpcf,'type') && ~isequal(gpcf.type,'gpcf_linear2')
+    if ~isfield(gpcf,'type') && ~isequal(gpcf.type,'gpcf_squared')
       error('First argument does not seem to be a valid covariance function structure')
     end
     init=false;
@@ -78,31 +78,31 @@ function gpcf = gpcf_linear2(varargin)
   
   if init
     % Set the function handles to the subfunctions
-    gpcf.fh.pak = @gpcf_linear2_pak;
-    gpcf.fh.unpak = @gpcf_linear2_unpak;
-    gpcf.fh.lp = @gpcf_linear2_lp;
-    gpcf.fh.lpg = @gpcf_linear2_lpg;
-    gpcf.fh.cfg = @gpcf_linear2_cfg;
-    gpcf.fh.cfdg = @gpcf_linear2_cfdg;
-    gpcf.fh.cfdg2 = @gpcf_linear2_cfdg2;
-    gpcf.fh.ginput = @gpcf_linear2_ginput;
-    gpcf.fh.ginput2 = @gpcf_linear2_ginput2;
-    gpcf.fh.ginput3 = @gpcf_linear2_ginput3;
-    gpcf.fh.ginput4 = @gpcf_linear2_ginput4;
-    gpcf.fh.cov = @gpcf_linear2_cov;
-    gpcf.fh.trcov  = @gpcf_linear2_trcov;
-    gpcf.fh.trvar  = @gpcf_linear2_trvar;
-    gpcf.fh.recappend = @gpcf_linear2_recappend;
-    gpcf.fh.cf2ss = @gpcf_linear2_cf2ss;
+    gpcf.fh.pak = @gpcf_squared_pak;
+    gpcf.fh.unpak = @gpcf_squared_unpak;
+    gpcf.fh.lp = @gpcf_squared_lp;
+    gpcf.fh.lpg = @gpcf_squared_lpg;
+    gpcf.fh.cfg = @gpcf_squared_cfg;
+    gpcf.fh.cfdg = @gpcf_squared_cfdg;
+    gpcf.fh.cfdg2 = @gpcf_squared_cfdg2;
+    gpcf.fh.ginput = @gpcf_squared_ginput;
+    gpcf.fh.ginput2 = @gpcf_squared_ginput2;
+    gpcf.fh.ginput3 = @gpcf_squared_ginput3;
+    gpcf.fh.ginput4 = @gpcf_squared_ginput4;
+    gpcf.fh.cov = @gpcf_squared_cov;
+    gpcf.fh.trcov  = @gpcf_squared_trcov;
+    gpcf.fh.trvar  = @gpcf_squared_trvar;
+    gpcf.fh.recappend = @gpcf_squared_recappend;
+    gpcf.fh.cf2ss = @gpcf_squared_cf2ss;
   end        
 
 end
 
-function [w, s, h] = gpcf_linear2_pak(gpcf, w)
-%GPCF_linear2_PAK  Combine GP covariance function parameters into one vector
+function [w, s, h] = gpcf_squared_pak(gpcf, w)
+%GPCF_squared_PAK  Combine GP covariance function parameters into one vector
 %
 %  Description
-%    W = GPCF_linear2_PAK(GPCF) takes a covariance function
+%    W = GPCF_squared_PAK(GPCF) takes a covariance function
 %    structure GPCF and combines the covariance function
 %    parameters and their hyperparameters into a single row
 %    vector W. This is a mandatory subfunction used for 
@@ -112,15 +112,15 @@ function [w, s, h] = gpcf_linear2_pak(gpcf, w)
 %             (hyperparameters of gpcf.coeffSigma2)]'
 %
 %  See also
-%    GPCF_linear2_UNPAK
+%    GPCF_squared_UNPAK
   
   w = []; s = {}; h =[];
   if ~isempty(gpcf.p.coeffSigma2)
     w = log(gpcf.coeffSigma2);
     if numel(gpcf.coeffSigma2)>1
-      s = [s; sprintf('log(linear2.coeffSigma2 x %d)',numel(gpcf.coeffSigma2))];
+      s = [s; sprintf('log(squared.coeffSigma2 x %d)',numel(gpcf.coeffSigma2))];
     else
-      s = [s; 'log(linear2.coeffSigma2)'];
+      s = [s; 'log(squared.coeffSigma2)'];
     end
     h = [h ones(1, numel(gpcf.coeffSigma2))];
     % Hyperparameters of coeffSigma2
@@ -132,12 +132,12 @@ function [w, s, h] = gpcf_linear2_pak(gpcf, w)
   end
 end
 
-function [gpcf, w] = gpcf_linear2_unpak(gpcf, w)
-%GPCF_linear2_UNPAK  Sets the covariance function parameters 
+function [gpcf, w] = gpcf_squared_unpak(gpcf, w)
+%GPCF_squared_UNPAK  Sets the covariance function parameters 
 %                   into the structure
 %
 %  Description
-%    [GPCF, W] = GPCF_linear2_UNPAK(GPCF, W) takes a covariance
+%    [GPCF, W] = GPCF_squared_UNPAK(GPCF, W) takes a covariance
 %    function structure GPCF and a hyper-parameter vector W, and
 %    returns a covariance function structure identical to the
 %    input, except that the covariance hyper-parameters have been
@@ -150,7 +150,7 @@ function [gpcf, w] = gpcf_linear2_unpak(gpcf, w)
 %             (hyperparameters of gpcf.coeffSigma2)]'
 %
 %  See also
-%   GPCF_linear2_PAK
+%   GPCF_squared_PAK
   
   gpp=gpcf.p;
 
@@ -166,17 +166,17 @@ function [gpcf, w] = gpcf_linear2_unpak(gpcf, w)
   end
 end
 
-function lp = gpcf_linear2_lp(gpcf)
-%GPCF_linear2_LP  Evaluate the log prior of covariance function parameters
+function lp = gpcf_squared_lp(gpcf)
+%GPCF_squared_LP  Evaluate the log prior of covariance function parameters
 %
 %  Description
-%    LP = GPCF_linear2_LP(GPCF) takes a covariance function
+%    LP = GPCF_squared_LP(GPCF) takes a covariance function
 %    structure GPCF and returns log(p(th)), where th collects the
 %    parameters. This is a mandatory subfunction used for example 
 %    in energy computations.
 %
 %  See also
-%   GPCF_linear2_PAK, GPCF_linear2_UNPAK, GPCF_linear2_LPG, GP_E
+%   GPCF_squared_PAK, GPCF_squared_UNPAK, GPCF_squared_LPG, GP_E
 
 % Evaluate the prior contribution to the error. The parameters that
 % are sampled are from space W = log(w) where w is all the "real" samples.
@@ -191,18 +191,18 @@ function lp = gpcf_linear2_lp(gpcf)
   end
 end
 
-function lpg = gpcf_linear2_lpg(gpcf)
-%GPCF_linear2_LPG  Evaluate gradient of the log prior with respect
+function lpg = gpcf_squared_lpg(gpcf)
+%GPCF_squared_LPG  Evaluate gradient of the log prior with respect
 %                 to the parameters.
 %
 %  Description
-%    LPG = GPCF_linear2_LPG(GPCF) takes a covariance function
+%    LPG = GPCF_squared_LPG(GPCF) takes a covariance function
 %    structure GPCF and returns LPG = d log (p(th))/dth, where th
 %    is the vector of parameters. This is a mandatory subfunction 
 %    used for example in gradient computations.
 %
 %  See also
-%    GPCF_linear2_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_LP, GP_G
+%    GPCF_squared_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_LP, GP_G
 
   lpg = [];
   gpp=gpcf.p;
@@ -214,7 +214,7 @@ function lpg = gpcf_linear2_lpg(gpcf)
   end
 end
 
-function DKff = gpcf_linear2_cfg(gpcf, x, x2, mask, i1)
+function DKff = gpcf_squared_cfg(gpcf, x, x2, mask, i1)
 %GPCF_LINEAR_CFG  Evaluate gradient of covariance function
 %                 with respect to the parameters
 %
@@ -322,7 +322,7 @@ function DKff = gpcf_linear2_cfg(gpcf, x, x2, mask, i1)
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
   elseif nargin == 3 || isempty(mask)
     if size(x,2) ~= size(x2,2)
-      error('gpcf_linear2 -> _ghyper: The number of columns in x and x2 has to be the same. ')
+      error('gpcf_squared -> _ghyper: The number of columns in x and x2 has to be the same. ')
     end
 
     if isfield(gpcf, 'selectedVariables')
@@ -389,7 +389,7 @@ function DKff = gpcf_linear2_cfg(gpcf, x, x2, mask, i1)
   end
 end
 
-function DKff = gpcf_linear2_cfdg(gpcf, x, x2)
+function DKff = gpcf_squared_cfdg(gpcf, x, x2)
 %GPCF_LINEAR_CFDG  Evaluate gradient of covariance function, of
 %                which has been taken partial derivative with
 %                respect to x, with respect to parameters.
@@ -452,7 +452,7 @@ if ~isempty(gpcf.p.coeffSigma2)
 end
 end
 
-function DKff = gpcf_linear2_cfdg2(gpcf, x)
+function DKff = gpcf_squared_cfdg2(gpcf, x)
 %GPCF_LINEAR_CFDG2  Evaluate gradient of covariance function, of
 %                 which has been taken partial derivatives with
 %                 respect to both input variables x, with respect
@@ -517,7 +517,7 @@ end
 end
 
 
-function DKff = gpcf_linear2_ginput(gpcf, x, x2, i1)
+function DKff = gpcf_squared_ginput(gpcf, x, x2, i1)
 %GPCF_LINEAR_GINPUT  Evaluate gradient of covariance function with 
 %                    respect to x.
 %
@@ -658,7 +658,7 @@ function DKff = gpcf_linear2_ginput(gpcf, x, x2, i1)
   end
 end
 
-function DKff = gpcf_linear2_ginput2(gpcf, x, x2)
+function DKff = gpcf_squared_ginput2(gpcf, x, x2)
 %GPCF_LINEAR_GINPUT2  Evaluate gradient of covariance function with
 %                   respect to both input variables x and x2 (in
 %                   same dimension).
@@ -700,7 +700,7 @@ for i=1:m
 end
 end
 
-function DKff = gpcf_linear2_ginput3(gpcf, x, x2)
+function DKff = gpcf_squared_ginput3(gpcf, x, x2)
 %GPCF_LINEAR_GINPUT3  Evaluate gradient of covariance function with
 %                   respect to both input variables x and x2 (in
 %                   different dimensions).
@@ -734,10 +734,10 @@ for i=1:m-1
 end
 end
 
-function DKff = gpcf_linear2_ginput4(gpcf, x, x2)
+function DKff = gpcf_squared_ginput4(gpcf, x, x2)
 %GPCF_LINEAR_GINPUT  Evaluate gradient of covariance function with 
 %                  respect to x. Simplified and faster version of
-%                  linear2_ginput, returns full matrices.
+%                  squared_ginput, returns full matrices.
 %
 %  Description
 %    DKff = GPCF_LINEAR_GINPUT4(GPCF, X) takes a covariance function
@@ -782,7 +782,7 @@ for i=i1
 end
 end
 
-function C = gpcf_linear2_cov(gpcf, x1, x2, varargin)
+function C = gpcf_squared_cov(gpcf, x1, x2, varargin)
 %GP_LINEAR_COV  Evaluate covariance matrix between two input vectors
 %
 %  Description         
@@ -816,7 +816,7 @@ function C = gpcf_linear2_cov(gpcf, x1, x2, varargin)
   C(abs(C)<=eps) = 0;
 end
 
-function C = gpcf_linear2_trcov(gpcf, x)
+function C = gpcf_squared_trcov(gpcf, x)
 %GP_LINEAR_TRCOV  Evaluate training covariance matrix of inputs
 %
 %  Description
@@ -843,7 +843,7 @@ function C = gpcf_linear2_trcov(gpcf, x)
 end
 
 
-function C = gpcf_linear2_trvar(gpcf, x)
+function C = gpcf_squared_trvar(gpcf, x)
 %GP_LINEAR_TRVAR  Evaluate training variance vector
 %
 %  Description
@@ -876,7 +876,7 @@ function C = gpcf_linear2_trvar(gpcf, x)
   
 end
 
-function reccf = gpcf_linear2_recappend(reccf, ri, gpcf)
+function reccf = gpcf_squared_recappend(reccf, ri, gpcf)
 %RECAPPEND Record append
 %
 %  Description
@@ -892,27 +892,27 @@ function reccf = gpcf_linear2_recappend(reccf, ri, gpcf)
 
   if nargin == 2
     % Initialize the record
-    reccf.type = 'gpcf_linear2';
+    reccf.type = 'gpcf_squared';
 
     % Initialize parameters
     reccf.coeffSigma2= [];
 
     % Set the function handles
-    reccf.fh.pak = @gpcf_linear2_pak;
-    reccf.fh.unpak = @gpcf_linear2_unpak;
-    reccf.fh.lp = @gpcf_linear2_lp;
-    reccf.fh.lpg = @gpcf_linear2_lpg;
-    reccf.fh.cfg = @gpcf_linear2_cfg;
-    reccf.fh.cfdg = @gpcf_linear2_cfdg;
-    reccf.fh.cfdg2 = @gpcf_linear2_cfdg2;
-    reccf.fh.ginput = @gpcf_linear2_ginput;
-    reccf.fh.ginput2 = @gpcf_linear2_ginput2;
-    reccf.fh.ginput3 = @gpcf_linear2_ginput3;
-    reccf.fh.ginput4 = @gpcf_linear2_ginput4;
-    reccf.fh.cov = @gpcf_linear2_cov;
-    reccf.fh.trcov  = @gpcf_linear2_trcov;
-    reccf.fh.trvar  = @gpcf_linear2_trvar;
-    reccf.fh.recappend = @gpcf_linear2_recappend;
+    reccf.fh.pak = @gpcf_squared_pak;
+    reccf.fh.unpak = @gpcf_squared_unpak;
+    reccf.fh.lp = @gpcf_squared_lp;
+    reccf.fh.lpg = @gpcf_squared_lpg;
+    reccf.fh.cfg = @gpcf_squared_cfg;
+    reccf.fh.cfdg = @gpcf_squared_cfdg;
+    reccf.fh.cfdg2 = @gpcf_squared_cfdg2;
+    reccf.fh.ginput = @gpcf_squared_ginput;
+    reccf.fh.ginput2 = @gpcf_squared_ginput2;
+    reccf.fh.ginput3 = @gpcf_squared_ginput3;
+    reccf.fh.ginput4 = @gpcf_squared_ginput4;
+    reccf.fh.cov = @gpcf_squared_cov;
+    reccf.fh.trcov  = @gpcf_squared_trcov;
+    reccf.fh.trvar  = @gpcf_squared_trvar;
+    reccf.fh.recappend = @gpcf_squared_recappend;
     reccf.p=[];
     reccf.p.coeffSigma2=[];
     if ~isempty(ri.p.coeffSigma2)
@@ -935,7 +935,7 @@ function reccf = gpcf_linear2_recappend(reccf, ri, gpcf)
   end
 end
 
-function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_linear2_cf2ss(gpcf,x)
+function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_squared_cf2ss(gpcf,x)
 %GPCF_LINEAR_CF2SS Convert the covariance function to state space form
 %
 %  Description

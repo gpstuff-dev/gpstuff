@@ -9,14 +9,22 @@ function [Ef, Varf, xtnn, xt1, xt2] = gp_cpred(gp,x,y,xt,ind,varargin)
 %    is used as a covariate for Cox-PH model.
 %
 %   OPTIONS is optional parameter-value pair
-%      predcf - an index vector telling which covariance functions are 
-%               used for prediction. Default is all (1:gpcfn). 
-%               See additional information below.
 %      method - which value to fix the not used covariates, 'median'
 %               (default), 'mean' or 'mode'
 %      var    - vector specifying optional values for not used covariates,
 %               elements corresponding to mean/median values should 
 %               be set to NaN. 
+%      plot   - option for plotting, 'off' (default) or 'on'
+%      normdata - a structure with fields xmean, xstd, ymean, and ystd
+%               to allow plotting in the original data scale (see
+%               functions normdata and denormdata)
+%      target - option for choosing what is computed 'mu' (default),
+%               'f' or 'cdf'
+%      tr     - Euclidean distance treshold for not using grid points when
+%               doing predictions with 2 covariates, default 0.25
+%      predcf - an index vector telling which covariance functions are 
+%               used for prediction. Default is all (1:gpcfn). 
+%               See additional information below.
 %      z      - optional observed quantity in triplet (x_i,y_i,z_i)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
@@ -25,11 +33,6 @@ function [Ef, Varf, xtnn, xt1, xt2] = gp_cpred(gp,x,y,xt,ind,varargin)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, the expected 
 %               value for the ith case. 
-%      plot   - option for plotting, 'off' (default) or 'on'
-%      target - option for choosing what is computed 'mu' (default),
-%               'f' or 'cdf'
-%      tr     - Euclidean distance treshold for not using grid points when
-%               doing predictions with 2 covariates, default 0.25
 
 
 ip=inputParser;
@@ -246,7 +249,7 @@ elseif length(ind)==2
     end
     
     if isequal(plot_results, 'on')
-      xtnn1=denormdata(xtnn1,nd.xmean(ind(2)),nd.xstd(ind(2)));
+      xtnn1=denormdata(xtnn1,nd.xmean(ind(1)),nd.xstd(ind(1)));
       xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
       if nu1>2 && nu2==2
         lstyle10='or';lstyle11='-r';lstyle12='--r';
@@ -300,6 +303,8 @@ elseif length(ind)==2
       xtnn2 = unique(xt(:,ind(2)));
     end
     [XT1, XT2] = meshgrid(xtnn1, xtnn2); XT1=XT1(:); XT2=XT2(:);
+    xtnn1=denormdata(xtnn1,nd.xmean(ind(1)),nd.xstd(ind(1)));
+    xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
     if ~isempty(z)
       options.zt = repmat(options.zt(1), size(XT1));
     end

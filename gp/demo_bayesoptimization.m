@@ -1,5 +1,5 @@
-%DEMO_BAYESIANOPTIMIZATIO  A demonstration program for Bayesian
-%                          optimization
+%DEMO_BAYESIANOPTIMIZATION  A demonstration program for Bayesian
+%                           optimization
 %
 %  Part 1:
 %  One dimensional example 
@@ -9,21 +9,21 @@
 %
 %  Part 3:
 %  Two dimensional example with constraints 
-%  * The implementation of constraints follows Gelbart et al. 
+%  * The implementation of constraints follows Gelbart et al. (2014)
 % 
 %  References:
-%   Jones, D., Schonlau, M., & Welch, W. (1998). Efficient global
-%   optimization of expensive black-box functions. Journal of Global
-%   Optimization, 13(4), 455–492. doi:10.1023/a:1008306431147  
+%    Jones, D., Schonlau, M., & Welch, W. (1998). Efficient global
+%    optimization of expensive black-box functions. Journal of Global
+%    Optimization, 13(4), 455-492. doi:10.1023/a:1008306431147  
 %
-%   Michael A. Gelbart, Jasper Snoek, and Ryan P. Adams. Bayesian
-%   Optimization with Unknown Constraints.
-%   http://arxiv.org/pdf/1403.5607v1.pdf 
+%    Michael A. Gelbart, Jasper Snoek, and Ryan P. Adams
+%    (2014). Bayesian Optimization with Unknown Constraints.
+%    http://arxiv.org/pdf/1403.5607v1.pdf
 %
-%   Snoek, J., Larochelle, H, Adams, R. P. (2012). Practical Bayesian
-%   Optimization of Machine Learning Algorithms. NIPS 25 
+%    Snoek, J., Larochelle, H, Adams, R. P. (2012). Practical Bayesian
+%    Optimization of Machine Learning Algorithms. NIPS 25 
 %
-% Copyright (c) 2015 Jarno Vanhatalo
+%  Copyright (c) 2015 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -80,7 +80,7 @@ while i1 < maxiter && improv>1e-6
     %    Note! Opposite to the standard notation we minimize negative Expected
     %    Improvement since Matlab optimizers seek for functions minimum
     % Here we use multiple starting points for the optimization so that we
-    % don't chrash into suboptimal mode
+    % don't crash into suboptimal mode
     fh_eg = @(x_new) expectedimprovement_eg(x_new, gp, x, a, invC, fmin); % The function handle to the Expected Improvement function
     indbest = find(y == fmin);
     xstart = [linspace(0.5,9.5,5) x(indbest)+0.1*randn(1,2)];
@@ -183,7 +183,7 @@ while i1 < maxiter && improv>1e-6
     %    Improvement and expected variance. The latter helps the
     %    optimization so that it does not get stuck in local mode
     % Here we use multiple starting points for the optimization so that we
-    % don't chrash into suboptimal mode of acquisition function
+    % don't crash into suboptimal mode of acquisition function
     if mod(i1,5)==0  % Do just exploration by finding the maimum variance location
         fh_eg = @(x_new) expectedvariance_eg(x_new, gp, x, [], invC);
     else
@@ -350,7 +350,7 @@ while i1 < maxiter && improv>1e-6
     %    Improvement and expected variance. The latter helps the
     %    optimization so that it does not get stuck in local mode
     % Here we use multiple starting points for the optimization so that we
-    % don't chrash into suboptimal mode of acquisition function
+    % don't crash into suboptimal mode of acquisition function
     if mod(i1,5)==0  %Do just exploration by finding the maimum variance location        
         fh_eg = @(x_new) expectedvariance_eg(x_new, gp, x, [], invC);
     else
