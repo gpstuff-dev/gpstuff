@@ -279,7 +279,7 @@ function [logM_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm
       ATOL = ATOL.^2;
       RTOL = RTOL.^2;
       [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-      sigm2hati1 = m_2 - m_1(i).^2;
+      sigm2hati1(i) = m_2 - m_1(i).^2;
       %    if sigm2hati1 >= sigm2_i
       %      error('lik_binomial_tilted_moments: sigm2hati1 >= sigm2_i');
       %    end
@@ -486,7 +486,7 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
     iter=iter+1;
     step=step*2;
     if iter>100
-      error(['lik_negbin -> init_negbin_norm: ' ...
+      error(['lik_binomial -> init_binomial_norm: ' ...
              'integration interval minimun not found ' ...
              'even after looking hard!'])
     end
@@ -500,7 +500,7 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
     iter=iter+1;
     step=step*2;
     if iter>100
-      error(['lik_negbin -> init_negbin_norm: ' ...
+      error(['lik_binomial -> init_binomial_norm: ' ...
              'integration interval maximun not found ' ...
              'even after looking hard!'])
     end
