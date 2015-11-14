@@ -739,11 +739,16 @@ function DKff = gpcf_sexp_cfdg(gpcf, x, x2)
 %  See also
 %    GPCF_SEXP_GINPUT
   
-  [n, m] =size(x);
   ii1=0;
   if nargin<3
     x2=x;
   end
+  if isfield(gpcf,'selectedVariables')
+    x = x(:,gpcf.selectedVariables);
+    x2 = x2(:,gpcf.selectedVariables);
+    gpcf=rmfield(gpcf,'selectedVariables');
+  end
+  [n, m] =size(x);
   Cdm = gpcf.fh.ginput4(gpcf, x, x2);
   
   % grad with respect to MAGNSIGMA
@@ -839,6 +844,10 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
 %  See also
 %   GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2 
   
+  if isfield(gpcf,'selectedVariables')
+    x = x(:,gpcf.selectedVariables);
+    gpcf=rmfield(gpcf,'selectedVariables');
+  end
   [n, m] =size(x);
   DKff = {};
   [DKdd, DKdd3, DKdd4] = gpcf.fh.ginput2(gpcf, x, x);
