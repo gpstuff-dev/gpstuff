@@ -67,6 +67,9 @@ vars = ip.Results.var;
 plot_results = ip.Results.plot;
 tr = ip.Results.tr;
 target = ip.Results.target;
+if strcmp(target,'f')
+    options = rmfield(options,'prct');
+end
 yt=ip.Results.yt;
 if ~isempty(yt)
   options.yt=yt;
