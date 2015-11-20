@@ -140,7 +140,7 @@ if length(ind)==1
   if ~strcmp(liktype, 'Coxph')
     switch target
       case 'f'
-        [Ef, Varf] = gp_pred(gp, x, y, xt, options);
+        [Ef, Varf] = gp_pred(gp, x, y, xt, rmfield(options,'prct'));
       case 'mu'
         prctmu = denormdata(gp_predprctmu(gp, x, y, xt, options),nd.ymean,nd.ystd);
         Ef = prctmu; Varf = [];
@@ -164,7 +164,9 @@ if length(ind)==1
   end
   if isequal(plot_results, 'on')
     if ind>0
-      xtnn=denormdata(xtnn,nd.xmean(ind),nd.xstd(ind));
+      if ind>1&numel(nd.xmean)>1
+        xtnn=denormdata(xtnn,nd.xmean(ind),nd.xstd(ind));
+      end
       deltadist=gp_finddeltadist(gp);
       if ~ismember(ind,deltadist)
         switch target
@@ -319,7 +321,7 @@ elseif length(ind)==2
     if ~strcmp(liktype, 'Coxph')
       switch target
         case 'f'
-          [Ef, Varf] = gp_pred(gp, x, y, xt, options);
+          [Ef, Varf] = gp_pred(gp, x, y, xt, rmfield(options,'prct'));
         case 'mu'
           prctmu = gp_predprctmu(gp, x, y, xt, options, 'prct', 50);
           Ef = prctmu; Varf = [];

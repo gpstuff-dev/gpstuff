@@ -201,7 +201,7 @@ switch m
     sn2=ceil(m/sn1);
     for xi=1:m
       subplot(sn1,sn2,xi);
-      gp_cpred(gp,x,y,xt,xi,'z',z,'zt',zt,'target',target,'plot','on',varargin{:});
+      gp_cpred(gp,x,y,xt,xi,'z',z,'zt',zt,'target',target,'plot','on','normdata',nd);
       drawnow
       hhh=get(gca,'children');
       hh(xi)=hhh(1);
