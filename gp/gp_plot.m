@@ -197,10 +197,11 @@ switch m
     hhh=get(gca,'children');
     hh=hhh(1);
   otherwise
-    sn=ceil(sqrt(m));
+    sn1=ceil(sqrt(m));
+    sn2=ceil(m/sn1);
     for xi=1:m
-      subplot(sn,sn,xi);
-      gp_cpred(gp,x,y,xt,xi,'z',z,'zt',zt,'target',target,'plot','on');
+      subplot(sn1,sn2,xi);
+      gp_cpred(gp,x,y,xt,xi,'z',z,'zt',zt,'target',target,'plot','on',varargin{:});
       drawnow
       hhh=get(gca,'children');
       hh(xi)=hhh(1);
