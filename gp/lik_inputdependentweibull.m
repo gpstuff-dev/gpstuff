@@ -21,12 +21,12 @@ function lik = lik_inputdependentweibull(varargin)
 %    optimization, grid integration, MCMC etc.
 %
 %    The likelihood is defined as follows:
-%                  __ n
-%      p(y|f1,f2, z) = || i=1 [ (r*exp(f2_i))^(1-z_i) exp( (1-z_i)*(-f1_i)
-%                           +(1-z_i)*((r*exp(f2_i))-1)*log(y_i)
-%                           -exp(-f1_i)*y_i^(r*exp(f2_i))) ]
+%                       __ n
+%      p(y|f1, f2, z) = || i=1 [ r_i^(1-z_i) exp( (1-z_i)*(-f1_i)
+%                           +(1-z_i)*(r_i-1)*log(y_i)
+%                           -exp(-f1_i)*y_i^r_i) ]
 %
-%    where r is the shape parameter of Weibull distribution.
+%    where r_i=r*exp(f2_i) is the shape parameter of Weibull distribution.
 %    z is a vector of censoring indicators with z = 0 for uncensored event
 %    and z = 1 for right censored event. Here the second latent variable f2
 %    implies the input dependance to the shape parameter in the original

@@ -1684,13 +1684,18 @@ Weibull distribution parametrized in \pkg{GPstuff} as
   h_0(y) = r y^{r-1},
 \end{equation}
 where $r>0$ is the shape parameter. This follows the parametrization
-used in \citet{Martino:2011}. The likelihood defined as
+used in \citet{Martino:2011}. The likelihood is defined as
 \begin{equation}
-  L = \prod_{i=1}^n r^{1-z_i} \exp \left( (1-z_i)f(\x_i)+(1-z_i)(r-1)\log(y_i)-\exp(f(\x_i))y_i^r \right),
+  L = \prod_{i=1}^n r^{1-z_i} e^{-(1-z_i)f(\x_i)}y_i^{(1-z_i)(r-1)}e^{-y_i^r/e^{f(\x_i)}} 
+%\prod_{i=1}^n r^{1-z_i} \exp \left( (1-z_i)f(\x_i)+(1-z_i)(r-1)\log(y_i)-\exp(f(\x_i))y_i^r \right),
 \end{equation}
 where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
-observation $i$. Here we present only the likelihood function because we don't have observation model for the censoring. 
+observation $i$. In case of censoring $y_i$ denotes the time of censoring. Here we present only the likelihood function because we don't have observation model for the censoring. Another common parameterization of Weibull model is through shape, $r$, and scale, $\lambda$ parameters. The parameterization in GPstuff corresponds to Weibull model with input dependent scale $\lambda(\x_i) =  e^{f(\x_i)/r}$, so that $\lambda(\x_i)^{r} =  e^{f(\x_i)}$. Hence the Weibull model for an uncensored observation $y_i$ is
+%
+\begin{align}
+  p(y_i|f(\x_i),r) &= \frac{r}{\lambda(\x_i)} \left(\frac{y_i}{\lambda(\x_i)}\right)^{r-1}e^{-(y_i/\lambda(\x_i))^r}
+\end{align}
 
 \subsubsection{Log-Gaussian}
 With Log-Gaussian survival model the logarithms of survival times are assumed to be normally distributed.
@@ -2305,10 +2310,12 @@ constant noise.
 In input-dependent Weibull model additional latent variable is used for modeling shape parameter $r$ of the standard Weibull model. 
 
 The likelihood is defined as
-\begin{eqnarray}
- p( \y |\f^{(1)}, \f_i^{(2)},\mathbf{z}) =&& \prod_{i=1}^n \exp(f_i^{(2)})^{1-z_i} \exp \Big{(} (1-z_i)f^{(1)}_i \\ \nonumber
- &+&(1-z_i)(\exp(f_i^{(2)})-1)\log(y_i)\exp(f^{(1)}_i)y_i^{\exp(f_i^{(2)})} \Big{)}, \nonumber
-\end{eqnarray}
+\begin{equation}
+ p( \y |\f^{(1)}, \f^{(2)},\mathbf{z}) =\prod_{i=1}^n r_i^{1-z_i} e^{-(1-z_i)f_i^{(1)}}y_i^{(1-z_i)(r_i-1)} e^{-y_i^{r_i}/e^{f_i^{(1)}}} 
+% p( \y |\f^{(1)}, \f_i^{(2)},\mathbf{z}) =&& \prod_{i=1}^n \exp(f_i^{(2)})^{1-z_i} \exp \Big{(} (1-z_i)f^{(1)}_i \\ \nonumber
+% &+&(1-z_i)(\exp(f_i^{(2)})-1)\log(y_i)\exp(f^{(1)}_i)y_i^{\exp(f_i^{(2)})} \Big{)}, \nonumber
+\end{equation}
+%
 where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
 observation $i$. Latent variable $f_2$ is used for modeling the shape parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness. Input-dependent Weibull is demonstrated in \code{demo\_inputdependentweibull}.
