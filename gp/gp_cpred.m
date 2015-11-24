@@ -164,7 +164,7 @@ if length(ind)==1
   end
   if isequal(plot_results, 'on')
     if ind>0
-      if ind>1&numel(nd.xmean)>1
+      if ind>=1&numel(nd.xmean)>=ind
         xtnn=denormdata(xtnn,nd.xmean(ind),nd.xstd(ind));
       end
       deltadist=gp_finddeltadist(gp);
