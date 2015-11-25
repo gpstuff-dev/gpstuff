@@ -140,7 +140,7 @@ if length(ind)==1
   if ~strcmp(liktype, 'Coxph')
     switch target
       case 'f'
-        [Ef, Varf] = gp_pred(gp, x, y, xt, rmfield(options,'prct'));
+        [Ef, Varf] = gp_pred(gp, x, y, xt, options);
       case 'mu'
         prctmu = denormdata(gp_predprctmu(gp, x, y, xt, options),nd.ymean,nd.ystd);
         Ef = prctmu; Varf = [];
@@ -149,7 +149,7 @@ if length(ind)==1
         Ef = cdf; Varf = [];
     end
   else
-    [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt, rmfield(options, 'prct'));
+    [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt);
     nt=size(Ef1,1);
     if ind>0
       % conditional posterior given Ef1=E[Ef1]
@@ -240,16 +240,16 @@ elseif length(ind)==2
     if ~strcmp(liktype, 'Coxph')
       switch target
         case 'f'
-          [Ef1, Varf1] = gp_pred(gp, x, y, xt1, rmfield(options1, 'prct'));
-          [Ef2, Varf2] = gp_pred(gp, x, y, xt2, rmfield(options2, 'prct'));
+          [Ef1, Varf1] = gp_pred(gp, x, y, xt1);
+          [Ef2, Varf2] = gp_pred(gp, x, y, xt2);
         case 'mu'
           prctmu1 = denormdata(gp_predprctmu(gp, x, y, xt1, options1),nd.ymean,nd.ystd);
           prctmu2 = denormdata(gp_predprctmu(gp, x, y, xt2, options2),nd.ymean,nd.ystd);
       end
     else
-      [Ef11,Ef12,Covf] = pred_coxph(gp,x,y,xt1, rmfield(options1, 'prct'));
+      [Ef11,Ef12,Covf] = pred_coxph(gp,x,y,xt1);
       Ef1 = Ef12; Varf1 = diag(Covf(size(Ef11,1)+1:end,size(Ef11,1)+1:end));
-      [Ef21,Ef22,Covf] = pred_coxph(gp,x,y,xt2, rmfield(options2, 'prct'));
+      [Ef21,Ef22,Covf] = pred_coxph(gp,x,y,xt2);
       Ef2 = Ef22; Varf2 = diag(Covf(size(Ef21,1)+1:end,size(Ef21,1)+1:end));
     end
     
@@ -321,7 +321,7 @@ elseif length(ind)==2
     if ~strcmp(liktype, 'Coxph')
       switch target
         case 'f'
-          [Ef, Varf] = gp_pred(gp, x, y, xt, rmfield(options,'prct'));
+          [Ef, Varf] = gp_pred(gp, x, y, xt);
         case 'mu'
           prctmu = gp_predprctmu(gp, x, y, xt, options, 'prct', 50);
           Ef = prctmu; Varf = [];
