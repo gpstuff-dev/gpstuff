@@ -28,7 +28,7 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, varargin)
 %                  'on', 'fact' is used for EP and 'cm2' for Laplace.
 %      autoscale - determines if the samples are drawn from split-normal
 %                  approximation in the case of non-gaussian likelihood.
-%                  Possible values are 'on' and 'off' (default).
+%                  Possible values are 'on' (default) and 'off'.
 %      n_scale   - the maximum number of the most significant principal
 %                  component directories to scale in the autoscaling
 %                  process (default 50).
