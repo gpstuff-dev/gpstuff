@@ -302,7 +302,7 @@ elseif length(ind)==2
     else
       xtnn1 = unique(xt(:,ind(1)));
     end
-    if ~ismember(ind(1),deltadist)
+    if ~ismember(ind(2),deltadist)
       xtnn2 = linspace(min(xt(:,ind(2))), max(xt(:,ind(2))), 20);
     else
       xtnn2 = unique(xt(:,ind(2)));
