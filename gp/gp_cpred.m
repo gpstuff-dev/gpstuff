@@ -254,7 +254,7 @@ elseif length(ind)==2
     end
     
     if isequal(plot_results, 'on')
-      xtnn1=denormdata(xtnn1,nd.xmean(ind(1)),nd.xstd(ind(1)));
+      xtnn1=denormdata(xtnn1,nd.xmean(ind(2)),nd.xstd(ind(2)));
       xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
       if nu1>2 && nu2==2
         lstyle10='or';lstyle11='-r';lstyle12='--r';
