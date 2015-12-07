@@ -354,6 +354,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         else
         
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+        if isnan(e)
+            error('EP algorithm returned NaN');
+        end
         [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
         
         if ~isfield(gp, 'lik_mono')
