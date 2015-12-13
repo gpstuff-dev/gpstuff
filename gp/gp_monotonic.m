@@ -109,7 +109,7 @@ else
   end
 end
 nvd=length(gp.nvd);
-if ~isfield(gp, 'xv') && ~ismember('init',ip.UsingDefaults(:)) 
+if ~isfield(gp, 'xv')
   switch init
     case 'sample'
       rpii=randperm(size(x,1));
