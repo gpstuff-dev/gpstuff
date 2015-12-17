@@ -266,17 +266,17 @@ function llg2 = lik_inputdependentweibull_llg2(lik, y, ff, param, z)
 %LIK_INPUTDEPENDENTWEIBULL_LLG2  Second gradients of the log likelihood
 %
 %  Description        
-%    LLG2 = LIK_INPUTDEPENDENTWEIBULL_LLG2(LIK, Y, F, PARAM) takes a likelihood
-%    structure LIK, survival times Y, censoring indicators Z, and
-%    latent values F. Returns the hessian of the log likelihood
-%    with respect to PARAM. At the moment PARAM can be only
-%    'latent'. LLG2 is a vector with diagonal elements of the
-%    Hessian matrix (off diagonals are zero). This subfunction 
-%    is needed when using Laplace approximation or EP for 
-%    inference with non-Gaussian likelihoods.
+%    LLG2 = LIK_INPUTDEPENDENTWEIBULL_LLG2(LIK, Y, F, PARAM) takes a
+%    likelihood structure LIK, survival times Y, censoring indicators Z,
+%    and latent values F. Returns the hessian of the log likelihood with
+%    respect to PARAM. LLG2 is a (2*length(y)) x 2 matrix containing the
+%    non-zero elements of the Hessian matrix. This subfunction is needed
+%    when using Laplace approximation or EP for  inference with
+%    non-Gaussian likelihoods.
 %
 %  See also
-%    LIK_INPUTDEPENDENTWEIBULL_LL, LIK_INPUTDEPENDENTWEIBULL_LLG, LIK_INPUTDEPENDENTWEIBULL_LLG3, GPLA_E
+%    LIK_INPUTDEPENDENTWEIBULL_LL, LIK_INPUTDEPENDENTWEIBULL_LLG,
+%    LIK_INPUTDEPENDENTWEIBULL_LLG3, GPLA_E 
 
   if numel(z)==0
     % no censoring by default
