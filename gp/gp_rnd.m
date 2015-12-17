@@ -26,16 +26,26 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, varargin)
 %                  Default is 'off'. Possible methods are 'fact' for EP
 %                  and either 'fact', 'cm2' or 'lr' for Laplace. If method is
 %                  'on', 'fact' is used for EP and 'cm2' for Laplace.
-%      autoscale - determines if the samples are drawn from split-normal
-%                  approximation in the case of non-gaussian likelihood.
-%                  Possible values are 'on' (default) and 'off'.
+%                  See GP_PREDCM and Cseke & Heskes (2011) for more information.
+%      splitnormal - determines if the samples are drawn from
+%                  split-Normal approximation (Geweke, 1989) in the
+%                  case of non-Gaussian likelihood.
+%                  Possible values are 'on' (default) and 'off'. 
 %      n_scale   - the maximum number of the most significant principal
-%                  component directories to scale in the autoscaling
-%                  process (default 50).
+%                  component directories to scale in the split-Normal
+%                  approximation (default 50).
 %
-%    If likelihood is non-Gaussian and gp.latent_method is either
-%    Laplace or EP, the samples are drawn from the Gaussian
-%    posterior approximation obtained from gpla_e or gpep_e.
+%    If likelihood is non-Gaussian and gp.latent_method is Laplace the
+%    samples are drawn from split-Normal approximation (see option
+%    splitnormal), and if gp.latent_method is EP the samples are drawn
+%    from the normal approximation.
+%
+%  Reference
+%    Cseke & Heskes (2011). Approximate Marginals in Latent Gaussian
+%    Models. Journal of Machine Learning Research 12 (2011), 417-454
+%
+%    Geweke, J. (1989).  Bayesian inference in econometric models using
+%    Monte Carlo integration. Econometrica 57:1317-1339.
 %
 %  See also
 %    GP_PRED, GP_PAK, GP_UNPAK
@@ -67,7 +77,7 @@ ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.addParamValue('nsamp', 1, @(x) isreal(x) && isscalar(x))
 ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'fact','cm2','off','on','lr'}))
-ip.addParamValue('autoscale', 'on', @(x) (islogical(x) && isscalar(x))|| ...
+ip.addParamValue('splitnormal', 'on', @(x) (islogical(x) && isscalar(x))|| ...
                  ismember(x,{'on' 'off' 'full'}))
 ip.addParamValue('n_scale',50, @(x) isnumeric(x) && x>=0);
 if numel(varargin)==0 || isnumeric(varargin{1})
@@ -84,7 +94,7 @@ predcf=ip.Results.predcf;
 tstind=ip.Results.tstind;
 nsamp=ip.Results.nsamp;
 fcorr=ip.Results.fcorr;
-autoscale = ip.Results.autoscale;
+splitnormal = ip.Results.splitnormal;
 n_scale = min(tn, floor(ip.Results.n_scale));
 if isempty(xt)
   xt=x;
@@ -115,9 +125,9 @@ if isfield(gp, 'latent_method')
   else
       gplatmet=gp.latent_method;
   end
-  if ~strcmp(gplatmet, 'Laplace') && strcmp(autoscale,'on')
-      % autoscale is applicable only with Laplace
-      autoscale='off';
+  if ~strcmp(gplatmet, 'Laplace') && strcmp(splitnormal,'on')
+      % splitnormal is applicable only with Laplace
+      splitnormal='off';
   end
 end
 
@@ -153,21 +163,23 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
     if nargout > 1
       warning('Sampling of yt is not implemented for non-Gaussian likelihoods');
     end
+    if strcmp(splitnormal,'on') && isfield(gp,'meanf')
+        warning('Split-Normal is not implemented for mean functions');
+        splitnormal='off';
+    end
+    if strcmp(splitnormal,'on') && isfield(gp.lik, 'nondiagW')
+        warning('Split-Normal is not implemented for likelihoods with nondiagonal Hessian')
+        splitnormal='off';
+    end
+    if strcmp(splitnormal,'on') && ~isequal(fcorr, 'off')
+        warning('Split-Normal is not used when latent marginal posterior corrections are used')
+        splitnormal='off';
+    end
     
-    if strcmp(autoscale,'on')
+    if strcmp(splitnormal,'on')
       % ------------------
-      %    Autoscale on
+      %    Splitnormal on
       % ------------------
-      
-      if isfield(gp,'meanf')
-        error('Mean functions not implemented for autoscale in GP_RND');
-      end
-      if isfield(gp.lik, 'nondiagW')
-        error('Autoscale is not implemented for likelihoods with nondiagonal Hessian')
-      end
-      if ~isequal(fcorr, 'off')
-        error('Autoscale and latent marginal posterior corrections are mutually exclusive features')
-      end
       
       switch gp.type
         
@@ -400,17 +412,17 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
           Covf = K - V'*V;
           
         otherwise
-          error('Autoscale not implemented for %s', gp.type)
+          error('Split-Normal not implemented for %s', gp.type)
           
       end
       
       % Scaling n_scale principal component directions
-      % Split-normal approximation: Geweke, 1989
+      % Split-normal approximation: Geweke (1989)
 
       % N.B. svd of sparse matrix is not generally sparse (unless Covf is
       % block diagonal or can be made such by reordering the dimensions).
       % Scaling using the Cholesky factorisation could possibly be done
-      % sparsely but the directions would be different (not split-norm).
+      % sparsely but the directions would be different (not split-Normal).
       % Thus full matrices has to be used.
       [V, D, ~] = svd(full(Covf));
       T = real(V) * sqrt(real(D)); % Ensuring the real
@@ -441,7 +453,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         r = [r;ones(tn-n_scale,1)];
       end
       
-      % Draw samples from split-norm approximated posterior of f and
+      % Draw samples from split-Normal approximated posterior of f and
       % sample from the conditional distribution of ft for each sample of f
       u = rand(tn,nsamp);
       c = r./(r+q);
@@ -468,7 +480,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
       
     else
       % -------------------
-      %    Autoscale off
+      %    split-Normal off
       % -------------------
       [Eft, Covft] = gp_jpred(gp,x,y,xt,'z',z, ...
         'predcf',predcf, 'tstind',tstind, 'fcorr','off');
