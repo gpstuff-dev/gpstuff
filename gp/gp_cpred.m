@@ -56,6 +56,7 @@ ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('target', 'mu', @(x) ismember(x,{'f','mu','cdf'}))
 ip.addParamValue('prct', [5 50 95], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('normdata', struct(), @(x) isempty(x) || isstruct(x))
+ip.addParamValue('xlabels', [], @(x) isempty(x) || iscell(x));
 ip.parse(gp, x, y, xt, ind, varargin{:});
 zt=ip.Results.zt;
 options=struct();
