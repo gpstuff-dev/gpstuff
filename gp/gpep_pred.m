@@ -828,6 +828,7 @@ function [m,S]=pred_var(tau_q,K,A,b)
   S=zeros(size(A,1),1);
   u=0;
   U=0;
+  L1=[];
   if ~isempty(ii1)
     % Cholesky decomposition for the positive sites
     L1=(W1*W1').*K(ii1,ii1);
@@ -844,12 +845,15 @@ function [m,S]=pred_var(tau_q,K,A,b)
   if ~isempty(ii2)
     % Cholesky decomposition for the negative sites
     V=bsxfun(@times,K(ii2,ii1),W1')/L1;
+    if isempty(V)
+        V=0;
+    end
     L2=(W2*W2').*(V*V'-K(ii2,ii2));
     L2(1:n2+1:end)=L2(1:n2+1:end)+1;
     
     [L2,pd]=chol(L2);
     if pd==0
-      U = bsxfun(@times,A(:,ii2),W2')/L2 -U*(bsxfun(@times,V,W2)'/L2);
+      U = bsxfun(@minus, bsxfun(@times,A(:,ii2),W2')/L2,U*(bsxfun(@times,V,W2)'/L2));
       u = L2'\(W2.*b(ii2)) -L2'\(bsxfun(@times,V,W2)*u);
       
       m = m+U*u;
