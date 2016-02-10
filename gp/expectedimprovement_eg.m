@@ -34,9 +34,9 @@ function [EI, EIg] = expectedimprovement_eg(x_new, gp, x, a, invC, fmin, varargi
 if ~isempty(x)
     Knx = gp_cov(gp,x_new,x);
     Kn = gp_trvar(gp,x_new);
-    Ef = Knx*a;
+    Ef = Knx*a; Ef=Ef(1:size(x_new,1));
     invCKnxt = invC*Knx';
-    Varf = Kn - sum(Knx.*invCKnxt',2);
+    Varf = Kn - sum(Knx.*invCKnxt',2); Varf=Varf(1:size(x_new,1));
     
     % expected improvement
     CDFpart = normcdf( (fmin - Ef)./sqrt(Varf) );
@@ -118,8 +118,8 @@ if nargout>1
         dEIdVarf = PDFpart/(2*sqrt(Varf));
         
         % Derivative of Ef and Varf wrt. x
-        dEfdx = Knxderiv*a;
-        dVarfdx = Kderiv - (Knxderiv*invCKnxt + (invCKnxt'*Knxderiv')');
+        dEfdx = Knxderiv(1:size(x_new,1),:)*a(1:size(x,1));
+        dVarfdx = Kderiv - (Knxderiv(1:size(x_new,1),:)*invCKnxt(1:size(x,1),1:size(x_new,1)) + (invCKnxt(1:size(x,1),1:size(x_new,1))'*Knxderiv(1:size(x_new,1),:)')');
         
         % Derivative of EI
         EIg = -( dEIdEf*dEfdx + dEIdVarf*dVarfdx )';
