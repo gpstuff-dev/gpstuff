@@ -37,6 +37,9 @@ function gp = gp_monotonic(gp, varargin)
 %      nu       - The strictness of the monotonicity information, with a 
 %                 smaller values corresponding to the more strict information. 
 %                 Default is 1e-6.
+%      force    - Boolean value indicating whether the monotonicity is
+%                 forced by adding virtual observations until the function
+%                 becomes monotonic at the training points. Default = true
 %      optimize - Option whether to optimize GP parameters. Default = 'off'. 
 %      opt      - Options structure for optimizer.
 %      optimf   - Function handle for an optimization function, which is
@@ -69,6 +72,7 @@ ip.addParamValue('nu', 1e-6, @(x) isreal(x) && isscalar(x) && (x>0))
 ip.addParamValue('nv', [], @(x) isreal(x) && isscalar(x))
 ip.addParamValue('init', 'sample', @(x) ismember(x, {'sample', 'kmeans'}));
 ip.addParamValue('xv', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('force', true, @(x) islogical(x));
 ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
 ip.addParamValue('opt', [], @isstruct)
 ip.addParamValue('optimize', 'off', @(x) ismember(x, {'on', 'off'}));
@@ -80,6 +84,7 @@ z=ip.Results.z;
 nu=ip.Results.nu;
 nv=ip.Results.nv;
 init=ip.Results.init;
+force = ip.Results.force;
 opt=ip.Results.opt;
 optimf=ip.Results.optimf;
 optimize=ip.Results.optimize;
@@ -137,19 +142,21 @@ if isequal(optimize, 'on')
   % Optimize the parameters
   gp=gp_optim(gp,x,y,'opt',opt, 'z', z, 'optimf', optimf);
 end
+
 n=size(x,1);
-[tmp,itst]=cvit(size(x,1),10);
+nblocks = 10;
+[tmp,itst]=cvit(size(x,1),nblocks);
 % Predict gradients at the training points 
 Ef=zeros(size(x,1),nvd);
-for i=1:10
+for i=1:nblocks
   % Predict in blocks to save memory
   Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
 end
 % Check if monotonicity is satisfied
 yv=round(gp.nvd./abs(gp.nvd));
-while any(any(bsxfun(@times,Ef, yv)<-nu))
+while any(any(bsxfun(@times,Ef, yv)<-nu)) && force
   % Monotonicity not satisfied, add 2 "most wrong" predictions, for each 
-  % dimension, from the observation set to the virual observations.
+  % dimension, from the observation set to the virtual observations.
   fprintf('Latent function not monotonic, adding virtual observations.\n');
   for j=1:nvd
     [~,ind(:,j)]=sort(Ef(:,j).*yv(j),'ascend');
@@ -166,7 +173,7 @@ while any(any(bsxfun(@times,Ef, yv)<-nu))
   end
   % Predict gradients at the training points
   %Ef=gpep_predgrad(gp,x,y,x,'z',z);
-  for i=1:10
+  for i=1:nblocks
     % Predict in blocks to save memory
     Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
   end
