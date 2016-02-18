@@ -38,7 +38,7 @@ xl = linspace(0,10,100)';
 fx = @(x) 0.6*x -0.1*x.^2 + sin(2*x);
 
 % construct GP
-cfse = gpcf_sexp('lengthScale',1);
+cfse = gpcf_sexp('lengthScale',1,'magnSigma2',1,'magnSigma2_prior',prior_sqrtt('s2',10^2));
 lik = lik_gaussian('sigma2', 0.001, 'sigma2_prior', prior_fixed);
 gp = gp_set('cf', {cfse}, 'lik', lik);
 
@@ -53,8 +53,9 @@ lb=0;     % lower bound of the input space
 ub=10;    % upper bound of the input space
 
 % draw initial point
+rng(3)
 x = 10*rand;
-y(1) = fx(x);
+y = fx(x);
 
 figure, % figure for visualization
 i1 = 1;
@@ -66,7 +67,9 @@ while i1 < maxiter && improv>1e-6
     % Train the GP model for objective function and calculate variables
     % that are needed when calculating the Expected improvement
     % (Acquisition function) 
-    gp = gp_optim(gp,x,y);
+    if i1>1
+        gp = gp_optim(gp,x,y);
+    end
     [K, C] = gp_trcov(gp,x);
     invC = inv(C);
     a = C\y;
@@ -98,20 +101,22 @@ while i1 < maxiter && improv>1e-6
     % visualize
     clf
     subplot(2,1,1),hold on, title('function to be optimized and GP fit')
-    plot(xl,fx(xl))
+    %plot(xl,fx(xl))
+    box on
     % The function evaluations so far
-    plot(x(1:end-1),y(1:end-1), 'k*')
+    plot(x(1:end-1),y(1:end-1), 'ko')
     % The new sample location
-    plot(x(end),y(end), 'r*')
+    plot(x(end),y(end), 'ro')
     % the posterior of the function
     plot(xl,Ef, 'k')
     plot(xl,Ef + 2*sqrt(Varf), 'k--')
     plot(xl,Ef - 2*sqrt(Varf), 'k--')
-    legend('objective function', 'function evaluations', 'next query point', 'GP mean', 'GP 95% interval')
+    legend('objective function', 'function evaluations', 'next query point', 'GP mean', 'GP 95% interval','location','southwest')
     % The expected information    
     subplot(2,1,2)
     plot(xl,EI, 'r'), hold on
     plot(x(end),0, 'r*')
+    plot(x(end)*[1 1],ylim, 'r--')
     title('acquisition function')
 
        
@@ -119,6 +124,8 @@ while i1 < maxiter && improv>1e-6
     i1=i1+1;
     pause
 end
+subplot(2,1,1)
+plot(xl,fx(xl),'r')
 
 %%  Part 2:
 %  Two dimensional example 
@@ -207,12 +214,13 @@ while i1 < maxiter && improv>1e-6
     clf
     % Plot the objective function
     subplot(2,2,1),hold on, title('Objective, query points')
+    box on
     pcolor(X,Y,Z),shading flat
     clim = caxis;
-    l1=plot(x(1:end-1,1),x(1:end-1,2), 'k*');
-    plot(x(end,1),x(end,2), 'kX', 'MarkerSize', 15)
-    l2=plot(xnews(:,1),xnews(:,2), 'kX', 'MarkerSize', 15);
-    l3=plot(x(end,1),x(end,2), 'kX', 'MarkerSize', 15, 'linewidth', 3);
+    l1=plot(x(1:end-1,1),x(1:end-1,2), 'rx', 'MarkerSize', 10);
+    %plot(x(end,1),x(end,2), 'ro', 'MarkerSize', 10)
+    l2=plot(xnews(:,1),xnews(:,2), 'ro', 'MarkerSize', 10);
+    l3=plot(x(end,1),x(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3);
     legend([l1,l2,l3], {'function evaluation points','local modes of acquisition function','The next query point'})
     % Plot the posterior mean of the GP model for the objective function
     subplot(2,2,2),hold on, title(sprintf('GP prediction, mean, iter: %d',i1))
@@ -221,13 +229,13 @@ while i1 < maxiter && improv>1e-6
     % Plot the posterior variance of GP model
     subplot(2,2,4),hold on, title('GP prediction, variance')
     pcolor(X,Y,reshape(Varf,100,100)),shading flat
-    l2=plot(xnews(:,1),xnews(:,2), 'kX', 'MarkerSize', 15);
-    l3=plot(x(end,1),x(end,2), 'kX', 'MarkerSize', 15, 'linewidth', 3);
+    l2=plot(xnews(:,1),xnews(:,2), 'ro', 'MarkerSize', 10);
+    l3=plot(x(end,1),x(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3);
     % Plot the expected improvement 
     subplot(2,2,3), hold on, title(sprintf('Expected improvement %.2e', min(EIs)))
     pcolor(X,Y,reshape(EI,100,100)),shading flat
-    plot(xnews(:,1),xnews(:,2), 'kX', 'MarkerSize', 15);
-    plot(x(end,1),x(end,2), 'kX', 'MarkerSize', 15, 'linewidth', 3);
+    plot(xnews(:,1),xnews(:,2), 'ro', 'MarkerSize', 10);
+    plot(x(end,1),x(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3);
 
        
     improv = abs(y(end) - y(end-1));
@@ -379,8 +387,8 @@ while i1 < maxiter && improv>1e-6
     subplot(2,4,1),hold on, title('Objective, query points')
     pcolor(X,Y,Z),shading flat
     clim = caxis;
-    plot(x(1:end-1,1),x(1:end-1,2), 'k*'),
-    plot(x(end,1),x(end,2), 'kX', 'MarkerSize', 15)
+    plot(x(1:end-1,1),x(1:end-1,2), 'rx', 'MarkerSize', 10),
+    plot(x(end,1),x(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3)
     % Plot the posterior mean of the GP model
     subplot(2,4,2),hold on, title(sprintf('GP prediction, mean, iter: %d',i1))
     pcolor(X,Y,reshape(Ef,100,100)),shading flat
@@ -388,29 +396,29 @@ while i1 < maxiter && improv>1e-6
     % Plot the posterior variance of GP model
     subplot(2,4,6),hold on, title('GP prediction, variance')
     pcolor(X,Y,reshape(Varf,100,100)),shading flat
-    plot(xnews(:,1),xnews(:,2), 'kX', 'MarkerSize', 15)
-    plot(x(end,1),x(end,2), 'kX', 'MarkerSize', 15, 'linewidth', 3)
-    plot(x(1:end-1,1),x(1:end-1,2), 'k*'),
+    plot(xnews(:,1),xnews(:,2), 'ro', 'MarkerSize', 10)
+    plot(x(end,1),x(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3)
+    plot(x(1:end-1,1),x(1:end-1,2), 'rx', 'MarkerSize', 10),
     
     % The expected information    
     subplot(2,4,5), hold on, title(sprintf('Expected improvement %.2e', min(EIs)))
     pcolor(X,Y,reshape(EI,100,100)),shading flat
-    plot(xnews(:,1),xnews(:,2), 'kX', 'MarkerSize', 15)
-    plot(x(end,1),x(end,2), 'kX', 'MarkerSize', 15, 'linewidth', 3)
-    plot(x(1:end-1,1),x(1:end-1,2), 'k*'),
+    plot(xnews(:,1),xnews(:,2), 'ro', 'MarkerSize', 10)
+    plot(x(end,1),x(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3)
+    plot(x(1:end-1,1),x(1:end-1,2), 'rx'),
     
     % constraint 1
     subplot(2,4,3), hold on, title(sprintf('constraint 1'))
     pcolor(X,Y,Zc1),shading flat    
-    plot(xc1(1:end-1,1),xc1(1:end-1,2), 'k*');
-    plot(xnews(:,1),xnews(:,2), 'kX', 'MarkerSize', 15);
-    plot(xc1(end,1),xc1(end,2), 'kX', 'MarkerSize', 15, 'linewidth', 3);
+    plot(xc1(1:end-1,1),xc1(1:end-1,2), 'rx', 'MarkerSize', 10);
+    plot(xnews(:,1),xnews(:,2), 'ro', 'MarkerSize', 10);
+    plot(xc1(end,1),xc1(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3);
     % constraint 2
     subplot(2,4,4), hold on, title(sprintf('constraint 2'))
     pcolor(X,Y,Zc2),shading flat    
-    l1= plot(xc2(1:end-1,1),xc2(1:end-1,2), 'k*');
-    l2=plot(xnews(:,1),xnews(:,2), 'kX', 'MarkerSize', 15);
-    l3=plot(xc2(end,1),xc2(end,2), 'kX', 'MarkerSize', 15, 'linewidth', 3);
+    l1= plot(xc2(1:end-1,1),xc2(1:end-1,2), 'rx', 'MarkerSize', 10);
+    l2=plot(xnews(:,1),xnews(:,2), 'ro', 'MarkerSize', 10);
+    l3=plot(xc2(end,1),xc2(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3);
     legend([l1,l2,l3], {'function evaluation points','local modes of acquisition function','The next query point'})
     
     % prediction of constraint 1
@@ -418,17 +426,17 @@ while i1 < maxiter && improv>1e-6
     Efc1(Efc1<const(1,1) | Efc1>const(1,2)) = nan; 
     Efc1(~isnan(Efc1))=1; Efc1 = reshape(Efc1,100,100);
     pcolor(X,Y,reshape(Efc1,100,100)),shading flat
-    plot(xnews(:,1),xnews(:,2), 'kX', 'MarkerSize', 15)
-    plot(xc1(end,1),xc1(end,2), 'kX', 'MarkerSize', 15, 'linewidth', 3)
-    plot(xc1(1:end-1,1),xc1(1:end-1,2), 'k*'),    
+    plot(xnews(:,1),xnews(:,2), 'ro', 'MarkerSize', 10)
+    plot(xc1(end,1),xc1(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3)
+    plot(xc1(1:end-1,1),xc1(1:end-1,2), 'rx'),    
     % prediction of constraint 2
     subplot(2,4,8), hold on, title(sprintf('prediction for const 2'))
     Efc2(Efc2<const(2,1) | Efc2>const(2,2)) = nan; 
     Efc2(~isnan(Efc2))=1; Efc2 = reshape(Efc2,100,100);
     pcolor(X,Y,reshape(Efc2,100,100)),shading flat
-    plot(xc2(1:end-1,1),xc2(1:end-1,2), 'k*'),
-    plot(xnews(:,1),xnews(:,2), 'kX', 'MarkerSize', 15)
-    plot(xc2(end,1),xc2(end,2), 'kX', 'MarkerSize', 15, 'linewidth', 3)
+    plot(xc2(1:end-1,1),xc2(1:end-1,2), 'rx', 'MarkerSize', 10),
+    plot(xnews(:,1),xnews(:,2), 'ro', 'MarkerSize', 10)
+    plot(xc2(end,1),xc2(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3)
     
       
     if length(y)>1
