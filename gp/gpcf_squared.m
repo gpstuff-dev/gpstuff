@@ -452,6 +452,10 @@ function DKff = gpcf_squared_ginput(gpcf, x, x2, i1)
 %
 %  See also
 %   GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_LP, GP_G        
+  
+  if isfield(gpcf,'selectedVariables')
+      error('gpcf_squared: ginput: selectedVariables not implemented yet')
+  end
 
   [n, m] =size(x);
     
@@ -470,17 +474,11 @@ function DKff = gpcf_squared_ginput(gpcf, x, x2, i1)
   if nargin == 2 || isempty(x2)      
 
           xx = x.^2;
-%           if isequal(gpcf.interactions,'on')
-%               s = zeros(1, (1+m)*m/2);
-%           else
-%               s = zeros(1, m);
-%           end
-%           if isfield(gpcf,'selectedVariables')
-%               s(gpcf.selectedVariables) = gpcf.coeffSigma2;
-%           else
-%               s(1:m) = gpcf.coeffSigma2;
-%           end
-          s=gpcf.coeffSigma2;
+          if length(gpcf.coeffSigma2)==1
+              s=gpcf.coeffSigma2.*ones(1,(1+m)*m/2);
+          else
+              s=gpcf.coeffSigma2;
+          end
           ii1 = 0;
           if nargin<4
               i1=1:m;
@@ -488,24 +486,13 @@ function DKff = gpcf_squared_ginput(gpcf, x, x2, i1)
           for j = 1:n
               for i=i1
                   DK = zeros(n);
-                  %DK(j,:)=2*s(i)*x(j,i)*xx(:,i)';
-                  DK(j,:)=2*s*x(j,i)*xx(:,i)';
+                  DK(j,:)=2*s(i)*x(j,i)*xx(:,i)';
                   if isequal(gpcf.interactions,'on')
-                      %for xi1=1:m
-                          %for xi2=xi1+1:m
-                          for xi2=i1
-                              if xi2~=i
-                                  DK(j,:) = DK(j,:) + s*x(j,xi2).*(x(:,i).*x(:,xi2))';
-                              end
-                              %DK(j,:) = DK(j,:) + s*x(:,xi2).*(x(:,xi1).*x(:,xi2))';
-                              %h2 = [h2 x2(:,xi1).*x2(:,xi2)];
+                      for xi2=i1
+                          if xi2~=i
+                              DK(j,:) = DK(j,:) + s(i)*x(j,xi2).*(x(:,i).*x(:,xi2))';
                           end
-                      %end
-%                       for xi2=i+1:m
-%                           %h = [h x(:,xi1).*x(:,xi2)];
-%                           %DK(j,:) = DK(j,:) + 2*s(i)*x(j,i)*xx(:,xi2)';
-%                           DK(j,:) = DK(j,:) + 2*s*x(j,i)*xx(:,xi2)';
-%                       end
+                      end
                   end
                   DK = DK + DK';
                   ii1 = ii1 + 1;
@@ -516,46 +503,31 @@ function DKff = gpcf_squared_ginput(gpcf, x, x2, i1)
   elseif nargin == 3 || nargin == 4
       
     xx2 = x2.^2;
-    
-%     if length(gpcf.coeffSigma2) == 1
-%       % In the case of an isotropic LINEAR
-%       s = repmat(gpcf.coeffSigma2, 1, m);
-%     else
-%       s = gpcf.coeffSigma2;
-%     end
-    s=gpcf.coeffSigma2;
-    ii1 = 0;
-      if ~savememory
-        i1=1:m;
-      end
-      for j = 1:n
-        for i=i1
-          
-          DK = zeros(n, size(x2,1));
-          %DK(j,:)=2*s(i)*x(j,i)*xx2(:,i)';
-          DK(j,:)=2*s*x(j,i)*xx2(:,i)';
-          if isequal(gpcf.interactions,'on')
-              %for xi1=1:m
-                  %for xi2=xi1+1:m
-                  for xi2=i1
-                      if xi2~=i
-                          DK(j,:) = DK(j,:) + s*x(j,xi2).*(x2(:,i).*x2(:,xi2))';
-                      end
-                      %DK(j,:) = DK(j,:) + s*x(:,xi2).*(x2(:,xi1).*x2(:,xi2))';
-                  end
-              %end
-%               for xi2=i+1:m
-%                   %DK(j,:) = DK(j,:) + 2*s(i)*x(j,i)*xx2(:,xi2)';
-%                   DK(j,:) = DK(j,:) + 2*s*x(j,i)*xx2(:,xi2)';
-%               end
-          end
-          ii1 = ii1 + 1;
-          DKff{ii1} = DK;
-        end
-      end
+    if length(gpcf.coeffSigma2)==1
+        s=gpcf.coeffSigma2.*ones(1,(1+m)*m/2);
+    else
+        s=gpcf.coeffSigma2;
     end
-    
-%   end
+    ii1 = 0;
+    if ~savememory
+        i1=1:m;
+    end
+    for j = 1:n
+        for i=i1
+            DK = zeros(n, size(x2,1));
+            DK(j,:)=2*s(i)*x(j,i)*xx2(:,i)';
+            if isequal(gpcf.interactions,'on')
+                for xi2=i1
+                    if xi2~=i
+                        DK(j,:) = DK(j,:) + s(i)*x(j,xi2).*(x2(:,i).*x2(:,xi2))';
+                    end
+                end
+            end
+            ii1 = ii1 + 1;
+            DKff{ii1} = DK;
+        end
+    end
+  end
 end
 
 function DKff = gpcf_squared_ginput2(gpcf, x, x2)
