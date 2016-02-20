@@ -37,7 +37,7 @@ function [H,b,B,Hs] = mean_prep(gp,x,xs)
     if ~isempty(xs)
       Hapu2{i}=gpmf.fh.geth(gpmf,xs);
     end
-    [dim nouse] = size(Hapu{i});
+    [dim,~] = size(Hapu{i});
     dimcount=dimcount+dim;          % amount of input dimensions total
     meanf_dim(i,:)=[i dim];         
     

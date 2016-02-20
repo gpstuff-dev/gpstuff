@@ -103,6 +103,7 @@ while i1 < maxiter && improv>1e-6
     subplot(2,1,1),hold on, title('function to be optimized and GP fit')
     %plot(xl,fx(xl))
     box on
+    plot(xl,fx(xl),'r')
     % The function evaluations so far
     plot(x(1:end-1),y(1:end-1), 'ko')
     % The new sample location
@@ -124,8 +125,8 @@ while i1 < maxiter && improv>1e-6
     i1=i1+1;
     pause
 end
-subplot(2,1,1)
-plot(xl,fx(xl),'r')
+%subplot(2,1,1)
+%plot(xl,fx(xl),'r')
 
 %%  Part 2:
 %  Two dimensional example 
@@ -146,7 +147,7 @@ Z = reshape(fx(xl),100,100);
 cfc = gpcf_constant('constSigma2',10,'constSigma2_prior', prior_fixed);
 cfse = gpcf_sexp('lengthScale',[1 1]);
 cfl = gpcf_linear('coeffSigma2', 10); 
-cfl2 = gpcf_squared('coeffSigma2', 10);
+cfl2 = gpcf_squared('coeffSigma2', 10, 'interactions', 'on');
 lik = lik_gaussian('sigma2', 0.001, 'sigma2_prior', prior_fixed);
 gp = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik);
 
@@ -154,7 +155,7 @@ gp = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik);
 
 % Set the options for optimizer of the acquisition function
 optimf = @fmincon;
-optdefault=struct('GradObj','on','LargeScale','off','Algorithm','trust-region-reflective','TolFun',1e-8,'TolX',1e-5);
+optdefault=struct('GradObj','on','LargeScale','off','Algorithm','trust-region-reflective','TolFun',1e-9,'TolX',1e-6);
 opt=optimset(optdefault);
 lb=[0 0];     % lower bound of the input space
 ub=[10 10];   % upper bound of the input space
@@ -197,7 +198,7 @@ while i1 < maxiter && improv>1e-6
         fh_eg = @(x_new) expectedimprovement_eg(x_new, gp, x, a, invC, fmin);
     end
     indbest = find(y == fmin);
-    nstarts = 10;
+    nstarts = 20;
     xstart = [repmat(lb,nstarts,1) + repmat(ub-lb,nstarts,1).*rand(nstarts,2) ]; 
     for s1=1:length(xstart)
         x_new(s1,:) = optimf(fh_eg, xstart(s1,:), [], [], [], [], lb, ub, [], opt);
@@ -274,17 +275,17 @@ Zc2(~isnan(Zc2))=1; Zc2 = reshape(Zc2,100,100);
 cfc = gpcf_constant('constSigma2',10,'constSigma2_prior', prior_fixed);
 cfse = gpcf_sexp('lengthScale',[1 1]);
 cfl = gpcf_linear('coeffSigma2', 10); 
-cfl2 = gpcf_squared('coeffSigma2', 10);
+cfl2 = gpcf_squared('coeffSigma2', 10, 'interactions', 'on');
 lik = lik_gaussian('sigma2', 0.001, 'sigma2_prior', prior_fixed);
 % GP model for objective function
 gp1 = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik);
 % GP models for constraint functions
-gpc1 = {gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik, 'jitterSigma2', 1e-6),...
-    gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik, 'jitterSigma2', 1e-6)};
+gpc1 = {gp_set('cf', {cfc, cfse}, 'lik', lik, 'jitterSigma2', 1e-6),...
+    gp_set('cf', {cfc, cfse}, 'lik', lik, 'jitterSigma2', 1e-6)};
 
 % Set the options for optimizer of the acquisition function
 optimf = @fmincon;
-optdefault=struct('GradObj','on','LargeScale','on','Algorithm','interior-point','TolFun',1e-8,'TolX',1e-5, 'Display', 'iter');
+optdefault=struct('GradObj','on','LargeScale','on','Algorithm','interior-point','TolFun',1e-9,'TolX',1e-6, 'Display', 'iter');
 opt=optimset(optdefault);
 lb=[0 0];     % lower bound of the input space
 ub=[10 10];   % upper bound of the input space
@@ -364,7 +365,7 @@ while i1 < maxiter && improv>1e-6
     else
         fh_eg = @(x_new) expectedimprovement_eg(x_new, gp, x, a, invC, fmin, const1, const2);
     end
-    nstarts = 10;
+    nstarts = 20;
     xstart = [repmat(lb,nstarts,1) + repmat(ub-lb,nstarts,1).*rand(nstarts,2) ]; %; repmat(x(indbest,:),2,1)+0.1*randn(2,size(x,2))
     for s1=1:nstarts
         x_new(s1,:) = optimf(fh_eg, xstart(s1,:), [], [], [], [], lb, ub, [], opt);
