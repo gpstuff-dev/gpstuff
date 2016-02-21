@@ -133,21 +133,21 @@ end
 clear
 
 % The objective function
-fx = @(x) -log( (mvnpdf([x(:,1) x(:,2)],[3.5 2.5], [1 0.3; 0.3 1]) + 0.3*mvnpdf([x(:,1) x(:,2)],[7 8], [3 0.5; 0.5 4])).*...
-    mvnpdf([x(:,1) x(:,2)],[5 5], [100 0; 0 100])) ./15 -1;
+fx = @(x) -log( (mvnpdf([x(:,1) x(:,2)],[-1.5 -2.5], [1 0.3; 0.3 1]) + 0.3*mvnpdf([x(:,1) x(:,2)],[2 3], [3 0.5; 0.5 4])).*...
+    mvnpdf([x(:,1) x(:,2)],[0 0], [100 0; 0 100])) ./15 -1;
 
 % Help variables for visualization
-lb=0;
-ub=10;
+lb=-5;
+ub=5;
 [X,Y] = meshgrid(linspace(lb,ub,100),linspace(lb,ub,100));
 xl = [X(:) Y(:)];
 Z = reshape(fx(xl),100,100);
 
 % construct GP to model the function
 cfc = gpcf_constant('constSigma2',10,'constSigma2_prior', prior_fixed);
-cfse = gpcf_sexp('lengthScale',[1 1]);
-cfl = gpcf_linear('coeffSigma2', 10); 
-cfl2 = gpcf_squared('coeffSigma2', 10, 'interactions', 'on');
+cfl = gpcf_linear('coeffSigma2', .01, 'coeffSigma2_prior', prior_sqrtt()); 
+cfl2 = gpcf_squared('coeffSigma2', .01, 'coeffSigma2_prior', prior_sqrtt(), 'interactions', 'on');
+cfse = gpcf_sexp('lengthScale',[5 5],'lengthScale_prior',prior_t('s2',4),'magnSigma2',.1,'magnSigma2_prior',prior_sqrtt('s2',10^2));
 lik = lik_gaussian('sigma2', 0.001, 'sigma2_prior', prior_fixed);
 gp = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik);
 
@@ -157,11 +157,11 @@ gp = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik);
 optimf = @fmincon;
 optdefault=struct('GradObj','on','LargeScale','off','Algorithm','trust-region-reflective','TolFun',1e-9,'TolX',1e-6);
 opt=optimset(optdefault);
-lb=[0 0];     % lower bound of the input space
-ub=[10 10];   % upper bound of the input space
+lb=[-5 -5];     % lower bound of the input space
+ub=[5 5];   % upper bound of the input space
 
 % draw initial points
-x = 10*rand(5,2);
+x = [-4 -4;-4 4;4 -4;4 4;0 0];
 y = fx(x);
 
 figure, % figure for visualization
@@ -174,7 +174,11 @@ while i1 < maxiter && improv>1e-6
     % Train the GP model for objective function and calculate variables
     % that are needed when calculating the Expected improvement
     % (Acquisition function) 
-    gp = gp_optim(gp,x,y);
+    if i1>1
+        gp = gp_optim(gp,x,y);
+        [gpia,pth,th]=gp_ia(gp,x,y);
+        gp = gp_unpak(gp,sum(bsxfun(@times,pth,th)));
+    end
     [K, C] = gp_trcov(gp,x);
     invC = inv(C);
     a = C\y;
@@ -225,15 +229,18 @@ while i1 < maxiter && improv>1e-6
     legend([l1,l2,l3], {'function evaluation points','local modes of acquisition function','The next query point'})
     % Plot the posterior mean of the GP model for the objective function
     subplot(2,2,2),hold on, title(sprintf('GP prediction, mean, iter: %d',i1))
+    box on
     pcolor(X,Y,reshape(Ef,100,100)),shading flat
     caxis(clim)
     % Plot the posterior variance of GP model
     subplot(2,2,4),hold on, title('GP prediction, variance')
+    box on
     pcolor(X,Y,reshape(Varf,100,100)),shading flat
     l2=plot(xnews(:,1),xnews(:,2), 'ro', 'MarkerSize', 10);
     l3=plot(x(end,1),x(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3);
     % Plot the expected improvement 
     subplot(2,2,3), hold on, title(sprintf('Expected improvement %.2e', min(EIs)))
+    box on
     pcolor(X,Y,reshape(EI,100,100)),shading flat
     plot(xnews(:,1),xnews(:,2), 'ro', 'MarkerSize', 10);
     plot(x(end,1),x(end,2), 'ro', 'MarkerSize', 10, 'linewidth', 3);
