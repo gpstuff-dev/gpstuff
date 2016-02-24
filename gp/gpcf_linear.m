@@ -404,6 +404,9 @@ function DKff = gpcf_linear_cfdg(gpcf, x, x2)
 %    GPCF_LINEAR_GINPUT
 
 [n,m]=size(x);
+if nargin<3
+    x2=x;
+end
 ii1=0;
 DKff={};
 if length(gpcf.coeffSigma2)==1

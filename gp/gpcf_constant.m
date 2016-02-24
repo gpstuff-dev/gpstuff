@@ -297,6 +297,9 @@ function DKff = gpcf_constant_cfdg(gpcf, x, x2)
 %    GPCF_CONSTANT_GINPUT
 
 [n,m]=size(x);
+if nargin<3
+    x2=x;
+end
 ii1=0;
 DKff={};
 if ~isempty(gpcf.p.constSigma2)
