@@ -38,6 +38,18 @@ xl = linspace(0,10,100)';
 fx = @(x) 0.6*x -0.1*x.^2 + sin(2*x);
 gx = @(x) 2*cos(2*x) - 0.2*x + 0.6;
 
+% x = 10*rand(10,1);
+% y = fx(x);
+% yg = gx(x);
+% cfc = gpcf_constant('constSigma2',0.01,'constSigma2_prior', prior_t);
+% cfl = gpcf_linear('coeffSigma2', .01, 'coeffSigma2_prior', prior_sqrtt()); 
+% cfl2 = gpcf_squared('coeffSigma2', .01, 'coeffSigma2_prior', prior_sqrtt(), 'interactions', 'on');
+% cfse = gpcf_sexp('lengthScale',5,'lengthScale_prior',prior_t('s2',4),'magnSigma2',.1,'magnSigma2_prior',prior_sqrtt('s2',10^2));
+% lik = lik_gaussian('sigma2', 0.01, 'sigma2_prior', prior_fixed);
+% gp = gp_set('cf', {cfc,cfl,cfl2,cfse}, 'lik', lik, 'derivobs', 'on');
+% 
+% gradcheck(gp_pak(gp),@gp_e,@gp_g,gp,x,[y;yg(:)]);
+
 % construct GP
 cfse = gpcf_sexp('lengthScale',1,'lengthScale_prior',prior_t('nu',20,'s2',0.5),'magnSigma2',1,'magnSigma2_prior',prior_sqrtt('s2',10^2));
 lik = lik_gaussian('sigma2', 0.0001, 'sigma2_prior', prior_fixed);
@@ -71,7 +83,7 @@ while i1 < maxiter && improv>1e-6
     % that are needed when calculating the Expected improvement
     % (Acquisition function) 
     if i1>1
-    gp = gp_optim(gp,x,[y;yg]);
+        gp = gp_optim(gp,x,[y;yg]);
     end
     [K, C] = gp_trcov(gp,x);
     invC = inv(C);
@@ -110,6 +122,7 @@ while i1 < maxiter && improv>1e-6
     %plot(xl,fx(xl))
     box on
     % The function evaluations so far
+    plot(xl,fx(xl),'r')
     plot(x(1:end-1),y(1:end-1), 'ko')
     % The new sample location
     plot(x(end),y(end), 'ro')
@@ -130,16 +143,20 @@ while i1 < maxiter && improv>1e-6
     i1=i1+1;
     pause
 end
-subplot(2,1,1)
-plot(xl,fx(xl),'r')
+
 
 %%  Part 2:
 %  Two dimensional example 
 clear
-
+mu1=[-1.5 -2.5]; Sigma1=[1 0.3; 0.3 1];
+mu2=[2 3];Sigma2=[3 0.5; 0.5 4];
+mu3=[0 0];Sigma3=[100 0; 0 100];
 % The objective function
-fx = @(x) -log( (mvnpdf([x(:,1) x(:,2)],[-1.5 -2.5], [1 0.3; 0.3 1]) + 0.3*mvnpdf([x(:,1) x(:,2)],[2 3], [3 0.5; 0.5 4])).*...
-    mvnpdf([x(:,1) x(:,2)],[0 0], [100 0; 0 100])) ./15 -1;
+fx = @(x) -log( (mvnpdf(x,mu1,Sigma1) + 0.3*mvnpdf(x,mu2,Sigma2)).*mvnpdf(x,mu3,Sigma3)) ./15 -1;
+dfx = @(x) -1./( (mvnpdf(x,mu1,Sigma1) + 0.3*mvnpdf(x,mu2,Sigma2)).*mvnpdf(x,mu3,Sigma3))/15.*...
+    ( ( -mvnpdf(x,mu1,Sigma1).*(x-mu1)/Sigma1 - 0.3*mvnpdf(x,mu2,Sigma2).*(x-mu2)/Sigma2 ).*mvnpdf(x,mu3,Sigma3) -...
+     (mvnpdf(x,mu1,Sigma1) + 0.3*mvnpdf(x,mu2,Sigma2)).*mvnpdf(x,mu3,Sigma3).*(x-mu3)/Sigma3  ) ;
+%gradcheck(5-10.*rand(1,2),fx,dfx);
 
 % Help variables for visualization
 lb=-5;
@@ -154,7 +171,7 @@ cfl = gpcf_linear('coeffSigma2', .01, 'coeffSigma2_prior', prior_sqrtt());
 cfl2 = gpcf_squared('coeffSigma2', .01, 'coeffSigma2_prior', prior_sqrtt(), 'interactions', 'on');
 cfse = gpcf_sexp('lengthScale',[5 5],'lengthScale_prior',prior_t('s2',4),'magnSigma2',.1,'magnSigma2_prior',prior_sqrtt('s2',10^2));
 lik = lik_gaussian('sigma2', 0.001, 'sigma2_prior', prior_fixed);
-gp = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik);
+gp = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik, 'derivobs', 'on');
 
 % ----- conduct Bayesian optimization -----
 
@@ -168,6 +185,91 @@ ub=[5 5];   % upper bound of the input space
 % draw initial points
 x = [-4 -4;-4 4;4 -4;4 4;0 0];
 y = fx(x);
+for i1=1:size(x,1)
+    yg(i1,:)=dfx(x(i1,:));
+end
+
+
+
+
+%% draw initial points
+
+fx = @(x) -log( (mvnpdf(x(:,1:2),mu1,Sigma1) + 0.3*mvnpdf(x(:,1:2),mu2,Sigma2)).*mvnpdf(x(:,1:2),mu3,Sigma3)) ./15 -1 + 0.1*x(:,3).^2;
+dfx = @(x) [(-1./( (mvnpdf(x(:,1:2),mu1,Sigma1) + 0.3*mvnpdf(x(:,1:2),mu2,Sigma2)).*mvnpdf(x(:,1:2),mu3,Sigma3))/15.*...
+    ( ( -mvnpdf(x(:,1:2),mu1,Sigma1).*(x(:,1:2)-mu1)/Sigma1 - 0.3*mvnpdf(x(:,1:2),mu2,Sigma2).*(x(:,1:2)-mu2)/Sigma2 ).*mvnpdf(x(:,1:2),mu3,Sigma3) -...
+     (mvnpdf(x(:,1:2),mu1,Sigma1) + 0.3*mvnpdf(x(:,1:2),mu2,Sigma2)).*mvnpdf(x(:,1:2),mu3,Sigma3).*(x(:,1:2)-mu3)/Sigma3  )) 0.2*x(:,3)];
+
+x = 5-rand(10,3);
+y = fx(x);yg=[];
+for i1=1:size(x,1)
+    yg(i1,:)=dfx(x(i1,:));
+end
+
+m = size(x,2);
+cfc = gpcf_constant('constSigma2',0.01,'constSigma2_prior', prior_t);
+cfl = gpcf_linear('coeffSigma2', .01, 'coeffSigma2_prior', prior_sqrtt()); 
+cfl2 = gpcf_squared('coeffSigma2', 0.001*ones(1,(1+m)*m/2), 'coeffSigma2_prior', prior_sqrtt(), 'interactions', 'on');
+%cfl2 = gpcf_squared('coeffSigma2', [.01 0.02 0.01], 'coeffSigma2_prior', prior_sqrtt(), 'interactions', 'off');
+cfl2 = gpcf_squared('coeffSigma2', 0.001, 'coeffSigma2_prior', prior_sqrtt(), 'interactions', 'on');
+cfse = gpcf_sexp('lengthScale',[5 5],'lengthScale_prior',prior_t('s2',4),'magnSigma2',.1,'magnSigma2_prior',prior_sqrtt('s2',10^2));
+%cfse = gpcf_sexp('lengthScale',[5 5],'lengthScale_prior',prior_t('s2',4),'magnSigma2',.1,'magnSigma2_prior',prior_sqrtt('s2',10^2));
+lik = lik_gaussian('sigma2', 0.1, 'sigma2_prior', prior_fixed);
+
+%gp = gp_set('cf', {cfc,cfl,cfl2,cfse}, 'lik', lik, 'derivobs', 'on');
+gp = gp_set('cf', {cfl2}, 'lik', lik, 'derivobs', 'on');
+%
+gradcheck(gp_pak(gp),@gp_e,@gp_g,gp,x,[y;yg(:)]);
+
+
+%K = gp_trcov(gp,x);
+
+
+% x2 = [x x(:,1).*x(:,2) x(:,1).*x(:,3) x(:,3).*x(:,3)];
+% cfl = gpcf_linear('coeffSigma2', 0.001*ones(1,(1+m)*m/2), 'coeffSigma2_prior', prior_sqrtt()); 
+% gp2 = gp_set('cf', {cfl}, 'lik', lik, 'derivobs', 'on');
+% K2 = gp_trcov(gp2,x2);
+
+%%
+%gradcheck(x(1,:), cfl2.fh.cov, cfl2.fh.ginput4, cfl2, x(1,:));
+gradcheck(x(1,:), cfl2.fh.ginput4, cfl2.fh.ginput2, cfl2, x(1,:));
+
+
+
+%%
+x = 5-rand(10,2);
+y = fx(x);
+for i1=1:size(x,1)
+    yg(i1,:)=dfx(x(i1,:));
+end
+
+cfc = gpcf_constant('constSigma2',0.01,'constSigma2_prior', prior_t);
+cfl = gpcf_linear('coeffSigma2', .01, 'coeffSigma2_prior', prior_sqrtt()); 
+%cfl2 = gpcf_squared('coeffSigma2', [.001 0.001 0.001], 'coeffSigma2_prior', prior_sqrtt(), 'interactions', 'on');
+cfl2 = gpcf_squared('coeffSigma2', [.01 0.02], 'coeffSigma2_prior', prior_sqrtt(), 'interactions', 'off');
+%cfl2 = gpcf_squared('coeffSigma2', 0.001, 'coeffSigma2_prior', prior_sqrtt(), 'interactions', 'on');
+cfse = gpcf_sexp('lengthScale',[5 5],'lengthScale_prior',prior_t('s2',4),'magnSigma2',.1,'magnSigma2_prior',prior_sqrtt('s2',10^2));
+%cfse = gpcf_sexp('lengthScale',[5 5],'lengthScale_prior',prior_t('s2',4),'magnSigma2',.1,'magnSigma2_prior',prior_sqrtt('s2',10^2));
+lik = lik_gaussian('sigma2', 0.1, 'sigma2_prior', prior_fixed);
+
+%gp = gp_set('cf', {cfc,cfl,cfl2,cfse}, 'lik', lik, 'derivobs', 'on');
+gp = gp_set('cf', {cfl2}, 'lik', lik, 'derivobs', 'on');
+%
+gradcheck(gp_pak(gp),@gp_e,@gp_g,gp,x,[y;yg(:)]);
+
+%%
+x = [-1 -1;1 1];
+y = fx(x);
+for i1=1:size(x,1)
+    yg(i1,:)=dfx(x(i1,:));
+end
+cfl2 = gpcf_squared('coeffSigma2', 1, 'coeffSigma2_prior', prior_sqrtt(), 'interactions', 'on');
+lik = lik_gaussian('sigma2', 0, 'sigma2_prior', prior_fixed);
+gp = gp_set('cf', {cfl2}, 'lik', lik, 'derivobs', 'on');
+K = gp_trcov(gp,x)
+
+%%
+
+
 
 figure, % figure for visualization
 i1 = 1;
