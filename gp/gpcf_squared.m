@@ -30,7 +30,7 @@ function gpcf = gpcf_squared(varargin)
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*, MEAN_*
 %
-% Copyright (c) 2007-2015 Jarno Vanhatalo
+% Copyright (c) 2007-2016 Jarno Vanhatalo
 % Copyright (c) 2008-2010 Jaakko Riihimäki
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2014 Arno Solin
@@ -208,7 +208,7 @@ function lpg = gpcf_squared_lpg(gpcf)
 %    used for example in gradient computations.
 %
 %  See also
-%    GPCF_squared_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_LP, GP_G
+%    GPCF_squared_PAK, GPCF_SQUARED_UNPAK, GPCF_SQUARED_LP, GP_G
 
   lpg = [];
   gpp=gpcf.p;
@@ -221,31 +221,31 @@ function lpg = gpcf_squared_lpg(gpcf)
 end
 
 function DKff = gpcf_squared_cfg(gpcf, x, x2, mask, i1)
-%GPCF_LINEAR_CFG  Evaluate gradient of covariance function
+%GPCF_SQUARED_CFG  Evaluate gradient of covariance function
 %                 with respect to the parameters
 %
 %  Description
-%    DKff = GPCF_LINEAR_CFG(GPCF, X) takes a covariance function
+%    DKff = GPCF_SQUARED_CFG(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X) with
 %    respect to th (cell array with matrix elements). This is a 
 %    mandatory subfunction used in gradient computations.
 %
-%    DKff = GPCF_LINEAR_CFG(GPCF, X, X2) takes a covariance
+%    DKff = GPCF_SQUARED_CFG(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to th (cell array with matrix
 %    elements). This subfunction is needed when using sparse 
 %    approximations (e.g. FIC).
 %
-%    DKff = GPCF_LINEAR_CFG(GPCF, X, [], MASK) takes a covariance
+%    DKff = GPCF_SQUARED_CFG(GPCF, X, [], MASK) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the diagonal of gradients of covariance matrix
 %    Kff = k(X,X2) with respect to th (cell array with matrix
 %    elements). This subfunction is needed when using sparse 
 %    approximations (e.g. FIC).
 %
-%    DKff = GPCF_LINEAR_CFG(GPCF,X,X2,MASK,i) takes a covariance 
+%    DKff = GPCF_SQUARED_CFG(GPCF,X,X2,MASK,i) takes a covariance 
 %    function structure GPCF, a matrix X of input vectors and 
 %    returns DKff, the gradient of covariance matrix Kff = 
 %    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
@@ -253,7 +253,7 @@ function DKff = gpcf_squared_cfg(gpcf, x, x2, mask, i1)
 %    memory save option in gp_set.
 %
 %  See also
-%   GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_LP, GP_G
+%   GPCF_SQUARED_PAK, GPCF_SQUARED_UNPAK, GPCF_SQUARED_LP, GP_G
 
   if nargin>2 && ~isempty(x2)
       if size(x,2) ~= size(x2,2)
@@ -375,12 +375,12 @@ function DKff = gpcf_squared_cfg(gpcf, x, x2, mask, i1)
 end
 
 function DKff = gpcf_squared_cfdg(gpcf, x, x2)
-%GPCF_LINEAR_CFDG  Evaluate gradient of covariance function, of
-%                which has been taken partial derivative with
-%                respect to x, with respect to parameters.
+%GPCF_SQUARED_CFDG  Evaluate gradient of covariance function, of
+%                  which has been taken partial derivative with
+%                  respect to x, with respect to parameters.
 %
 %  Description
-%    DKff = GPCF_LINEAR_CFDG(GPCF, X) takes a covariance function
+%    DKff = GPCF_SQUARED_CFDG(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of derivatived covariance matrix
 %    dK(df,f)/dhyp = d(d k(X,X)/dx)/dhyp, with respect to the
@@ -392,58 +392,149 @@ function DKff = gpcf_squared_cfdg(gpcf, x, x2)
 %    observations.
 %
 %  See also
-%    GPCF_LINEAR_GINPUT
+%    GPCF_SQUARED_GINPUT
 
-error('this subfunction is not implemented yet')
+[n,m]=size(x);
+if nargin<3
+    x2=x;
+end
+h = x.^2;
+h2 = x2.^2;
+
+ii1=0;
+DKff={};
+if length(gpcf.coeffSigma2)==1
+  c=repmat(gpcf.coeffSigma2,1,m);
+else
+  c=gpcf.coeffSigma2;
+end
+if ~isempty(gpcf.p.coeffSigma2)
+  if length(gpcf.coeffSigma2)==1
+    % One coeffSigma2
+    for i=1:m
+      if isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i)==0
+        DK{i}=zeros(size(x,1),size(x2,1));
+      else
+        DK{i}=c(1).*2*x(:,i)*h2(:,i)';
+        if isequal(gpcf.interactions,'on')
+            for xi2=1:m
+                if xi2~=i
+                    DK{i} = DK{i} + c(1)*x(:,xi2)*(x2(:,i).*x2(:,xi2))';
+                end
+            end
+        end
+      end
+    end
+    ii1=ii1+1;
+    DKff{ii1}=cat(1,DK{1:m});
+  else
+    % vector of coeffSigma2s
+    for i=1:m
+      for j=1:m
+        if i~=j || (isfield(gpcf, 'selectedVariables') ...
+            && sum(gpcf.selectedVariables==i)==0)
+          DK{j}=zeros(size(x,1),size(x2,1));
+        else
+          DK{j}=c(i).*2*x(:,j)*h2(:,j)';
+        end
+      end
+      ii1=ii1+1;
+      DKff{ii1}=cat(1,DK{1:m});
+    end
+  end
+end
 
 end
 
 function DKff = gpcf_squared_cfdg2(gpcf, x)
-%GPCF_LINEAR_CFDG2  Evaluate gradient of covariance function, of
-%                 which has been taken partial derivatives with
-%                 respect to both input variables x, with respect
-%                 to parameters.
+%GPCF_SQUARED_CFDG2  Evaluate gradient of covariance function, of which has
+%                    been taken partial derivatives with respect to both
+%                    input variables x, with respect to parameters.
 %
 %  Description
-%    DKff = GPCF_LINEAR_CFDG2(GPCF, X) takes a covariance
+%    DKff = GPCF_SQUARED_CFDG2(GPCF, X) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of derivative covariance matrix
 %    dK(df,df)/dhyp = d(d^2 k(X1,X2)/dX1dX2)/dhyp with respect to
 %    the parameters
 %
-%    Evaluate: DKff{1:m} = d Kff / d coeffSigma 
-%    m is the dimension of inputs. If ARD is used, then multiple
-%    lengthScales. This subfunction is needed when using derivative 
-%    observations.
+%    Evaluate: DKff{1:m} = d K(df,df) / d coeffSigma 
+%    m is the dimension of inputs.  This subfunction is needed when using
+%    derivative observations.
 %
 %  See also
-%   GPCF_LINEAR_GINPUT, GPCF_LINEAR_GINPUT2
+%   GPCF_SQUARED_GINPUT, GPCF_SQUARED_GINPUT2
 
-error('this subfunction is not implemented yet')
+
+[n,m]=size(x);
+ii1=0;
+if length(gpcf.coeffSigma2)==1
+  c=repmat(gpcf.coeffSigma2,1,m);
+else
+  c=gpcf.coeffSigma2;
+end
+if length(gpcf.coeffSigma2)==1
+  % One coeffSigma2
+  for k=1:m
+    for j=1:m
+      if k~=j || (isfield(gpcf, 'selectedVariables') ...
+          && sum(gpcf.selectedVariables==j)==0) || (isfield(gpcf, 'selectedVariables') ...
+          && sum(gpcf.selectedVariables==k)==0)
+        DK{k,j}=zeros(size(x,1),size(x,1));
+        if isequal(gpcf.interactions,'on') && ~((isfield(gpcf, 'selectedVariables') ...
+          && sum(gpcf.selectedVariables==j)==0) || (isfield(gpcf, 'selectedVariables') ...
+          && sum(gpcf.selectedVariables==k)==0))
+            DK{k,j} = c(1)*x(:,j)*x(:,k)';
+        end
+      else
+        DK{k,j}=c(1).*4.*x(:,k)*x(:,j)';
+        if isequal(gpcf.interactions,'on')
+            for xi2=1:m
+                if xi2~=j
+                    DK{k,j} = DK{k,j} + c(1)*x(:,xi2)*x(:,xi2)';
+                end
+            end
+        end
+      end
+    end
+  end
+  ii1=ii1+1;
+  DKff{ii1}=cell2mat(DK);
+else
+  % vector of coeffSigma2s
+  for i1=1:m
+    for k=1:m
+      for j=1:m
+        if k~=j || j~=i1 || (isfield(gpcf, 'selectedVariables') ...
+            && sum(gpcf.selectedVariables==i1)==0)
+          DK{k,j}=zeros(size(x,1),size(x,1));
+        else
+          DK{k,j}=c(i1).*4.*x(:,k)*x(:,j)';
+        end
+      end
+    end
+    ii1=ii1+1;
+    DKff{ii1}=cell2mat(DK);  
+  end
+end
 
 end
 
 
 function DKff = gpcf_squared_ginput(gpcf, x, x2, i1)
-%GPCF_LINEAR_GINPUT  Evaluate gradient of covariance function with 
+%GPCF_SQUARED_GINPUT  Evaluate gradient of covariance function with 
 %                    respect to x.
 %
 %  Description
-%    DKff = GPCF_LINEAR_GINPUT(GPCF, X) takes a covariance
-%    function structure GPCF, a matrix X of input vectors and
-%    returns DKff, the gradients of covariance matrix Kff =
-%    k(X,X) with respect to X (cell array with matrix elements).
-%    This subfunction is needed when computing gradients with 
-%    respect to inducing inputs in sparse approximations.
+%    DKff = GPCF_SQUARED_GINPUT(GPCF, X, X2) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns DKff, the
+%    gradients of covariance matrix Kff = k(X,X2) with respect to X (cell
+%    array with matrix elements). If called with only two inputs
+%    GPCF_SQUARED_GINPUT(GPCF, X), X2=X. This subfunction is needed when
+%    computing gradients with respect to inducing inputs in sparse
+%    approximations. 
 %
-%    DKff = GPCF_LINEAR_GINPUT(GPCF, X, X2) takes a covariance
-%    function structure GPCF, a matrix X of input vectors and
-%    returns DKff, the gradients of covariance matrix Kff =
-%    k(X,X2) with respect to X (cell array with matrix elements).
-%    This subfunction is needed when computing gradients with 
-%    respect to inducing inputs in sparse approximations.
-%
-%    DKff = GPCF_LINEAR_GINPUT(GPCF, X, X2, i) takes a covariance
+%    DKff = GPCF_SQUARED_GINPUT(GPCF, X, X2, i) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to ith covariate in X (matrix).
@@ -451,15 +542,15 @@ function DKff = gpcf_squared_ginput(gpcf, x, x2, i1)
 %    in gp_set.
 %
 %  See also
-%   GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_LP, GP_G        
+%   GPCF_SQUARED_PAK, GPCF_SQUARED_UNPAK, GPCF_SQUARED_LP, GP_G        
   
-  if isfield(gpcf,'selectedVariables')
-      error('gpcf_squared: ginput: selectedVariables not implemented yet')
-  end
+if isfield(gpcf,'selectedVariables')
+    error('gpcf_squared: ginput: selectedVariables not implemented yet')
+end
 
-  [n, m] =size(x);
-    
-  if nargin==4
+[n, m] =size(x);
+
+if nargin==4
     % Use memory save option
     savememory=1;
     if i1==0
@@ -467,41 +558,41 @@ function DKff = gpcf_squared_ginput(gpcf, x, x2, i1)
         DKff=m;
         return
     end
-  else
+else
     savememory=0;
-  end
-  
-  if nargin == 2 || isempty(x2)      
+end
 
-          xx = x.^2;
-          if length(gpcf.coeffSigma2)==1
-              s=gpcf.coeffSigma2.*ones(1,(1+m)*m/2);
-          else
-              s=gpcf.coeffSigma2;
-          end
-          ii1 = 0;
-          if nargin<4
-              i1=1:m;
-          end
-          for j = 1:n
-              for i=i1
-                  DK = zeros(n);
-                  DK(j,:)=2*s(i)*x(j,i)*xx(:,i)';
-                  if isequal(gpcf.interactions,'on')
-                      for xi2=i1
-                          if xi2~=i
-                              DK(j,:) = DK(j,:) + s(i)*x(j,xi2).*(x(:,i).*x(:,xi2))';
-                          end
-                      end
-                  end
-                  DK = DK + DK';
-                  ii1 = ii1 + 1;
-                  DKff{ii1} = DK;
-              end
-          end 
+if nargin == 2 || isempty(x2)
     
-  elseif nargin == 3 || nargin == 4
-      
+    xx = x.^2;
+    if length(gpcf.coeffSigma2)==1
+        s=gpcf.coeffSigma2.*ones(1,(1+m)*m/2);
+    else
+        s=gpcf.coeffSigma2;
+    end
+    ii1 = 0;
+    if nargin<4
+        i1=1:m;
+    end
+    for j = 1:n
+        for i=i1
+            DK = zeros(n);
+            DK(j,:)=2*s(i)*x(j,i)*xx(:,i)';
+            if isequal(gpcf.interactions,'on')
+                for xi2=i1
+                    if xi2~=i
+                        DK(j,:) = DK(j,:) + s(i)*x(j,xi2).*(x(:,i).*x(:,xi2))';
+                    end
+                end
+            end
+            DK = DK + DK';
+            ii1 = ii1 + 1;
+            DKff{ii1} = DK;
+        end
+    end
+    
+elseif nargin == 3 || nargin == 4
+    
     xx2 = x2.^2;
     if length(gpcf.coeffSigma2)==1
         s=gpcf.coeffSigma2.*ones(1,(1+m)*m/2);
@@ -527,39 +618,60 @@ function DKff = gpcf_squared_ginput(gpcf, x, x2, i1)
             DKff{ii1} = DK;
         end
     end
-  end
+end
+
 end
 
 function DKff = gpcf_squared_ginput2(gpcf, x, x2)
-%GPCF_LINEAR_GINPUT2  Evaluate gradient of covariance function with
+%GPCF_SQUARED_GINPUT2  Evaluate gradient of covariance function with
 %                   respect to both input variables x and x2 (in
 %                   same dimension).
 %
 %  Description
-%    DKff = GPCF_LINEAR_GINPUT2(GPCF, X, X2) takes a covariance
+%    DKff = GPCF_SQUARED_GINPUT2(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of twice derivatived covariance
 %    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
 %    elements). Input variable's dimensions are expected to be
-%    same. The function returns also DKff1 and DKff2 which are
-%    parts of DKff and needed with CFDG2. DKff = DKff1 -
-%    DKff2. This subfunction is needed when using derivative 
+%    same.  This subfunction is needed when using derivative 
 %    observations.
 %   
 %  See also
-%    GPCF_LINEAR_GINPUT, GPCF_LINEAR_GINPUT2, GPCF_LINEAR_CFDG2       
+%    GPCF_SQUARED_GINPUT, GPCF_SQUARED_GINPUT2, GPCF_SQUARED_CFDG2       
 
-error('this subfunction is not implemented yet')
+[n,m]=size(x);
+ii1=0;
+if length(gpcf.coeffSigma2)==1
+  c=repmat(gpcf.coeffSigma2,1,(1+m)*m/2);
+else
+  c=gpcf.coeffSigma2;
+end
+for i1=1:m
+  if isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i1)==0
+    DK=zeros(size(x,1),size(x2,1));
+  else
+    DK=c(i1).*4.*x(:,i1)*x2(:,i1)';
+    if isequal(gpcf.interactions,'on')
+        for xi2=1:m
+            if xi2~=i1 && ~(isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==xi2)==0)
+                DK = DK + c(i1)*x(:,xi2)*x2(:,xi2)';
+            end
+        end
+    end
+  end
+  ii1=ii1+1;
+  DKff{ii1}=DK;
+end
 
 end
 
 function DKff = gpcf_squared_ginput3(gpcf, x, x2)
-%GPCF_LINEAR_GINPUT3  Evaluate gradient of covariance function with
+%GPCF_SQUARED_GINPUT3  Evaluate gradient of covariance function with
 %                   respect to both input variables x and x2 (in
 %                   different dimensions).
 %
 %  Description
-%    DKff = GPCF_LINEAR_GINPUT3(GPCF, X, X2) takes a covariance
+%    DKff = GPCF_SQUARED_GINPUT3(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of twice derivatived covariance
 %    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
@@ -569,43 +681,83 @@ function DKff = gpcf_squared_ginput3(gpcf, x, x2)
 %    observations.
 %   
 %  See also
-%    GPCF_LINEAR_GINPUT, GPCF_LINEAR_GINPUT2, GPCF_LINEAR_CFDG2        
+%    GPCF_SQUARED_GINPUT, GPCF_SQUARED_GINPUT2, GPCF_SQUARED_CFDG2        
 
-error('this subfunction is not implemented yet')
+[n,m]=size(x);
+ii1=0;
+if length(gpcf.coeffSigma2)==1
+  c=repmat(gpcf.coeffSigma2,1,(1+m)*m/2);
+else
+  c=gpcf.coeffSigma2;
+end
+DK=zeros(size(x,1),size(x2,1));
+for i=1:m-1
+  for j=i+1:m
+    ii1=ii1+1;
+    if isequal(gpcf.interactions,'on') &&...
+            ~(isfield(gpcf, 'selectedVariables') && (sum(gpcf.selectedVariables==i)==0 || sum(gpcf.selectedVariables==j)==0))
+        DKff{ii1} = c(i)*x(:,i)*x2(:,j)';
+    else
+        DKff{ii1}=DK;
+    end
+  end
+end
 
 end
 
 function DKff = gpcf_squared_ginput4(gpcf, x, x2)
-%GPCF_LINEAR_GINPUT  Evaluate gradient of covariance function with 
-%                  respect to x. Simplified and faster version of
-%                  squared_ginput, returns full matrices.
+%GPCF_SQUARED_GINPUT  Evaluate gradient of covariance function with respect
+%                    to x. Simplified and faster version of squared_ginput,
+%                    returns full matrices. 
 %
 %  Description
-%    DKff = GPCF_LINEAR_GINPUT4(GPCF, X) takes a covariance function
-%    structure GPCF, a matrix X of input vectors and returns
-%    DKff, the gradients of covariance matrix Kff = k(X,X) with
-%    respect to X (whole matrix). This subfunction is needed when 
-%    using derivative observations.
+%    DKff = GPCF_SQUARED_GINPUT4(GPCF, X, X2) takes a covariance function
+%    structure GPCF, matrices X and X2 of input vectors and returns DKff,
+%    the gradients of covariance matrix Kff = k(X,X2) with respect to X
+%    (whole matrix); that is d k(X,X2)/dX. If called with only two inputs
+%    GPCF_SQUARED_GINPUT4(GPCF, X), X2=X.
 %
-%    DKff = GPCF_LINEAR_GINPUT4(GPCF, X, X2) takes a covariance
-%    function structure GPCF, a matrix X of input vectors and
-%    returns DKff, the gradients of covariance matrix Kff =
-%    k(X,X2) with respect to X (whole matrix). This subfunction 
-%    is needed when using derivative observations.
+%    This subfunction is needed when using derivative observations. 
 %
 %  See also
-%    GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_LP, GP_G
+%    GPCF_SQUARED_PAK, GPCF_SQUARED_UNPAK, GPCF_SQUARED_LP, GP_G
 
-error('this subfunction is not implemented yet')
-
+[n,m]=size(x);
+i1=1:m;
+ii1=0;
+if nargin==2
+  x2=x;
+end
+h2=x2.^2;
+if length(gpcf.coeffSigma2)==1
+  c=repmat(gpcf.coeffSigma2,1,(1+m)*m/2);
+else
+  c=gpcf.coeffSigma2;
+end
+for i=i1
+  if isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i)==0
+    DK=zeros(size(x,1),size(x2,1));
+  else
+    DK=c(i).*2.*x(:,i)*h2(:,i)';
+    if isequal(gpcf.interactions,'on')
+        for xi2=i1
+            if xi2~=i
+                DK = DK + c(i)*x(:,xi2)*(x2(:,i).*x2(:,xi2))';
+            end
+        end
+    end
+  end
+  ii1=ii1+1;
+  DKff{ii1}=DK;
+end
 
 end
 
 function C = gpcf_squared_cov(gpcf, x1, x2, varargin)
-%GP_LINEAR_COV  Evaluate covariance matrix between two input vectors
+%GP_SQUARED_COV  Evaluate covariance matrix between two input vectors
 %
 %  Description         
-%    C = GP_LINEAR_COV(GP, TX, X) takes in covariance function of
+%    C = GP_SQUARED_COV(GP, TX, X) takes in covariance function of
 %    a Gaussian process GP and two matrixes TX and X that contain
 %    input vectors to GP. Returns covariance matrix C. Every
 %    element ij of C contains covariance between inputs i in TX
@@ -613,7 +765,7 @@ function C = gpcf_squared_cov(gpcf, x1, x2, varargin)
 %    prediction and energy computations.
 %
 %  See also
-%    GPCF_LINEAR_TRCOV, GPCF_LINEAR_TRVAR, GP_COV, GP_TRCOV
+%    GPCF_SQUARED_TRCOV, GPCF_SQUARED_TRVAR, GP_COV, GP_TRCOV
   
   if isempty(x2)
     x2=x1;
@@ -644,10 +796,10 @@ function C = gpcf_squared_cov(gpcf, x1, x2, varargin)
 end
 
 function C = gpcf_squared_trcov(gpcf, x)
-%GP_LINEAR_TRCOV  Evaluate training covariance matrix of inputs
+%GP_SQUARED_TRCOV  Evaluate training covariance matrix of inputs
 %
 %  Description
-%    C = GP_LINEAR_TRCOV(GP, TX) takes in covariance function of
+%    C = GP_SQUARED_TRCOV(GP, TX) takes in covariance function of
 %    a Gaussian process GP and matrix TX that contains training
 %    input vectors. Returns covariance matrix C. Every element ij
 %    of C contains covariance between inputs i and j in TX. This 
@@ -655,7 +807,7 @@ function C = gpcf_squared_trcov(gpcf, x)
 %    energy computations.
 %
 %  See also
-%    GPCF_LINEAR_COV, GPCF_LINEAR_TRVAR, GP_COV, GP_TRCOV
+%    GPCF_SQUARED_COV, GPCF_SQUARED_TRVAR, GP_COV, GP_TRCOV
 
   
   if isfield(gpcf, 'selectedVariables')
@@ -678,10 +830,10 @@ end
 
 
 function C = gpcf_squared_trvar(gpcf, x)
-%GP_LINEAR_TRVAR  Evaluate training variance vector
+%GP_SQUARED_TRVAR  Evaluate training variance vector
 %
 %  Description
-%    C = GP_LINEAR_TRVAR(GPCF, TX) takes in covariance function
+%    C = GP_SQUARED_TRVAR(GPCF, TX) takes in covariance function
 %    of a Gaussian process GPCF and matrix TX that contains
 %    training inputs. Returns variance vector C. Every element i
 %    of C contains variance of input i in TX. This is a mandatory 
@@ -689,7 +841,7 @@ function C = gpcf_squared_trvar(gpcf, x)
 %
 %
 %  See also
-%    GPCF_LINEAR_COV, GP_COV, GP_TRCOV
+%    GPCF_SQUARED_COV, GP_COV, GP_TRCOV
 
   
   if isfield(gpcf, 'selectedVariables')
@@ -718,7 +870,7 @@ function reccf = gpcf_squared_recappend(reccf, ri, gpcf)
 %RECAPPEND Record append
 %
 %  Description
-%    RECCF = GPCF_LINEAR_RECAPPEND(RECCF, RI, GPCF) takes a
+%    RECCF = GPCF_SQUARED_RECAPPEND(RECCF, RI, GPCF) takes a
 %    covariance function record structure RECCF, record index RI
 %    and covariance function structure GPCF with the current MCMC
 %    samples of the parameters. Returns RECCF which contains all
@@ -776,7 +928,7 @@ function reccf = gpcf_squared_recappend(reccf, ri, gpcf)
 end
 
 function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_squared_cf2ss(gpcf,x)
-%GPCF_LINEAR_CF2SS Convert the covariance function to state space form
+%GPCF_SQUARED_CF2SS Convert the covariance function to state space form
 %
 %  Description
 %    Convert the covariance function to state space form such that

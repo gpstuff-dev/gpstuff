@@ -794,7 +794,7 @@ function DKff = gpcf_sexp_cfdg(gpcf, x, x2)
       else
         % In the case ARD is used
         if m~=length(gpcf.lengthScale)
-          error('Amount of lengtscales dont match input dimension')
+          error('Amount of lengtscales does not match input dimension')
         end
         %Preparing
         for i=1:m
@@ -892,8 +892,6 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
       ii1=ii1+1;
       DKff{ii1}=DKffapu;
     end
-  else
-    error('no prior set to magnSigma')
   end  
   
   % grad with respect to LENGTHSCALE
