@@ -39,9 +39,10 @@ fx = @(x) 0.6*x -0.1*x.^2 + sin(2*x);
 gx = @(x) 2*cos(2*x) - 0.2*x + 0.6;
 
 % construct GP
+cfc = gpcf_constant('constSigma2',10,'constSigma2_prior', prior_fixed);
 cfse = gpcf_sexp('lengthScale',1,'lengthScale_prior',prior_t('nu',20,'s2',0.5),'magnSigma2',1,'magnSigma2_prior',prior_sqrtt('s2',10^2));
 lik = lik_gaussian('sigma2', 0.0001, 'sigma2_prior', prior_fixed);
-gp = gp_set('cf', {cfse}, 'lik', lik);
+gp = gp_set('cf', {cfc cfse}, 'lik', lik);
 gp = gp_set(gp, 'derivobs','on');
 
 % ----- conduct Bayesian optimization -----
