@@ -171,6 +171,7 @@ cfl2 = gpcf_squared('coeffSigma2', .01, 'coeffSigma2_prior', prior_sqrtt(), 'int
 cfse = gpcf_sexp('lengthScale',[5 5],'lengthScale_prior',prior_t('s2',4),'magnSigma2',.1,'magnSigma2_prior',prior_sqrtt('s2',10^2));
 lik = lik_gaussian('sigma2', 0.001, 'sigma2_prior', prior_fixed);
 gp = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik, 'derivobs', 'on');
+gp = gp_set('cf', {cfc, cfse}, 'lik', lik, 'derivobs', 'on');
 
 % ----- conduct Bayesian optimization -----
 
@@ -239,6 +240,7 @@ while i1 < maxiter && improv>1e-6
     % put new sample point to the list of evaluation points
     x(end+1,:) = x_new;
     y(end+1,:) = fx(x(end,:));     % calculate the function value at query point
+    yg(end+1,:)=dfx(x(end,:));
 
     % visualize
     clf
