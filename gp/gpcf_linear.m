@@ -400,6 +400,10 @@ function DKff = gpcf_linear_cfdg(gpcf, x, x2)
 %    coefficients. This subfunction is needed when using derivative 
 %    observations.
 %
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
 %  See also
 %    GPCF_LINEAR_GINPUT
 
@@ -461,6 +465,10 @@ function DKff = gpcf_linear_cfdg2(gpcf, x)
 %    m is the dimension of inputs. If ARD is used, then multiple
 %    lengthScales. This subfunction is needed when using derivative 
 %    observations.
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
 %
 %  See also
 %   GPCF_LINEAR_GINPUT, GPCF_LINEAR_GINPUT2
@@ -645,7 +653,7 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2, i1)
   end
 end
 
-function DKff = gpcf_linear_ginput2(gpcf, x, x2)
+function DKff = gpcf_linear_ginput2(gpcf, x, x2, takeOnlyDiag)
 %GPCF_LINEAR_GINPUT2  Evaluate gradient of covariance function with
 %                   respect to both input variables x and x2 (in
 %                   same dimension).
@@ -658,6 +666,10 @@ function DKff = gpcf_linear_ginput2(gpcf, x, x2)
 %    elements). Input variable's dimensions are expected to be
 %    same. This subfunction is needed when using derivative 
 %    observations.
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
 %   
 %  See also
 %    GPCF_LINEAR_GINPUT, GPCF_LINEAR_GINPUT2, GPCF_LINEAR_CFDG2       
@@ -669,14 +681,19 @@ if length(gpcf.coeffSigma2)==1
 else
   c=gpcf.coeffSigma2;
 end
-for i=1:m
-  if isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i)==0
-    DK=zeros(size(x,1),size(x2,1));
-  else
-    DK=c(i).*ones(size(x,1),size(x2,1));
-  end
-  ii1=ii1+1;
-  DKff{ii1}=DK;
+
+if nargin==4 && isequal(takeOnlyDiag,'takeOnlyDiag')
+    DKff = kron(c(:),ones(n,1));
+else
+    for i=1:m
+        if isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i)==0
+            DK=zeros(size(x,1),size(x2,1));
+        else
+            DK=c(i).*ones(size(x,1),size(x2,1));
+        end
+        ii1=ii1+1;
+        DKff{ii1}=DK;
+    end
 end
 end
 
@@ -694,6 +711,21 @@ function DKff = gpcf_linear_ginput3(gpcf, x, x2)
 %    problem between input's observation dimensions which are not
 %    same. This subfunction is needed when using derivative 
 %    observations.
+%
+%    DKff is a cell array with the following elements:
+%      DKff{1} = dk(X1,X2)/dX1_1dX2_2
+%      DKff{2} = dk(X1,X2)/dX1_1dX2_3
+%       ... 
+%      DKff{m-1} = dk(X1,X2)/dX1_1dX2_m
+%      DKff{m} = dk(X1,X2)/dX1_2dX2_3
+%       ...
+%      DKff{m} = dk(X1,X2)/dX1_(m-1)dX2_m
+%    where _m denotes the input dimension with respect to which the
+%    gradient is calculated.
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
 %   
 %  See also
 %    GPCF_LINEAR_GINPUT, GPCF_LINEAR_GINPUT2, GPCF_LINEAR_CFDG2        
@@ -722,6 +754,11 @@ function DKff = gpcf_linear_ginput4(gpcf, x, x2)
 %    GPCF_LINEAR_GINPUT4(GPCF, X), X2=X.
 %
 %    This subfunction is needed when using derivative observations. 
+%
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
 %
 %  See also
 %    GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_LP, GP_G

@@ -418,7 +418,7 @@ function DKff = gpcf_constant_ginput(gpcf, x, x2, i1)
 end
 
 
-function DKff = gpcf_constant_ginput2(gpcf, x, x2)
+function DKff = gpcf_constant_ginput2(gpcf, x, x2, takeOnlyDiag)
 %GPCF_CONSTANT_GINPUT2  Evaluate gradient of covariance function with
 %                   respect to both input variables x and x2 (in
 %                   same dimension).
@@ -438,11 +438,15 @@ function DKff = gpcf_constant_ginput2(gpcf, x, x2)
 %    GPCF_CONSTANT_GINPUT, GPCF_CONSTANT_GINPUT2, GPCF_CONSTANT_CFDG2       
 
 [n,m]=size(x);
-ii1=0;
-DK=zeros(size(x,1),size(x2,1));
-for i=1:m
-  ii1=ii1+1;
-  DKff{ii1}=DK;
+if nargin==4 && isequal(takeOnlyDiag,'takeOnlyDiag')
+    DKff = kron(zeros(m,1),zeros(n,1));
+else
+    ii1=0;
+    DK=zeros(size(x,1),size(x2,1));
+    for i=1:m
+        ii1=ii1+1;
+        DKff{ii1}=DK;
+    end
 end
 end
 

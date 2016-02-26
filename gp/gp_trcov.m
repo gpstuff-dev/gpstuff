@@ -19,7 +19,7 @@ function [K, C] = gp_trcov(gp, x1, predcf)
 %  See also
 %    GP_SET, GPCF_*
 %
-% Copyright (c) 2006-2010 Jarno Vanhatalo
+% Copyright (c) 2006-2010, 2016 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen
 
 % This software is distributed under the GNU General Public 
@@ -70,48 +70,43 @@ switch gp.type
             if isfield(gp,'derivobs') && gp.derivobs
                 if m==1
                     Kff = gpcf.fh.trcov(gpcf, x1);
-                    Gset = gpcf.fh.ginput4(gpcf, x1);
+                    Kdf = gpcf.fh.ginput4(gpcf, x1);
                     D = gpcf.fh.ginput2(gpcf, x1, x1);
                     
-                    Kdf=Gset{1};
+                    Kdf=Kdf{1};
                     Kfd = Kdf';
                     Kdd=D{1};
                     
                     % Add all the matrices into a one K matrix
                     K = K + [Kff Kfd; Kdf Kdd];
                 else
+                    % the block of covariance matrix
                     Kff = gpcf.fh.trcov(gpcf, x1);
-                    G= gpcf.fh.ginput4(gpcf, x1);
-                    D= gpcf.fh.ginput2(gpcf, x1, x1);
+                    % the blocks on the left side, below Kff 
+                    Kdf= gpcf.fh.ginput4(gpcf, x1);
+                    Kdf=cat(1,Kdf{1:m});
+                    Kfd=Kdf';
+                    % the diagonal blocks of double derivatives
+                    D= gpcf.fh.ginput2(gpcf, x1, x1);   
+                    % the off diagonal blocks of double derivatives on the
+                    % upper right corner. See e.g. gpcf_squared -> ginput3
                     Kdf2 = gpcf.fh.ginput3(gpcf, x1 ,x1);
-                    
-                    Kdf=cat(1,G{1:m});
-                    
+                                        
                     % Now build up Kdd m*n x m*n matrix, which contains all the
                     % both partial derivative" -matrices
-                    Kdd=blkdiag(D{1:m});
                     
-                    % Gather non-diagonal matrices to Kddnodi
-                    if m==2
-                        Kddnodi=[zeros(n,n) Kdf2{1};Kdf2{1} zeros(n,n)];
-                    else
-                        t1=1;
-                        Kddnodi=zeros(m*n,m*n);
-                        for im=1:m-1
-                            aa=zeros(m-1,m);
-                            t2=t1+m-2-(im-1);
-                            aa(m-1,im)=1;
-                            k=kron(aa,cat(1,zeros((im)*n,n),Kdf2{t1:t2}));
-                            k(1:n*m,:)=[];
-                            k=k+k';
-                            Kddnodi = Kddnodi + k;
-                            t1=t2+1;
+                    % Add the diagonal matrices
+                    Kdd=blkdiag(D{1:m});
+                    % Add the non-diagonal matrices to Kdd
+                    ii3=0;
+                    for j=0:m-2
+                        for i=1+j:m-1
+                            ii3=ii3+1;
+                            Kdd(i*n+1:(i+1)*n,j*n+1:j*n+n) = Kdf2{ii3}';
+                            Kdd(j*n+1:j*n+n,i*n+1:(i+1)*n) = Kdf2{ii3};
                         end
                     end
-                    % Sum the diag + no diag matrices
-                    Kdd=Kdd+Kddnodi;
-                    Kfd=Kdf';
-                    
+                                        
                     % Gather all the matrices into one final matrix K which is the
                     % training covariance matrix
                     K = K + [Kff Kfd; Kdf Kdd];
