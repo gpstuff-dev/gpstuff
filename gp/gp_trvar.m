@@ -27,21 +27,21 @@ function [K, C] = gp_trvar(gp, x1, predcf)
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-% no covariance functions?
-if length(gp.cf)==0 || (nargin>2 && ~isempty(predcf) && predcf(1)==0) ...
-        || isfield(gp, 'lik_mono')
-    K=[];
-    C=[];
-    if nargout>1 && isfield(gp.lik.fh,'trcov')
-        C=sparse(0);
-        % Add Gaussian noise to the covariance
-        C = C + gp.lik.fh.trvar(gp.lik, x1);
-        if ~isempty(gp.jitterSigma2)
-            C=C+gp.jitterSigma2;
-        end
-    end
-    return
-end
+% % no covariance functions?
+% if length(gp.cf)==0 || (nargin>2 && ~isempty(predcf) && predcf(1)==0) ...
+%         || isfield(gp, 'lik_mono')
+%     K=[];
+%     C=[];
+%     if nargout>1 && isfield(gp.lik.fh,'trcov')
+%         C=sparse(0);
+%         % Add Gaussian noise to the covariance
+%         C = C + gp.lik.fh.trvar(gp.lik, x1);
+%         if ~isempty(gp.jitterSigma2)
+%             C=C+gp.jitterSigma2;
+%         end
+%     end
+%     return
+% end
 
 [n,m]=size(x1);
 n1 = n+1;

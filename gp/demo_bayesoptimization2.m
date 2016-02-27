@@ -222,11 +222,11 @@ while i1 < maxiter && improv>1e-6
     %    optimization so that it does not get stuck in local mode
     % Here we use multiple starting points for the optimization so that we
     % don't crash into suboptimal mode of acquisition function
-    if mod(i1,5)==0  % Do just exploration by finding the maimum variance location
-        fh_eg = @(x_new) expectedvariance_eg(x_new, gp, x, [], invC);
-    else
+%     if mod(i1,5)==0  % Do just exploration by finding the maimum variance location
+%         fh_eg = @(x_new) expectedvariance_eg(x_new, gp, x, [], invC);
+%     else
         fh_eg = @(x_new) expectedimprovement_eg(x_new, gp, x, a, invC, fmin);
-    end
+%     end
     indbest = find(y == fmin);
     nstarts = 20;
     xstart = [repmat(lb,nstarts,1) + repmat(ub-lb,nstarts,1).*rand(nstarts,2) ]; 
