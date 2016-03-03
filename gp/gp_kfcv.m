@@ -465,7 +465,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
     
     if nargout>=4
-      inds=1:n;      
+      inds=1:n;
       tsind=tstind;
     else
       inds=tstindex{i}(:);
@@ -485,7 +485,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
       [tmp,tmp,lpyt(inds)]=gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
                         tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
     elseif predyt
-      [Eft(inds), Varft(inds), lpyt(inds), Eytt, Varytt] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+      [Eftt, Varftt, lpyt(inds), Eytt, Varytt] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
                                      tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
       if ~isempty(Eytt)
         Eyt(inds)=Eytt; 
@@ -493,17 +493,28 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
       end
     elseif predlpyt
       if joint
-        [Eft(inds), Covft,lpyt(inds)] = gp_jpred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+        [Eftt, Covft,lpyt(inds)] = gp_jpred(gp, xtr, ytr, x(inds,:), 'tstind', ...
                                                       tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
-        Varft(inds)=diag(Covft);
+        Varftt=diag(Covft);
       else
-        [Eft(inds), Varft(inds),lpyt(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+        [Eftt, Varftt,lpyt(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
                                                       tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
       end
     elseif predft
-      [Eft(inds),Varft(inds)] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
+      [Eftt,Varftt] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
                     tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
     end
+    if isfield(gp.lik, 'nondiagW')
+        % 17.12.2015: this needs to be rewritten so that we store Eft and
+        % Varft for nondiagW also. However, now this is a quick fix so
+        % that the gp_kfcv does not crash
+        Eft= [];
+        Varft= [];
+    else
+        Eft(inds) = Eftt;
+        Varft(inds) = Varftt;
+    end
+      
     if ~predft
       Eft=[]; Varft=[];
     end

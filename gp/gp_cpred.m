@@ -56,6 +56,7 @@ ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('target', 'mu', @(x) ismember(x,{'f','mu','cdf'}))
 ip.addParamValue('prct', [5 50 95], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('normdata', struct(), @(x) isempty(x) || isstruct(x))
+ip.addParamValue('xlabels', [], @(x) isempty(x) || iscell(x));
 ip.parse(gp, x, y, xt, ind, varargin{:});
 zt=ip.Results.zt;
 options=struct();
@@ -67,6 +68,9 @@ vars = ip.Results.var;
 plot_results = ip.Results.plot;
 tr = ip.Results.tr;
 target = ip.Results.target;
+if strcmp(target,'f')
+    options = rmfield(options,'prct');
+end
 yt=ip.Results.yt;
 if ~isempty(yt)
   options.yt=yt;
@@ -146,7 +150,7 @@ if length(ind)==1
         Ef = cdf; Varf = [];
     end
   else
-    [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt, rmfield(options, 'prct'));
+    [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt);
     nt=size(Ef1,1);
     if ind>0
       % conditional posterior given Ef1=E[Ef1]
@@ -161,7 +165,9 @@ if length(ind)==1
   end
   if isequal(plot_results, 'on')
     if ind>0
-      xtnn=denormdata(xtnn,nd.xmean(ind),nd.xstd(ind));
+      if ind>=1&numel(nd.xmean)>=ind
+        xtnn=denormdata(xtnn,nd.xmean(ind),nd.xstd(ind));
+      end
       deltadist=gp_finddeltadist(gp);
       if ~ismember(ind,deltadist)
         switch target
@@ -235,21 +241,21 @@ elseif length(ind)==2
     if ~strcmp(liktype, 'Coxph')
       switch target
         case 'f'
-          [Ef1, Varf1] = gp_pred(gp, x, y, xt1, rmfield(options1, 'prct'));
-          [Ef2, Varf2] = gp_pred(gp, x, y, xt2, rmfield(options2, 'prct'));
+          [Ef1, Varf1] = gp_pred(gp, x, y, xt1);
+          [Ef2, Varf2] = gp_pred(gp, x, y, xt2);
         case 'mu'
           prctmu1 = denormdata(gp_predprctmu(gp, x, y, xt1, options1),nd.ymean,nd.ystd);
           prctmu2 = denormdata(gp_predprctmu(gp, x, y, xt2, options2),nd.ymean,nd.ystd);
       end
     else
-      [Ef11,Ef12,Covf] = pred_coxph(gp,x,y,xt1, rmfield(options1, 'prct'));
+      [Ef11,Ef12,Covf] = pred_coxph(gp,x,y,xt1);
       Ef1 = Ef12; Varf1 = diag(Covf(size(Ef11,1)+1:end,size(Ef11,1)+1:end));
-      [Ef21,Ef22,Covf] = pred_coxph(gp,x,y,xt2, rmfield(options2, 'prct'));
+      [Ef21,Ef22,Covf] = pred_coxph(gp,x,y,xt2);
       Ef2 = Ef22; Varf2 = diag(Covf(size(Ef21,1)+1:end,size(Ef21,1)+1:end));
     end
     
     if isequal(plot_results, 'on')
-      xtnn1=denormdata(xtnn1,nd.xmean(ind(1)),nd.xstd(ind(1)));
+      xtnn1=denormdata(xtnn1,nd.xmean(ind(2)),nd.xstd(ind(2)));
       xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
       if nu1>2 && nu2==2
         lstyle10='or';lstyle11='-r';lstyle12='--r';
@@ -297,7 +303,7 @@ elseif length(ind)==2
     else
       xtnn1 = unique(xt(:,ind(1)));
     end
-    if ~ismember(ind(1),deltadist)
+    if ~ismember(ind(2),deltadist)
       xtnn2 = linspace(min(xt(:,ind(2))), max(xt(:,ind(2))), 20);
     else
       xtnn2 = unique(xt(:,ind(2)));
@@ -316,7 +322,7 @@ elseif length(ind)==2
     if ~strcmp(liktype, 'Coxph')
       switch target
         case 'f'
-          [Ef, Varf] = gp_pred(gp, x, y, xt, options);
+          [Ef, Varf] = gp_pred(gp, x, y, xt);
         case 'mu'
           prctmu = gp_predprctmu(gp, x, y, xt, options, 'prct', 50);
           Ef = prctmu; Varf = [];
