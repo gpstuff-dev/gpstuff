@@ -85,7 +85,8 @@ if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')
   ind = gp.tr_index;           % block indeces for training points
   gp = rmfield(gp,'tr_index');
 end
-  
+
+eyts_ok = true;
 for i1=1:nmc
   % compute leave-one-out predictions for each hyperparameter sample
   % if latent method is MCMC, then these samples are for latent values, too
@@ -107,7 +108,17 @@ for i1=1:nmc
   if nargout <= 3
     [Efts(:,i1), Varfts(:,i1), lpyts(:,i1)] = gp_loopred(Gp, x, y, 'z', z);
   else
-    [Efts(:,i1), Varfts(:,i1), lpyts(:,i1), Eyts(:,i1), Varyts(:,i1)] = gp_loopred(Gp, x, y, 'z', z);
+    [Efts_i, Varfts_i, lpyts_i, Eyts_i, Varyts_i] = ...
+        gp_loopred(Gp, x, y, 'z', z);
+    Efts(:,i1) = Efts_i;
+    Varfts(:,i1) = Varfts_i;
+    lpyts(:,i1) = lpyts_i;
+    if isempty(Eyts_i)
+      eyts_ok = false;
+    else
+      Eyts(:,i1) = Eyts_i;
+      Varyts(:,i1) = Varyts_i;
+    end
   end
 end
 
@@ -144,7 +155,12 @@ Varft = sum(Varfts.*w,2) + sum(bsxfun(@minus,Efts,Eft).^2.*w,2);
 if nargout > 2
   lpyt = sumlogs(lpyts+lw,2); % same as lpyt=log(sum(exp(lpyts).*w,2));
   if nargout > 3
-    Eyt = sum(Eyts.*w,2);
-    Varyt = sum(Varyts.*w,2) + sum(bsxfun(@minus,Eyts,Eyt).^2.*w,2);
+    if eyts_ok
+      Eyt = sum(Eyts.*w,2);
+      Varyt = sum(Varyts.*w,2) + sum(bsxfun(@minus,Eyts,Eyt).^2.*w,2);
+    else
+      Eyt = [];
+      Varyt = [];
+    end
   end
 end

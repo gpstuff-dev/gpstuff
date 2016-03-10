@@ -308,7 +308,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   
   if ~isequal(fcorr, 'off') && predyt
     warning(['Can''t use marginal posterior corrections with y predictions';
-             'Disabling prediction for y                                  ']);
+             'Disabling prediction for y                                 ']);
     predyt=0;
   end
   
