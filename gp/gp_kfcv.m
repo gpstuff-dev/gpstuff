@@ -504,7 +504,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
       [Eftt,Varftt] = gp_pred(gp, xtr, ytr, x(inds,:), 'tstind', ...
                     tsind, 'z', ztr, 'yt', yt(inds,:), 'zt', ztt, 'fcorr', fcorr);
     end
-    if isfield(gp.lik, 'nondiagW')
+    if isfield(gplik, 'nondiagW')
         % 17.12.2015: this needs to be rewritten so that we store Eft and
         % Varft for nondiagW also. However, now this is a quick fix so
         % that the gp_kfcv does not crash
