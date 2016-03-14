@@ -126,15 +126,18 @@ else
   % ratios have infinite variance the convergence to true value is
   % slower and if raw importance ratios have non-existing mean the the
   % estimate can't converge to true value
-  vkn1=sum(pk>=0.5&pk<1);
-  vkn2=sum(pk>=1);
+  vkn1=sum(pk>=0.5&pk<0.7);
+  vkn2=sum(pk>=0.7&pk<1);
+  vkn3=sum(pk>=1);
   n=numel(pk);
-  if vkn1>0&vkn2==0
-      warning('%d (%.0f%%) PSIS Pareto k estimates between 0.5 and 1',vkn1,vkn1/n*100)
-  elseif vkn1==0&vkn2>0
+  if vkn1>0
+      warning('%d (%.0f%%) PSIS Pareto k estimates between 0.5 and .7',vkn1,vkn1/n*100)
+  end
+  if vkn2>0
+      warning('%d (%.0f%%) PSIS Pareto k estimates between 0.7 and 1',vkn2,vkn2/n*100)
+  end
+  if vkn3>0
       warning('%d (%.0f%%) PSIS Pareto k estimates greater than 1',vkn2,vkn2/n*100)
-  elseif vkn1>0&vkn2>0
-      warning('%d (%.0f%%) PSIS Pareto k estimates between 0.5 and 1\n     and %d (%.0f%%) PSIS Pareto k estimates greater than 1',vkn1,vkn1/n*100,vkn2,vkn2/n*100)
   end
 end
 

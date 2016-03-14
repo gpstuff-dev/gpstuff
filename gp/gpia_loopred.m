@@ -98,15 +98,39 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_loopred(gp_array, x, y, varargin)
     end
     % importance sampling weights
     w=exp(lw);
-    % check the effective sample size
-    m_eff=1./sum(w.^2,2);
-    if min(m_eff)<nGP/10
-      warning(sprintf('For %d folds the effective sample size in IS is less than m/10',sum(m_eff<(nGP/10))))
-    end
-  
     % reweight ia weights
     P_TH=bsxfun(@times,P_TH,w);
     P_TH=bsxfun(@rdivide,P_TH,sum(P_TH,2));
+    % check the effective sample size
+    m_eff=1./sum(P_TH.^2,2);
+    if min(m_eff)<nGP/5
+      warning(sprintf('For %d folds the effective sample size in IS is less than m/5',sum(m_eff<(nGP/5))))
+    end
+    fprintf('%d %.0f %.2f\n',nGP, min(1./sum(P_TH.^2,2)), min(1./sum(P_TH.^2,2))./nGP)
+    % PSIS
+    if nGP>=200
+        % e.g. CCD with nParam>=12 has at least 281 points
+        [lw,pk] = psislw(log(P_TH'),10);
+        P_TH=exp(lw');
+        % check whether the variance and mean of the raw importance ratios is finite
+        % PSIS weights have always finite variance and mean, but if raw importance
+        % ratios have infinite variance the convergence to true value is
+        % slower and if raw importance ratios have non-existing mean the the
+        % estimate can't converge to true value
+        vkn1=sum(pk>=0.5&pk<0.7);
+        vkn2=sum(pk>=0.7&pk<1);
+        vkn3=sum(pk>=1);
+        n=numel(pk);
+        if vkn1>0
+            warning('%d (%.0f%%) PSIS Pareto k estimates between 0.5 and .7',vkn1,vkn1/n*100)
+        end
+        if vkn2>0
+            warning('%d (%.0f%%) PSIS Pareto k estimates between 0.7 and 1',vkn2,vkn2/n*100)
+        end
+        if vkn3>0
+            warning('%d (%.0f%%) PSIS Pareto k estimates greater than 1',vkn3,vkn3/n*100)
+        end
+    end
   end
 
   % compute combined predictions
