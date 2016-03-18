@@ -150,7 +150,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         %[e, edata, eprior, tautilde, nutilde, BKnu, B, cholP, invPBKnu]= gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [e, edata, eprior, p]= gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         if isnan(e)
-            error('EP algorithm returned NaN');
+            Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+            return
         end
         [nutilde, BKnu, B, cholP, invPBKnu]=deal(p.nutilde, p.BKnu, p.B, p.cholP, p.invPBKnu);
         
@@ -250,7 +251,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         
           [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
           if isnan(e)
-              error('EP algorithm returned NaN');
+              Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+              return
           end
           [tautildee, nutildee, L, L2] = deal(p.tautilde, p.nutilde, p.L, p.La2);
         
@@ -360,7 +362,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         
           [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
           if isnan(e)
-              error('EP algorithm returned NaN');
+              Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+              return
           end
           [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
           
@@ -465,7 +468,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
                         %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         if isnan(e)
-            error('EP algorithm returned NaN');
+            Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+            return
         end
         [tautilde, nutilde, L, La, b] = deal(p.tautilde, p.nutilde, p.L, p.La2, p.b);
         
@@ -543,7 +547,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         if isnan(e)
-            error('EP algorithm returned NaN');
+            Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+            return
         end
         [L, La, b] = deal(p.L, p.La2, p.b);
         
@@ -605,7 +610,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         if isnan(e)
-            error('EP algorithm returned NaN');
+            Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+            return
         end
         [L, La, b] = deal(p.L, p.La2, p.b);
         
@@ -730,7 +736,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
                                       %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         if isnan(e)
-            error('EP algorithm returned NaN');
+            Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+            return
         end
         [L, La, b] = deal(p.L, p.La2, p.b);
         
