@@ -149,6 +149,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
       case 'FULL'
         %[e, edata, eprior, tautilde, nutilde, BKnu, B, cholP, invPBKnu]= gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [e, edata, eprior, p]= gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+        if isnan(e)
+            Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+            return
+        end
         [nutilde, BKnu, B, cholP, invPBKnu]=deal(p.nutilde, p.BKnu, p.B, p.cholP, p.invPBKnu);
         
         if isfield(gp, 'comp_cf')  % own covariance for each ouput component
@@ -246,6 +250,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         if isfield(gp.lik, 'int_likparam')
         
           [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+          if isnan(e)
+              Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+              return
+          end
           [tautildee, nutildee, L, L2] = deal(p.tautilde, p.nutilde, p.L, p.La2);
         
           tautilde=tautildee(:,1);
@@ -354,7 +362,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         
           [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
           if isnan(e)
-              error('EP algorithm returned NaN');
+              Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+              return
           end
           [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
           
@@ -458,6 +467,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
       case 'FIC'        % Predictions with FIC sparse approximation for GP
                         %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+        if isnan(e)
+            Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+            return
+        end
         [tautilde, nutilde, L, La, b] = deal(p.tautilde, p.nutilde, p.L, p.La2, p.b);
         
         % Here tstind = 1 if the prediction is made for the training set
@@ -533,6 +546,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         ind = gp.tr_index;
         %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+        if isnan(e)
+            Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+            return
+        end
         [L, La, b] = deal(p.L, p.La2, p.b);
         
         K_fu = gp_cov(gp, x, u, predcf);         % f x u
@@ -592,6 +609,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         
         %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+        if isnan(e)
+            Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+            return
+        end
         [L, La, b] = deal(p.L, p.La2, p.b);
         
         % Indexes to all non-compact support and compact support covariances.
@@ -714,6 +735,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
       case {'DTC' 'VAR' 'SOR'}        % Predictions with DTC or variational sparse approximation for GP
                                       %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+        if isnan(e)
+            Eft=NaN; Varft=NaN; lpyt=NaN; Eyt=NaN; Varyt=NaN;
+            return
+        end
         [L, La, b] = deal(p.L, p.La2, p.b);
         
         % Here tstind = 1 if the prediction is made for the training set
