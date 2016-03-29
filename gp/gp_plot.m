@@ -131,6 +131,15 @@ if isempty(xt)
   end
 end
 target = ip.Results.target;
+if iscell(gp)
+  liktype=gp{1}.lik.type;
+else
+  liktype=gp.lik.type;
+end
+if isequal(gp.lik.type, 'Coxph') && isequal(target,'mu')
+    target='f';
+    warning('GP_CPRED: Target ''mu'' not applicable for a Cox-PH model. Switching to target ''f''')
+end
 tr = ip.Results.tr;
 xlabels=ip.Results.xlabels;
 % normdata
