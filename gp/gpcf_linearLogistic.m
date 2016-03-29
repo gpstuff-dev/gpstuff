@@ -28,8 +28,8 @@ function gpcf = gpcf_linearLogistic(varargin)
 %                          values by log transformation
 %      b                 - intercept of the linear part [0].
 %                          b can be positive or negative.
-%      a_prior           - prior for a [prior_gaussian]
-%      b_prior           - prior for b [prior_gaussian]
+%      a_prior           - prior for a [prior_gaussian('s2',10)]
+%      b_prior           - prior for b [prior_gaussian('s2',10)]
 %      coeffSigma2       - prior variance for regressor coefficients [10]
 %                          This can be either scalar corresponding
 %                          to a common prior variance or vector
@@ -70,8 +70,8 @@ function gpcf = gpcf_linearLogistic(varargin)
   ip.addParamValue('a',1, @(x) isvector(x) && all(x>0));
   ip.addParamValue('b',0, @(x) isvector(x) );
   ip.addParamValue('coeffSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('a_prior',prior_gaussian, @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('b_prior',prior_gaussian, @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('a_prior',prior_gaussian('s2',10), @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('b_prior',prior_gaussian('s2',10), @(x) isstruct(x) || isempty(x));
   ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
   ip.parse(varargin{:});
   gpcf=ip.Results.gpcf;
