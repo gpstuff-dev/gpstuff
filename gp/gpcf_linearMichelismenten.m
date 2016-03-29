@@ -32,7 +32,7 @@ function gpcf = gpcf_linearMichelismenten(varargin)
 %                          to a common prior variance or vector
 %                          defining own prior variance for each
 %                          coefficient.
-%      a_prior           - prior structure for a [prior_gaussian]
+%      a_prior           - prior structure for a [prior_gaussian('s2',10)]
 %      coeffSigma2_prior - prior structure for coeffSigma2 [prior_logunif]
 %      selectedVariables - vector defining which inputs are used [all]
 %
@@ -73,7 +73,7 @@ function gpcf = gpcf_linearMichelismenten(varargin)
   ip.addParamValue('coeffSigma2',10, @(x) isvector(x) && all(x>0));
   ip.addParamValue('a',1, @(x) isvector(x) && all(x>0));
   ip.addParamValue('coeffSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('a_prior',prior_gaussian, @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('a_prior',prior_gaussian('s2',10), @(x) isstruct(x) || isempty(x));
   ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
   ip.parse(varargin{:});
   gpcf=ip.Results.gpcf;
