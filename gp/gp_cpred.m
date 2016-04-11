@@ -107,7 +107,8 @@ else
 end
 
 if isequal(liktype, 'Coxph') && isequal(target,'mu')
-  error('GP_CPRED: Target ''mu'' not applicable for a Cox-PH model')
+    target='f';
+    warning('GP_CPRED: Target ''mu'' not applicable for a Cox-PH model. Switching to target ''f''')
 end
 
 if ~isempty(vars) && (~isvector(vars) || length(vars) ~= nin)
@@ -150,7 +151,7 @@ if length(ind)==1
         Ef = cdf; Varf = [];
     end
   else
-    [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt);
+    [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt,'z',options.z,'zt',options.zt);
     nt=size(Ef1,1);
     if ind>0
       % conditional posterior given Ef1=E[Ef1]
