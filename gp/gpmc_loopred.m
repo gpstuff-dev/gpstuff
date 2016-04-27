@@ -69,7 +69,7 @@ ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('is', 'on', @(x) ismember(x,{'on' 'off'}))
+ip.addParamValue('is', 'on', @(x) ismember(x,{'on' 'off' 'psis' 'is'}))
 ip.parse(gp, x, y, varargin{:});
 z=ip.Results.z;
 is=ip.Results.is;
@@ -117,8 +117,14 @@ if isequal(is,'off')
 else
   % log importance sampling weights
   lw=-lpyts;
-  % compute Pareto smoothed log weights given raw log weights
-  [lw,pk]=psislw(lw');lw=lw';
+  if ismember(is,{'on' 'psis'})
+      % compute Pareto smoothed log weights given raw log weights
+      [lw,pk]=psislw(lw');lw=lw';
+  else
+      % normalise raw log weights (basic IS weights)
+      lw=bsxfun(@minus,lw',sumlogs(lw'))';
+      pk=0;
+  end
   % importance sampling weights
   w=exp(lw);
   % check whether the variance and mean of the raw importance ratios is finite

@@ -106,10 +106,11 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_loopred(gp_array, x, y, varargin)
     if min(m_eff)<nGP/5
       warning(sprintf('For %d folds the effective sample size in IS is less than m/5',sum(m_eff<(nGP/5))))
     end
-    fprintf('%d %.0f %.2f\n',nGP, min(1./sum(P_TH.^2,2)), min(1./sum(P_TH.^2,2))./nGP)
+    fprintf('nGP=%d, min(neff)=%.0f, min(neff)/nGP=%.2f\n',nGP, min(1./sum(P_TH.^2,2)), min(1./sum(P_TH.^2,2))./nGP)
     % PSIS
     if nGP>=200
-        % e.g. CCD with nParam>=12 has at least 281 points
+        % (new) default sample size for is_normal and is_t is 200
+        % CCD with nParam>=12 has at least 281 points
         [lw,pk] = psislw(log(P_TH'),10);
         P_TH=exp(lw');
         % check whether the variance and mean of the raw importance ratios is finite

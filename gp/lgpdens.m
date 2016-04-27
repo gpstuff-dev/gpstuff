@@ -264,10 +264,13 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           lws(isnan(lws)|isinf(lws))=-Inf;
           % compute Pareto smoothed log weights given raw log importance weights
           [lws,pk]=psislw(lws);
-          if pk>0.75&pk<1
+          if ismember(opt.display,{'on','iter'})
+              fprintf(' lgpdens: Pareto k=%.2f\n',pk);
+          end
+          if pk>0.7&pk<1
               % with the current proposal, it is quite common to get k\approx 0.6
-              % which is not so bad, and thus don't warn until k>0.75
-              warning('PSIS Pareto k estimate between 0.75 and 1 (%.1f)',pk)
+              % which is not so bad, and thus don't warn until k>0.7
+              warning('PSIS Pareto k estimate between 0.7 and 1 (%.1f)',pk)
           elseif pk>1
               warning('PSIS Pareto k estimate greater than 1 (%.1f)',pk)
           end
@@ -428,10 +431,13 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           lws = lp_th(:) - lp_th_appr(:);
           % compute Pareto smoothed log weights given raw log importance weights
           [lws,pk]=psislw(lws);
-          if pk>0.75&pk<1
+          if ismember(opt.display,{'on','iter'})
+              fprintf(' lgpdens: Pareto k=%.2f\n',pk);
+          end
+          if pk>0.7&pk<1
               % with the current proposal, it is quite common to get k\approx 0.6
-              % which is not so bad, and thus don't warn until k>0.75
-              warning('PSIS Pareto k estimate between 0.5 and 1 (%.1f)',pk)
+              % which is not so bad, and thus don't warn until k>0.7
+              warning('PSIS Pareto k estimate between 0.7 and 1 (%.1f)',pk)
           elseif pk>1
               warning('PSIS Pareto k estimate greater than 1 (%.1f)',pk)
           end
