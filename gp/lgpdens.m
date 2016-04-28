@@ -264,7 +264,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           lws(isnan(lws)|isinf(lws))=-Inf;
           % compute Pareto smoothed log weights given raw log importance weights
           [lws,pk]=psislw(lws);
-          if ismember(opt.display,{'on','iter'})
+          if ismember(display,{'on','iter'})
               fprintf(' lgpdens: Pareto k=%.2f\n',pk);
           end
           if pk>0.7&pk<1
@@ -431,7 +431,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           lws = lp_th(:) - lp_th_appr(:);
           % compute Pareto smoothed log weights given raw log importance weights
           [lws,pk]=psislw(lws);
-          if ismember(opt.display,{'on','iter'})
+          if ismember(display,{'on','iter'})
               fprintf(' lgpdens: Pareto k=%.2f\n',pk);
           end
           if pk>0.7&pk<1
