@@ -244,12 +244,14 @@ switch gp.type
       % -------------------
       nxt = size(xt,1); nblock=10000;
       ind = ceil(nxt./nblock);
-      Eft = zeros(nxt,1);    % Mean
       if isfield(gp,'derivobs') && gp.derivobs==1
-        nderobs = length(y)./length(x);
-        Eft = zeros(nxt,1)*nderobs;    % Mean
+        nderobs = size(y,1)./size(x,1);
+        Eft = zeros(nxt*nderobs,1);    % Mean
+        Varft = zeros(nxt*nderobs,1);    % Variance
+      else
+        Eft = zeros(nxt,1);    % Mean
+        Varft = zeros(nxt,1);    % Variance
       end
-      Varft = zeros(nxt,1);    % Variance
       
       for i1=1:ind
         % Do the prediction in blocks to save memory
