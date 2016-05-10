@@ -136,7 +136,7 @@ if iscell(gp)
 else
   liktype=gp.lik.type;
 end
-if isequal(gp.lik.type, 'Coxph') && isequal(target,'mu')
+if isequal(liktype, 'Coxph') && isequal(target,'mu')
     target='f';
     warning('GP_CPRED: Target ''mu'' not applicable for a Cox-PH model. Switching to target ''f''')
 end

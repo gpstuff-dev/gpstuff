@@ -1,74 +1,61 @@
  IA-CCD: finding the mode
-    Elapsed time 1.26 seconds
+    Elapsed time 1.34 seconds
  IA-CCD: computing Hessian using multiplication
  IA-CCD: 9 points for 2 parameters
  IA-CCD: autoscaling in 4 directions
  IA-CCD: scaling minmax [0.89 1.10]
  IA-CCD: evaluating density at 9 points
- IA-CCD: Total elapsed time 2.73 seconds
+ IA-CCD: Total elapsed time 2.85 seconds
  Iteration  Func-count   Grad-count         f(x)         Step-size
-     0           1           1             102.113    
-     1           2           2             91.7827       0.0878372
-     2           4           4             89.5452        0.119397
-     3           5           5             89.0605               1
-     4           6           6             88.6554               1
-     5           7           7              88.595               1
+     0           1           1             102.417    
+     1           2           2             89.3513       0.0650335
+     2           4           4             87.5645        0.148177
+     3           5           5             86.4853               1
+     4           6           6             85.9438               1
+     5           8           8              84.971        0.430378
  Optimizer Results
   Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
   Exit message : Change in x was smaller than the specified tolerance TolX.
   Iterations : 6
-  Function Count : 8
-  Minimum found : 88.5859
-  Intern Time : 0.005624 seconds
-  Total Time : 1.0349 seconds
-Latent function not monotonic, adding virtual observations.
-Added 2 virtual observations.
- Iteration  Func-count   Grad-count         f(x)         Step-size
-     0           1           1              86.248    
-     1           3           3             85.0875        0.356608
-     2           5           5             85.0312        0.170586
-     3           7           7             84.9894         0.48102
- Optimizer Results
-  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
-  Exit message : Change in x was smaller than the specified tolerance TolX.
-  Iterations : 4
-  Function Count : 8
-  Minimum found : 84.9886
-  Intern Time : 0.006604 seconds
-  Total Time : 1.3787 seconds
+  Function Count : 10
+  Minimum found : 84.9383
+  Intern Time : 0.006423 seconds
+  Total Time : 1.715 seconds
  IA-CCD: finding the mode
+    Elapsed time 2.74 seconds
  IA-CCD: computing Hessian using multiplication
  IA-CCD: 9 points for 2 parameters
  IA-CCD: autoscaling in 4 directions
- IA-CCD: scaling minmax [0.90 1.32]
+ IA-CCD: scaling minmax [0.90 1.35]
  IA-CCD: evaluating density at 9 points
-    Elapsed time 1.35 seconds
- IA-CCD: Total elapsed time 3.11 seconds
+    Elapsed time 1.29 seconds
+ IA-CCD: Total elapsed time 5.31 seconds
  IA-CCD: finding the mode
  IA-CCD: computing Hessian using multiplication
  IA-CCD: 9 points for 2 parameters
  IA-CCD: autoscaling in 4 directions
  IA-CCD: scaling minmax [1.02 1.44]
  IA-CCD: evaluating density at 9 points
- IA-CCD: Total elapsed time 2.41 seconds
+    Elapsed time 1.02 seconds
+ IA-CCD: Total elapsed time 2.67 seconds
  Iteration  Func-count   Grad-count         f(x)         Step-size
-     0           1           1             85.7506    
-     1           3           3             85.6078        0.146294
-     2           4           4             85.5651               1
+     0           1           1             84.3228    
+     1           3           3             84.0392        0.112757
+     2           4           4             83.9396               1
  Optimizer Results
   Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
   Exit message : Change in the objective function value was less than TolFun.
   Iterations : 3
   Function Count : 5
-  Minimum found : 85.5549
-  Intern Time : 0.003272 seconds
-  Total Time : 0.63927 seconds
+  Minimum found : 83.9237
+  Intern Time : 0.003398 seconds
+  Total Time : 0.6747 seconds
  IA-CCD: finding the mode
-    Elapsed time 2.16 seconds
+    Elapsed time 2.32 seconds
  IA-CCD: computing Hessian using multiplication
  IA-CCD: 9 points for 2 parameters
  IA-CCD: autoscaling in 4 directions
- IA-CCD: scaling minmax [1.00 1.35]
+ IA-CCD: scaling minmax [1.02 1.32]
  IA-CCD: evaluating density at 9 points
- IA-CCD: Total elapsed time 4.17 seconds
-Demo completed in 0.408 minutes
+ IA-CCD: Total elapsed time 4.41 seconds
+Demo completed in 0.439 minutes
