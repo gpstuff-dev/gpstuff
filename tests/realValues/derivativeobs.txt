@@ -3,24 +3,23 @@ Checking gradient ...
 
    analytic   diffs     delta
 
-    2.6657    2.6657    0.0000
-   -3.7894   -3.7894   -0.0000
-    1.6251    1.6251    0.0000
+    2.2001    2.2001    0.0000
+   -1.0624   -1.0624   -0.0000
 
- TolX reached. Func-count 19. Final f(x)=2.89367. Elapsed time 0.17
+ TolFun reached. Func-count 17. Final f(x)=5.67863. Elapsed time 0.12
 GP model with derivative obs
 Checking gradient ...
 
    analytic   diffs     delta
 
-    4.3476    4.3476    0.0000
-  -13.6379  -13.6379   -0.0000
-    4.4016    4.4016   -0.0000
+    3.6684    3.6684    0.0000
+  -10.3567  -10.3567   -0.0000
+    1.1596    1.1596    0.0000
 
- TolFun reached. Func-count 26. Final f(x)=-8.68413. Elapsed time 0.23
+ TolX reached. Func-count 19. Final f(x)=3.15085. Elapsed time 0.17
 
  gp hyperparameters: 
  
-   -1.5025   -0.2305   -4.9053
+   -1.6957   -0.3805   -4.1351
 
-Demo completed in 0.014 minutes
+Demo completed in 0.012 minutes

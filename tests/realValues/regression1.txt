@@ -23,20 +23,20 @@ C =
     0.0019    0.0187    0.0800
 
  MAP estimate for the parameters
- TolFun reached. Func-count 33. Final f(x)=41.4902. Elapsed time 0.58
+ TolFun reached. Func-count 33. Final f(x)=41.4902. Elapsed time 0.65
     'log(sexp.magnSigma2)'
     'log(sexp.lengthScale x 2)'
     'log(gaussian.sigma2)'
 
-    3.5983    0.8838    0.8323    0.0428
+    3.5984    0.8838    0.8323    0.0428
 
  Grid integration over the parameters
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
  IA-grid: evaluated density at 341 points
-    Elapsed time 12.01 seconds
- IA-grid: Total elapsed time 20.93 seconds
+    Elapsed time 11.44 seconds
+ IA-grid: Total elapsed time 19.63 seconds
  MCMC integration over the parameters
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
@@ -44,17 +44,17 @@ C =
    40  42.705  sls  
    60  42.124  sls  
    80  44.214  sls  
-  100  42.966  sls  
+  100  42.967  sls  
   120  43.217  sls  
   140  41.865  sls  
   160  44.764  sls  
   180  42.241  sls  
   200  41.686  sls  
-  220  42.983  sls  
+  220  42.984  sls  
 Done
 
  gp hyperparameters: 
  
     1.2805   -0.1235   -0.1836   -3.1521
 
-Demo completed in 1.001 minutes
+Demo completed in 1.078 minutes
