@@ -701,7 +701,7 @@ function g = gpmc_g(w, gp, x, y, f, z)
         && isequal(gp.latent_method, 'MCMC')
       g=[g gp_g(w, gp, x, [y; f], 'z', z)];
     else
-      g=[g gp_e(w, gp, x, f, 'z', z)];
+      g=[g gp_g(w, gp, x, f, 'z', z)];
     end
   end
   if ~isempty(strfind(gp.infer_params, 'likelihood')) ...

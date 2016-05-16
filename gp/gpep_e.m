@@ -527,7 +527,7 @@ end
         ch.datahash=datahash;
       end
       
-    else % diagonal W
+    else % isfield(gp.lik,'nondiagW') % diagonal W
       
       if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
         % The covariance function parameters or data haven't changed
