@@ -277,42 +277,11 @@ switch gp.type
               np=length(DKffa);
               gprior_cf = -gpcf.fh.lpg(gpcf);
           else
-%             if m==1
-%               
-%               DKffa = gpcf.fh.cfg(gpcf, x);
-%               DKdf = gpcf.fh.cfdg(gpcf, x);
-%               DKdd = gpcf.fh.cfdg2(gpcf, x);
-%               gprior_cf = -gpcf.fh.lpg(gpcf);
-%               
-%               % DKff{1} -- d K / d magnSigma2
-%               % DKff{2} -- d K / d lengthScale
-%               DKffc{1} = [DKffa{1}, DKdf{1}'; DKdf{1}, DKdd{1}];
-%               DKffc{2} = [DKffa{2}, DKdf{2}'; DKdf{2}, DKdd{2}];
-%               np=2;
-%               
-%             else
-              %Case: input dimension is >1
+
               DKffa = gpcf.fh.cfg(gpcf, x);
               DKdf = gpcf.fh.cfdg(gpcf, x);
               DKdd = gpcf.fh.cfdg2(gpcf, x);
               gprior_cf = -gpcf.fh.lpg(gpcf);
-              
-%               %Check whether ARD method is in use (with gpcf_sexp)
-%               Ard=length(gpcf.lengthScale);              
-%               
-%               % DKff{1} - d K / d magnSigma2
-%               % DKff{2:end} - d K / d lengthScale(1:end)
-%               for i=1:2
-%                 DKffc{i}=[DKffa{i} DKdf{i}';DKdf{i} DKdd{i}];
-%               end
-%               
-%               %If ARD is in use
-%               if Ard>1
-%                 for i=2+1:2+Ard-1
-%                   DKffc{i}=[DKffa{i} DKdf{i}';DKdf{i} DKdd{i}];
-%                 end
-%               end
-%               np=length(DKffc);
               
               np=length(DKffa);
               for inp=1:np

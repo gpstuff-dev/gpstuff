@@ -734,7 +734,10 @@ function DKff = gpcf_sexp_cfdg(gpcf, x, x2)
 %    m is the dimension of inputs. If ARD is used, then multiple
 %    lengthScales. This subfunction is needed when using derivative 
 %    observations.
-
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
 %
 %  See also
 %    GPCF_SEXP_GINPUT
@@ -794,7 +797,7 @@ function DKff = gpcf_sexp_cfdg(gpcf, x, x2)
       else
         % In the case ARD is used
         if m~=length(gpcf.lengthScale)
-          error('Amount of lengtscales dont match input dimension')
+          error('Amount of lengtscales does not match input dimension')
         end
         %Preparing
         for i=1:m
@@ -839,7 +842,10 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
 %    m is the dimension of inputs. If ARD is used, then multiple
 %    lengthScales. This subfunction is needed when using derivative 
 %    observations.
-
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
 %
 %  See also
 %   GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2 
@@ -892,8 +898,6 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
       ii1=ii1+1;
       DKff{ii1}=DKffapu;
     end
-  else
-    error('no prior set to magnSigma')
   end  
   
   % grad with respect to LENGTHSCALE
@@ -1154,7 +1158,7 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2, i1)
   end
 end
 
-function [DKff, DKff1, DKff2]  = gpcf_sexp_ginput2(gpcf, x, x2)
+function [DKff, DKff1, DKff2]  = gpcf_sexp_ginput2(gpcf, x, x2, takeOnlyDiag)
 %GPCF_SEXP_GINPUT2  Evaluate gradient of covariance function with
 %                   respect to both input variables x and x2 (in
 %                   same dimension).
@@ -1170,41 +1174,49 @@ function [DKff, DKff1, DKff2]  = gpcf_sexp_ginput2(gpcf, x, x2)
 %    DKff2. This subfunction is needed when using derivative 
 %    observations.
 %   
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
 %  See also
 %    GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2, GPCF_SEXP_CFDG2 
   
   [n, m] =size(x);
   [n2,m2] =size(x2);
   ii1 = 0;
-  if nargin ~= 3
+  if nargin < 3
     error('Needs 3 input arguments')
   end
   
-  if isequal(x,x2)
-    K = gpcf.fh.trcov(gpcf, x); 
+  if nargin==4 && isequal(takeOnlyDiag,'takeOnlyDiag')
+      DKff=gpcf.magnSigma2.*ones(m*n,1);
   else
-    K = gpcf.fh.cov(gpcf, x, x2);
-  end
-
-  %metric doesn't work with grad.obs on
-  if isfield(gpcf,'metric')
-    error('Metric doesnt work with grad.obs')
-  else
-      s = zeros(1, m);
-      if isfield(gpcf,'selectedVariables')
-          s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
+      if isequal(x,x2)
+          K = gpcf.fh.trcov(gpcf, x);
       else
-          s(1:m) = 1./gpcf.lengthScale.^2;
+          K = gpcf.fh.cov(gpcf, x, x2);
       end
-
-    for i=1:m
-      DK2 = s(i).^2.*bsxfun(@minus,x(:,i),x2(:,i)').^2.*K;
-      DK = s(i).*K;     
-      ii1 = ii1 + 1;
-      DKff1{ii1} = DK;
-      DKff2{ii1} = DK2;
-      DKff{ii1} = DK - DK2;
-    end
+      
+      %metric doesn't work with grad.obs on
+      if isfield(gpcf,'metric')
+          error('Metric doesnt work with grad.obs')
+      else
+          s = zeros(1, m);
+          if isfield(gpcf,'selectedVariables')
+              s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
+          else
+              s(1:m) = 1./gpcf.lengthScale.^2;
+          end
+          
+          for i=1:m
+              DK2 = s(i).^2.*bsxfun(@minus,x(:,i),x2(:,i)').^2.*K;
+              DK = s(i).*K;
+              ii1 = ii1 + 1;
+              DKff1{ii1} = DK;
+              DKff2{ii1} = DK2;
+              DKff{ii1} = DK - DK2;
+          end
+      end
   end
 end
 
@@ -1222,7 +1234,22 @@ function DKff = gpcf_sexp_ginput3(gpcf, x, x2)
 %    problem between input's observation dimensions which are not
 %    same. This subfunction is needed when using derivative 
 %    observations.
+%
+%    DKff is a cell array with the following elements:
+%      DKff{1} = dk(X1,X2)/dX1_1dX2_2
+%      DKff{2} = dk(X1,X2)/dX1_1dX2_3
+%       ... 
+%      DKff{m-1} = dk(X1,X2)/dX1_1dX2_m
+%      DKff{m} = dk(X1,X2)/dX1_2dX2_3
+%       ...
+%      DKff{m} = dk(X1,X2)/dX1_(m-1)dX2_m
+%    where _m denotes the input dimension with respect to which the
+%    gradient is calculated.
 %   
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
 %  See also
 %    GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2, GPCF_SEXP_CFDG2 
   
@@ -1280,6 +1307,10 @@ function DKff = gpcf_sexp_ginput4(gpcf, x, x2, i1)
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to X (whole matrix). This subfunction 
 %    is needed when using derivative observations.
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
 %
 %  See also
 %    GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LP, GP_G
