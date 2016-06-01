@@ -36,12 +36,17 @@ if ~isempty(x)
     Kn = gp_trvar(gp,x_new);
     Ef = Knx*a; Ef=Ef(1:size(x_new,1));
     invCKnxt = invC*Knx';
-    Varf = Kn - sum(Knx.*invCKnxt',2); Varf=Varf(1:size(x_new,1));
+    Varf = Kn - sum(Knx.*invCKnxt',2); 
+    Varf=max(Varf(1:size(x_new,1)),0);
     
     % expected improvement
-    CDFpart = normcdf( (fmin - Ef)./sqrt(Varf) );
-    PDFpart = normpdf( (fmin - Ef)./sqrt(Varf) );
-    %EI =  (fmin - Ef).*normcdf( (fmin - Ef)./sqrt(Varf) ) + sqrt(Varf).*normpdf( (fmin - Ef)./sqrt(Varf) );
+    posvar=find(Varf>0);
+    CDFpart = zeros(size(Varf));
+    PDFpart = zeros(size(Varf));
+    tmp = (fmin - Ef(posvar))./sqrt(Varf(posvar));
+    CDFpart(posvar) = normcdf(tmp);
+    CDFpart(~posvar) = (fmin - Ef(~posvar))>0;
+    PDFpart(posvar) = normpdf(tmp);
     EI =  (fmin - Ef).*CDFpart + sqrt(Varf).*PDFpart;
 else
     EI = 1;
