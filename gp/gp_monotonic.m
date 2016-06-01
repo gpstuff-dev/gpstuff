@@ -143,41 +143,46 @@ if isequal(optimize, 'on')
   gp=gp_optim(gp,x,y,'opt',opt, 'z', z, 'optimf', optimf);
 end
 
-n=size(x,1);
-nblocks = 10;
-[tmp,itst]=cvit(size(x,1),nblocks);
-% Predict gradients at the training points 
-Ef=zeros(size(x,1),nvd);
-for i=1:nblocks
-  % Predict in blocks to save memory
-  Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
+
+
+if force
+    % Predict gradients at the training points 
+    n=size(x,1);
+    nblocks = 10;
+    [tmp,itst]=cvit(size(x,1),nblocks);
+    Ef=zeros(size(x,1),nvd);
+    for i=1:nblocks
+      % Predict in blocks to save memory
+      Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
+    end
+    % Check if monotonicity is satisfied
+    yv=round(gp.nvd./abs(gp.nvd));
+    while any(any(bsxfun(@times,Ef, yv)<-nu))
+      % Monotonicity not satisfied, add 2 "most wrong" predictions, for each 
+      % dimension, from the observation set to the virtual observations.
+      fprintf('Latent function not monotonic, adding virtual observations.\n');
+      for j=1:nvd
+        [~,ind(:,j)]=sort(Ef(:,j).*yv(j),'ascend');
+      end
+      ind=ind(1:2,:);
+      inds=unique(ind(:));
+      clear ind;
+      fprintf('Added %d virtual observations.\n', length(inds));
+      xv=[xv;x(inds,:)];
+      gp.xv=xv;
+      gpep_e('clearcache',gp);
+      if isequal(optimize, 'on')
+        gp=gp_optim(gp,x,y,'opt',opt,'z',z, 'optimf', optimf);
+      end
+      % Predict gradients at the training points
+      %Ef=gpep_predgrad(gp,x,y,x,'z',z);
+      for i=1:nblocks
+        % Predict in blocks to save memory
+        Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
+      end
+    end
 end
-% Check if monotonicity is satisfied
-yv=round(gp.nvd./abs(gp.nvd));
-while any(any(bsxfun(@times,Ef, yv)<-nu)) && force
-  % Monotonicity not satisfied, add 2 "most wrong" predictions, for each 
-  % dimension, from the observation set to the virtual observations.
-  fprintf('Latent function not monotonic, adding virtual observations.\n');
-  for j=1:nvd
-    [~,ind(:,j)]=sort(Ef(:,j).*yv(j),'ascend');
-  end
-  ind=ind(1:2,:);
-  inds=unique(ind(:));
-  clear ind;
-  fprintf('Added %d virtual observations.\n', length(inds));
-  xv=[xv;x(inds,:)];
-  gp.xv=xv;
-  gpep_e('clearcache',gp);
-  if isequal(optimize, 'on')
-    gp=gp_optim(gp,x,y,'opt',opt,'z',z, 'optimf', optimf);
-  end
-  % Predict gradients at the training points
-  %Ef=gpep_predgrad(gp,x,y,x,'z',z);
-  for i=1:nblocks
-    % Predict in blocks to save memory
-    Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
-  end
-end
+
 
 end
 
