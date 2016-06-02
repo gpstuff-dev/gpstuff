@@ -52,9 +52,9 @@ else
 	tmp2=cat(1,rs(:).(names{i1}));
 	for i2=1:length(tmp1(:))
 	  %eval(['r.' names{i1} '{i2}=cat(1,tmp2{:,i2});']);
-	  r.(names{i1}){i2}=cat(1,tmp2{:,i2});
+	  r.(names{i1}){i2}=join([tmp2{:,i2}]);
 	end
-      elseif length(tmp1) > 1 || joinall
+      elseif ~ischar(tmp1) && (length(tmp1) > 1 || joinall)
 	%eval(['r.' names{i1} '=cat(1,rs.' names{i1} ');']);
 	r.(names{i1})=cat(1,rs.(names{i1}));
       end

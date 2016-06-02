@@ -23,7 +23,7 @@ function lik = lik_weibull(varargin)
 %                  __ n
 %      p(y|f, z) = || i=1 [ r^(1-z_i) exp( (1-z_i)*(-f_i)
 %                           +(1-z_i)*(r-1)*log(y_i)
-%                           -exp(-f_i)*y_i^r) ]
+%                           -exp(-f_i)*y_i^r ) ]
 %
 %    where r is the shape parameter of Weibull distribution.  z is a
 %    vector of censoring indicators with z = 0 for uncensored event

@@ -639,7 +639,11 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 % Select monotonic dimensions
                 inds=[];
                 nvd=abs(gp.nvd);
-                for idd=1:length(gp.nvd)
+                if isfield(gpcf,'selectedVariables')
+                    [~,nvd]=ismember(nvd,gpcf.selectedVariables);
+                    nvd=nvd(logical(nvd));
+                end
+                for idd=1:length(nvd)
                   inds=[inds size(x,1)*(nvd(idd)-1)+1:size(x,1)*nvd(idd)];
                 end
                 for ijj=1:length(DKffa)

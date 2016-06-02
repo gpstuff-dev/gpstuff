@@ -11,3 +11,4 @@ auto
 _region_.*
 \#*\#
 SuiteSparse/
+*.mexa64

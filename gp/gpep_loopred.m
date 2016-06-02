@@ -63,8 +63,12 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
     Varft=Varft(1:n);
     lpyt=lpyt(1:n);
     if nargout > 3
-      Eyt=Eyt(1:n);
-      Varyt=Varyt(1:n);
+      if isempty(Eyt)
+        warning(sprintf('Ey and Vary not computed for %s ',gp.lik.type))
+      else
+        Eyt=Eyt(1:n);
+        Varyt=Varyt(1:n);
+      end
     end
   end
 end

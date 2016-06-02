@@ -41,7 +41,7 @@
 % License.txt, included with the software, for details.
 
 % Create the data
-tp=9;                                  %number of training points -1
+tp=5;                                  %number of training points -1
 x=[-2:4/tp:2]';
 y=sin(x).*cos(x).^2;                   % The underlying process
 dy=cos(x).^3 - 2*sin(x).^2.*cos(x);    % Derivative of the process
@@ -70,6 +70,8 @@ gpcf = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5, ...
                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Use default Gaussian likelihood
 gp = gp_set('cf', gpcf);
+gp.lik.sigma2=0.06.^2;
+gp.lik.p.sigma2=[];
 
 % Set the options for the optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'DerivativeCheck','on');

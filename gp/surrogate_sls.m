@@ -21,15 +21,14 @@ function [samples,samplesf,diagn] = surrogate_sls(f, x, opt, gp, xx, yy, z, vara
 %
 %  See also
 %    METROP2, HMC2, SLS_OPT, SLS
-
+%
 %  Based on "Slice Sampling" by Radford M. Neal in "The Annals of Statistics"
 %  2003, Vol. 31, No. 3, 705-767, (c) Institute of Mathematical Statistics, 2003
 %  "Slice sampling covariance hyperparameters of latent Gaussian models"
 %  by Iain Murray and Ryan P. Adams, 2010, Arxiv preprint arXiv:1006.0868
-
+%
 %  Copyright (c) Toni Auranen, 2003-2006
 %  Copyright (c) Ville Tolvanen, 2012
-
 
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 

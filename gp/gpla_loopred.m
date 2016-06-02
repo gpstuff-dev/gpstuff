@@ -36,6 +36,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPLA_LOOPRED';
+
   ip=iparser(ip,'addRequired','gp', @(x) isstruct(x));
   ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
   ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
@@ -43,6 +44,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
   ip=iparser(ip,'addParamValue','method', 'lrs', @(x) ismember(x, {'lrs' 'cavity' 'inla'}));
   ip=iparser(ip,'addParamValue','fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}));
   ip=iparser(ip,'parse',gp, x, y, varargin{:});
+
   z=ip.Results.z;
   method = ip.Results.method;
   fcorr=ip.Results.fcorr;

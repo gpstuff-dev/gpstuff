@@ -84,7 +84,7 @@ disp(['Optimized magnitude sigma^2: ' num2str(gpep.cf{1}.magnSigma2)])
 disp(['Optimized lengthscales: ' num2str(gpep.cf{1}.lengthScale)])
 
 %- compute the predictions for the test data
-[Eftep, Covftep, lpytep] = gpep_pred(gpep, x, y, xt,'yt', ones(size(xt,1),size(y,2)));
+[Eftep, Covftep, lpytep] = gp_pred(gpep, x, y, xt,'yt', ones(size(xt,1),size(y,2)));
 
 % calculate the percentage of misclassified points
 ttep = (exp(lpytep)==repmat(max(exp(lpytep),[],2),1,size(lpytep,2)));
@@ -97,7 +97,7 @@ xtg2 = meshgrid(linspace(min(x(:,2))-.1, max(x(:,2))+.1, 30))';
 xtg=[xtg1(:) xtg2(:) repmat(mean(x(:,3:4)), size(xtg1(:),1),1)];
 
 %- compute the predictions in a 2D grid
-[Eft, Covft, lpg] = gpep_pred(gpep, x, y, xtg,'yt', ones(size(xtg,1),size(y,2)));
+[Eft, Covft, lpg] = gp_pred(gpep, x, y, xtg,'yt', ones(size(xtg,1),size(y,2)));
 
 %- plot the training data
 figure, hold on

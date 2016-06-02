@@ -17,13 +17,7 @@ function  gpmf = gpmf_squared(varargin)
 %                          functions' weight prior (default 0)
 %      prior_cov         - prior covariances (scalar or vector) 
 %                          for base functions' prior corresponding
-%                          each selected input dimension. In 
-%                          multiple dimension case prior_cov is a
-%                          struct containing scalars or vectors.
-%                          The covariances must all be either
-%                          scalars (diagonal cov.matrix) or
-%                          vectors (for non-diagonal cov.matrix)
-%                          (default 100)
+%                          each selected input dimension (default 100)
 %      selectedVariables - vector defining which inputs are active
 % 
 %  See also
@@ -39,6 +33,7 @@ function  gpmf = gpmf_squared(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPMF_SQUARED';
+
   ip=iparser(ip,'addOptional','gpmf', [], @isstruct);
   ip=iparser(ip,'addParamValue','selectedVariables',[], @(x) isvector(x) && all(x>0));
   ip=iparser(ip,'addParamValue','interactions', 'off', @(x) islogical(x) || ismember(x,{'on' 'off'}));
@@ -47,6 +42,7 @@ function  gpmf = gpmf_squared(varargin)
   ip=iparser(ip,'addParamValue','mean_prior', [], @isstruct);
   ip=iparser(ip,'addParamValue','cov_prior', [], @isstruct);
   ip=iparser(ip,'parse',varargin{:});
+
   gpmf=ip.Results.gpmf;
   
   if isempty(gpmf)
