@@ -40,6 +40,8 @@ function gp = gp_monotonic(gp, varargin)
 %      force    - Boolean value indicating whether the monotonicity is
 %                 forced by adding virtual observations until the function
 %                 becomes monotonic at the training points. Default = true
+%      display  - true or false, indicating whether to display some
+%                 information when relevant. Default = true.
 %      optimize - Option whether to optimize GP parameters. Default = 'off'. 
 %      opt      - Options structure for optimizer.
 %      optimf   - Function handle for an optimization function, which is
@@ -73,6 +75,7 @@ ip.addParamValue('nv', [], @(x) isreal(x) && isscalar(x))
 ip.addParamValue('init', 'sample', @(x) ismember(x, {'sample', 'kmeans'}));
 ip.addParamValue('xv', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('force', true, @(x) islogical(x));
+ip.addParamValue('display', true, @(x) islogical(x));
 ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
 ip.addParamValue('opt', [], @isstruct)
 ip.addParamValue('optimize', 'off', @(x) ismember(x, {'on', 'off'}));
@@ -85,6 +88,7 @@ nu=ip.Results.nu;
 nv=ip.Results.nv;
 init=ip.Results.init;
 force = ip.Results.force;
+display = ip.Results.display;
 opt=ip.Results.opt;
 optimf=ip.Results.optimf;
 optimize=ip.Results.optimize;
@@ -132,7 +136,9 @@ if isempty(opt) || ~isfield(opt, 'TolX')
   opt=optimset('TolX',1e-4,'TolFun',1e-4,'Display','iter');
 end
 if ~isfield(gp,'latent_method') || ~strcmpi(gp.latent_method,'EP')
-    fprintf('Switching the latent method to EP.\n');
+    if display
+        fprintf('Switching the latent method to EP.\n');
+    end
     gp=gp_set(gp,'latent_method','EP');
 end
 gp.latent_opt.init_prev='off';
@@ -160,14 +166,18 @@ if force
     while any(any(bsxfun(@times,Ef, yv)<-nu))
       % Monotonicity not satisfied, add 2 "most wrong" predictions, for each 
       % dimension, from the observation set to the virtual observations.
-      fprintf('Latent function not monotonic, adding virtual observations.\n');
+      if display
+          fprintf('Latent function not monotonic, adding virtual observations.\n');
+      end
       for j=1:nvd
         [~,ind(:,j)]=sort(Ef(:,j).*yv(j),'ascend');
       end
       ind=ind(1:2,:);
       inds=unique(ind(:));
       clear ind;
-      fprintf('Added %d virtual observations.\n', length(inds));
+      if display
+        fprintf('Added %d virtual observations.\n', length(inds));
+      end
       xv=[xv;x(inds,:)];
       gp.xv=xv;
       gpep_e('clearcache',gp);
