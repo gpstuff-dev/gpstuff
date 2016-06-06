@@ -57,7 +57,6 @@ ip=iparser(ip,'addParamValue','plot', 'off', @(x)  ismember(x, {'on', 'off'}));
 ip=iparser(ip,'addParamValue','tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addParamValue','target', 'mu', @(x) ismember(x,{'f','mu','cdf'}));
 ip=iparser(ip,'addParamValue','prct', [5 50 95], @(x) isreal(x) && all(isfinite(x(:))));
-ip=iparser(ip,'addParamValue','normdata', struct(), @(x) isempty(x) || isstruct(x));
 ip=iparser(ip,'addParamValue','xlabels', [], @(x) isempty(x) || iscell(x));
 ip=iparser(ip,'parse',gp, x, y, xt, ind, varargin{:});
 
@@ -169,7 +168,7 @@ if length(ind)==1
   end
   if isequal(plot_results, 'on')
     if ind>0
-      if ind>=1&numel(nd.xmean)>=ind
+      if ind>=1 && numel(nd.xmean)>=ind
         xtnn=denormdata(xtnn,nd.xmean(ind),nd.xstd(ind));
       end
       deltadist=gp_finddeltadist(gp);
