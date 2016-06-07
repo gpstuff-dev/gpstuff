@@ -37,6 +37,11 @@ function gp = gp_monotonic(gp, varargin)
 %      nu       - The strictness of the monotonicity information, with a 
 %                 smaller values corresponding to the more strict information. 
 %                 Default is 1e-6.
+%      force    - Boolean value indicating whether the monotonicity is
+%                 forced by adding virtual observations until the function
+%                 becomes monotonic at the training points. Default = true
+%      display  - true or false, indicating whether to display some
+%                 information when relevant. Default = true.
 %      optimize - Option whether to optimize GP parameters. Default = 'off'. 
 %      opt      - Options structure for optimizer.
 %      optimf   - Function handle for an optimization function, which is
@@ -69,6 +74,8 @@ ip.addParamValue('nu', 1e-6, @(x) isreal(x) && isscalar(x) && (x>0))
 ip.addParamValue('nv', [], @(x) isreal(x) && isscalar(x))
 ip.addParamValue('init', 'sample', @(x) ismember(x, {'sample', 'kmeans'}));
 ip.addParamValue('xv', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('force', true, @(x) islogical(x));
+ip.addParamValue('display', true, @(x) islogical(x));
 ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
 ip.addParamValue('opt', [], @isstruct)
 ip.addParamValue('optimize', 'off', @(x) ismember(x, {'on', 'off'}));
@@ -80,6 +87,8 @@ z=ip.Results.z;
 nu=ip.Results.nu;
 nv=ip.Results.nv;
 init=ip.Results.init;
+force = ip.Results.force;
+display = ip.Results.display;
 opt=ip.Results.opt;
 optimf=ip.Results.optimf;
 optimize=ip.Results.optimize;
@@ -127,7 +136,9 @@ if isempty(opt) || ~isfield(opt, 'TolX')
   opt=optimset('TolX',1e-4,'TolFun',1e-4,'Display','iter');
 end
 if ~isfield(gp,'latent_method') || ~strcmpi(gp.latent_method,'EP')
-    fprintf('Switching the latent method to EP.\n');
+    if display
+        fprintf('Switching the latent method to EP.\n');
+    end
     gp=gp_set(gp,'latent_method','EP');
 end
 gp.latent_opt.init_prev='off';
@@ -137,40 +148,51 @@ if isequal(optimize, 'on')
   % Optimize the parameters
   gp=gp_optim(gp,x,y,'opt',opt, 'z', z, 'optimf', optimf);
 end
-n=size(x,1);
-[tmp,itst]=cvit(size(x,1),10);
-% Predict gradients at the training points 
-Ef=zeros(size(x,1),nvd);
-for i=1:10
-  % Predict in blocks to save memory
-  Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
+
+
+
+if force
+    % Predict gradients at the training points 
+    n=size(x,1);
+    nblocks = 10;
+    [tmp,itst]=cvit(size(x,1),nblocks);
+    Ef=zeros(size(x,1),nvd);
+    for i=1:nblocks
+      % Predict in blocks to save memory
+      Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
+    end
+    % Check if monotonicity is satisfied
+    yv=round(gp.nvd./abs(gp.nvd));
+    while any(any(bsxfun(@times,Ef, yv)<-nu))
+      % Monotonicity not satisfied, add 2 "most wrong" predictions, for each 
+      % dimension, from the observation set to the virtual observations.
+      if display
+          fprintf('Latent function not monotonic, adding virtual observations.\n');
+      end
+      for j=1:nvd
+        [~,ind(:,j)]=sort(Ef(:,j).*yv(j),'ascend');
+      end
+      ind=ind(1:2,:);
+      inds=unique(ind(:));
+      clear ind;
+      if display
+        fprintf('Added %d virtual observations.\n', length(inds));
+      end
+      xv=[xv;x(inds,:)];
+      gp.xv=xv;
+      gpep_e('clearcache',gp);
+      if isequal(optimize, 'on')
+        gp=gp_optim(gp,x,y,'opt',opt,'z',z, 'optimf', optimf);
+      end
+      % Predict gradients at the training points
+      %Ef=gpep_predgrad(gp,x,y,x,'z',z);
+      for i=1:nblocks
+        % Predict in blocks to save memory
+        Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
+      end
+    end
 end
-% Check if monotonicity is satisfied
-yv=round(gp.nvd./abs(gp.nvd));
-while any(any(bsxfun(@times,Ef, yv)<-nu))
-  % Monotonicity not satisfied, add 2 "most wrong" predictions, for each 
-  % dimension, from the observation set to the virual observations.
-  fprintf('Latent function not monotonic, adding virtual observations.\n');
-  for j=1:nvd
-    [~,ind(:,j)]=sort(Ef(:,j).*yv(j),'ascend');
-  end
-  ind=ind(1:2,:);
-  inds=unique(ind(:));
-  clear ind;
-  fprintf('Added %d virtual observations.\n', length(inds));
-  xv=[xv;x(inds,:)];
-  gp.xv=xv;
-  gpep_e('clearcache',gp);
-  if isequal(optimize, 'on')
-    gp=gp_optim(gp,x,y,'opt',opt,'z',z, 'optimf', optimf);
-  end
-  % Predict gradients at the training points
-  %Ef=gpep_predgrad(gp,x,y,x,'z',z);
-  for i=1:10
-    % Predict in blocks to save memory
-    Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
-  end
-end
+
 
 end
 
