@@ -9,14 +9,22 @@ function [Ef, Varf, xtnn, xt1, xt2] = gp_cpred(gp,x,y,xt,ind,varargin)
 %    is used as a covariate for Cox-PH model.
 %
 %   OPTIONS is optional parameter-value pair
-%      predcf - an index vector telling which covariance functions are 
-%               used for prediction. Default is all (1:gpcfn). 
-%               See additional information below.
 %      method - which value to fix the not used covariates, 'median'
 %               (default), 'mean' or 'mode'
 %      var    - vector specifying optional values for not used covariates,
 %               elements corresponding to mean/median values should 
 %               be set to NaN. 
+%      plot   - option for plotting, 'off' (default) or 'on'
+%      normdata - a structure with fields xmean, xstd, ymean, and ystd
+%               to allow plotting in the original data scale (see
+%               functions normdata and denormdata)
+%      target - option for choosing what is computed 'mu' (default),
+%               'f' or 'cdf'
+%      tr     - Euclidean distance treshold for not using grid points when
+%               doing predictions with 2 covariates, default 0.25
+%      predcf - an index vector telling which covariance functions are 
+%               used for prediction. Default is all (1:gpcfn). 
+%               See additional information below.
 %      z      - optional observed quantity in triplet (x_i,y_i,z_i)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
@@ -25,15 +33,11 @@ function [Ef, Varf, xtnn, xt1, xt2] = gp_cpred(gp,x,y,xt,ind,varargin)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, the expected 
 %               value for the ith case. 
-%      plot   - option for plotting, 'off' (default) or 'on'
-%      target - option for choosing what is computed 'mu' (default),
-%               'f' or 'cdf'
-%      tr     - Euclidean distance treshold for not using grid points when
-%               doing predictions with 2 covariates, default 0.25
 
 
 ip=inputParser;
 ip.FunctionName = 'GP_CPRED';
+
 ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || iscell(x));
 ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
@@ -53,7 +57,9 @@ ip=iparser(ip,'addParamValue','plot', 'off', @(x)  ismember(x, {'on', 'off'}));
 ip=iparser(ip,'addParamValue','tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addParamValue','target', 'mu', @(x) ismember(x,{'f','mu','cdf'}));
 ip=iparser(ip,'addParamValue','prct', [5 50 95], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','xlabels', [], @(x) isempty(x) || iscell(x));
 ip=iparser(ip,'parse',gp, x, y, xt, ind, varargin{:});
+
 zt=ip.Results.zt;
 options=struct();
 options.predcf=ip.Results.predcf;
@@ -64,6 +70,9 @@ vars = ip.Results.var;
 plot_results = ip.Results.plot;
 tr = ip.Results.tr;
 target = ip.Results.target;
+if strcmp(target,'f')
+    options = rmfield(options,'prct');
+end
 yt=ip.Results.yt;
 if ~isempty(yt)
   options.yt=yt;
@@ -100,7 +109,8 @@ else
 end
 
 if isequal(liktype, 'Coxph') && isequal(target,'mu')
-  error('GP_CPRED: Target ''mu'' not applicable for a Cox-PH model')
+    target='f';
+    warning('GP_CPRED: Target ''mu'' not applicable for a Cox-PH model. Switching to target ''f''')
 end
 
 if ~isempty(vars) && (~isvector(vars) || length(vars) ~= nin)
@@ -143,7 +153,7 @@ if length(ind)==1
         Ef = cdf; Varf = [];
     end
   else
-    [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt, rmfield(options, 'prct'));
+    [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt,'z',options.z,'zt',options.zt);
     nt=size(Ef1,1);
     if ind>0
       % conditional posterior given Ef1=E[Ef1]
@@ -158,7 +168,9 @@ if length(ind)==1
   end
   if isequal(plot_results, 'on')
     if ind>0
-      xtnn=denormdata(xtnn,nd.xmean(ind),nd.xstd(ind));
+      if ind>=1 && numel(nd.xmean)>=ind
+        xtnn=denormdata(xtnn,nd.xmean(ind),nd.xstd(ind));
+      end
       deltadist=gp_finddeltadist(gp);
       if ~ismember(ind,deltadist)
         switch target
@@ -232,16 +244,16 @@ elseif length(ind)==2
     if ~strcmp(liktype, 'Coxph')
       switch target
         case 'f'
-          [Ef1, Varf1] = gp_pred(gp, x, y, xt1, rmfield(options1, 'prct'));
-          [Ef2, Varf2] = gp_pred(gp, x, y, xt2, rmfield(options2, 'prct'));
+          [Ef1, Varf1] = gp_pred(gp, x, y, xt1);
+          [Ef2, Varf2] = gp_pred(gp, x, y, xt2);
         case 'mu'
           prctmu1 = denormdata(gp_predprctmu(gp, x, y, xt1, options1),nd.ymean,nd.ystd);
           prctmu2 = denormdata(gp_predprctmu(gp, x, y, xt2, options2),nd.ymean,nd.ystd);
       end
     else
-      [Ef11,Ef12,Covf] = pred_coxph(gp,x,y,xt1, rmfield(options1, 'prct'));
+      [Ef11,Ef12,Covf] = pred_coxph(gp,x,y,xt1, 'z', z);
       Ef1 = Ef12; Varf1 = diag(Covf(size(Ef11,1)+1:end,size(Ef11,1)+1:end));
-      [Ef21,Ef22,Covf] = pred_coxph(gp,x,y,xt2, rmfield(options2, 'prct'));
+      [Ef21,Ef22,Covf] = pred_coxph(gp,x,y,xt2, 'z', z);
       Ef2 = Ef22; Varf2 = diag(Covf(size(Ef21,1)+1:end,size(Ef21,1)+1:end));
     end
     
@@ -294,12 +306,14 @@ elseif length(ind)==2
     else
       xtnn1 = unique(xt(:,ind(1)));
     end
-    if ~ismember(ind(1),deltadist)
+    if ~ismember(ind(2),deltadist)
       xtnn2 = linspace(min(xt(:,ind(2))), max(xt(:,ind(2))), 20);
     else
       xtnn2 = unique(xt(:,ind(2)));
     end
     [XT1, XT2] = meshgrid(xtnn1, xtnn2); XT1=XT1(:); XT2=XT2(:);
+    xtnn1=denormdata(xtnn1,nd.xmean(ind(1)),nd.xstd(ind(1)));
+    xtnn2=denormdata(xtnn2,nd.xmean(ind(2)),nd.xstd(ind(2)));
     if ~isempty(z)
       options.zt = repmat(options.zt(1), size(XT1));
     end
@@ -311,7 +325,7 @@ elseif length(ind)==2
     if ~strcmp(liktype, 'Coxph')
       switch target
         case 'f'
-          [Ef, Varf] = gp_pred(gp, x, y, xt, options);
+          [Ef, Varf] = gp_pred(gp, x, y, xt);
         case 'mu'
           options
           prctmu = gp_predprctmu(gp, x, y, xt, options, 'prct', 50);

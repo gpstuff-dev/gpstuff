@@ -518,7 +518,7 @@ end
 %         ch.datahash=datahash;
       end
       
-    else % diagonal W
+    else % isfield(gp.lik,'nondiagW') % diagonal W
       
 
       if 0%~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)

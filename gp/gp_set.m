@@ -40,7 +40,7 @@ function gp = gp_set(varargin)
 %                     created by lik_gaussian(). If likelihood is
 %                     non-Gaussian, see latent_method below.
 %      jitterSigma2 - Positive jitter to be added in the diagonal of 
-%                     covariance matrix. The default is 1e-9.
+%                     covariance matrix. The default is 1e-6.
 %      infer_params - String defining which parameters are inferred.
 %                     The default is 'covariance+likelihood'.
 %                      'covariance'     = infer parameters of the
@@ -209,7 +209,7 @@ function gp = gp_set(varargin)
                    @(x) ismember(x,{'FULL' 'FIC' 'PIC' 'PIC_BLOCK' 'VAR' ...
                       'DTC' 'SOR' 'CS+FIC' 'KALMAN'}));
   ip=iparser(ip,'addParamValue','lik',lik_gaussian(), @(x) isstruct(x));
-  ip=iparser(ip,'addParamValue','jitterSigma2',1e-9, @(x) isscalar(x) && x>=0);
+  ip=iparser(ip,'addParamValue','jitterSigma2',1e-6, @(x) isscalar(x) && x>=0);
   ip=iparser(ip,'addParamValue','infer_params','covariance+likelihood', @(x) ischar(x));
   ip=iparser(ip,'addParamValue','latent_method','Laplace', @(x) ischar(x) || iscell(x));
   ip=iparser(ip,'addParamValue','latent_opt',struct(), @isstruct);

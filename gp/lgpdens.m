@@ -86,12 +86,12 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
   ip=iparser(ip,'addParamValue','cond_dens',[], @(x) ismember(x,{'on' 'off'}));
   ip=iparser(ip,'addParamValue','basis','gaussian', @(x) ismember(x,{'gaussian' 'exp' 'off'}));
   ip=iparser(ip,'addParamValue','bounded',[0 0], @(x) isnumeric(x) && min(size(x))==1 && max(size(x))==2);
+
   % additional undocumented parameters for importance sampling
   ip=iparser(ip,'addParamValue','n_is',8000, @(x) isnumeric(x) && x>=0);
   ip=iparser(ip,'addParamValue','n_scale',50, @(x) isnumeric(x) && x>=0);
   ip=iparser(ip,'addParamValue','contSplit','on', @(x) ismember(x,{'on' 'off'}));
   ip=iparser(ip,'parse',x,varargin{:});
-
 
   x=ip.Results.x;
   xt=ip.Results.xt;
@@ -229,7 +229,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           end
         end
         
-        if strcmpi(imp_sampling,'on')
+        if ~strcmpi(imp_sampling,'off')
           % importance sampling using a normal as a proposal density
           % TODO: split normal
           % Geweke, J. (1989).  Bayesian inference in econometric models using
@@ -264,8 +264,13 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           lws(isnan(lws)|isinf(lws))=-Inf;
           % compute Pareto smoothed log weights given raw log importance weights
           [lws,pk]=psislw(lws);
-          if pk>0.5&pk<1
-              warning('PSIS Pareto k estimate between 0.5 and 1 (%.1f)',pk)
+          if ismember(display,{'on','iter'})
+              fprintf(' lgpdens: Pareto k=%.2f\n',pk);
+          end
+          if pk>0.7&pk<1
+              % with the current proposal, it is quite common to get k\approx 0.6
+              % which is not so bad, and thus don't warn until k>0.7
+              warning('PSIS Pareto k estimate between 0.7 and 1 (%.1f)',pk)
           elseif pk>1
               warning('PSIS Pareto k estimate greater than 1 (%.1f)',pk)
           end
@@ -308,7 +313,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           end
         end
         
-        if strcmpi(imp_sampling,'on')
+        if ~strcmpi(imp_sampling,'off')
           % importance sampling using a split normal as a proposal density
           % Geweke, J. (1989).  Bayesian inference in econometric models using
           % Monte Carlo integration. Econometrica 57:1317-1339.
@@ -428,10 +433,23 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           
           % log importance weights for the samples
           lws = lp_th(:) - lp_th_appr(:);
-          % compute Pareto smoothed log weights given raw log importance weights
-          [lws,pk]=psislw(lws);
-          if pk>0.5&pk<1
-              warning('PSIS Pareto k estimate between 0.5 and 1 (%.1f)',pk)
+          if ismember(imp_sampling,{'on' 'psis'})
+              % compute Pareto smoothed log weights given raw log importance weights
+              [lws,pk]=psislw(lws);
+          else
+              % normalise raw log weights (basic IS weights)
+              lws=bsxfun(@minus,lws,sumlogs(lws));
+              pk=0;
+          end
+           % lws=lws;pk=0;
+           % lws=bsxfun(@minus,lws',sumlogs(lws'))';
+          if ismember(display,{'on','iter'})
+              fprintf(' lgpdens: Pareto k=%.2f\n',pk);
+          end
+          if pk>0.7&pk<1
+              % with the current proposal, it is quite common to get k\approx 0.6
+              % which is not so bad, and thus don't warn until k>0.7
+              warning('PSIS Pareto k estimate between 0.7 and 1 (%.1f)',pk)
           elseif pk>1
               warning('PSIS Pareto k estimate greater than 1 (%.1f)',pk)
           end
@@ -453,7 +471,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
         pjr=pjr./xd;
       end
       
-      if strcmpi(imp_sampling,'on')
+      if ~strcmpi(imp_sampling,'off')
         pp=wmean(pjr',ws)';
         ppq=wprctile(pjr', [5 95], ws)';
       else
@@ -544,7 +562,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           %nzt=length(zt);
           xt=zt;
           
-          if strcmpi(latent_method,'Laplace') && strcmpi(imp_sampling,'on')
+          if strcmpi(latent_method,'Laplace') && ~strcmpi(imp_sampling,'off')
             % Enrique added this to make IS easier
             % TODO: allow different xx and xt
             xx = xt;
@@ -643,7 +661,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
         else
           qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf,'upper'),Ef');
         end
-        if strcmpi(imp_sampling,'on')
+        if ~strcmpi(imp_sampling,'off')
           % importance sampling using a split normal as a proposal density
           % Geweke, J. (1989).  Bayesian inference in econometric models using
           % Monte Carlo integration. Econometrica 57:1317-1339.
@@ -794,7 +812,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           unx2=unique(xt(:,2));
           xd2=(unx2(2)-unx2(1));
           for k1=1:size(qjr,2)
-            if strcmpi(latent_method,'Laplace') && strcmpi(imp_sampling,'on')
+            if strcmpi(latent_method,'Laplace') && ~strcmpi(imp_sampling,'off')
               qjrtmp=reshape(qjr(:,k1),[gridn(2) gridn(1)]);
               % Enrique disabled ntx2
               % TODO: enable ntx2
@@ -811,7 +829,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
         end
       end
       
-      if strcmpi(imp_sampling,'on')
+      if ~strcmpi(imp_sampling,'off')
         pp=wmean(pjr',ws)';
         ppq=wprctile(pjr', [5 95], ws)';
       else
@@ -822,7 +840,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
       if nargout<1
         % no output, do the plot thing
         if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
-          if strcmpi(latent_method,'Laplace') && strcmpi(imp_sampling,'on')
+          if strcmpi(latent_method,'Laplace') && ~strcmpi(imp_sampling,'off')
             pjr2=reshape(pjr,[gridn(2) gridn(1) size(pjr,2)]);
             % Enrique disabled ntx2
             % TODO: enable ntx2

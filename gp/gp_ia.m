@@ -44,7 +44,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   Default is 2.5,
 %       step_size - step-size for grid search. Default is 1.
 %       nsamples  - number of samples for IS and MCMC methods.
-%                   Default is 40.
+%                   Default is 200.
 %       t_nu      - degrees of freedom for Student's t-distribution.
 %                   Default is 4.
 %       qmc         tells whether quasi Monte Carlo samples are used in
@@ -93,6 +93,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GP_IA';
+
   ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || isempty(x));
   ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
   ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
@@ -129,6 +130,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip=iparser(ip,'addParamValue','cache', 'off', @(x) ischar(x) && ismember(x,{'on','off'}));
   ip=iparser(ip,'addParamValue','display', 'on', @(x) islogical(x) || isreal(x) || ...
                    ismember(x,{'on' 'off' 'iter'}));
+
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
     ip=iparser(ip,'parse',gp, x, y, varargin{:});
@@ -666,6 +668,21 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             p_th=p_th.*[delta_0,repmat(delta_k,1,size(th,1)-1)];
           end
           
+          if numel(p_th)>=200
+              % e.g. CCD with nParam>=12 has at least 281 points
+              [lw,pk] = psislw(log(p_th'),10);
+              p_th=exp(lw');
+              if ismember(opt.display,{'on','iter'})
+                  fprintf(' IA-%s: The weight distribution Pareto k estimate %.2f\n',int_method,pk);
+              end
+              if pk>0.5&pk<=0.7
+                  warning('PSIS Pareto k estimate between 0.5 and 0.7 (%.1f)',pk)
+              elseif pk>0.7&pk<=1
+                  warning('PSIS Pareto k estimate between 0.7 and 1 (%.1f)',pk)
+              elseif pk>1
+                  warning('PSIS Pareto k estimate greater than 1 (%.1f)',pk)
+              end
+          end
           % Remove points with negligible weights
           p_th=p_th./sum(p_th);
           dii=find(p_th<(1e-2/numel(p_th)));
@@ -816,9 +833,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               ttt = zeros(1,nParam);
               ttt(i0)=1;
               for i1 = 1 : length(delta)
-                phat = exp(-fh_e(w+(delta(i1)*LS*ttt')',gp,x,y,options));
+                phat = -fh_e(w+(delta(i1)*LS*ttt')',gp,x,y,options);
                 
-                fi(i1) = nu^(-.5).*abs(delta(i1)).*(((exp(P0)/phat)^(2/(nu+nParam))-1).^(-.5));
+                fi(i1) = nu^(-.5).*abs(delta(i1)).*(((exp(P0-phat))^(2/(nu+nParam))-1).^(-.5));
                 rel(i1) = exp(-fh_e(w+(delta(i1)*LS*ttt')',gp,x,y,options) ...
                               -mt_lpdf((delta(i1)*LS*ttt')', Scale, nu));%TODO: inline!
               end
@@ -904,8 +921,13 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       lw=p_th-p_th_appr;
       % compute Pareto smoothed log weights given raw log importance ratios
       [lw,pk]=psislw(lw);
-      if pk>0.5&pk<1
-          warning('PSIS Pareto k estimate between 0.5 and 1 (%.1f)',pk)
+      if ismember(opt.display,{'on','iter'})
+          fprintf(' IA-%s: PSIS Pareto k estimate %.2f\n',int_method,pk);
+      end
+      if pk>0.5&pk<=0.7
+          warning('PSIS Pareto k estimate between 0.5 and 0.7 (%.1f)',pk)
+      elseif pk>0.7&pk<=1
+          warning('PSIS Pareto k estimate between 0.7 and 1 (%.1f)',pk)
       elseif pk>1
           warning('PSIS Pareto k estimate greater than 1 (%.1f)',pk)
       end
