@@ -37,8 +37,7 @@ for cvi=(a+1):k
 end  
 
 if rsubstream>0
-  prevstream=setrandstream(0, 'mrg32k3a');
-  stream.Substream = rsubstream;
+  prevstream=setrandstream(rsubstream, 'mrg32k3a');
 
   rii=randperm(n);
   for cvi=1:k

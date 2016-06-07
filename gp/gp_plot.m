@@ -19,6 +19,10 @@ function h = gp_plot(gp, x, y, varargin)
 %    OPTIONS is optional parameter-value pair
 %      target - option for choosing what is computed 'mu' (default)
 %               or 'f'
+%      normdata - a structure with fields xmean, xstd, ymean, and ystd
+%               to allow plotting in the original data scale (see
+%               functions normdata and denormdata)
+%      xlabels - a cell array of covariate label strings
 %      predcf - an index vector telling which covariance functions are 
 %               used for prediction. Default is all (1:gpcfn). 
 %               See additional information below.
@@ -83,6 +87,7 @@ ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addOptional('xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))))
 ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('xlabels', [], @(x) isempty(x) || iscell(x));
 ip.addParamValue('predcf', [], @(x) isempty(x) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)&x>=0))
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
@@ -126,7 +131,17 @@ if isempty(xt)
   end
 end
 target = ip.Results.target;
+if iscell(gp)
+  liktype=gp{1}.lik.type;
+else
+  liktype=gp.lik.type;
+end
+if isequal(liktype, 'Coxph') && isequal(target,'mu')
+    target='f';
+    warning('GP_CPRED: Target ''mu'' not applicable for a Cox-PH model. Switching to target ''f''')
+end
 tr = ip.Results.tr;
+xlabels=ip.Results.xlabels;
 % normdata
 nd=ip.Results.normdata;
 ipnd=inputParser;
@@ -177,27 +192,51 @@ switch m
           hh=plot(xt, prctmu(:,2), '-b', xt, prctmu(:,1), '--b', xt, prctmu(:,3), '--b');
       end
     end
+    if ~isempty(xlabels)
+        xlabel(xlabels{1})
+    else
+        xlabel('x')
+    end
   case 2
     subplot(2,2,1);
-    gp_cpred(gp,x,y,xt,1,'z',z,'zt',zt,'target',target,'plot','on');
-    xlabel('x1')
+    gp_cpred(gp,x,y,xt,1,'z',z,'zt',zt,'target',target,'plot','on',varargin{:});
+    if ~isempty(xlabels)
+        xlabel(xlabels{1})
+    else
+        xlabel('x1')
+    end
     subplot(2,2,2);
-    gp_cpred(gp,x,y,xt,2,'z',z,'zt',zt,'target',target,'plot','on');
-    xlabel('x2')
+    gp_cpred(gp,x,y,xt,2,'z',z,'zt',zt,'target',target,'plot','on',varargin{:});
+    if ~isempty(xlabels)
+        xlabel(xlabels{2})
+    else
+        xlabel('x2')
+    end
     subplot(2,1,2);
-    gp_cpred(gp,x,y,xt,[1 2],'z',z,'zt',zt,'target',target,'plot','on','tr',1e9);
+    gp_cpred(gp,x,y,xt,[1 2],'z',z,'zt',zt,'target',target,'plot','on','tr',1e9,varargin{:});
     axis square
-    xlabel('x1')
-    ylabel('x2')
+    if ~isempty(xlabels)
+        xlabel(xlabels{1})
+        ylabel(xlabels{2})
+    else
+        xlabel('x1')
+        ylabel('x2')
+    end
     view(3)
     shading faceted
     hhh=get(gca,'children');
     hh=hhh(1);
   otherwise
-    sn=ceil(sqrt(m));
+    sn1=ceil(sqrt(m));
+    sn2=ceil(m/sn1);
     for xi=1:m
-      subplot(sn,sn,xi);
-      gp_cpred(gp,x,y,xt,xi,'z',z,'zt',zt,'target',target,'plot','on');
+      subplot(sn1,sn2,xi);
+      gp_cpred(gp,x,y,xt,xi,'z',z,'zt',zt,'target',target,'plot','on','normdata',nd,options);
+      if ~isempty(xlabels)
+          xlabel(xlabels{xi})
+      else
+          xlabel(sprintf('x%d',xi))
+      end
       drawnow
       hhh=get(gca,'children');
       hh(xi)=hhh(1);

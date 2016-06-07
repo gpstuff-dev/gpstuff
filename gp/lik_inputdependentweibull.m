@@ -21,12 +21,12 @@ function lik = lik_inputdependentweibull(varargin)
 %    optimization, grid integration, MCMC etc.
 %
 %    The likelihood is defined as follows:
-%                  __ n
-%      p(y|f1,f2, z) = || i=1 [ (r*exp(f2_i))^(1-z_i) exp( (1-z_i)*(-f1_i)
-%                           +(1-z_i)*((r*exp(f2_i))-1)*log(y_i)
-%                           -exp(-f1_i)*y_i^(r*exp(f2_i))) ]
+%                       __ n
+%      p(y|f1, f2, z) = || i=1 [ r_i^(1-z_i) exp( (1-z_i)*(-f1_i)
+%                           +(1-z_i)*(r_i-1)*log(y_i)
+%                           -exp(-f1_i)*y_i^r_i) ]
 %
-%    where r is the shape parameter of Weibull distribution.
+%    where r_i=r*exp(f2_i) is the shape parameter of Weibull distribution.
 %    z is a vector of censoring indicators with z = 0 for uncensored event
 %    and z = 1 for right censored event. Here the second latent variable f2
 %    implies the input dependance to the shape parameter in the original
@@ -209,7 +209,8 @@ function ll = lik_inputdependentweibull_ll(lik, y, ff, z)
 %    LIK_INPUTDEPENDENTWEIBULL_LLG, LIK_INPUTDEPENDENTWEIBULL_LLG3, LIK_INPUTDEPENDENTWEIBULL_LLG2, GPLA_E
   
   if numel(z)==0
-    z=1;
+    % no censoring by default
+    z=0;
   end
 
   f=ff(:);
@@ -238,7 +239,8 @@ function llg = lik_inputdependentweibull_llg(lik, y, ff, param, z)
 %    LIK_INPUTDEPENDENTWEIBULL_LL, LIK_INPUTDEPENDENTWEIBULL_LLG2, LIK_INPUTDEPENDENTWEIBULL_LLG3, GPLA_E
 
   if numel(z)==0
-    z=1;
+    % no censoring by default
+    z=0;
   end
 
   f=ff(:);
@@ -264,20 +266,21 @@ function llg2 = lik_inputdependentweibull_llg2(lik, y, ff, param, z)
 %LIK_INPUTDEPENDENTWEIBULL_LLG2  Second gradients of the log likelihood
 %
 %  Description        
-%    LLG2 = LIK_INPUTDEPENDENTWEIBULL_LLG2(LIK, Y, F, PARAM) takes a likelihood
-%    structure LIK, survival times Y, censoring indicators Z, and
-%    latent values F. Returns the hessian of the log likelihood
-%    with respect to PARAM. At the moment PARAM can be only
-%    'latent'. LLG2 is a vector with diagonal elements of the
-%    Hessian matrix (off diagonals are zero). This subfunction 
-%    is needed when using Laplace approximation or EP for 
-%    inference with non-Gaussian likelihoods.
+%    LLG2 = LIK_INPUTDEPENDENTWEIBULL_LLG2(LIK, Y, F, PARAM) takes a
+%    likelihood structure LIK, survival times Y, censoring indicators Z,
+%    and latent values F. Returns the hessian of the log likelihood with
+%    respect to PARAM. LLG2 is a (2*length(y)) x 2 matrix containing the
+%    non-zero elements of the Hessian matrix. This subfunction is needed
+%    when using Laplace approximation or EP for  inference with
+%    non-Gaussian likelihoods.
 %
 %  See also
-%    LIK_INPUTDEPENDENTWEIBULL_LL, LIK_INPUTDEPENDENTWEIBULL_LLG, LIK_INPUTDEPENDENTWEIBULL_LLG3, GPLA_E
+%    LIK_INPUTDEPENDENTWEIBULL_LL, LIK_INPUTDEPENDENTWEIBULL_LLG,
+%    LIK_INPUTDEPENDENTWEIBULL_LLG3, GPLA_E 
 
   if numel(z)==0
-    z=1;
+    % no censoring by default
+    z=0;
   end
 
   a = lik.shape;
@@ -329,7 +332,8 @@ function llg3 = lik_inputdependentweibull_llg3(lik, y, ff, param, z)
 %    LIK_INPUTDEPENDENTWEIBULL_LL, LIK_INPUTDEPENDENTWEIBULL_LLG, LIK_INPUTDEPENDENTWEIBULL_LLG2, GPLA_E, GPLA_G
 
   if numel(z)==0
-    z=1;
+    % no censoring by default
+    z=0;
   end
 
   a = lik.shape;

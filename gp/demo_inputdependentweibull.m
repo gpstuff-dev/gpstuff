@@ -76,6 +76,7 @@ gp3=gp_optim(gp3,x,y,'z',ye,'opt',opt);
 % Plot results
 col1=ones(1,3)*0.7;
 col2=ones(1,3)*0.3;
+nt = size(xt1,1);
 figure, hold on, set(gcf, 'color', 'w'),
 plot(xt01(:,1), Ef1(1:nt), 'color', col1, 'linewidth', 3)
 plot(xt01(:,1), Ef1(1:nt)+1.96*sqrt(diag(Varf1(1:nt,1:nt))), '--', 'color', col1, 'linewidth', 2)
