@@ -1,3 +1,20 @@
+2016-06-08 Version 4.7
+
+New features
+  - Bayesian Optimization made possible with GPstuff
+    - See demo_bayesoptimization.m
+
+Improvements
+  - More options added to gp_monotonic
+  - Possibility to use gpcf_squared.m-covariance function with derivative
+    observations/monotonicity
+  - Default behaviour made more robust by changing default jitter from
+    1e-9 to 1e-6
+  - Cavity method used as default from this version on
+  - Selected variables -option works now better with monotonicity-option
+
+Several minor bug fixes
+
 2015-07-09 Version 4.6
 
 New features
