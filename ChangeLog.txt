@@ -1,19 +1,26 @@
 2016-06-08 Version 4.7
 
 New features
-  - Bayesian Optimization made possible with GPstuff
-    - See demo_bayesoptimization.m
+  - Simple Bayesian Optimization demo
 
 Improvements
+  - Improved use of PSIS
   - More options added to gp_monotonic
+  - Monotonicity now works for additive covariance functions with selected
+    variables
   - Possibility to use gpcf_squared.m-covariance function with derivative
     observations/monotonicity
   - Default behaviour made more robust by changing default jitter from
     1e-9 to 1e-6
-  - Cavity method used as default from this version on
-  - Selected variables -option works now better with monotonicity-option
+  - LA-LOO uses the cavity method as the default (see Vehtari et al
+    (2016). Bayesian leave-one-out cross-validation approximations for
+    Gaussian latent variable models. JMLR, accpeted for publication)
+  - Selected variables -option works now better with monotonicity
 
-Several minor bug fixes
+Bugfixes
+ - small error in derivative observation computation fixed
+ - several minor bug fixes
+
 
 2015-07-09 Version 4.6
 
