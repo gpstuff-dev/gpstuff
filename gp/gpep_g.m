@@ -651,8 +651,23 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 for ijj=1:length(DKffa)
                   DKdf{ijj}=DKdf{ijj}(inds,:);
                   DKdd{ijj}=DKdd{ijj}(inds,inds);
+                  if isfield(gpcf,'selectedVariables') & (length(gpcf.selectedVariables)<m)
+                      tmp1 = zeros(size(x,1)*length(gp.nvd), size(x2, 1));
+                      tmp2 = zeros(size(x,1)*length(gp.nvd));
+                      DKdfi = DKdf{ijj}(:,:);
+                      DKddi = DKdd{ijj}(:,:);
+                      for i = 1:length(nvd)
+                          tmp1((nvd(i) - 1)*n + [1:n], :) = DKdfi((i-1)*n + [1:n],:);
+                          tmp2((nvd(i) - 1)*n + [1:n], (nvd(i)-1)*n + [1:n]) = DKddi((i-1)*n + [1:n], (i-1)*n + [1:n]);
+                          for k = i+1: length(nvd)
+                            tmp2((nvd(k) - 1)*n+ [1:n], (nvd(i)-1)*n + [1:n]) = DKddi((k-1)*n + [1:n], (i-1)*n + [1:n]);
+                            tmp2((nvd(i)-1)*n + [1:n], (nvd(k) - 1)*n+ [1:n]) = DKddi((i-1)*n + [1:n], (k-1)*n + [1:n]);
+                          end
+                      end
+                      DKdf{ijj} = tmp1;
+                      DKdd{ijj} = tmp2;
+                  end
                 end
-                
                 DKffc{1}=[DKffa{1} DKdf{1}';DKdf{1} DKdd{1}];
                 for i2=2:length(DKffa)
                   DKffc{i2}=[DKffa{i2} DKdf{i2}';DKdf{i2} DKdd{i2}];
