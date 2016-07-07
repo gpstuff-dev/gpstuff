@@ -6,8 +6,8 @@ MAP estimate for the parameters
   Iterations : 16
   Function Count : 24
   Minimum found : 44.1644
-  Intern Time : 0.014187 seconds
-  Total Time : 0.67327 seconds
+  Intern Time : 0.013711 seconds
+  Total Time : 0.45321 seconds
 MAP estimate for the parameters - k-fold-CV
 Evaluating the CV utility. The inference method is MAP.
  The CV-fold number: 1/10 
@@ -39,125 +39,182 @@ MCMC integration over the parameters - k-fold-CV
 Evaluating the CV utility. The inference method is MCMC.
  The CV-fold number: 1/10 
  cycle  etr      slsrej  
-   20  47.365  sls  
-   40  47.871  sls  
+   20  49.915  sls  
+   40  47.439  sls  
  The CV-fold number: 2/10 
  cycle  etr      slsrej  
-   20  48.040  sls  
-   40  47.595  sls  
+   20  46.967  sls  
+   40  42.475  sls  
  The CV-fold number: 3/10 
  cycle  etr      slsrej  
-   20  47.035  sls  
-   40  47.781  sls  
+   20  48.453  sls  
+   40  46.553  sls  
  The CV-fold number: 4/10 
  cycle  etr      slsrej  
-   20  46.956  sls  
-   40  44.509  sls  
+   20  44.906  sls  
+   40  43.748  sls  
  The CV-fold number: 5/10 
  cycle  etr      slsrej  
-   20  48.573  sls  
-   40  46.945  sls  
+   20  51.467  sls  
+   40  49.598  sls  
  The CV-fold number: 6/10 
  cycle  etr      slsrej  
-   20  50.441  sls  
-   40  50.100  sls  
+   20  49.069  sls  
+   40  48.426  sls  
  The CV-fold number: 7/10 
  cycle  etr      slsrej  
-   20  47.685  sls  
-   40  46.701  sls  
+   20  48.705  sls  
+   40  48.089  sls  
  The CV-fold number: 8/10 
  cycle  etr      slsrej  
-   20  43.340  sls  
-   40  41.618  sls  
+   20  45.651  sls  
+   40  45.839  sls  
  The CV-fold number: 9/10 
  cycle  etr      slsrej  
-   20  47.305  sls  
-   40  47.582  sls  
+   20  46.631  sls  
+   40  48.315  sls  
  The CV-fold number: 10/10 
  cycle  etr      slsrej  
-   20  47.354  sls  
-   40  46.455  sls  
+   20  47.905  sls  
+   40  48.387  sls  
 MCMC integration over the parameters - LOO-CV
+[Warning: 7 (3%) PSIS Pareto k estimates between 0.5 and .7] 
+[> In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gpmc_loopred.m',151,1)">gpmc_loopred at 151</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_loopred.m',85,1)">gp_loopred at 85</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/demo_modelassesment1.m',121,1)">demo_modelassesment1 at 121</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/test_modelassesment1.m',44,1)">test_modelassesment1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',967,1)">TestRunner>TestRunner.evaluateMethod at 967</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',691,1)">TestRunner>TestRunner.evaluateMethodsOnTestContent at 691</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',953,1)">TestRunner>TestRunner.runTestMethod at 953</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',902,1)">TestRunner>TestRunner.runTest at 902</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',374,1)">TestRunner>TestRunner.runSharedTestCase at 374</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',832,1)">TestRunner>TestRunner.runTestClass at 832</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',369,1)">TestRunnerPlugin>TestRunnerPlugin.runTestClass at 369</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/+testrunprogress/ConciseProgressPlugin.m',61,1)">ConciseProgressPlugin>ConciseProgressPlugin.runTestClass at 61</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',754,1)">TestRunner>TestRunner.runTestSuite at 754</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',220,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',83,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 83</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',220,1)">TestRunner>TestRunner.run at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',568,1)">TestSuite>TestSuite.run at 568</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/runtests.m',73,1)">runtests at 73</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/runtestset.m',163,1)">runtestset at 163</a>] 
+[Warning: 1 (0%) PSIS Pareto k estimates between 0.7 and 1] 
+[> In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gpmc_loopred.m',154,1)">gpmc_loopred at 154</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_loopred.m',85,1)">gp_loopred at 85</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/demo_modelassesment1.m',121,1)">demo_modelassesment1 at 121</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/test_modelassesment1.m',44,1)">test_modelassesment1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',967,1)">TestRunner>TestRunner.evaluateMethod at 967</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',691,1)">TestRunner>TestRunner.evaluateMethodsOnTestContent at 691</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',953,1)">TestRunner>TestRunner.runTestMethod at 953</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',902,1)">TestRunner>TestRunner.runTest at 902</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',374,1)">TestRunner>TestRunner.runSharedTestCase at 374</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',832,1)">TestRunner>TestRunner.runTestClass at 832</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',369,1)">TestRunnerPlugin>TestRunnerPlugin.runTestClass at 369</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/+testrunprogress/ConciseProgressPlugin.m',61,1)">ConciseProgressPlugin>ConciseProgressPlugin.runTestClass at 61</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',754,1)">TestRunner>TestRunner.runTestSuite at 754</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',220,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',83,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 83</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',220,1)">TestRunner>TestRunner.run at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',568,1)">TestSuite>TestSuite.run at 568</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/runtests.m',73,1)">runtests at 73</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/runtestset.m',163,1)">runtestset at 163</a>] 
 Grid integration over the parameters
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
  IA-grid: evaluated density at 335 points
-    Elapsed time 1.52 seconds
- IA-grid: Total elapsed time 1.72 seconds
+    Elapsed time 1.86 seconds
+ IA-grid: Total elapsed time 2.10 seconds
 Grid integration over the parameters - k-fold-CV
 Evaluating the CV utility. The inference method is IA.
  The CV-fold number: 1/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 326 points
-    Elapsed time 1.34 seconds
- IA-grid: Total elapsed time 1.81 seconds
+ IA-grid: evaluated density at 334 points
+    Elapsed time 1.71 seconds
+ IA-grid: Total elapsed time 2.53 seconds
  The CV-fold number: 2/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 333 points
-    Elapsed time 1.36 seconds
- IA-grid: Total elapsed time 1.74 seconds
+ IA-grid: evaluated density at 347 points
+    Elapsed time 1.64 seconds
+ IA-grid: Total elapsed time 2.21 seconds
  The CV-fold number: 3/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 372 points
-    Elapsed time 1.52 seconds
- IA-grid: Total elapsed time 1.85 seconds
+ IA-grid: evaluated density at 342 points
+    Elapsed time 1.75 seconds
+ IA-grid: Total elapsed time 2.34 seconds
  The CV-fold number: 4/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 342 points
-    Elapsed time 1.40 seconds
- IA-grid: Total elapsed time 1.92 seconds
+ IA-grid: evaluated density at 368 points
+    Elapsed time 1.89 seconds
+ IA-grid: Total elapsed time 2.43 seconds
  The CV-fold number: 5/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 357 points
-    Elapsed time 1.46 seconds
- IA-grid: Total elapsed time 1.80 seconds
+ IA-grid: evaluated density at 355 points
+    Elapsed time 1.80 seconds
+ IA-grid: Total elapsed time 2.27 seconds
  The CV-fold number: 6/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 314 points
-    Elapsed time 1.28 seconds
- IA-grid: Total elapsed time 1.86 seconds
+ IA-grid: evaluated density at 341 points
+    Elapsed time 1.64 seconds
+ IA-grid: Total elapsed time 2.27 seconds
  The CV-fold number: 7/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 354 points
-    Elapsed time 1.44 seconds
- IA-grid: Total elapsed time 1.93 seconds
+ IA-grid: evaluated density at 318 points
+    Elapsed time 1.67 seconds
+ IA-grid: Total elapsed time 2.35 seconds
  The CV-fold number: 8/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 363 points
-    Elapsed time 1.48 seconds
- IA-grid: Total elapsed time 2.08 seconds
+ IA-grid: evaluated density at 340 points
+    Elapsed time 1.74 seconds
+ IA-grid: Total elapsed time 2.22 seconds
  The CV-fold number: 9/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 351 points
-    Elapsed time 1.46 seconds
- IA-grid: Total elapsed time 1.74 seconds
+ IA-grid: evaluated density at 352 points
+    Elapsed time 1.63 seconds
+ IA-grid: Total elapsed time 2.12 seconds
  The CV-fold number: 10/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 341 points
-    Elapsed time 1.45 seconds
- IA-grid: Total elapsed time 1.82 seconds
+ IA-grid: evaluated density at 340 points
+    Elapsed time 1.59 seconds
+ IA-grid: Total elapsed time 2.10 seconds
 Grid integration over the parameters - LOO-CV
+nGP=335, min(neff)=106, min(neff)/nGP=0.32
 GP with FIC sparse approximation
 
 gp_fic = 
@@ -176,16 +233,11 @@ MAP estimate for the parameters
  Optimizer Results
   Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
   Exit message : Change in x was smaller than the specified tolerance TolX.
-  Iterations : 19
-  Function Count : 30
+  Iterations : 18
+  Function Count : 28
   Minimum found : 42.5028
-  Intern Time : 0.013008 seconds
-  Total Time : 0.34139 seconds
-
-n =
-
-   225
-
+  Intern Time : 0.014367 seconds
+  Total Time : 0.37088 seconds
 MAP estimate for the parameters - k-fold-CV
 Evaluating the CV utility. The inference method is MAP.
  The CV-fold number: 1/10 
@@ -202,160 +254,421 @@ MAP estimate for the parameters - LOO-CV
 MCMC integration over the parameters
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  43.432  sls  
-   40  47.122  sls  
-   60  43.719  sls  
-   80  46.022  sls  
-  100  43.813  sls  
-  120  43.664  sls  
-  140  45.968  sls  
-  160  43.173  sls  
-  180  45.430  sls  
-  200  43.797  sls  
-  220  45.146  sls  
+   20  44.110  sls  
+   40  43.476  sls  
+   60  46.095  sls  
+   80  44.254  sls  
+  100  43.226  sls  
+  120  46.526  sls  
+  140  43.814  sls  
+  160  44.708  sls  
+  180  44.317  sls  
+  200  43.350  sls  
+  220  44.033  sls  
 MCMC integration over the parameters - k-fold-CV
 Evaluating the CV utility. The inference method is MCMC.
  The CV-fold number: 1/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  47.086  sls  
-   40  46.972  sls  
+   20  46.985  sls  
+   40  45.946  sls  
  The CV-fold number: 2/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  46.050  sls  
-   40  46.532  sls  
+   20  42.811  sls  
+   40  42.772  sls  
  The CV-fold number: 3/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  46.107  sls  
-   40  47.328  sls  
+   20  44.476  sls  
+   40  45.202  sls  
  The CV-fold number: 4/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  48.334  sls  
-   40  42.812  sls  
+   20  42.646  sls  
+   40  43.725  sls  
  The CV-fold number: 5/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  46.991  sls  
-   40  45.679  sls  
+   20  48.929  sls  
+   40  47.440  sls  
  The CV-fold number: 6/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  46.842  sls  
-   40  46.800  sls  
+   20  48.780  sls  
+   40  50.843  sls  
  The CV-fold number: 7/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  46.764  sls  
-   40  46.945  sls  
+   20  47.380  sls  
+   40  54.810  sls  
  The CV-fold number: 8/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  39.821  sls  
-   40  41.284  sls  
+   20  42.506  sls  
+   40  42.409  sls  
  The CV-fold number: 9/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  47.632  sls  
-   40  47.333  sls  
+   20  45.453  sls  
+   40  43.981  sls  
  The CV-fold number: 10/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  45.015  sls  
-   40  44.994  sls  
+   20  47.457  sls  
+   40  44.505  sls  
 MCMC integration over the parameters - LOO-CV
+[Warning: 6 (3%) PSIS Pareto k estimates between 0.5 and .7] 
+[> In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gpmc_loopred.m',151,1)">gpmc_loopred at 151</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_loopred.m',85,1)">gp_loopred at 85</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/demo_modelassesment1.m',229,1)">demo_modelassesment1 at 229</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/test_modelassesment1.m',44,1)">test_modelassesment1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',967,1)">TestRunner>TestRunner.evaluateMethod at 967</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',691,1)">TestRunner>TestRunner.evaluateMethodsOnTestContent at 691</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',953,1)">TestRunner>TestRunner.runTestMethod at 953</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',902,1)">TestRunner>TestRunner.runTest at 902</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',374,1)">TestRunner>TestRunner.runSharedTestCase at 374</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',832,1)">TestRunner>TestRunner.runTestClass at 832</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',369,1)">TestRunnerPlugin>TestRunnerPlugin.runTestClass at 369</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/+testrunprogress/ConciseProgressPlugin.m',61,1)">ConciseProgressPlugin>ConciseProgressPlugin.runTestClass at 61</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',754,1)">TestRunner>TestRunner.runTestSuite at 754</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',220,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',83,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 83</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',220,1)">TestRunner>TestRunner.run at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',568,1)">TestSuite>TestSuite.run at 568</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/runtests.m',73,1)">runtests at 73</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/runtestset.m',163,1)">runtestset at 163</a>] 
+[Warning: 3 (1%) PSIS Pareto k estimates between 0.7 and 1] 
+[> In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gpmc_loopred.m',154,1)">gpmc_loopred at 154</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_loopred.m',85,1)">gp_loopred at 85</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/demo_modelassesment1.m',229,1)">demo_modelassesment1 at 229</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/test_modelassesment1.m',44,1)">test_modelassesment1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',967,1)">TestRunner>TestRunner.evaluateMethod at 967</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',691,1)">TestRunner>TestRunner.evaluateMethodsOnTestContent at 691</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',953,1)">TestRunner>TestRunner.runTestMethod at 953</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',902,1)">TestRunner>TestRunner.runTest at 902</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',374,1)">TestRunner>TestRunner.runSharedTestCase at 374</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',832,1)">TestRunner>TestRunner.runTestClass at 832</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',369,1)">TestRunnerPlugin>TestRunnerPlugin.runTestClass at 369</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/+testrunprogress/ConciseProgressPlugin.m',61,1)">ConciseProgressPlugin>ConciseProgressPlugin.runTestClass at 61</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',754,1)">TestRunner>TestRunner.runTestSuite at 754</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',220,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',83,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 83</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',220,1)">TestRunner>TestRunner.run at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',568,1)">TestSuite>TestSuite.run at 568</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/runtests.m',73,1)">runtests at 73</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/runtestset.m',163,1)">runtestset at 163</a>] 
 Grid integration over the parameters
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
  IA-grid: evaluated density at 348 points
-    Elapsed time 1.30 seconds
- IA-grid: Total elapsed time 1.43 seconds
+    Elapsed time 1.40 seconds
+ IA-grid: Total elapsed time 1.57 seconds
 Grid integration over the parameters - k-fold-CV
 Evaluating the CV utility. The inference method is IA.
  The CV-fold number: 1/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 296 points
-    Elapsed time 1.10 seconds
- IA-grid: Total elapsed time 1.78 seconds
+ IA-grid: evaluated density at 327 points
+    Elapsed time 1.61 seconds
+ IA-grid: Total elapsed time 2.45 seconds
  The CV-fold number: 2/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 341 points
-    Elapsed time 1.25 seconds
- IA-grid: Total elapsed time 1.66 seconds
+ IA-grid: evaluated density at 326 points
+    Elapsed time 1.45 seconds
+ IA-grid: Total elapsed time 2.06 seconds
  The CV-fold number: 3/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 385 points
-    Elapsed time 1.38 seconds
- IA-grid: Total elapsed time 1.81 seconds
+ IA-grid: evaluated density at 345 points
+    Elapsed time 1.37 seconds
+ IA-grid: Total elapsed time 1.80 seconds
  The CV-fold number: 4/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 312 points
-    Elapsed time 1.12 seconds
- IA-grid: Total elapsed time 1.68 seconds
+ IA-grid: evaluated density at 366 points
+    Elapsed time 1.53 seconds
+ IA-grid: Total elapsed time 1.98 seconds
  The CV-fold number: 5/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 348 points
-    Elapsed time 1.24 seconds
- IA-grid: Total elapsed time 1.54 seconds
+ IA-grid: evaluated density at 370 points
+    Elapsed time 1.58 seconds
+ IA-grid: Total elapsed time 2.12 seconds
  The CV-fold number: 6/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
  IA-grid: evaluated density at 350 points
-    Elapsed time 1.25 seconds
- IA-grid: Total elapsed time 1.66 seconds
+    Elapsed time 1.70 seconds
+ IA-grid: Total elapsed time 2.08 seconds
  The CV-fold number: 7/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
  IA-grid: evaluated density at 336 points
-    Elapsed time 1.21 seconds
- IA-grid: Total elapsed time 2.23 seconds
+    Elapsed time 1.51 seconds
+ IA-grid: Total elapsed time 2.29 seconds
  The CV-fold number: 8/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 353 points
-    Elapsed time 1.28 seconds
- IA-grid: Total elapsed time 1.82 seconds
+ IA-grid: evaluated density at 308 points
+    Elapsed time 1.33 seconds
+ IA-grid: Total elapsed time 1.75 seconds
  The CV-fold number: 9/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 337 points
-    Elapsed time 1.23 seconds
- IA-grid: Total elapsed time 1.55 seconds
+ IA-grid: evaluated density at 336 points
+    Elapsed time 1.40 seconds
+ IA-grid: Total elapsed time 1.95 seconds
  The CV-fold number: 10/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 324 points
-    Elapsed time 1.17 seconds
- IA-grid: Total elapsed time 1.56 seconds
+ IA-grid: evaluated density at 340 points
+    Elapsed time 1.47 seconds
+ IA-grid: Total elapsed time 1.96 seconds
 Grid integration over the parameters - LOO-CV
+nGP=348, min(neff)=102, min(neff)/nGP=0.29
 GP with PIC sparse approximation
 MAP estimate for the parameters
+[Warning: Matrix is close to singular or badly scaled. Results may be inaccurate. RCOND =  7.250762e-40.] 
+[> In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_e.m',331,1)">gp_e at 331</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_eg.m',35,1)">gp_eg at 35</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',66,1)">gp_optim>@(ww)gp_eg(ww,gp,x,y,'z',z) at 66</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',890,1)">fminlbfgs>gradient_function at 890</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',744,1)">fminlbfgs>bracketingPhase at 744</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',583,1)">fminlbfgs>linesearch at 583</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',279,1)">fminlbfgs at 279</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',121,1)">gp_optim at 121</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/demo_modelassesment1.m',299,1)">demo_modelassesment1 at 299</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/test_modelassesment1.m',44,1)">test_modelassesment1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',967,1)">TestRunner>TestRunner.evaluateMethod at 967</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',691,1)">TestRunner>TestRunner.evaluateMethodsOnTestContent at 691</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',953,1)">TestRunner>TestRunner.runTestMethod at 953</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',902,1)">TestRunner>TestRunner.runTest at 902</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',374,1)">TestRunner>TestRunner.runSharedTestCase at 374</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',832,1)">TestRunner>TestRunner.runTestClass at 832</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',369,1)">TestRunnerPlugin>TestRunnerPlugin.runTestClass at 369</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/+testrunprogress/ConciseProgressPlugin.m',61,1)">ConciseProgressPlugin>ConciseProgressPlugin.runTestClass at 61</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',754,1)">TestRunner>TestRunner.runTestSuite at 754</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',220,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',83,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 83</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',220,1)">TestRunner>TestRunner.run at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',568,1)">TestSuite>TestSuite.run at 568</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/runtests.m',73,1)">runtests at 73</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/runtestset.m',163,1)">runtestset at 163</a>] 
+[Warning: Matrix is close to singular or badly scaled. Results may be inaccurate. RCOND =  1.208460e-40.] 
+[> In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_e.m',360,1)">gp_e at 360</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_eg.m',35,1)">gp_eg at 35</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',66,1)">gp_optim>@(ww)gp_eg(ww,gp,x,y,'z',z) at 66</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',890,1)">fminlbfgs>gradient_function at 890</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',744,1)">fminlbfgs>bracketingPhase at 744</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',583,1)">fminlbfgs>linesearch at 583</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',279,1)">fminlbfgs at 279</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',121,1)">gp_optim at 121</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/demo_modelassesment1.m',299,1)">demo_modelassesment1 at 299</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/test_modelassesment1.m',44,1)">test_modelassesment1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',967,1)">TestRunner>TestRunner.evaluateMethod at 967</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',691,1)">TestRunner>TestRunner.evaluateMethodsOnTestContent at 691</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',953,1)">TestRunner>TestRunner.runTestMethod at 953</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',902,1)">TestRunner>TestRunner.runTest at 902</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',374,1)">TestRunner>TestRunner.runSharedTestCase at 374</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',832,1)">TestRunner>TestRunner.runTestClass at 832</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',369,1)">TestRunnerPlugin>TestRunnerPlugin.runTestClass at 369</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/+testrunprogress/ConciseProgressPlugin.m',61,1)">ConciseProgressPlugin>ConciseProgressPlugin.runTestClass at 61</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',754,1)">TestRunner>TestRunner.runTestSuite at 754</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',220,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',83,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 83</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',220,1)">TestRunner>TestRunner.run at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',568,1)">TestSuite>TestSuite.run at 568</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/runtests.m',73,1)">runtests at 73</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/runtestset.m',163,1)">runtestset at 163</a>] 
+[Warning: Matrix is close to singular or badly scaled. Results may be inaccurate. RCOND =  7.250762e-40.] 
+[> In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_g.m',667,1)">gp_g at 667</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_eg.m',40,1)">gp_eg at 40</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',66,1)">gp_optim>@(ww)gp_eg(ww,gp,x,y,'z',z) at 66</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',890,1)">fminlbfgs>gradient_function at 890</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',744,1)">fminlbfgs>bracketingPhase at 744</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',583,1)">fminlbfgs>linesearch at 583</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',279,1)">fminlbfgs at 279</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',121,1)">gp_optim at 121</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/demo_modelassesment1.m',299,1)">demo_modelassesment1 at 299</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/test_modelassesment1.m',44,1)">test_modelassesment1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',967,1)">TestRunner>TestRunner.evaluateMethod at 967</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',691,1)">TestRunner>TestRunner.evaluateMethodsOnTestContent at 691</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',953,1)">TestRunner>TestRunner.runTestMethod at 953</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',902,1)">TestRunner>TestRunner.runTest at 902</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',374,1)">TestRunner>TestRunner.runSharedTestCase at 374</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',832,1)">TestRunner>TestRunner.runTestClass at 832</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',369,1)">TestRunnerPlugin>TestRunnerPlugin.runTestClass at 369</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/+testrunprogress/ConciseProgressPlugin.m',61,1)">ConciseProgressPlugin>ConciseProgressPlugin.runTestClass at 61</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',754,1)">TestRunner>TestRunner.runTestSuite at 754</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',220,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',83,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 83</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',220,1)">TestRunner>TestRunner.run at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',568,1)">TestSuite>TestSuite.run at 568</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/runtests.m',73,1)">runtests at 73</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/runtestset.m',163,1)">runtestset at 163</a>] 
+[Warning: Matrix is close to singular or badly scaled. Results may be inaccurate. RCOND =  7.250762e-40.] 
+[> In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_g.m',687,1)">gp_g at 687</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_eg.m',40,1)">gp_eg at 40</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',66,1)">gp_optim>@(ww)gp_eg(ww,gp,x,y,'z',z) at 66</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',890,1)">fminlbfgs>gradient_function at 890</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',744,1)">fminlbfgs>bracketingPhase at 744</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',583,1)">fminlbfgs>linesearch at 583</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',279,1)">fminlbfgs at 279</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',121,1)">gp_optim at 121</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/demo_modelassesment1.m',299,1)">demo_modelassesment1 at 299</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/test_modelassesment1.m',44,1)">test_modelassesment1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',967,1)">TestRunner>TestRunner.evaluateMethod at 967</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',691,1)">TestRunner>TestRunner.evaluateMethodsOnTestContent at 691</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',953,1)">TestRunner>TestRunner.runTestMethod at 953</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',902,1)">TestRunner>TestRunner.runTest at 902</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',374,1)">TestRunner>TestRunner.runSharedTestCase at 374</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',832,1)">TestRunner>TestRunner.runTestClass at 832</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',369,1)">TestRunnerPlugin>TestRunnerPlugin.runTestClass at 369</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/+testrunprogress/ConciseProgressPlugin.m',61,1)">ConciseProgressPlugin>ConciseProgressPlugin.runTestClass at 61</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',754,1)">TestRunner>TestRunner.runTestSuite at 754</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',220,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',83,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 83</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',220,1)">TestRunner>TestRunner.run at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',568,1)">TestSuite>TestSuite.run at 568</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/runtests.m',73,1)">runtests at 73</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/runtestset.m',163,1)">runtestset at 163</a>] 
+[Warning: Matrix is close to singular or badly scaled. Results may be inaccurate. RCOND =  7.250762e-40.] 
+[> In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_g.m',693,1)">gp_g at 693</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_eg.m',40,1)">gp_eg at 40</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',66,1)">gp_optim>@(ww)gp_eg(ww,gp,x,y,'z',z) at 66</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',890,1)">fminlbfgs>gradient_function at 890</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',744,1)">fminlbfgs>bracketingPhase at 744</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',583,1)">fminlbfgs>linesearch at 583</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',279,1)">fminlbfgs at 279</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',121,1)">gp_optim at 121</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/demo_modelassesment1.m',299,1)">demo_modelassesment1 at 299</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/test_modelassesment1.m',44,1)">test_modelassesment1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',967,1)">TestRunner>TestRunner.evaluateMethod at 967</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',691,1)">TestRunner>TestRunner.evaluateMethodsOnTestContent at 691</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',953,1)">TestRunner>TestRunner.runTestMethod at 953</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',902,1)">TestRunner>TestRunner.runTest at 902</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',374,1)">TestRunner>TestRunner.runSharedTestCase at 374</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',832,1)">TestRunner>TestRunner.runTestClass at 832</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',369,1)">TestRunnerPlugin>TestRunnerPlugin.runTestClass at 369</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/+testrunprogress/ConciseProgressPlugin.m',61,1)">ConciseProgressPlugin>ConciseProgressPlugin.runTestClass at 61</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',754,1)">TestRunner>TestRunner.runTestSuite at 754</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',220,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',83,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 83</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',220,1)">TestRunner>TestRunner.run at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',568,1)">TestSuite>TestSuite.run at 568</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/runtests.m',73,1)">runtests at 73</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/runtestset.m',163,1)">runtestset at 163</a>] 
+[Warning: Matrix is close to singular or badly scaled. Results may be inaccurate. RCOND =  7.250762e-40.] 
+[> In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_g.m',693,1)">gp_g at 693</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_eg.m',40,1)">gp_eg at 40</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',66,1)">gp_optim>@(ww)gp_eg(ww,gp,x,y,'z',z) at 66</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',890,1)">fminlbfgs>gradient_function at 890</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',744,1)">fminlbfgs>bracketingPhase at 744</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',583,1)">fminlbfgs>linesearch at 583</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/optim/fminlbfgs.m',279,1)">fminlbfgs at 279</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_optim.m',121,1)">gp_optim at 121</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/demo_modelassesment1.m',299,1)">demo_modelassesment1 at 299</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/test_modelassesment1.m',44,1)">test_modelassesment1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',967,1)">TestRunner>TestRunner.evaluateMethod at 967</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',691,1)">TestRunner>TestRunner.evaluateMethodsOnTestContent at 691</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',953,1)">TestRunner>TestRunner.runTestMethod at 953</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',902,1)">TestRunner>TestRunner.runTest at 902</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',374,1)">TestRunner>TestRunner.runSharedTestCase at 374</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',832,1)">TestRunner>TestRunner.runTestClass at 832</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',369,1)">TestRunnerPlugin>TestRunnerPlugin.runTestClass at 369</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/+testrunprogress/ConciseProgressPlugin.m',61,1)">ConciseProgressPlugin>ConciseProgressPlugin.runTestClass at 61</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',754,1)">TestRunner>TestRunner.runTestSuite at 754</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',220,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',83,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 83</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',220,1)">TestRunner>TestRunner.run at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',568,1)">TestSuite>TestSuite.run at 568</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/runtests.m',73,1)">runtests at 73</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/runtestset.m',163,1)">runtestset at 163</a>] 
  Optimizer Results
   Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
   Exit message : Change in x was smaller than the specified tolerance TolX.
-  Iterations : 14
-  Function Count : 22
+  Iterations : 15
+  Function Count : 23
   Minimum found : 41.3886
-  Intern Time : 0.009816 seconds
-  Total Time : 0.70206 seconds
+  Intern Time : 0.012708 seconds
+  Total Time : 1.2001 seconds
 MAP estimate for the parameters - k-fold-CV
 Evaluating the CV utility. The inference method is MAP.
  The CV-fold number: 1/10 
@@ -372,175 +685,207 @@ MAP estimate for the parameters - LOO-CV
 MCMC integration over the parameters
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  43.063  sls  
-   40  43.080  sls  
-   60  42.595  sls  
-   80  42.580  sls  
-  100  42.209  sls  
-  120  42.570  sls  
-  140  41.681  sls  
-  160  41.755  sls  
-  180  42.976  sls  
-  200  45.913  sls  
-  220  43.838  sls  
+   20  43.513  sls  
+   40  41.960  sls  
+   60  43.009  sls  
+   80  43.101  sls  
+  100  42.243  sls  
+  120  42.513  sls  
+  140  45.753  sls  
+  160  43.202  sls  
+  180  42.720  sls  
+  200  43.325  sls  
+  220  43.854  sls  
 MCMC integration over the parameters - k-fold-CV
 Evaluating the CV utility. The inference method is MCMC.
  The CV-fold number: 1/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  44.577  sls  
-   40  44.882  sls  
+   20  46.026  sls  
+   40  48.588  sls  
  The CV-fold number: 2/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  45.445  sls  
-   40  47.048  sls  
+   20  42.670  sls  
+   40  41.343  sls  
  The CV-fold number: 3/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  49.586  sls  
-   40  45.713  sls  
+   20  46.519  sls  
+   40  44.717  sls  
  The CV-fold number: 4/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  42.448  sls  
-   40  44.822  sls  
+   20  40.118  sls  
+   40  43.574  sls  
  The CV-fold number: 5/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  45.504  sls  
-   40  43.310  sls  
+   20  49.996  sls  
+   40  48.717  sls  
  The CV-fold number: 6/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  46.215  sls  
-   40  44.736  sls  
+   20  47.279  sls  
+   40  46.921  sls  
  The CV-fold number: 7/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  45.338  sls  
-   40  45.546  sls  
+   20  51.196  sls  
+   40  46.650  sls  
  The CV-fold number: 8/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  41.780  sls  
-   40  41.196  sls  
+   20  41.311  sls  
+   40  43.641  sls  
  The CV-fold number: 9/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  46.193  sls  
-   40  46.335  sls  
+   20  45.798  sls  
+   40  42.149  sls  
  The CV-fold number: 10/10 
  Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-   20  43.116  sls  
-   40  43.045  sls  
+   20  44.515  sls  
+   40  45.142  sls  
 MCMC integration over the parameters - LOO-CV
+[Warning: 4 (2%) PSIS Pareto k estimates between 0.5 and .7] 
+[> In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gpmc_loopred.m',151,1)">gpmc_loopred at 151</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/gp_loopred.m',85,1)">gp_loopred at 85</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/gp/demo_modelassesment1.m',349,1)">demo_modelassesment1 at 349</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/lang/run.m',63,1)">run at 63</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/rundemo.m',111,1)">rundemo at 111</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/test_modelassesment1.m',44,1)">test_modelassesment1>testRunDemo at 44</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/FunctionTestCase.m',90,1)">FunctionTestCase>FunctionTestCase.test at 90</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',967,1)">TestRunner>TestRunner.evaluateMethod at 967</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',691,1)">TestRunner>TestRunner.evaluateMethodsOnTestContent at 691</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',953,1)">TestRunner>TestRunner.runTestMethod at 953</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',902,1)">TestRunner>TestRunner.runTest at 902</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',374,1)">TestRunner>TestRunner.runSharedTestCase at 374</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',832,1)">TestRunner>TestRunner.runTestClass at 832</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',369,1)">TestRunnerPlugin>TestRunnerPlugin.runTestClass at 369</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/+testrunprogress/ConciseProgressPlugin.m',61,1)">ConciseProgressPlugin>ConciseProgressPlugin.runTestClass at 61</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',754,1)">TestRunner>TestRunner.runTestSuite at 754</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/TestRunnerPlugin.m',220,1)">TestRunnerPlugin>TestRunnerPlugin.runTestSuite at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/+plugins/FailureDiagnosticsPlugin.m',83,1)">FailureDiagnosticsPlugin>FailureDiagnosticsPlugin.runTestSuite at 83</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',678,1)">TestRunner>TestRunner.evaluateMethodOnPlugins at 678</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestRunner.m',220,1)">TestRunner>TestRunner.run at 220</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/+matlab/+unittest/TestSuite.m',568,1)">TestSuite>TestSuite.run at 568</a>
+  In <a href="matlab: opentoline('/m/work/modules/Ubuntu/14.04/amd64/common/matlab/2014a/toolbox/matlab/testframework/runtests.m',73,1)">runtests at 73</a>
+  In <a href="matlab: opentoline('/m/cs/project/bayes/siivole1/gitcodes/gpstuff_monotonic/tests/runtestset.m',163,1)">runtestset at 163</a>] 
 Grid integration over the parameters
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
  IA-grid: evaluated density at 338 points
-    Elapsed time 3.18 seconds
- IA-grid: Total elapsed time 3.55 seconds
+    Elapsed time 4.94 seconds
+ IA-grid: Total elapsed time 5.41 seconds
 Grid integration over the parameters - k-fold-CV
 Evaluating the CV utility. The inference method is IA.
  The CV-fold number: 1/10 
  IA-grid: finding the mode
+    Elapsed time 1.39 seconds
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 347 points
-    Elapsed time 3.18 seconds
- IA-grid: Total elapsed time 4.11 seconds
+ IA-grid: evaluated density at 343 points
+    Elapsed time 4.85 seconds
+ IA-grid: Total elapsed time 6.54 seconds
  The CV-fold number: 2/10 
+ IA-grid: finding the mode
+    Elapsed time 1.43 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 349 points
+    Elapsed time 5.00 seconds
+ IA-grid: Total elapsed time 6.71 seconds
+ The CV-fold number: 3/10 
+ IA-grid: finding the mode
+    Elapsed time 1.12 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 339 points
+    Elapsed time 4.60 seconds
+ IA-grid: Total elapsed time 6.05 seconds
+ The CV-fold number: 4/10 
+ IA-grid: finding the mode
+    Elapsed time 1.26 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 348 points
+    Elapsed time 4.86 seconds
+ IA-grid: Total elapsed time 6.45 seconds
+ The CV-fold number: 5/10 
+ IA-grid: finding the mode
+    Elapsed time 1.08 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 337 points
+    Elapsed time 4.67 seconds
+ IA-grid: Total elapsed time 6.05 seconds
+ The CV-fold number: 6/10 
+ IA-grid: finding the mode
+    Elapsed time 1.01 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 338 points
+    Elapsed time 4.60 seconds
+ IA-grid: Total elapsed time 5.92 seconds
+ The CV-fold number: 7/10 
+ IA-grid: finding the mode
+    Elapsed time 1.67 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 351 points
+    Elapsed time 5.00 seconds
+ IA-grid: Total elapsed time 6.96 seconds
+ The CV-fold number: 8/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
  IA-grid: evaluated density at 337 points
-    Elapsed time 3.10 seconds
- IA-grid: Total elapsed time 4.11 seconds
- The CV-fold number: 3/10 
- IA-grid: finding the mode
- IA-grid: computing Hessian using multiplication
- IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 355 points
-    Elapsed time 3.26 seconds
- IA-grid: Total elapsed time 4.30 seconds
- The CV-fold number: 4/10 
- IA-grid: finding the mode
-    Elapsed time 1.04 seconds
- IA-grid: computing Hessian using multiplication
- IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 348 points
-    Elapsed time 3.20 seconds
- IA-grid: Total elapsed time 4.47 seconds
- The CV-fold number: 5/10 
+    Elapsed time 4.66 seconds
+ IA-grid: Total elapsed time 5.78 seconds
+ The CV-fold number: 9/10 
  IA-grid: finding the mode
     Elapsed time 1.03 seconds
- IA-grid: computing Hessian using multiplication
- IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 352 points
-    Elapsed time 3.20 seconds
- IA-grid: Total elapsed time 4.45 seconds
- The CV-fold number: 6/10 
- IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
  IA-grid: evaluated density at 336 points
-    Elapsed time 3.06 seconds
- IA-grid: Total elapsed time 3.88 seconds
- The CV-fold number: 7/10 
- IA-grid: finding the mode
-    Elapsed time 1.53 seconds
- IA-grid: computing Hessian using multiplication
- IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 347 points
-    Elapsed time 3.17 seconds
- IA-grid: Total elapsed time 4.92 seconds
- The CV-fold number: 8/10 
- IA-grid: finding the mode
-    Elapsed time 1.03 seconds
- IA-grid: computing Hessian using multiplication
- IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 342 points
-    Elapsed time 3.13 seconds
- IA-grid: Total elapsed time 4.39 seconds
- The CV-fold number: 9/10 
- IA-grid: finding the mode
-    Elapsed time 1.25 seconds
- IA-grid: computing Hessian using multiplication
- IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 335 points
-    Elapsed time 3.06 seconds
- IA-grid: Total elapsed time 4.53 seconds
+    Elapsed time 4.96 seconds
+ IA-grid: Total elapsed time 6.28 seconds
  The CV-fold number: 10/10 
  IA-grid: finding the mode
  IA-grid: computing Hessian using multiplication
  IA-grid: evaluating density in a grid
- IA-grid: evaluated density at 344 points
-    Elapsed time 3.15 seconds
- IA-grid: Total elapsed time 4.20 seconds
+ IA-grid: evaluated density at 348 points
+    Elapsed time 5.03 seconds
+ IA-grid: Total elapsed time 6.32 seconds
 Grid integration over the parameters - LOO-CV
+nGP=338, min(neff)=123, min(neff)/nGP=0.36
 Summary of the results
 
 S =
 
         full_MAP  full_MCMC  full_IA  FIC_MAP  FIC_MCMC  FIC_IA  PIC_MAP  PIC_MCMC  PIC_IA
- CV-mlpd   0.05      0.06      0.05      0.06     0.06      0.06     0.07     0.08     0.08
- CV-rmse   0.24      0.24      0.24      0.23     0.23      0.23     0.23     0.23     0.23
+ CV-mlpd   0.05      0.05      0.05      0.05     0.05      0.05     0.07     0.07     0.07
+ CV-rmse   0.24      0.24      0.23      0.23     0.23      0.23     0.23     0.23     0.23
  LOO-mlpd  0.06      0.05      0.05      0.06     0.05      0.05     0.07     0.06     0.06
  LOO-rmse  0.24      0.24      0.24      0.23     0.23      0.23     0.23     0.23     0.23
  
- WAIC_V    0.07      0.06      0.07      0.11    -1.06     -0.11     0.09     0.08     0.08
- WAIC_G    0.10      0.09      0.09      0.17    -0.45      0.42     0.12     0.12     0.12
+ WAIC_V    0.07      0.06      0.07      0.11    -2.28     -0.11     0.09     0.08     0.08
+ WAIC_G    0.10      0.09      0.09      0.17    -0.55      0.42     0.12     0.12     0.12
  
- DIC_h      NaN     -0.20     -0.20       NaN    -0.19     -0.19      NaN    -0.19    -0.18
- DIC_a      NaN      0.05      0.07       NaN     0.12      0.12      NaN     0.09     0.09
+ DIC_h      NaN     -0.20     -0.20       NaN    -0.19     -0.19      NaN    -0.18    -0.18
+ DIC_a      NaN      0.05      0.07       NaN     0.13      0.12      NaN     0.08     0.09
  DIC_l     0.07      0.00      0.00      0.11     0.00      0.00     0.09    
- peff_h     NaN      3.47      3.25       NaN     4.20      3.21      NaN     3.64     3.34
- peff_a     NaN     43.12     39.79       NaN    81.90     82.93      NaN    46.67    47.16
+ peff_h     NaN      3.47      3.25       NaN     3.93      3.21      NaN     3.30     3.34
+ peff_a     NaN     43.12     39.79       NaN    79.48     82.94      NaN    48.41    47.16
  peff_l   37.44      0.00      0.00     76.09     0.00      0.00    45.15    
- peff_l2  37.61      0.00      0.00     76.28     0.00      0.00    45.22    
+ peff_l2  37.61      0.00      0.00     76.41     0.00      0.00    45.12    
  
  
  The notation is as follows:
@@ -564,4 +909,4 @@ S =
  
     1.0742   -0.1662   -0.2199   -3.1540
 
-Demo completed in 12.993 minutes
+Demo completed in 17.382 minutes
