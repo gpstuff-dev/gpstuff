@@ -30,7 +30,10 @@
  */
 
 
+#include "SuiteSparse_config.h"
+#include "cholmod_core.h"
 #include "cholmod_matlab.h"
+#define Int SuiteSparse_long
 
 void mexFunction
 (

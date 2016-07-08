@@ -40,9 +40,12 @@
  */
 
 #include <stdio.h>
+#include "SuiteSparse_config.h"
 #include "cholmod_matlab.h"
 #include "mex.h"
 #include "matrix.h"
+#include "cholmod_core.h"
+#define Int SuiteSparse_long
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
