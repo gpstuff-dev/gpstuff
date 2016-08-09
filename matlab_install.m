@@ -29,13 +29,13 @@ function matlab_install(SuiteSparse_path)
         fprintf(' gpcf_ppcs0  \n gpcf_ppcs1 \n gpcf_ppcs2 \n gpcf_ppcs3 \n\n\n')
     elseif strcmp(SuiteSparse_path, 'SuiteSparseOn')
         cdir = pwd;        
-        cd SuiteSparse
+        cd SuiteSparse //Change this to correspond your own settings!
         SuiteSparse_path = path_spaces([pwd '/']);
         
         
         % Compile SuiteSparse
         fprintf('Compiling SuiteSparse. This may take a while \n \n')
-        paths = SuiteSparse_install(false);
+        SuiteSparse_install(false);
         
         cd(cdir)
         fprintf('Compiling GPstuff. This may take a while \n \n')
@@ -83,13 +83,14 @@ function matlab_install(SuiteSparse_path)
        addpath(S{i}); 
        fprintf ('addpath %s\n', S{i}) ;
     end
-   
-    if nargin==1
-        fprintf ('\n')
-        for k = 1:length (paths)
-            fprintf ('addpath %s\n', paths {k}) ;
-        end
-    end
+
+% SuiteSparse paths not available in the newest SuiteSparse version
+%     if nargin==1
+%         fprintf ('\n')
+%         for k = 1:length (paths)
+%             fprintf ('addpath %s\n', paths {k}) ;
+%         end
+%     end
 end
 
 function path = path_spaces(path)
