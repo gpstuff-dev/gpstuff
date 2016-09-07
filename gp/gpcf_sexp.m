@@ -762,7 +762,7 @@ function DKff = gpcf_sexp_cfdg(gpcf, x, x2)
     else
       DKffapu = cat(1,Cdm{1:m});
       ii1=ii1+1;
-      DKff{ii1}=DKffapu;
+      DKff{ii1}=DKffapu/gpcf.magnSigma2;
     end
   end
   
