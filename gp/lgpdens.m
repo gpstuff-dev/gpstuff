@@ -82,7 +82,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
                    ismember(x,{'on' 'off' 'iter'}))
   ip.addParamValue('speedup',[], @(x) ismember(x,{'on' 'off'}));
   ip.addParamValue('rej_sampling','on', @(x) ismember(x,{'on' 'off'}));
-  ip.addParamValue('imp_sampling','on', @(x) ismember(x,{'on' 'off' 'is' 'psis'}));
+  ip.addParamValue('imp_sampling','on', @(x) ismember(x,{'on' 'off' 'is' 'tis' 'psis'}));
   ip.addParamValue('cond_dens',[], @(x) ismember(x,{'on' 'off'}));
   ip.addParamValue('basis','gaussian', @(x) ismember(x,{'gaussian' 'exp' 'off'}));
   ip.addParamValue('bounded',[0 0], @(x) isnumeric(x) && min(size(x))==1 && max(size(x))==2);
@@ -263,7 +263,20 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           lws=lqs-lqq;
           lws(isnan(lws)|isinf(lws))=-Inf;
           % compute Pareto smoothed log weights given raw log importance weights
-          [lws,pk]=psislw(lws);
+          if ismember(imp_sampling,{'on' 'psis'})
+              % compute Pareto smoothed log weights given raw log importance weights
+              [lws,pk]=psislw(lws);
+          elseif ismember(imp_sampling,{'tis'})
+              lws=bsxfun(@minus,lws,sumlogs(lws));
+              lwt=min(lws,(-1/2)*log(size(lws,1)));
+              lwt=bsxfun(@minus,lwt,sumlogs(lwt));
+              lws=lwt;
+              pk=0;
+          else
+              % normalise raw log weights (basic IS weights)
+              lws=bsxfun(@minus,lws,sumlogs(lws));
+              pk=0;
+          end
           if ismember(display,{'on','iter'})
               fprintf(' lgpdens: Pareto k=%.2f\n',pk);
           end
@@ -432,13 +445,17 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           if ismember(imp_sampling,{'on' 'psis'})
               % compute Pareto smoothed log weights given raw log importance weights
               [lws,pk]=psislw(lws);
+          elseif ismember(imp_sampling,{'tis'})
+              lws=bsxfun(@minus,lws,sumlogs(lws));
+              lwt=min(lws,(-1/2)*log(size(lws,1)));
+              lwt=bsxfun(@minus,lwt,sumlogs(lwt));
+              lws=lwt;
+              pk=0;
           else
               % normalise raw log weights (basic IS weights)
               lws=bsxfun(@minus,lws,sumlogs(lws));
               pk=0;
           end
-           % lws=lws;pk=0;
-           % lws=bsxfun(@minus,lws',sumlogs(lws'))';
           if ismember(display,{'on','iter'})
               fprintf(' lgpdens: Pareto k=%.2f\n',pk);
           end

@@ -874,13 +874,12 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
     else
       t1=1;
       DKffapund=zeros(m*n,m*n);
-      for i=1:m-1
-        aa=zeros(m-1,m);
+      for i=1:m-1             
         t2=t1+m-2-(i-1);
-        aa(m-1,i)=1;
-        k=kron(aa,cat(1,zeros((i)*n,n),DKdda{t1:t2}));
-        k(1:n*(m-2)*m,:)=[];
-        k=k+k';
+        k = zeros(m*n);
+        kkk = cat(1,zeros((i)*n,n),DKdda{t1:t2});
+        k(:,(i-1)*n+1:i*n) = kkk;
+        k((i-1)*n+1:i*n,:) = k((i-1)*n+1:i*n,:) + kkk';
         DKffapund = DKffapund + k;
         t1=t2+1;
       end
@@ -948,12 +947,11 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
             t1=1;
             DKffapu2nd=zeros(m*n,m*n);
             for i=1:m-1
-              aa=zeros(m-1,m);
               t2=t1+m-2-(i-1);
-              aa(m-1,i)=1;
-              k=kron(aa,cat(1,zeros((i)*n,n),DKffnondiag{t1:t2}));
-              k(1:n*(m-2)*m,:)=[];
-              k=k+k';
+              k = zeros(m*n);
+              kkk = cat(1,zeros((i)*n,n),DKffnondiag{t1:t2});
+              k(:,(i-1)*n+1:i*n) = kkk;
+              k((i-1)*n+1:i*n,:) = k((i-1)*n+1:i*n,:) + kkk';
               DKffapu2nd = DKffapu2nd + k;
               t1=t2+1;
             end
@@ -1026,12 +1024,13 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
 %                 t1=t2+1;
 %               end
 %               aa=zeros(1,m);
-              aa=zeros(m-1,m);
 %               aa(1,i)=1;
-              aa(m-1,j+1)=1;
-              kk=kron(aa,cat(1,zeros((j+1)*n,n),Dnondiag{1+j:m-1}));
-              kk(1:n*(m-2)*m,:)=[];
-              kk=kk+kk';
+              
+              kk = zeros(m*n);
+              kkk = cat(1,zeros((j+1)*n,n),Dnondiag{1+j:m-1});
+              kk(:,j*n+1:(j+1)*n) = kkk;
+              kk(j*n+1:(j+1)*n,:) = kk(j*n+1:(j+1)*n,:) + kkk';
+              
               NDi{k} = NDi{k} + kk;
             end
           end
