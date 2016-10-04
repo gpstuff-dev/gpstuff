@@ -445,7 +445,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
             [Eft,V]=pred_var(tautilde,K,K_nf,nutilde);
             Varft=kstarstar-V;
             
-            if nargout > 3 && isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Ga  ussian')
+            if nargout >= 3 && isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian')
               % Gaussian likelihood with monotonicity -> analytical
               % predictions for f, see e.g. gp_monotonic, gpep_predgrad
               Eyt=Eft;
