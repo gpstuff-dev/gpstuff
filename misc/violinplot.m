@@ -22,8 +22,12 @@ function hh = violinplot(x,varargin)
 %               on or off (default)
 %      cutoff - cutoff for not plotting thin tails. Default is
 %               0.01, that is, 1% of the mass in both tails is not plotted
+%      gridn  - optional number of grid points used. Default is 400
+%      bounded - tells if the density is bounded from left or right 
+%                (default is [0 0]). In unbounded case, decreasing tails 
+%                are assumed.
 %
-% Copyright (c) 2011 Aki Vehtari
+% Copyright (c) 2011,2016 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -39,6 +43,8 @@ function hh = violinplot(x,varargin)
   ip.addParamValue('cutoff',.01, @(x) isreal(x)&& isscalar(x) && x>0 && x<1);
   ip.addParamValue('dots', 'off', @(x) islogical(x) || ...
                    ismember(x,{'on' 'off'}))
+  ip.addParamValue('gridn',400, @(x) isnumeric(x));
+  ip.addParamValue('bounded',[0 0], @(x) isnumeric(x) && min(size(x))==1 && max(size(x))==2);
   ip.parse(x,varargin{:});
   x=ip.Results.x;
   y=ip.Results.y;
@@ -46,6 +52,8 @@ function hh = violinplot(x,varargin)
   xrange=ip.Results.range;
   cutoff=ip.Results.cutoff;
   dots=ip.Results.dots;
+  gridn=ip.Results.gridn;
+  bounded=ip.Results.bounded;
   
   horiz=true;
   if isempty(y)
@@ -60,7 +68,7 @@ function hh = violinplot(x,varargin)
   
   [n,m]=size(y);
   for i1=1:m
-    [p,notused,yy]=lgpdens(y(:,i1),'gridn',200,'range',xrange);
+    [p,notused,yy]=lgpdens(y(:,i1),'gridn',200,'range',xrange,'bounded',bounded,'gridn',gridn);
     cp=cumsum(p./sum(p));
     qicutofflo=binsgeq(cp,cutoff/2);
     qicutoffhi=binsgeq(cp,1-cutoff/2);
