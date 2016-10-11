@@ -102,7 +102,7 @@ function prctys = gp_predprcty(gp, x, y, varargin)
   
   if iscell(gp) || numel(gp.jitterSigma2)>1
     % gp_array or MCMC samples
-    if (iscell(gp) && isfield(gp{1}.lik.fh,'trcov')) || isfield(gp.lik.fh,'trcov')
+    if (iscell(gp) && isfield(gp{1}.lik.fh,'trcov')) || (~iscell(gp) && isfield(gp.lik.fh,'trcov'))
       % Gaussian likelihood
       % the combined predictive distribution is not Gaussian
       [tmp, sampyt] = gp_rnd(gp,x,y,xt, 'nsamp', nsamp, options);
