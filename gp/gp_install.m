@@ -90,7 +90,7 @@ else
     % Compile the 'spinv' and 'ldlrowupdate' mex-functions
     % This is awfully long since the functions need all the functionalities of SuiteSparse
 
-    include = '-I../../CHOLMOD/MATLAB -I../../AMD/Include -I../../COLAMD/Include -I../../CCOLAMD/Include -I../../CAMD/Include -I../Include -I../../UFconfig' ;
+    include = '-I../../CHOLMOD/MATLAB -I../CHOLMOD/Include -I../../AMD/Include -I../../COLAMD/Include -I../../CCOLAMD/Include -I../../CAMD/Include -I../Include -I../../UFconfig' ;
 
     if (v < 7.0)
         % do not attempt to compile CHOLMOD with large file support
@@ -108,12 +108,14 @@ else
     % Determine the METIS path, and whether or not METIS is available
 % $$$ if (nargin == 0)
     metis_path = '../../metis-4.0' ;
+    %metis_path = '';
 % $$$ end
 % $$$ if (strcmp (metis_path, 'no metis'))
 % $$$     metis_path = '' ;
 % $$$ end
     have_metis = (~isempty (metis_path)) ;
-
+    config_path = [suiteSparse 'SuiteSparse_config'];
+    include = [include ' -I' config_path] ;
     % fix the METIS 4.0.1 rename.h file
     if (have_metis)
         fprintf ('Compiling CHOLMOD with METIS on MATLAB Version %g\n', v) ;
@@ -127,6 +129,7 @@ else
         fprintf (f, '#undef log2\n') ;
         fprintf (f, '#define log2 METIS__log2\n') ;
         fprintf (f, '#include "mex.h"\n') ;
+        fprintf (f, '#include <stdio.h>\n') ;
         fprintf (f, '#define malloc mxMalloc\n') ;
         fprintf (f, '#define free mxFree\n') ;
         fprintf (f, '#define calloc mxCalloc\n') ;
@@ -172,7 +175,7 @@ else
     cholmod_path = [suiteSparse 'CHOLMOD/'];
     include = strrep(include, '../../', suiteSparse);
     include = strrep(include, '../', cholmod_path);
-    include = strrep (include, '/', filesep) ;
+    include = strrep (include, '/', filesep);
 
     amd_src = { ...
         '../../AMD/Source/amd_1', ...
@@ -269,6 +272,8 @@ else
         metis_src {i} = [metis_path '/' metis_src{i}] ;
     end
 
+    config_src = [config_path '/' 'SuiteSparse_config'];
+
     cholmod_matlab = { '../MATLAB/cholmod_matlab' } ;
 
     cholmod_src = {
@@ -335,7 +340,7 @@ else
     % compile each library source file
     obj = '' ;
 
-    source = [amd_src colamd_src ccolamd_src camd_src cholmod_src cholmod_matlab] ;
+    source = [config_src amd_src colamd_src ccolamd_src camd_src cholmod_src cholmod_matlab] ;
     if (have_metis)
         source = [metis_src source] ;
     end

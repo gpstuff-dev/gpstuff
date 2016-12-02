@@ -52,9 +52,9 @@ function gpcf = gpcf_linearMichelismenten(varargin)
 %  References:
 %   Kot, M. (2001). Elements of Mathematical Ecology. University Press,
 %      Cambridge 
-%   Jarno Vanhatalo, Geoffrey R. Hosack, Hugh Sweatman (in review).
-%      Spatio-temporal progression of outbreaks of the crown-of-thorns 
-%      starfish on the Great Barrier Reef, 1985–2014.
+%   Jarno Vanhatalo, Geoffrey R. Hosack, Hugh Sweatman (2016).
+%      Spatio-temporal modelling of crown-of-thorns starfish outbreaks on
+%      the Great Barrier Reef to inform control strategies. 
 %
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*, MEAN_*

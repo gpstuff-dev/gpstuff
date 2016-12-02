@@ -460,12 +460,12 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
       i1 = i1 - gpcf.max_deg;
       % The parameter belongs to one of the underlying kernels
       % Now i1 is [kernel_index, param_index_in_that_kernel]
-      i3=cumsum(i3);
-      ind=find(cumsum(i3 >= i1)==1);
-      if ind>1
-        i1=[ind i1-i3(ind-1)];
+      i3 = cumsum(i3);
+      ind = find(i3 >= i1, 1);
+      if ind > 1
+        i1 = [ind, i1-i3(ind-1)];
       else
-        i1=[ind i1];
+        i1 = [ind, i1];
       end
     end
   else
@@ -484,7 +484,7 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
     zs = zeros(n,n,ncf);
     for i=1:ncf
       cf = gpcf.cf{i};
-      zs(:,:,i) = cf.fh.trcov(cf, x);
+      zs(:,:,i) = cf.fh.trcov(cf, x(:,i));
     end
     
     % Evaluate the gradients
@@ -504,7 +504,7 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
       % Subkernel hyperparameters
       for i=1:ncf
         cf = gpcf.cf{i};
-        DK = cf.fh.cfg(cf, x);
+        DK = cf.fh.cfg(cf, x(:,i));
         
         CC = gpcf.sigma2(1).*ones(n,n);
         if r > 1
@@ -527,7 +527,7 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
       else
         
         cf = gpcf.cf{i1(1)};
-        DK = cf.fh.cfg(cf,x,[],[],i1(2));
+        DK = cf.fh.cfg(cf,x(:,i1(1)),[],[],i1(2));
 
         CC = gpcf.sigma2(1).*ones(n,n);
         if r > 1
@@ -553,7 +553,7 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
     zs = zeros(size(x,1),size(x2,1),ncf);
     for i=1:ncf
       cf = gpcf.cf{i};
-      zs(:,:,i) = cf.fh.cov(cf, x, x2);
+      zs(:,:,i) = cf.fh.cov(cf, x(:,i), x2(:,i));
     end
     
     % Evaluate the gradients
@@ -573,7 +573,7 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
       % Subkernel hyperparameters
       for i=1:ncf
         cf = gpcf.cf{i};
-        DK = cf.fh.cfg(cf, x,x2);
+        DK = cf.fh.cfg(cf, x(:,i), x2(:,i));
         
         CC = gpcf.sigma2(1).*ones(n,n);
         if r > 1
@@ -596,7 +596,7 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
       else
         
         cf = gpcf.cf{i1(1)};
-        DK = cf.fh.cfg(cf,x,x2,[],i1(2));
+        DK = cf.fh.cfg(cf, x(:,i), x2(:,i), [], i1(2));
 
         CC = gpcf.sigma2(1).*ones(n,n);
         if r > 1
@@ -621,7 +621,7 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
     zs = zeros(size(x,1),ncf);
     for i=1:ncf
       cf = gpcf.cf{i};
-      zs(:,i) = cf.fh.trvar(cf, x);
+      zs(:,i) = cf.fh.trvar(cf, x(:,i));
     end
     
     % Evaluate the gradients
@@ -641,7 +641,7 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
       % Subkernel hyperparameters
       for i=1:ncf
         cf = gpcf.cf{i};
-        DK = cf.fh.cfg(cf, x, [], 1);
+        DK = cf.fh.cfg(cf, x(:,i), [], 1);
         
         CC = gpcf.sigma2(1).*ones(n,n);
         if r > 1
@@ -664,7 +664,7 @@ function DKff = gpcf_additive_cfg(gpcf, x, x2, mask, i1)
       else
         
         cf = gpcf.cf{i1(1)};
-        DK = cf.fh.cfg(cf, x, [], 1, i1(2));
+        DK = cf.fh.cfg(cf, x(:,i1(1)), [], 1, i1(2));
 
         CC = gpcf.sigma2(1).*ones(n,n);
         if r > 1
@@ -742,7 +742,7 @@ function DKff = gpcf_additive_ginput(gpcf, x, x2, i1)
     zs = zeros(n,n,ncf);
     for i=1:ncf
       cf = gpcf.cf{i};
-      zs(:,:,i) = cf.fh.trcov(cf, x);
+      zs(:,:,i) = cf.fh.trcov(cf, x(:,i));
     end
     
     % Evaluate the gradients
@@ -755,9 +755,9 @@ function DKff = gpcf_additive_ginput(gpcf, x, x2, i1)
     for i=1:ncf
       cf = gpcf.cf{i};
       if ~savememory
-        DK = cf.fh.ginput(cf, x);
+        DK = cf.fh.ginput(cf, x(:,i));
       else
-        DK = cf.fh.ginput(cf, x, [], i1);
+        DK = cf.fh.ginput(cf, x(:,i), [], i1);
       end
       
       CC = gpcf.sigma2(1).*ones(n,n);
@@ -784,7 +784,7 @@ function DKff = gpcf_additive_ginput(gpcf, x, x2, i1)
     zs = zeros(n,n,ncf);
     for i=1:ncf
       cf = gpcf.cf{i};
-      zs(:,:,i) = cf.fh.cov(cf, x, x2);
+      zs(:,:,i) = cf.fh.cov(cf, x(:,i), x2(:,i));
     end
     
     % Evaluate the gradients
@@ -797,9 +797,9 @@ function DKff = gpcf_additive_ginput(gpcf, x, x2, i1)
     for i=1:ncf
       cf = gpcf.cf{i};
       if ~savememory
-        DK = cf.fh.ginput(cf, x, x2);
+        DK = cf.fh.ginput(cf, x(:,i), x2(:,i));
       else
-        DK = cf.fh.ginput(cf, x, x2, i1);
+        DK = cf.fh.ginput(cf, x(:,i), x2(:,i), i1);
       end
       
       CC = gpcf.sigma2(1).*ones(n,n);

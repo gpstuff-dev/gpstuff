@@ -99,7 +99,7 @@ function h = gpmf_geth(gpmf, x)
 %    dimension.
   
   if isfield(gpmf,'selectedVariables')
-    x=x(:,selectedVariables);
+    x=x(:,gpmf.selectedVariables);
   end
   h = x'.^2;
   if isequal(gpmf.interactions,'on')

@@ -5,7 +5,7 @@ function matlab_install(SuiteSparse_path)
 %  SuiteSparse toolbox by Tim Davis:
 %    http://www.cise.ufl.edu/research/sparse/SuiteSparse/current/SuiteSparse/
 %
-%  This package includes the SuiteSparse version 3.4. 
+%  This package includes the SuiteSparse version 4.4.2. 
 % 
 %  * To install without SuiteSparse run matlab_install
 %  * To install with SuiteSparse run matlab_install('SuiteSparseOn')
@@ -13,7 +13,8 @@ function matlab_install(SuiteSparse_path)
 %   The function matlab_install compiles the mex-files and prints on
 %   the screen, which directories should be added to Matlab paths. 
     
-% Copyright (c) 2008-2012 Jarno Vanhatalo
+% Copyright (c) 2008-2012, 2016 Jarno Vanhatalo
+% Copyright (c) 2016            Eero Siivola
     
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -29,13 +30,43 @@ function matlab_install(SuiteSparse_path)
         fprintf(' gpcf_ppcs0  \n gpcf_ppcs1 \n gpcf_ppcs2 \n gpcf_ppcs3 \n\n\n')
     elseif strcmp(SuiteSparse_path, 'SuiteSparseOn')
         cdir = pwd;        
-        cd SuiteSparse
+        cd SuiteSparse % Change this to correspond your own settings!
         SuiteSparse_path = path_spaces([pwd '/']);
         
         
         % Compile SuiteSparse
         fprintf('Compiling SuiteSparse. This may take a while \n \n')
-        paths = SuiteSparse_install(false);
+        SuiteSparse_install(false);
+        
+        paths{1} = SuiteSparse_path;
+        paths{2} = [SuiteSparse_path 'UMFPACK/MATLAB'];
+        paths{3} = [SuiteSparse_path 'CHOLMOD/MATLAB'];
+        paths{4} = [SuiteSparse_path 'AMD/MATLAB'];
+        paths{5} = [SuiteSparse_path 'COLAMD/MATLAB'];
+        paths{6} = [SuiteSparse_path 'CCOLAMD/MATLAB'];
+        paths{7} = [SuiteSparse_path 'CAMD/MATLAB'];
+        paths{8} = [SuiteSparse_path 'CXSparse/MATLAB/Demo'];
+        paths{9} = [SuiteSparse_path 'CXSparse/MATLAB/CSparse'];
+        paths{10} = [SuiteSparse_path 'LDL/MATLAB'];
+        paths{11} = [SuiteSparse_path 'BTF/MATLAB'];
+        paths{12} = [SuiteSparse_path 'KLU/MATLAB'];
+        paths{13} = [SuiteSparse_path 'SPQR/MATLAB'];
+        paths{14} = [SuiteSparse_path 'RBio/RBio'];
+        paths{15} = [SuiteSparse_path 'MATLAB_Tools'];
+        paths{16} = [SuiteSparse_path 'MATLAB_Tools/Factorize'];
+        paths{17} = [SuiteSparse_path 'MATLAB_Tools/MESHND'];
+        paths{18} = [SuiteSparse_path 'MATLAB_Tools/LINFACTOR'];
+        paths{19} = [SuiteSparse_path 'MATLAB_Tools/find_components'];
+        paths{20} = [SuiteSparse_path 'MATLAB_Tools/GEE'];
+        paths{21} = [SuiteSparse_path 'MATLAB_Tools/shellgui'];
+        paths{22} = [SuiteSparse_path 'MATLAB_Tools/waitmex'];
+        paths{23} = [SuiteSparse_path 'MATLAB_Tools/spqr_rank'];
+        paths{24} = [SuiteSparse_path 'MATLAB_Tools/spqr_rank/SJget'];
+        paths{25} = [SuiteSparse_path 'MATLAB_Tools/UFcollection'];
+        paths{26} = [SuiteSparse_path 'MATLAB_Tools/SSMULT'];
+        paths{27} = [SuiteSparse_path 'MATLAB_Tools/dimacs10'];
+        paths{28} = [SuiteSparse_path 'MATLAB_Tools/spok'];
+        paths{29} = [SuiteSparse_path 'MATLAB_Tools/sparseinv'];
         
         cd(cdir)
         fprintf('Compiling GPstuff. This may take a while \n \n')
@@ -83,7 +114,7 @@ function matlab_install(SuiteSparse_path)
        addpath(S{i}); 
        fprintf ('addpath %s\n', S{i}) ;
     end
-   
+
     if nargin==1
         fprintf ('\n')
         for k = 1:length (paths)
