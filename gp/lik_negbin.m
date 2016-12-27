@@ -41,6 +41,7 @@ function lik = lik_negbin(varargin)
 %
 % Copyright (c) 2007-2010 Jarno Vanhatalo & Jouni Hartikainen
 % Copyright (c) 2010 Aki Vehtari
+% ············· 2016 Marcelo Hartmann
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -484,28 +485,31 @@ function [lpy, Ey, Vary] = lik_negbin_predy(lik, Ef, Varf, yt, zt)
   
   lpy = zeros(size(Ef));
   Ey = zeros(size(Ef));
-  EVary = zeros(size(Ef));
-  VarEy = zeros(size(Ef)); 
+  % EVary = zeros(size(Ef));
+  % VarEy = zeros(size(Ef)); 
   
   if nargout > 1
-    % Evaluate Ey and Vary 
-    for i1=1:length(Ef)
-        %%% With quadrature
-        myy_i = Ef(i1);
-        sigm_i = sqrt(Varf(i1));
-        minf=myy_i-6*sigm_i;
-        maxf=myy_i+6*sigm_i;
+    % Evaluate Ey and Vary in closed-form
+    Ey = zt .* exp(Ef + Varf./2);
+    Vary = Ey + zt.^2 .* exp(2.*Ef + Varf) .* (exp(Varf)*(1/r + 1) - 1);
 
-        F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
-        Ey(i1) = quadgk(F,minf,maxf);
+    % for i1=1:length(Ef)
+    %     %%% With quadrature
+    %     myy_i = Ef(i1);
+    %     sigm_i = sqrt(Varf(i1));
+    %     minf=myy_i-6*sigm_i;
+    %     maxf=myy_i+6*sigm_i;
 
-        F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
-        EVary(i1) = quadgk(F2,minf,maxf);
+    %     F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
+    %     Ey(i1) = quadgk(F,minf,maxf);
 
-        F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
-        VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
-    end
-    Vary = EVary + VarEy;
+    %     F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
+    %     EVary(i1) = quadgk(F2,minf,maxf);
+
+    %     F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
+    %     VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
+    % end
+    % Vary = EVary + VarEy;
   end
 
   % Evaluate the posterior predictive densities of the given observations
