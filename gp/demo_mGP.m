@@ -77,7 +77,7 @@
 % ─────── data analysis with the multivariate Gaussian process model
 
 % download the data
-data = importdata('predpreydata.txt');
+data = importdata('demodata/predpreydata.txt');
 
 % colors;
 col = [0 0 1; 1 0 0];
