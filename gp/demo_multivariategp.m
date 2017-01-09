@@ -48,19 +48,19 @@
 % 
 %   where K is a full covariance matrix formed by covariance function 
 %
-%       k(fj(t), fj'(t')) = Σ_(c = 1, 2) u_c(j, j') k_c(t, t')
+%       k(fj(t), fj'(t')) = Sig_(c = 1, 2) u_c(j, j') k_c(t, t')
 %  
 %   with u_c(j, j') the (j, j') entry of the matrix U_c = Lc Lc^T, where Lc
 %   is cth column of the Cholesky decomposition of the coregionalization
-%   matrix (covariance matrix) {Σ}j,j' = σ_j σ_j' ρ_{j, j'}. We use the
+%   matrix (covariance matrix) {Sig}j,j' = sig_j sig_j' rho_{j, j'}. We use the
 %   analytical approximation expectation-propagation to carry out the inference
 %   over the latent values f1, f2 and then calcule the unconditional expected values
-%   of N1 and N2, i.e, E[N1(t)|Y1 = y1 Λ Y2 = y2] and E[N2(t)|Y1 = y1 Λ Y2 = y2].
+%   of N1 and N2, i.e, E[N1(t)|Y1 = y1, Y2 = y2] and E[N2(t)|Y1 = y1, Y2 = y2].
 %
 % Additional references :
 %
 %   Murray, J, D (2002). Mathematical biology. Third Edition. Springer
-%   Series.
+%    Series.
 %
 %   Gelfand et al. (2004). Nonstationary multivariate process modelling 
 %     through spatially varying coregionalization.
@@ -69,15 +69,17 @@
 %    Processes for Machine Learning. The MIT Press.
 %
 %   Bernardo, J and Smith, A (2008). Bayesian Theory. Wiley series in
-%   probability and statistics
+%    probability and statistics
 %
-% ──────────── Marcelo Hartmann
+% -------------- Marcelo Hartmann
 
 %%
-% ─────── data analysis with the multivariate Gaussian process model
+% ------- data analysis with the multivariate Gaussian process model
 
 % download the data
-data = importdata('demodata/predpreydata.txt');
+S = which('demo_multivariategp');
+L = strrep(S, 'demo_multivariategp.m', 'demodata/predpreydata.txt');
+data = Load('demodata/predpreydata.txt');
 
 % colors;
 col = [0 0 1; 1 0 0];
@@ -117,7 +119,7 @@ z = ones(size(x, 1), 1);
 lik1 = lik_negbin;
 lik2 = lik_negbin;
 likS = {lik1 lik2};
-lik = liks('likelihoods', likS, 'classVariables', x(:, 2));
+lik = lik_liks('likelihoods', likS, 'classVariables', x(:, 2));
 
 % correlation function for each species (the correlation functions can also be distinct)
 k1 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior', prior_fixed, 'selectedVariables', 1);
@@ -125,7 +127,7 @@ k2 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior', prior_fixed, 'selectedVariab
 
 % the linear model of coregionalization (multivariate Gaussian process model)
 k = gpcf_covar('numberClass', 2, 'classVariables', 2, ...
-    'R_prior', prior_R('nu', 3), 'corrFun', {k1 k2});
+    'R_prior', prior_corrunif('nu', 3), 'corrFun', {k1 k2});
 
 % set gp structure
 gp = gp_set('lik', lik, 'cf', k, 'latent_method', 'EP');
@@ -161,7 +163,7 @@ zp = ones(size(xp, 1), 1);
 % prediction for new observations
 [Ef, Varf, ~, Ey, Vary] = gp_pred(gp, x, y, xp, 'z', z, 'zt', [zp xp(:, 2)]); 
 
-% ─── visualize predictions
+% --- visualize predictions
 
 figure; hold on;
 
@@ -197,7 +199,7 @@ legend(pl, 'E[N1(t)|Y1 = y1 Λ Y2 = y2]', 'E[N2(t)|Y1 = y1 Λ Y2 = y2]', ...
     'hare-data', 'lynx-data', 'Location', 'northeast'); 
 
 %%
-% ─────── data analysis with independent Gaussian process model
+% -------- data analysis with independent Gaussian process model
 
 EfI = {}; VarfI = {}; EyI = {}; VaryI = {};
 gpI = {};
@@ -239,11 +241,11 @@ plot(t2(t2 >= yr2(2)), y2(t2 >= yr2(2)), '.', ...
 xlabel('years'); ylabel('Population size'); 
 title('independent Gaussian process models');
 
-legend(pl, 'E[N1(t)|Y1 = y1 Λ Y2 = y2]', 'E[N2(t)|Y1 = y1 Λ Y2 = y2]', ...
+legend(pl, 'E[N1(t)|Y1 = y1, Y2 = y2]', 'E[N2(t)|Y1 = y1, Y2 = y2]', ...
     'hare-data', 'lynx-data', 'Location', 'northeast'); 
 
 %%
-% ────── all measurements (compare the difference ...)
+% ------ all measurements (compare the difference ...)
 
 figure; hold on;
 
