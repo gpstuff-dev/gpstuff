@@ -1,20 +1,41 @@
 function lik = lik_liks(varargin)
-%  LIKS creates a likelihood which is composed by many
-%  different likelihoods.
+%  LIKS creates a likelihood structure which is composed by many
+%       different likelihoods.
 %
 %  Description:
-%    LIK = LIKS(LIKELIHOODS, VALUE1, ...) 
-%    creates a likelihood structure with many different likelihoods. if
-%    there is any unspecified parameters you get an error
-%  
-%    The likelihood is the product of the likelihoods (independent
-%    observations given the latent process),
+%    LIK_LIK = LIK_LIKS(LIKELIHOODS, VALUE1, ...) creates a likelihood
+%    structure that allows alternative likelihoods for latent variables.
+%    The full likelihood is the product of independent likelihoods
+%    (independent observations given the latent process), 
 %
-%               __ k    __ n_j
-%      p(y|f) = || j=1  || i=1 L(y_ij|f_ij, th_j)
+%               __k    __ 
+%      p(y|f) = ||     ||  L_j(y_i|f_i, th_j)
+%                 j=1 i\in I_j
 %
-%      f = (f1, f2, ..., fk)
-%      y = (y1, y2, ..., yk)
+%      f = (f1, f2, ..., fk)'
+%      y = (y1, y2, ..., yk)'
+%
+%    Here j is the index for different likelihoods and I_j is the index
+%    vector telling for which observations likelihood j is used.
+%
+%    When using the Liks likelihood you must give the vector/matrix z as 
+%    an extra parameter to each function that requires also y. The matrix z
+%    must include the covariates for independent likelihoods (see e.g.
+%    LIK_POISSON) and a column telling the index of likelihood attached to
+%    respective observation. For example: 
+%      lik = lik_liks('likelihoods', {lik1 lik2}, 'classVariables', 2);
+%      gp = gp_set('lik', lik, 'cf', k, 'latent_method', 'EP');
+%      z = [1 1 1 2 2 2]'; 
+%      gp_optim(gp, x, y, 'z', z)
+%    Here z is a vector telling that the first 3 observations are related
+%    to likelihood 1 and the last 3 to likelihood 2.
+%
+%    Parameters for Liks likelihood are [default]
+%      likelihoods      - array of likelyhood structures [ {} ]
+%      classVariables   - a scalar telling which column of matrix z defines 
+%                         the likelihood indices (variance) [1]
+%
+%    For the demonstration of the use of lik_liks see DEMO_MULTIVARIATEGP.
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
@@ -29,7 +50,7 @@ function lik = lik_liks(varargin)
 % License.txt, included with the software, for details.
 
   ip = inputParser;
-  ip.FunctionName = 'LIKS';
+  ip.FunctionName = 'LIK_LIKS';
   ip.addOptional('lik', [], @isstruct);
   ip.addParamValue('likelihoods', {}, @(x) ~isempty(x) && iscell(x));
   ip.addParamValue('classVariables', [], @(x) ~isempty(x) && isvector(x));
@@ -79,35 +100,35 @@ function lik = lik_liks(varargin)
   
   if init
       % Set the function handles to the subfunctions
-      lik.fh.pak = @liks_pak;
-      lik.fh.unpak = @liks_unpak;
-      lik.fh.lp = @liks_lp;
-      lik.fh.lpg = @liks_lpg;
-      lik.fh.ll = @liks_ll;
-      lik.fh.llg = @liks_llg;    
-      lik.fh.llg2 = @liks_llg2;
-      lik.fh.llg3 = @liks_llg3;
-      lik.fh.tiltedMoments = @liks_tiltedMoments;
-      lik.fh.siteDeriv = @liks_siteDeriv;
-      lik.fh.predy = @liks_predy;
-      lik.fh.recappend = @liks_recappend;
+      lik.fh.pak = @lik_liks_pak;
+      lik.fh.unpak = @lik_liks_unpak;
+      lik.fh.lp = @lik_liks_lp;
+      lik.fh.lpg = @lik_liks_lpg;
+      lik.fh.ll = @lik_liks_ll;
+      lik.fh.llg = @lik_liks_llg;    
+      lik.fh.llg2 = @lik_liks_llg2;
+      lik.fh.llg3 = @lik_liks_llg3;
+      lik.fh.tiltedMoments = @lik_liks_tiltedMoments;
+      lik.fh.siteDeriv = @lik_liks_siteDeriv;
+      lik.fh.predy = @lik_liks_predy;
+      lik.fh.recappend = @lik_liks_recappend;
   end
     
 
 end
 
 
-function [w, s, h] = liks_pak(lik)
-% LIKS_PAK  Combines each likelihood parameters into one vector.
+function [w, s, h] = lik_liks_pak(lik)
+% LIK_LIKS_PAK  Combines each likelihood parameters into one vector.
 %
 %  Description:
-%    W = LIKS_PAK(LIK) takes a likelihood structure LIK and
+%    W = LIK_LIKS_PAK(LIK) takes a likelihood structure LIK and
 %    combines the parameters into a single row vector W. This is a 
 %    mandatory subfunction used for example in energy and gradient 
 %    computations.
 %     
 %   See also
-%   LIKS_UNPAK, GP_PAK
+%   LIK_LIKS_UNPAK, GP_PAK
 
  w = []; s = {}; h = [];
 
@@ -123,17 +144,17 @@ function [w, s, h] = liks_pak(lik)
 end
 
 
-function [lik, w] = liks_unpak(lik, w)
-% LIKS_UNPAK  Extracts each likelihood parameters from the vector.
+function [lik, w] = lik_liks_unpak(lik, w)
+% LIK_LIKS_UNPAK  Extracts each likelihood parameters from the vector.
 %
 %  Description: 
-%    [LIK, W] = LIKS_UNPAK(W, LIK) takes each likelihood
+%    [LIK, W] = LIK_LIKS_UNPAK(W, LIK) takes each likelihood
 %    structure inside LIK and extracts the parameters from the vector W
 %    to the whole LIK structure. This is a mandatory subfunction used 
 %    for example in energy and gradient computations.
 %     
 %   See also:
-%   LIKS_PAK, GP_UNPAK
+%   LIK_LIKS_PAK, GP_UNPAK
 
 % Assignment is inverse parameter transformation 
 
@@ -147,16 +168,16 @@ function [lik, w] = liks_unpak(lik, w)
 end
 
 
-function lp = liks_lp(lik, varargin)
-% LIKS_LP  log(prior) of each the likelihood parameters
+function lp = lik_liks_lp(lik, varargin)
+% LIK_LIKS_LP  log(prior) of each the likelihood parameters
 %
 %  Description:
-%    LP = LIKS_LP(LIK) takes the a likelihood structure LIK and
+%    LP = LIK_LIKS_LP(LIK) takes the a likelihood structure LIK and
 %    returns log(p(th)), where th collects the parameters. This 
 %    subfunction is needed when there are likelihood parameters.
 %
 %  See also:
-%    LIKS_LLG, LIKS_LLG2, LIKS_LLG3, GPLA_E
+%    LIK_LIKS_LLG, LIK_LIKS_LLG2, LIK_LIKS_LLG3, GPLA_E
   
  % If there is prior for the likelihood parameters
  lp = 0;
@@ -170,17 +191,17 @@ function lp = liks_lp(lik, varargin)
 end
 
 
-function lpg = liks_lpg(lik)
-% LIKS_LPG  dlog(prior)/dth of each the likelihood parameters th
+function lpg = lik_liks_lpg(lik)
+% LIK_LIKS_LPG  dlog(prior)/dth of each the likelihood parameters th
 %
 %  Description:
-%    E = LIKS_LPG(LIK) takes a likelihood structure LIK and
+%    E = LIK_LIKS_LPG(LIK) takes a likelihood structure LIK and
 %    returns d log(p(th))/dth for each likelihood function,
 %    where th collects the parameters.
 %    This subfunction is needed when there are likelihood parameters.
 %
 %  See also:
-%    LIKS_LLG, LIKS_LG3, LIKS_LLG2, GPLA_G
+%    LIK_LIKS_LLG, LIK_LIKS_LG3, LIK_LIKS_LLG2, GPLA_G
 
  lpg = [];
  
@@ -193,11 +214,11 @@ function lpg = liks_lpg(lik)
 end
 
 
-function ll = liks_ll(lik, y, ff, z)
-% LIKS_LL log-likelihood
+function ll = lik_liks_ll(lik, y, ff, z)
+% LIK_LIKS_LL log-likelihood
 %
 %  Description:
-%    LL = LIKS_LL(LIK, Y, F) takes a likelihood structure LIK. 
+%    LL = LIK_LIKS_LL(LIK, Y, F) takes a likelihood structure LIK. 
 %    Returns the log-likelihood, sum_{i=1}^{k} (log p_i(y|f)).
 %    This subfunction is needed when using Laplace approximation 
 %    or MCMC for inference with non-Gaussian likelihoods. This 
@@ -231,11 +252,11 @@ function ll = liks_ll(lik, y, ff, z)
 end
 
 
-function llg = liks_llg(lik, y, ff, param, z)
-% LIKS_LLG  Gradient of the log-likelihood
+function llg = lik_liks_llg(lik, y, ff, param, z)
+% LIK_LIKS_LLG  Gradient of the log-likelihood
 %
 %  Description:
-%    LLG = LIKS_LLG(LIK, Y, F, PARAM) takes a likelihood
+%    LLG = LIK_LIKS_LLG(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, Returns the gradient of the log likelihood
 %    with respect to PARAM for each likelihood function. At the moment PARAM
 %    can be 'param' or 'latent'. This subfunction is needed when using 
@@ -243,7 +264,7 @@ function llg = liks_llg(lik, y, ff, param, z)
 %    likelihoods.
 %
 %  See also:
-%    LIKS_LL, LIKS_LLG2, LIKS_LLG3, GPLA_E
+%    LIK_LIKS_LL, LIK_LIKS_LLG2, LIK_LIKS_LLG3, GPLA_E
   
  n = size(y, 1);
  if n ~= numel(lik.classVariables)
@@ -279,11 +300,11 @@ function llg = liks_llg(lik, y, ff, param, z)
 end
 
 
-function llg2 = liks_llg2(lik, y, ff, param, z)
-% LIKS_LLG2  Second gradients of the log-likelihood
+function llg2 = lik_liks_llg2(lik, y, ff, param, z)
+% LIK_LIKS_LLG2  Second gradients of the log-likelihood
 %
 %  Description        
-%    LLG2 = LIKS_LLG2(LIK, Y, F, PARAM) takes a likelihood
+%    LLG2 = LIK_LIKS_LLG2(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, Returns the hessian of the log likelihood
 %    with respect to PARAM. At the moment PARAM can be only
 %    'latent'. LLG2 is a vector with diagonal elements of the
@@ -292,7 +313,7 @@ function llg2 = liks_llg2(lik, y, ff, param, z)
 %    inference with non-Gaussian likelihoods.
 %
 %  See also
-%    LIKS_LL, LIKS_LLG, LIKS_LLG3, GPLA_E
+%    LIK_LIKS_LL, LIK_LIKS_LLG, LIK_LIKS_LLG3, GPLA_E
 
  n = size(y, 1);
  if n ~= numel(lik.classVariables)
@@ -348,11 +369,11 @@ function llg2 = liks_llg2(lik, y, ff, param, z)
 end    
 
 
-function llg3 = liks_llg3(lik, y, ff, param, z)
-% LIKS_LLG3  Third gradients of the log likelihood
+function llg3 = lik_liks_llg3(lik, y, ff, param, z)
+% LIK_LIKS_LLG3  Third gradients of the log likelihood
 %
 %  Description:
-%    LLG3 = LIKS_LLG3(LIK, Y, F, PARAM) takes a likelihood
+%    LLG3 = LIK_LIKS_LLG3(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, returns the third gradients of the log
 %    likelihood with respect to PARAM. At the moment PARAM can be
 %    only 'latent'. LLG3 is a vector with third gradients. This 
@@ -360,7 +381,7 @@ function llg3 = liks_llg3(lik, y, ff, param, z)
 %    inference with non-Gaussian likelihoods.
 %
 %  See also:
-%    LIKS_LL, LIKS_LLG, LIKS_LLG2, GPLA_E, GPLA_G
+%    LIK_LIKS_LL, LIK_LIKS_LLG, LIK_LIKS_LLG2, GPLA_E, GPLA_G
 
  n = size(y, 1);
  if n ~= numel(lik.classVariables)
@@ -418,11 +439,11 @@ function llg3 = liks_llg3(lik, y, ff, param, z)
  end
 end
 
-function [logM_0, m_1, sigm2hati1] = liks_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-% LIKS_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+function [logM_0, m_1, sigm2hati1] = lik_liks_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+% LIK_LIKS_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
 %  Description
-%    [M_0, M_1, M2] = LIKS_TILTEDMOMENTS(LIK, Y, I, S2,
+%    [M_0, M_1, M2] = LIK_LIKS_TILTEDMOMENTS(LIK, Y, I, S2,
 %    MYY) takes a likelihood structure LIKS, the observation Y, index 
 %    I, cavity variance S2 and mean MYY. Returns the zeroth
 %    moment M_0, mean M_1 and variance M_2 of the posterior
@@ -459,13 +480,13 @@ function [logM_0, m_1, sigm2hati1] = liks_tiltedMoments(lik, y, i1, sigm2_i, myy
  end
 end
 
-function [g_i] = liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
-% LIKS_SITEDERIV  Evaluate the expectation of the gradient
+function [g_i] = lik_liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
+% LIK_LIKS_SITEDERIV  Evaluate the expectation of the gradient
 %                 of the log likelihood term with respect
 %                 to the multiple-likelihood parameters for EP 
 %
 %  Description [M_0, M_1, M2] =
-%    LIKS_SITEDERIV(LIK, Y, I, S2, MYY, Z) takes a
+%    LIK_LIKS_SITEDERIV(LIK, Y, I, S2, MYY, Z) takes a
 %    likelihood structure LIKS, incedence counts Y, expected
 %    counts Z, index I and cavity variance S2 and mean MYY. 
 %    Returns E_f [d log p(y_i|f_i) /d a], where a is the
@@ -519,18 +540,18 @@ function [g_i] = liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
  end
 end
 
-function [lpy, Ey, Vary] = liks_predy(lik, Ef, Varf, yt, zt)
-% LIKS_PREDY  Returns the predictive mean, variance and density of y
+function [lpy, Ey, Vary] = lik_liks_predy(lik, Ef, Varf, yt, zt)
+% LIK_LIKS_PREDY  Returns the predictive mean, variance and density of y
 %
 %  Description:  
-%    LPY = LIKS_PREDY(LIK, EF, VARF YT, ZT)
+%    LPY = LIK_LIKS_PREDY(LIK, EF, VARF YT, ZT)
 %    Returns logarithm of the predictive density PY of YT, that is 
 %    p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
 %    This requires the observations YT.
 %    This subfunction is needed when computing posterior predictive 
 %    distributions for future observations.
 %
-%    [LPY, EY, VARY] = LIKS_PREDY(LIK, EF, VARF) takes a
+%    [LPY, EY, VARY] = LIK_LIKS_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
@@ -626,11 +647,11 @@ end
 end
 
 
-function reclik = liks_recappend(reclik, ri, lik)
+function reclik = lik_liks_recappend(reclik, ri, lik)
 % RECAPPEND Append the parameters to the record
 %
 %  Description:
-%    RECLIK = LIKS_RECAPPEND(RECLIK, RI, LIK) takes a
+%    RECLIK = LIK_LIKS_RECAPPEND(RECLIK, RI, LIK) takes a
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
@@ -652,18 +673,18 @@ function reclik = liks_recappend(reclik, ri, lik)
      end
      
      % Set the function handles
-     reclik.fh.pak = @liks_pak;
-     reclik.fh.unpak = @liks_unpak;
-     reclik.fh.lp = @liks_lp;  
-     reclik.fh.lpg = @liks_lpg;
-     reclik.fh.ll = @liks_ll;
-     reclik.fh.llg = @liks_llg;    
-     reclik.fh.llg2 = @liks_llg2;
-     reclik.fh.llg3 = @liks_llg3;
-     reclik.fh.tiltedMoments = @liks_tiltedMoments;
-     reclik.fh.siteDeriv = @liks_siteDeriv;
-     reclik.fh.predy = @liks_predy;
-     reclik.fh.recappend = @liks_recappend;  
+     reclik.fh.pak = @lik_liks_pak;
+     reclik.fh.unpak = @lik_liks_unpak;
+     reclik.fh.lp = @lik_liks_lp;  
+     reclik.fh.lpg = @lik_liks_lpg;
+     reclik.fh.ll = @lik_liks_ll;
+     reclik.fh.llg = @lik_liks_llg;    
+     reclik.fh.llg2 = @lik_liks_llg2;
+     reclik.fh.llg3 = @lik_liks_llg3;
+     reclik.fh.tiltedMoments = @lik_liks_tiltedMoments;
+     reclik.fh.siteDeriv = @lik_liks_siteDeriv;
+     reclik.fh.predy = @lik_liks_predy;
+     reclik.fh.recappend = @lik_liks_recappend;  
      
      if isfield(ri, 'classVariables') 
          reclik.classVariables = ri.classVariables;

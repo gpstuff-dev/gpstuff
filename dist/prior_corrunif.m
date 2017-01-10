@@ -1,4 +1,4 @@
-function p = prior_R(varargin)
+function p = prior_corrunif(varargin)
 % * PRIOR_R  Correlation prior structure     
 %       
 % * Description:
@@ -8,12 +8,12 @@ function p = prior_R(varargin)
 %    Modelling covariance matrices in terms of standart deviations and correlations
 %    with applications to shrinkage. Statistical Sinica, 2000
 %
-%  · P = PRIOR_R('PARAM1', VALUE1, ...) 
+%  · P = PRIOR_CORRUNIF('PARAM1', VALUE1, ...) 
 %    creates the prior structure in which the
 %    named parameters have the specified values. Any unspecified
 %    parameters are set to default values.
 %
-%  · P = PRIOR_R(P, 'PARAM1', VALUE1, ...)
+%  · P = PRIOR_CORRUNIF(P, 'PARAM1', VALUE1, ...)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
 %
@@ -42,7 +42,7 @@ function p = prior_R(varargin)
 % License.txt, included with the software, for details.
 
   ip = inputParser;
-  ip.FunctionName = 'PRIOR_R';
+  ip.FunctionName = 'PRIOR_CORRUNIF';
   ip.addOptional('p', [], @isstruct);
   ip.addParamValue('nu', 15, @(x) isscalar(x) && x > 0);
   ip.addParamValue('prior_nu', [], @(x) isstruct(x) || isempty(x));
@@ -53,10 +53,10 @@ function p = prior_R(varargin)
   
   if isempty(p)
     init = true;
-    p.type = 'R';
+    p.type = 'CORRUNIF';
     
   else
-    if ~isfield(p, 'type') && ~isequal(p.type, 'R')
+    if ~isfield(p, 'type') && ~isequal(p.type, 'CORRUNIF')
       error('First argument does not seem to be a valid prior structure')
     end
     
@@ -91,17 +91,17 @@ function p = prior_R(varargin)
   
   if init
     % set functions
-    p.fh.pak = @prior_R_pak;
-    p.fh.unpak = @prior_R_unpak;
-  % p.fh.RealToRho = @prior_R_RealToRho;
-    p.fh.lp = @prior_R_lp;
-    p.fh.lpg = @prior_R_lpg;
-    p.fh.recappend = @prior_R_recappend;
+    p.fh.pak = @prior_corrunif_pak;
+    p.fh.unpak = @prior_corrunif_unpak;
+  % p.fh.RealToRho = @prior_corrunif_RealToRho;
+    p.fh.lp = @prior_corrunif_lp;
+    p.fh.lpg = @prior_corrunif_lpg;
+    p.fh.recappend = @prior_corrunif_recappend;
   end
 
 end
 
-function [w, s, h] = prior_R_pak(p)
+function [w, s, h] = prior_corrunif_pak(p)
 % This is a mandatory subfunction used for example 
 % in energy and gradient computations.
   
@@ -115,7 +115,7 @@ function [w, s, h] = prior_R_pak(p)
   
 end
 
-function [p, w] = prior_R_unpak(p, w)
+function [p, w] = prior_corrunif_unpak(p, w)
 % This is a mandatory subfunction used for example 
 % in energy and gradient computations.
 
@@ -127,7 +127,7 @@ function [p, w] = prior_R_unpak(p, w)
   
 end
 
-function lp = prior_R_lp(x, p)
+function lp = prior_corrunif_lp(x, p)
 % This is a mandatory subfunction used for example 
 % in energy computations.
 
@@ -181,7 +181,7 @@ end
 
 end
 
-function lpg = prior_R_lpg(x, p)
+function lpg = prior_corrunif_lpg(x, p)
 % This is a mandatory subfunction used for example 
 % in gradient computations.
  
@@ -269,7 +269,7 @@ function lpg = prior_R_lpg(x, p)
   end
 end
 
-function rec = prior_R_recappend(rec, ri, p)
+function rec = prior_corrunif_recappend(rec, ri, p)
 % This subfunction is needed when using MCMC sampling (gp_mc).
 % The parameters are not sampled in any case.
 

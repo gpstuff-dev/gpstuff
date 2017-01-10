@@ -79,7 +79,7 @@
 % download the data
 S = which('demo_multivariategp');
 L = strrep(S, 'demo_multivariategp.m', 'demodata/predpreydata.txt');
-data = Load('demodata/predpreydata.txt');
+data = importdata(L);
 
 % colors;
 col = [0 0 1; 1 0 0];
