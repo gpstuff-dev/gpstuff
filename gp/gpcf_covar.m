@@ -69,7 +69,7 @@ function gpcf = gpcf_covar(varargin)
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('R', 0.01, @(x) isvector(x) && ~any(abs(x) > 1));  
   ip.addParamValue('V', 1, @(x) isvector(x) && ~any(x < 0)); 
-  ip.addParamValue('R_prior', prior_R(), @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('R_prior', prior_corrunif(), @(x) isstruct(x) || isempty(x));
   ip.addParamValue('V_prior', prior_t(), @(x) isstruct(x) || isempty(x));
   ip.addParamValue('corrFun', {}, @(x) ~isempty(x) && iscell(x));
   ip.addParamValue('classVariables', [], @(x) ~isempty(x) && mod(x, 1) == 0 && x > 0);

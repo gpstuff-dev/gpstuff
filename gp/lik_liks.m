@@ -1,4 +1,4 @@
-function lik = liks(varargin)
+function lik = lik_liks(varargin)
 %  LIKS creates a likelihood which is composed by many
 %  different likelihoods.
 %
