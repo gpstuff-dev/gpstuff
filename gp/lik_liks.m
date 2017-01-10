@@ -1,4 +1,4 @@
-function lik = lik_liks(varargin)
+function lik = lik_liks1(varargin)
 %  LIKS creates a likelihood structure which is composed by many
 %       different likelihoods.
 %
@@ -8,9 +8,9 @@ function lik = lik_liks(varargin)
 %    The full likelihood is the product of independent likelihoods
 %    (independent observations given the latent process), 
 %
-%               __k    __ 
-%      p(y|f) = ||     ||  L_j(y_i|f_i, th_j)
-%                 j=1 i\in I_j
+%               __k     __ 
+%      p(y|f) = ||      ||   L_j(y_i|f_i, th_j)
+%                 j=1   i \in I_j
 %
 %      f = (f1, f2, ..., fk)'
 %      y = (y1, y2, ..., yk)'
@@ -33,7 +33,7 @@ function lik = lik_liks(varargin)
 %    Parameters for Liks likelihood are [default]
 %      likelihoods      - array of likelyhood structures [ {} ]
 %      classVariables   - a scalar telling which column of matrix z defines 
-%                         the likelihood indices (variance) [1]
+%                         the likelihood indices
 %
 %    For the demonstration of the use of lik_liks see DEMO_MULTIVARIATEGP.
 %
@@ -43,7 +43,7 @@ function lik = lik_liks(varargin)
 % Copyright (c) 2011 Jaakko Riihimäki
 % Copyright (c) 2011 Aki Vehtari
 % Copyright (c) 2012 Ville Tolvanen
-% ───────────── 2015 Marcelo Hartmann
+% ------------- 2015 Marcelo Hartmann
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -53,7 +53,7 @@ function lik = lik_liks(varargin)
   ip.FunctionName = 'LIK_LIKS';
   ip.addOptional('lik', [], @isstruct);
   ip.addParamValue('likelihoods', {}, @(x) ~isempty(x) && iscell(x));
-  ip.addParamValue('classVariables', [], @(x) ~isempty(x) && isvector(x));
+  ip.addParamValue('classVariables', [], @(x) ~isempty(x) && isscalar(x));
   ip.parse(varargin{:});
   lik = ip.Results.lik;
   
@@ -78,17 +78,8 @@ function lik = lik_liks(varargin)
       error('use one likelihood structure')
       
   else 
-      % for observations
+      % column of z where the classVariables can be found
       lik.classVariables = ip.Results.classVariables;
-      if issorted(lik.classVariables)       
-          if (length(unique(lik.classVariables)) == lik.nliks && lik.classVariables(end) == lik.nliks);
-          else
-              error('something is wrong with the number of likelihoods and given class variables');
-          end
-      else
-         error('you need to give the class variable increasing downwards');
-      end
-      
   end
   
   % Initialize prior structure
@@ -228,24 +219,30 @@ function ll = lik_liks_ll(lik, y, ff, z)
 %  See also:
 %    LIK_LLG, LIK_LLG3, LIK_LLG2, GPLA_E
  
- n = size(y, 1);
- if n ~= numel(lik.classVariables)
-     error('lengths of y and class variables are different')
+ n  = size(y, 1);
+ zi = z(:, lik.classVariables);
+ z  = z(:, 1);
+ 
+ indj  = unique(zi); 
+ nind = numel(indj);
+ 
+ if n ~= numel(zi)
+     error('row-length of y and z are different')
  end
  
  f = ff(:);
- 
- u = diff([0 lik.classVariables(:)' lik.classVariables(end)+1]) .* (1:(n+1));
- u = u(u ~= 0);
- 
+ u = find(diff([-inf; zi; inf]));
+
  ll = 0;
  
- for j = 1:lik.nliks
-     ind = (u(j):u(j+1)-1);
+ for j = 1:nind
+     ind = (u(j) : u(j + 1) - 1);
+     likj = lik.liks{indj(j)};
+     
      yj = y(ind);
      fj = f(ind);
      zj = z(ind);
-     ll = ll + lik.liks{j}.fh.ll(lik.liks{j}, yj, fj, zj);
+     ll = ll + likj.fh.ll(likj, yj, fj, zj);
      
  end
  
@@ -266,33 +263,39 @@ function llg = lik_liks_llg(lik, y, ff, param, z)
 %  See also:
 %    LIK_LIKS_LL, LIK_LIKS_LLG2, LIK_LIKS_LLG3, GPLA_E
   
- n = size(y, 1);
- if n ~= numel(lik.classVariables)
-     error('lengths of y and class variables are different')
+ n  = size(y, 1); 
+ zi = z(:, lik.classVariables);
+ z  = z(:, 1);
+ 
+ indj  = unique(zi); 
+ nind = numel(indj);
+ 
+ if n ~= numel(zi)
+     error('row-length of y and z are different')
  end
  
  f = ff(:);
- 
- u = diff([0 lik.classVariables(:)' lik.classVariables(end)+1]) .* (1:(n + 1));
- u = u(u ~= 0);
+ u = find(diff([-inf; zi; inf]));
  
  llg = [];
  
- for j = 1:lik.nliks
-     ind = (u(j):u(j+1)-1);
+ for j = 1:nind
+     ind = (u(j) : u(j + 1) - 1);
+     likj = lik.liks{indj(j)};
+     
      yj = y(ind); 
      fj = f(ind); 
      zj = z(ind);
      
      switch param
          case 'param'
-             if ~isempty(lik.liks{j}.fh.pak(lik.liks{j}))
-                 llg = [llg lik.liks{j}.fh.llg(lik.liks{j}, yj, fj, param, zj)];
+             if ~isempty(lik.liks{j}.fh.pak(likj))
+                 llg = [llg likj.fh.llg(likj, yj, fj, param, zj)];
                  
              end
              
          case 'latent'
-             llg = [llg; lik.liks{j}.fh.llg(lik.liks{j}, yj, fj, param, zj)];
+             llg = [llg; likj.fh.llg(likj, yj, fj, param, zj)];
              
      end
      
@@ -315,48 +318,49 @@ function llg2 = lik_liks_llg2(lik, y, ff, param, z)
 %  See also
 %    LIK_LIKS_LL, LIK_LIKS_LLG, LIK_LIKS_LLG3, GPLA_E
 
- n = size(y, 1);
- if n ~= numel(lik.classVariables)
-     error('lengths of y and class variables are different')
+ n  = size(y, 1); 
+ zi = z(:, lik.classVariables);
+ z  = z(:, 1);
+ 
+ indj = unique(zi); 
+ nind = numel(indj);
+ 
+ if n ~= numel(zi)
+     error('row-length of y and z are different')
  end
  
  f = ff(:);
-  
- u = diff([0 lik.classVariables(:)' lik.classVariables(end)+1]) .* (1 : (n + 1));
- u = u(u ~= 0);
- 
+ u = find(diff([-inf; zi; inf]));
+
  llg2 = [];
  
  nlikpar = length(lik.fh.pak(lik));
  z0 = zeros(n, nlikpar);
  aux(1) = 0;
   
- for j = 1:lik.nliks
-     ind = (u(j):u(j+1)-1);
+ for j = 1:nind
+     ind  = (u(j) : u(j + 1) - 1);
+     likj = lik.liks{indj(j)};
+     
      yj = y(ind);
      fj = f(ind);
+     zj = z(ind);
      
-     if ~isempty(z)
-         zj = z(ind);
-     else
-         zj = [];
-     end
-
      switch param
          case 'param'
              
          case 'latent'
-             llg2 = [llg2; lik.liks{j}.fh.llg2(lik.liks{j}, yj, fj, param, zj)];
+             llg2 = [llg2; likj.fh.llg2(likj, yj, fj, param, zj)];
              
          case 'latent+param'
-             if ~isempty(lik.liks{j}.fh.pak(lik.liks{j}))
+             if ~isempty(likj.fh.pak(likj))
                  % take the column vectors
-                 llg2_tmp = lik.liks{j}.fh.llg2(lik.liks{j}, yj, fj, param, zj);
+                 llg2_tmp = likj.fh.llg2(likj, yj, fj, param, zj);
                  
                  % auxiliar indexes
-                 aux(end + 1) = aux(end) + size(lik.liks{j}.fh.pak(lik.liks{j}), 2);
+                 aux(end + 1) = aux(end) + size(likj.fh.pak(likj), 2);
                  
-                 % auxiliar matrices for derivatives w.r.t parameters in
+                 % auxiliar matrices for derivatives w.r.t. parameters in
                  % the specific likelihood j
                  z0(ind, (aux(end - 1) + 1) : aux(end)) = llg2_tmp;
                  llg2 = [llg2 z0(:, aux(end - 1) + 1 : aux(end))];
@@ -383,16 +387,20 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
 %  See also:
 %    LIK_LIKS_LL, LIK_LIKS_LLG, LIK_LIKS_LLG2, GPLA_E, GPLA_G
 
- n = size(y, 1);
- if n ~= numel(lik.classVariables)
-     error('lengths of y and class variables are different')
+ n  = size(y, 1); 
+ zi = z(:, lik.classVariables);
+ z  = z(:, 1);
+ 
+ indj  = unique(zi); 
+ nind = numel(indj);
+ 
+ if n ~= numel(zi)
+     error('row-length of y and z are different')
  end
  
  f = ff(:);
+ u = find(diff([-inf; zi; inf]));
   
- u = diff([0 lik.classVariables(:)' lik.classVariables(end)+1]) .* (1:(n+1));
- u = u(u ~= 0);
- 
  llg3 = [];
 
  % auxiliar matrix for derivatives of parameters w.r.t. many likelihoods
@@ -400,31 +408,35 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
  z0 = zeros(n, nlikpar);
  aux(1) = 0;
       
- for j = 1:lik.nliks
+ for j = 1:nind
      switch param
          case 'param'
              
          case 'latent'
-             ind = (u(j):u(j+1)-1);
+             ind = (u(j) : u(j + 1) - 1);
+             likj = lik.liks{indj(j)};
+             
              yj = y(ind); 
              fj = f(ind);
              zj = z(ind);
              
-             llg3 = [llg3; lik.liks{j}.fh.llg3(lik.liks{j}, yj, fj, param, zj)];
+             llg3 = [llg3; likj.fh.llg3(likj, yj, fj, param, zj)];
              
          case 'latent2+param'
-             if ~isempty(lik.liks{j}.fh.pak(lik.liks{j}))
+             if ~isempty(lik.liks{indj(j)}.fh.pak(lik.liks{indj(j)}))
                  % take indexes and respective observations for specific likelihood
-                 ind = (u(j):u(j+1)-1);
+                 ind = (u(j) : u(j + 1) - 1);
+                 likj = lik.liks{indj(j)};
+                 
                  yj = y(ind); 
                  fj = f(ind);
                  zj = z(ind);
                  
                  % take the column vectors
-                 llg3_tmp = lik.liks{j}.fh.llg3(lik.liks{j}, yj, fj, param, zj);
+                 llg3_tmp = likj.fh.llg3(likj, yj, fj, param, zj);
                  
                  % auxiliar indexes
-                 aux(end + 1) = aux(end) + size(lik.liks{j}.fh.pak(lik.liks{j}), 2);
+                 aux(end + 1) = aux(end) + size(likj.fh.pak(likj), 2);
                  
                  % auxiliar matrices for derivatives w.r.t parameters in
                  % the specific likelihood j
@@ -438,6 +450,7 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
      
  end
 end
+
 
 function [logM_0, m_1, sigm2hati1] = lik_liks_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 % LIK_LIKS_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
@@ -455,30 +468,37 @@ function [logM_0, m_1, sigm2hati1] = lik_liks_tiltedMoments(lik, y, i1, sigm2_i,
 %  See also
 %    GPEP_E
 
- n = size(y, 1);
- if n ~= numel(lik.classVariables)
-     error('length of y and class variables are different')
- end
-  
- u = diff([0 lik.classVariables(:)' lik.classVariables(end)+1]) .* (1:(n + 1));
- u = u(u ~= 0);
- sizeObs = diff(u);
+ n  = size(y, 1); 
+ zi = z(:, lik.classVariables);
+ z  = z(:, 1);
  
+ indj = unique(zi); 
+ nind = numel(indj);
+ 
+ if n ~= numel(zi)
+     error('row-length of y and z are different')
+ end
+ 
+ u = find(diff([-inf; zi; inf]));
+ sizeObs = diff(u);
+  
  logM_0 = zeros(n, 1);
  m_1 = zeros(n, 1);
  sigm2hati1 = zeros(n, 1);
 
- for j = 1:lik.nliks
+ for j = 1:nind
      ind = (u(j) : u(j + 1) - 1);
+     likj = lik.liks{indj(j)};
      yj = y(ind); 
      sigm2_ij = sigm2_i(ind);
      myy_ij = myy_i(ind);
      zj = z(ind);
      
      [logM_0(ind), m_1(ind), sigm2hati1(ind)] = ...
-     lik.liks{j}.fh.tiltedMoments(lik.liks{j}, yj, 1:sizeObs(j), sigm2_ij, myy_ij, zj);
+     likj.fh.tiltedMoments(likj, yj, 1:sizeObs(j), sigm2_ij, myy_ij, zj);
  end
 end
+
 
 function [g_i] = lik_liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 % LIK_LIKS_SITEDERIV  Evaluate the expectation of the gradient
@@ -502,25 +522,31 @@ function [g_i] = lik_liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %  See also
 %    GPEP_G
 
- n = size(y, 1);
- if n ~= numel(lik.classVariables)
-     error('lengths of y and class variables are different')
- end
-  
- u = diff([0 lik.classVariables(:)' lik.classVariables(end)+1]) .* (1:(n + 1));
- u = u(u ~= 0);
+ n  = size(y, 1); 
+ zi = z(:, lik.classVariables);
+ z  = z(:, 1);
  
+ indj = unique(zi); 
+ nind = numel(indj);
+ 
+ if n ~= numel(zi)
+     error('row-length of y and z are different')
+ end
+ 
+ u = find(diff([-inf; zi; inf]));
+
  nlikpar = length(lik.fh.pak(lik));
  g_i = zeros(1, nlikpar);
  aux = 0;
  
- for j = 1:lik.nliks
-     if ~isempty(lik.liks{j}.fh.pak(lik.liks{j}))
+ for j = 1:nind
+     if ~isempty(lik.liks{indj(j)}.fh.pak(lik.liks{indj(j)}))
          % auxiliar indexes for paramters
          aux = aux + 1;
          
          % indexes for that specific likelihood
          ind = (u(j) : u(j + 1) - 1);
+         likj = lik.liks{indj(j)};
 
          if any(ind == i1)
              i1j = i1;
@@ -533,12 +559,13 @@ function [g_i] = lik_liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
              
              % if some specific likelihood has more than one parameter this will not work
              g_i(1, aux) = ...
-             lik.liks{j}.fh.siteDeriv(lik.liks{j}, y, i1j, sigm2_ij, myy_ij, z);
+             likj.fh.siteDeriv(likj, y, i1j, sigm2_ij, myy_ij, z);
          end
      end
          
  end
 end
+
 
 function [lpy, Ey, Vary] = lik_liks_predy(lik, Ef, Varf, yt, zt)
 % LIK_LIKS_PREDY  Returns the predictive mean, variance and density of y
@@ -563,67 +590,37 @@ function [lpy, Ey, Vary] = lik_liks_predy(lik, Ef, Varf, yt, zt)
 %  See also:
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED1
 
-% if numel(zt) == 0
-%     zt = ones(size(Ef));
-% end
-% 
-% n = size(Ef, 1);
-% 
-% % take class variables for prediction or loocv
-% if ~isfield(lik, 'classVariablesPred')
-%     classVariables = lik.classVariables;
-% else
-%     classVariables = lik.classVariablesPred;
-% end
-
-if nargout > 1
-    flag = 1;
-    
-    if size(zt, 2) ~= 2
-        error(['if you want to predict with many likelihoods you need' ...
-            'to pass the class variables in the second column of zt']);
-    else
-        classVariables = zt(:, 2);
-    end
-    
-    % actual zt ...
-    zt = zt(:, 1);
-    
-else
-    flag = 0;
-    classVariables = lik.classVariables;
-    
-end
-
 % number of values to predict;
 n = size(Ef, 1);
+zi = zt(:, lik.classVariables);
+zt = zt(:, 1);
 
 % check some conditions
-if ~issorted(classVariables) 
+if ~issorted(zi) 
     error('you need to give the class variable increasing downwards');
 end
 
-if max(classVariables) > lik.nliks
+if max(zi) > lik.nliks
     error('more classes than the number of classes you are trying to model');
 end
 
 % getting the information of the classes in the data
-indClass = unique(classVariables)'; 
-nind = size(indClass, 2);
+indj = unique(zi); 
+nind = numel(indj);
 
 % getting the positions of observations in each vector 
-u = find(diff([-inf classVariables' inf]));
+u = find(diff([-inf; zi; inf]));
 
 % log-density
 lpy = zeros(n, 1);
 
-if flag
+if nargout > 1
     Ey = zeros(n, 1);
     Vary = zeros(n, 1);
     
     for j = 1:nind
         ind = (u(j) : u(j + 1) - 1);
-        likj = lik.liks{indClass(j)};
+        likj = lik.liks{indj(j)};
         
         if numel(yt) ~= 0;
            [lpy(ind), Ey(ind), Vary(ind)] = ...
@@ -638,7 +635,7 @@ if flag
 else
     for j = 1:nind
         ind = (u(j) : u(j + 1) - 1);
-        likj = lik.liks{indClass(j)};
+        likj = lik.liks{indj(j)};
         
         lpy(ind) = likj.fh.predy(likj, Ef(ind), Varf(ind), yt(ind), zt(ind));
     end
@@ -702,4 +699,3 @@ function reclik = lik_liks_recappend(reclik, ri, lik)
      
  end
 end
-

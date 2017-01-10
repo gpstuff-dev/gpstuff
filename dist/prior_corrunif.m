@@ -3,31 +3,31 @@ function p = prior_corrunif(varargin)
 %       
 % * Description:
 % 
-%  · REFERENCE: prior for correlation matrix
+%  - REFERENCE: prior for correlation matrix
 %    Barnard, J.; McCulloch, R. & li Meng, X. 
 %    Modelling covariance matrices in terms of standart deviations and correlations
 %    with applications to shrinkage. Statistical Sinica, 2000
 %
-%  · P = PRIOR_CORRUNIF('PARAM1', VALUE1, ...) 
+%  - P = PRIOR_CORRUNIF('PARAM1', VALUE1, ...) 
 %    creates the prior structure in which the
 %    named parameters have the specified values. Any unspecified
 %    parameters are set to default values.
 %
-%  · P = PRIOR_CORRUNIF(P, 'PARAM1', VALUE1, ...)
+%  - P = PRIOR_CORRUNIF(P, 'PARAM1', VALUE1, ...)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
 %
-%  · Parameters for correlation prior [default]
+%  - Parameters for correlation prior [default]
 %     nu       - degree of freedom [15]
 %     prior_nu - prior for nu [prior_fixed]
 %
-%  · some inverse-Wishart properties
+%  - some inverse-Wishart properties
 %    if W ~ InvWish_d (v, A) then E[W] = A/(v-d-1)
 %    nu > = d
 %    d = number os species (dimension of the square matrix)
 %    the construction for this prior assumes A = I.
 %  
-%  · dimension of the correlation vector: (numberClass^2 - numberClass)/2
+%  - dimension of the correlation vector: (numberClass^2 - numberClass)/2
 %
 % * See also
 %    PRIOR_*
@@ -35,7 +35,7 @@ function p = prior_corrunif(varargin)
 % Copyright (c) 2000-2001,2010 Aki Vehtari
 % Copyright (c) 2009,2015 Jarno Vanhatalo
 % Copyright (c) 2010 Jaakko Riihimäki
-% ───────────── 2015 Marcelo Hartmann 
+% ------------ 2015 Marcelo Hartmann 
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -215,8 +215,6 @@ function lpg = prior_corrunif_lpg(x, p)
      b = - p.nu/2;
      
      % building principal submatrices and evaluating log determinant
-     % Id  = eye(p.numberClass);
-     % invR = L'\(L\Id);
      invR = inv(R);
      
      % COULD WE USE COFACTOR MATRIX ?
@@ -239,12 +237,6 @@ function lpg = prior_corrunif_lpg(x, p)
                      if k < j && (i == 1 || k > i)
                          m = j-1;
                          sumtrDer = sumtrDer + 2*b*invAk(m, i);
-                         %  if k < j && i == 1
-                         %     m = j-1;
-                         %     sumtrDer = sumtrDer + 2*b*invAk(m, i);
-                         %  elseif k < j && k > i 
-                         %     m = j-1;
-                         %  sumtrDer = sumtrDer + 2*b*invAk(m, i);
                      elseif k < j && k < i 
                          l = i-1; 
                          m = j-1;

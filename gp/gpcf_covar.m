@@ -1,22 +1,22 @@
 function gpcf = gpcf_covar(varargin)
 %   GPCF_COVAR creates a covariance matrix in the parameterization of
-%   correlation and variances for the GP multiclass/categorical model
+%   correlation and variances for the multivariates Gaussian process model
 %   based on coregionalization models (LMC). See Gelfand et al. (2004) in
 %   nonstationary multivariate process modelling through spatially varying
 %   coregionalization.
 %  
 %   Description :
 %
-%   · GPCF = GPCF_COVAR('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%   - GPCF = GPCF_COVAR('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %     creates correlation matrix structure in which
 %     the named parameters have the specified values. Any
 %     unspecified parameters are set to default values.
 %
-%   · GPCF = GPCF_COVAR(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%   - GPCF = GPCF_COVAR(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %    modify a covariance function structure with the named
 %    parameters altered with the specified values.
 %  
-%   · Parameters for covariance matrix [default]
+%   - Parameters for covariance matrix [default]
 %     R_prior             - prior for correlation matrix  [prior_R]
 %     V_prior             - prior for the variances. Must be a structure 
 %                           with each component being also a structure (the
@@ -35,7 +35,7 @@ function gpcf = gpcf_covar(varargin)
 %                           being modelled (this is required to initialize 
 %                           other parameters)
 %
-%     degreeFreedom_prior - prior for degree of freedoms 'nu' [prior_R]
+%     degreeFreedom_prior - prior for degree of freedoms 'nu' [prior_corrunif]
 %     classVariables      - value defining which column of x is used to
 %                           identify the class variables. If this is not
 %                           given returns an error. They have to be given
@@ -50,10 +50,10 @@ function gpcf = gpcf_covar(varargin)
 % * See also
 %   GP_SET, GPCF_*, PRIOR_* 
 %
-% Copyright (c) 2007-2010,2015 Jarno Vanhatalo
+% Copyright (c) 2007-2010, 2015 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2014 Arno Solin and Jukka Koskenranta
-% ̣̣̣────────────  2015 Marcelo Hartmann
+% ̣̣̣------------  2015 Marcelo Hartmann
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -179,8 +179,6 @@ function gpcf = gpcf_covar(varargin)
           Vpriors.(var(ind, :)).p = ip.Results.V_prior;
       end
       gpcf.p.V = Vpriors;
-      % add var fields 
-      % gpcf.varfields = fields(gpcf.p.V);
       gpcf.varfields = (fields(gpcf.p.V)');
   end
  
@@ -189,12 +187,12 @@ end
 
 function y = gpcf_covar_RealToRho(x, a, d)
 % Description :
-%   · Transforms the real line to the interval (-1, 1) using modified
+%   Transforms the real line to the interval (-1, 1) using modified
 %   logistic distribution function
 %
-%   · rho = 2/(1+exp(-ax)) - 1   
-%   · x is the vector on the real line
-%   · d equals to [], 1 or 2, and indicates whether the output corresponds
+%   - rho = 2/(1+exp(-ax)) - 1   
+%   - x is the vector on the real line
+%   - d equals to [], 1 or 2, and indicates whether the output corresponds
 %     no derivatives, first or second derivative.
 
 if isempty(d)
@@ -219,11 +217,11 @@ end
 
 function y = gpcf_covar_RhoToReal(x, a)
 %  Description :
-%   · Transforms the interval (-1, 1) to the real line, using inverse
-%     modified logistic distribution function
+%   Transforms the interval (-1, 1) to the real line, using inverse
+%   modified logistic distribution function
 %
-%   · y = - 1/a * log(2/(x+1) - 1)   
-%   · x in (-1, 1)^(dim(x))
+%   - y = - 1/a * log(2/(x+1) - 1)   
+%   - x in (-1, 1)^(dim(x))
 
 if any(abs(x) > 1)
     error('domain error');
@@ -239,12 +237,12 @@ function [w, s, h] = gpcf_covar_pak(gpcf, w)
 %   keeping the order of input below.
 %
 %  Description :
-%   · W = GPCF_COVAR_PAK(GPCF) takes the non-diagonal elements of 
+%   W = GPCF_COVAR_PAK(GPCF) takes the non-diagonal elements of 
 %     the correlation matrix and put them into a single row vector w
 %     This is a mandatory subfunction used for example 
 %     in energy and gradient computations.
 %
-%   · w = [rho_(1, 2), ..., rho_(1, J), rho_(2, 3), ..., rho_(2, J), ..., rho_((J-1), J)]
+%   w = [rho_(1, 2), ..., rho_(1, J), rho_(2, 3), ..., rho_(2, J), ..., rho_((J-1), J)]
 %
 %  * See also
 %    GPCF_covar_UNPAK
@@ -304,13 +302,13 @@ function [gpcf, w] = gpcf_covar_unpak(gpcf, w)
 %   structure
 %
 %  Description :
-%   · [GPCF, W] = GPCF_COVAR_UNPAK(GPCF, W) takes a covariance
-%     function structure GPCF and a hyperparameter vector W,
-%     and returns a covariance function structure identical to
-%     the input, except that the covariance hyperparameters have
-%     been set to the values in W. Deletes the values set to GPCF
-%     from W and returns the modified W. This is a mandatory 
-%     subfunction used for example in energy and gradient computations.
+%   [GPCF, W] = GPCF_COVAR_UNPAK(GPCF, W) takes a covariance
+%   function structure GPCF and a hyperparameter vector W,
+%   and returns a covariance function structure identical to
+%   the input, except that the covariance hyperparameters have
+%   been set to the values in W. Deletes the values set to GPCF
+%   from W and returns the modified W. This is a mandatory 
+%   subfunction used for example in energy and gradient computations.
 %    
 %  * See also
 %    GPCF_covar_PAK
@@ -354,8 +352,8 @@ function lp = gpcf_covar_lp(gpcf)
 %  GPCF_COVAR_LP Evaluate the log prior of covariance function parameters
 %
 %  Description :
-%   · LP = GPCF_COVAR_LP(GPCF, X, T) takes a correlation function
-%     structure GPCF and evaluates log-prior(R)
+%   LP = GPCF_COVAR_LP(GPCF, X, T) takes a correlation function
+%   structure GPCF and evaluates log-prior(R)
 %
 %  * See also
 %    GPCF_COVAR_PAK, GPCF_covar_UNPAK, GPCF_covar_LPG, GP_E
@@ -399,11 +397,11 @@ function lpg = gpcf_covar_lpg(gpcf)
 %   to the parameters.
 %
 %  Description :
-%   · LPG = GPCF_COVAR_LPG(GPCF) takes a covariance function
-%     structure GPCF and returns LPG = d log (p(th))/dth, where th
-%     is the parametric vector of correlations and variances.
-%     This is a mandatory subfunction used for example in gradient 
-%     computations.
+%   LPG = GPCF_COVAR_LPG(GPCF) takes a covariance function
+%   structure GPCF and returns LPG = d log (p(th))/dth, where th
+%   is the parametric vector of correlations and variances.
+%   This is a mandatory subfunction used for example in gradient 
+%   computations.
 %
 %  * See also
 %    GPCF_covar_PAK, GPCF_covar_UNPAK, GPCF_covar_LP, GP_G
@@ -450,11 +448,11 @@ function C = gpcf_covar_sigma(gpcf, type)
 %  coregionalization and its Cholesky decomposition.
 %
 %  Description :
-%   · C = GP_COVAR_COV(GP, i1) takes the gpcf structure and
-%     returns the covariance matrix Σ and its Cholesky decomposition.
-%     Every element (i, j) of Σ contains the covariance (parameterised by
-%     correlation and variances) between class i and class j. This is a
-%     mandatory subfunction. 
+%   C = GP_COVAR_COV(GP, i1) takes the gpcf structure and
+%   returns the covariance matrix Σ and its Cholesky decomposition.
+%   Every element (i, j) of Σ contains the covariance (parameterised by
+%   correlation and variances) between class i and class j. This is a
+%   mandatory subfunction. 
 %
 %  * See also
 %    GPCF_COVAR_TRCOV, GPCF_COVAR_TRVAR, GP_COV, GP_TRCOV
@@ -506,12 +504,12 @@ function C = gpcf_covar_cov(gpcf, x1, x2)
 %  GP_COVAR_COV  Evaluate the covariance matrix between two input vectors
 %
 %  Description
-%   · C = GP_COVAR_COV(GP, TX, X) takes in correlation structure
-%     and two matrixes TX and X that contain input vectors to GP. 
-%     Returns covariance matrix C. 
-%     Every element ij of C contains correlation between inputs i
-%     in TX and j in X. This is a mandatory subfunction used for 
-%     example in prediction and energy computations.
+%   C = GP_COVAR_COV(GP, TX, X) takes in correlation structure
+%   and two matrixes TX and X that contain input vectors to GP. 
+%   Returns covariance matrix C. 
+%   Every element ij of C contains correlation between inputs i
+%   in TX and j in X. This is a mandatory subfunction used for 
+%   example in prediction and energy computations.
 %
 %
 %  * See also
@@ -581,17 +579,17 @@ function dCRV = gpcf_covar_cfg(gpcf, x, x2, mask, i1)
 %  GPCF_COVAR_CFG  Evaluate the derivarive of the covar matrix
 %
 %  Description :
-%   · dRff = GPCF_COVAR_CFG(GPCF, X) takes a
-%     covariance structure GPCF, a matrix of inputs
-%     vectors and returns dSRS/drho and/or dSRS/dV, the gradients of 
-%     SRS matrix
+%   dRff = GPCF_COVAR_CFG(GPCF, X) takes a
+%   covariance structure GPCF, a matrix of inputs
+%   vectors and returns dSRS/drho and/or dSRS/dV, the gradients of 
+%   SRS matrix
 %
-%   · dRff = GPCF_COVAR_CFG(GPCF, X, X2) takes a
-%     covariance structure GPCF, a matrix X of input
-%     vectors and returns  dSRS/drho and/or dSRS/dV, the gradients of 
-%     SRS matrix with respect to rho (cell array with matrix
-%     elements). This subfunction is needed when using sparse 
-%     approximations (e.g. FIC).
+%   dRff = GPCF_COVAR_CFG(GPCF, X, X2) takes a
+%   covariance structure GPCF, a matrix X of input
+%   vectors and returns  dSRS/drho and/or dSRS/dV, the gradients of 
+%   SRS matrix with respect to rho (cell array with matrix
+%   elements). This subfunction is needed when using sparse 
+%   approximations (e.g. FIC).
 %
 %  * See also
 %    GPCF_COVAR_PAK, GPCF_COVAR_UNPAK, GPCF_COVAR_LP, GP_G
@@ -670,7 +668,7 @@ if nargin == 2 || (isempty(x2) && isempty(mask))
         end
     end    
     
-    % correlations matrices
+    % matrices
     dC = {};
     
     for i1 = 1:nc
@@ -816,12 +814,12 @@ function C = gpcf_covar_trcov(gpcf, x)
 %  GP_COVAR_TRCOV  Evaluate training covariance matrix of inputs
 %
 %  Description :
-%   · C = GP_COVAR_TRCOV(GP, TX) takes in correlation structure
-%     matrix TX that contains training input vectors.
-%     Returns covariance matrix C. Every element ij of C contains
-%     the correlation between inputs i and j in TX.
-%     This is a mandatory subfunction used for example in
-%     prediction and energy computations.
+%   C = GP_COVAR_TRCOV(GP, TX) takes in correlation structure
+%   matrix TX that contains training input vectors.
+%   Returns covariance matrix C. Every element ij of C contains
+%   the correlation between inputs i and j in TX.
+%   This is a mandatory subfunction used for example in
+%   prediction and energy computations.
 %
 %  * See also
 %    GPCF_COVAR_COV, GPCF_COVAR_TRVAR, GP_COV, GP_TRCOV
@@ -844,7 +842,6 @@ a = unique(xC); % na = size(a, 1);
 
 % checking
 if max(a) > gpcf.numberClass
-% if na ~= gpcf.numberClass || max(a) ~= gpcf.numberClass
     error('more or less classes than given to the model');
 end
 
@@ -899,12 +896,12 @@ function C = gpcf_covar_trvar(gpcf, x)
 %  GP_COVAR_VECTOR  Evaluate training variance vector
 %
 %  Description:
-%   · C = GP_COVAR_TRVAR(GPCF, TX) takes in correlation structure
-%     of and matrix TX that contains training inputs. 
-%     Returns correlation vector C, which are ones. 
-%     Every element i of C contains the correlation of the input in TX. 
-%     This is a mandatory subfunction used for example in prediction and 
-%     energy computations.
+%   C = GP_COVAR_TRVAR(GPCF, TX) takes in correlation structure
+%   of and matrix TX that contains training inputs. 
+%   Returns correlation vector C, which are ones. 
+%   Every element i of C contains the correlation of the input in TX. 
+%   This is a mandatory subfunction used for example in prediction and 
+%   energy computations.
 %
 %  * See also:
 %    GPCF_COVAR_COV, GP_COV, GP_TRCOV  
@@ -929,12 +926,12 @@ function reccf = gpcf_covar_recappend(reccf, ri, gpcf)
 %  RECAPPEND  Record append
 %
 %  Description:
-%   · RECCF = GPCF_COVAR_RECAPPEND(RECCF, RI, GPCF) takes a
-%     correlation structure record structure RECCF, record index RI
-%     and correlation structure GPCF with the current MCMC
-%     samples of the parameters. Returns RECCF which contains
-%     all the old samples and the current samples from GPCF.
-%     This subfunction is needed when using MCMC sampling (gp_mc).
+%   RECCF = GPCF_COVAR_RECAPPEND(RECCF, RI, GPCF) takes a
+%   correlation structure record structure RECCF, record index RI
+%   and correlation structure GPCF with the current MCMC
+%   samples of the parameters. Returns RECCF which contains
+%   all the old samples and the current samples from GPCF.
+%   This subfunction is needed when using MCMC sampling (gp_mc).
 %
 %  * See also:
 %    GP_MC and GP_MC -> RECAPPEND

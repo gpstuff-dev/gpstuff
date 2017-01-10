@@ -92,10 +92,12 @@ yy = [round(data.data(:, 2)); round(data.data(:, 3))];
 
 % take sparse data (you can change the years);
 yr1 = [1870, 1900];
+% yr1 = [1846,  1935]; one observation
 indt1 = ~logical((t >= yr1(1)) .* (t <= yr1(2)));
 t1 = t(indt1);
 
 yr2 = [1850, 1870];
+% yr2 = [1845, 1934]; one observation
 indt2 = ~logical((t >= yr2(1)) .* (t <= yr2(2)));
 t2 = t(indt2);
 
@@ -111,15 +113,15 @@ y = [y1; y2];
 % create species markers
 c = [ones(size(t1)); 2*ones(size(t2))];
 
-% data gp-format ─ species markers in the last column
+% data gp-format - species markers in the last column
 x = [[t1; t2] c];
-z = ones(size(x, 1), 1);
+z = [ones(size(x, 1), 1) c];
 
 % likelihood structure for each species (the likelihood can also be distinct)
 lik1 = lik_negbin;
 lik2 = lik_negbin;
 likS = {lik1 lik2};
-lik = lik_liks('likelihoods', likS, 'classVariables', x(:, 2));
+lik = lik_liks('likelihoods', likS, 'classVariables', 2);
 
 % correlation function for each species (the correlation functions can also be distinct)
 k1 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior', prior_fixed, 'selectedVariables', 1);
@@ -195,7 +197,7 @@ plot(t2(t2 >= yr2(2)), y2(t2 >= yr2(2)), '.', ...
 xlabel('years'); ylabel('Population size'); 
 title('multivariate Gaussian process model');
 
-legend(pl, 'E[N1(t)|Y1 = y1 Λ Y2 = y2]', 'E[N2(t)|Y1 = y1 Λ Y2 = y2]', ...
+legend(pl, 'E[N_1(t_*)|N_1 = n_1, N_2 = n_2]', 'E[N_2(t_*)|N_1 = n_1, N_2 = n_2]', ...
     'hare-data', 'lynx-data', 'Location', 'northeast'); 
 
 %%
