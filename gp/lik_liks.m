@@ -1,4 +1,4 @@
-function lik = lik_liks1(varargin)
+function lik = lik_liks(varargin)
 %  LIKS creates a likelihood structure which is composed by many
 %       different likelihoods.
 %
@@ -220,8 +220,9 @@ function ll = lik_liks_ll(lik, y, ff, z)
 %    LIK_LLG, LIK_LLG3, LIK_LLG2, GPLA_E
  
  n  = size(y, 1);
- zi = z(:, lik.classVariables);
- z  = z(:, 1);
+ indClass = 1:size(z,2)==lik.classVariables; 
+ zi = z(:, indClass);
+ z  = z(:, ~indClass);
  
  indj  = unique(zi); 
  nind = numel(indj);
@@ -264,8 +265,10 @@ function llg = lik_liks_llg(lik, y, ff, param, z)
 %    LIK_LIKS_LL, LIK_LIKS_LLG2, LIK_LIKS_LLG3, GPLA_E
   
  n  = size(y, 1); 
- zi = z(:, lik.classVariables);
- z  = z(:, 1);
+ indClass = 1:size(z,2)==lik.classVariables; 
+ zi = z(:, indClass);
+ z  = z(:, ~indClass);
+ 
  
  indj  = unique(zi); 
  nind = numel(indj);
@@ -319,8 +322,10 @@ function llg2 = lik_liks_llg2(lik, y, ff, param, z)
 %    LIK_LIKS_LL, LIK_LIKS_LLG, LIK_LIKS_LLG3, GPLA_E
 
  n  = size(y, 1); 
- zi = z(:, lik.classVariables);
- z  = z(:, 1);
+ indClass = 1:size(z,2)==lik.classVariables; 
+ zi = z(:, indClass);
+ z  = z(:, ~indClass);
+ 
  
  indj = unique(zi); 
  nind = numel(indj);
@@ -388,8 +393,10 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
 %    LIK_LIKS_LL, LIK_LIKS_LLG, LIK_LIKS_LLG2, GPLA_E, GPLA_G
 
  n  = size(y, 1); 
- zi = z(:, lik.classVariables);
- z  = z(:, 1);
+ indClass = 1:size(z,2)==lik.classVariables; 
+ zi = z(:, indClass);
+ z  = z(:, ~indClass);
+ 
  
  indj  = unique(zi); 
  nind = numel(indj);
@@ -469,8 +476,10 @@ function [logM_0, m_1, sigm2hati1] = lik_liks_tiltedMoments(lik, y, i1, sigm2_i,
 %    GPEP_E
 
  n  = size(y, 1); 
- zi = z(:, lik.classVariables);
- z  = z(:, 1);
+ indClass = 1:size(z,2)==lik.classVariables; 
+ zi = z(:, indClass);
+ z  = z(:, ~indClass);
+ 
  
  indj = unique(zi); 
  nind = numel(indj);
@@ -523,9 +532,10 @@ function [g_i] = lik_liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %    GPEP_G
 
  n  = size(y, 1); 
- zi = z(:, lik.classVariables);
- z  = z(:, 1);
- 
+ indClass = 1:size(z,2)==lik.classVariables; 
+ zi = z(:, indClass);
+ z  = z(:, ~indClass);
+  
  indj = unique(zi); 
  nind = numel(indj);
  
@@ -592,8 +602,10 @@ function [lpy, Ey, Vary] = lik_liks_predy(lik, Ef, Varf, yt, zt)
 
 % number of values to predict;
 n = size(Ef, 1);
-zi = zt(:, lik.classVariables);
-zt = zt(:, 1);
+indClass = 1:size(zt,2)==lik.classVariables;
+zi = zt(:, indClass);
+zt  = zt(:, ~indClass);
+ 
 
 % check some conditions
 if ~issorted(zi) 
