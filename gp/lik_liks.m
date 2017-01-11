@@ -12,8 +12,8 @@ function lik = lik_liks(varargin)
 %      p(y|f) = ||      ||   L_j(y_i|f_i, th_j)
 %                 j=1   i \in I_j
 %
-%      f = (f1, f2, ..., fk)'
-%      y = (y1, y2, ..., yk)'
+%      f = (f1' f2' ... fk')'
+%      y = (y1' y2' ... yk')'
 %
 %    Here j is the index for different likelihoods and I_j is the index
 %    vector telling for which observations likelihood j is used.
