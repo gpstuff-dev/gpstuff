@@ -1187,36 +1187,33 @@ function [DKff, DKff1, DKff2]  = gpcf_sexp_ginput2(gpcf, x, x2, takeOnlyDiag)
     error('Needs 3 input arguments')
   end
   
-  if nargin==4 && isequal(takeOnlyDiag,'takeOnlyDiag')
-      for i = 1:m
-          DKff((i-1)*n+1:i*n,1) = repmat(gpcf.magnSigma2/(gpcf.lengthScale(1,i))^2,n,1);
+  %metric doesn't work with grad.obs on
+  if isfield(gpcf,'metric')
+      error('Metric doesnt work with grad.obs')
+  else
+      s = zeros(1, m);
+      if isfield(gpcf,'selectedVariables')
+          s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
+      else
+          s(1:m) = 1./gpcf.lengthScale.^2;
       end
+  end
+  
+  if nargin==4 && isequal(takeOnlyDiag,'takeOnlyDiag')
+      DKff = repelem(gpcf.magnSigma2.*s',n,1);
   else
       if isequal(x,x2)
           K = gpcf.fh.trcov(gpcf, x);
       else
           K = gpcf.fh.cov(gpcf, x, x2);
-      end
-      
-      %metric doesn't work with grad.obs on
-      if isfield(gpcf,'metric')
-          error('Metric doesnt work with grad.obs')
-      else
-          s = zeros(1, m);
-          if isfield(gpcf,'selectedVariables')
-              s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
-          else
-              s(1:m) = 1./gpcf.lengthScale.^2;
-          end
-          
-          for i=1:m
-              DK2 = s(i).^2.*bsxfun(@minus,x(:,i),x2(:,i)').^2.*K;
-              DK = s(i).*K;
-              ii1 = ii1 + 1;
-              DKff1{ii1} = DK;
-              DKff2{ii1} = DK2;
-              DKff{ii1} = DK - DK2;
-          end
+      end          
+      for i=1:m
+          DK2 = s(i).^2.*bsxfun(@minus,x(:,i),x2(:,i)').^2.*K;
+          DK = s(i).*K;
+          ii1 = ii1 + 1;
+          DKff1{ii1} = DK;
+          DKff2{ii1} = DK2;
+          DKff{ii1} = DK - DK2;
       end
   end
 end
