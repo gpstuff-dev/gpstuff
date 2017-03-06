@@ -267,7 +267,7 @@ switch gp.type
         end
         if isfield(gp,'derivobs') && gp.derivobs==1 && ~isfield(gp,'lik_mono')
           for k2=2:nderobs
-            xtind2 = [xtind2 xtind+length(xt)*(k2-1)];
+            xtind2 = [xtind2 xtind+size(xt,1)*(k2-1)];
           end
         end
         if ~isempty(K)
@@ -530,8 +530,8 @@ switch gp.type
     end
     
     iKuuKuf = K_uu\K_fu';    
-    w_bu=zeros(length(xt),length(u));
-    w_n=zeros(length(xt),1);
+    w_bu=zeros(size(xt,1),length(u));
+    w_n=zeros(size(xt,1),1);
     for i=1:length(ind)
       w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*p(ind{i},:))', length(tstind{i}),1);
       K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf);              % n x u
