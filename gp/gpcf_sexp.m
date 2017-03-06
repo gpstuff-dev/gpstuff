@@ -1188,7 +1188,9 @@ function [DKff, DKff1, DKff2]  = gpcf_sexp_ginput2(gpcf, x, x2, takeOnlyDiag)
   end
   
   if nargin==4 && isequal(takeOnlyDiag,'takeOnlyDiag')
-      DKff=gpcf.magnSigma2.*ones(m*n,1);
+      for i = 1:m
+          DKff((i-1)*n+1:i*n,1) = repmat(gpcf.magnSigma2/(gpcf.lengthScale(1,i))^2,n,1);
+      end
   else
       if isequal(x,x2)
           K = gpcf.fh.trcov(gpcf, x);
