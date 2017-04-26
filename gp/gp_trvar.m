@@ -1,5 +1,5 @@
 function [K, C] = gp_trvar(gp, x1, predcf)
-%GP_TRVAR  Evaluate training variance vector. 
+%GP_TRVAR  Evaluate training variance vector.
 %
 %  Description
 %    K = GP_TRVAR(GP, TX, PREDCF) takes in Gaussian process GP and
@@ -20,66 +20,66 @@ function [K, C] = gp_trvar(gp, x1, predcf)
 %  See also
 %    GP_SET, GPCF_*
 %
-% Copyright (c) 2006 Jarno Vanhatalo
+% Copyright (c) 2006, 2016 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen
 
-% This software is distributed under the GNU General Public 
-% License (version 3 or later); please refer to the file 
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
+
+% % no covariance functions?
+% if length(gp.cf)==0 || (nargin>2 && ~isempty(predcf) && predcf(1)==0) ...
+%         || isfield(gp, 'lik_mono')
+%     K=[];
+%     C=[];
+%     if nargout>1 && isfield(gp.lik.fh,'trcov')
+%         C=sparse(0);
+%         % Add Gaussian noise to the covariance
+%         C = C + gp.lik.fh.trvar(gp.lik, x1);
+%         if ~isempty(gp.jitterSigma2)
+%             C=C+gp.jitterSigma2;
+%         end
+%     end
+%     return
+% end
 
 [n,m]=size(x1);
 n1 = n+1;
 ncf = length(gp.cf);
 
-if ~(isfield(gp,'derivobs') && gp.derivobs)
-  % Evaluate the covariance without noise
-  K = 0;
-  if nargin < 3 || isempty(predcf)
+%if ~(isfield(gp,'derivobs') && gp.derivobs)
+% Evaluate the covariance without noise
+K = 0;
+if nargin < 3 || isempty(predcf)
     predcf = 1:ncf;
-  end
-  if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude && ...
-      (~isfield(gp,'comp_cf') || (isfield(gp,'comp_cf') && sum(gp.comp_cf{1}==predcf)))
-    K=ones(n,1);
-  else
-    for i=1:length(predcf)
-      gpcf = gp.cf{predcf(i)};
-      K = K + gpcf.fh.trvar(gpcf, x1);
-    end
-  end
-
-  if ~isempty(gp.jitterSigma2)
-    K = K + gp.jitterSigma2;
-  end
-
-  if nargout >1
-    C=K;
-    if isfield(gp.lik.fh,'trvar')
-      % Add Gaussian noise to the covariance
-      C = C + gp.lik.fh.trvar(gp.lik, x1);
-    end
-  end
-else
-  % Derivative observations
-  
-  % Evaluate the covariance without noise
-  K = 0;
-  gpcf = gp.cf{1};
-  %right sized vector for the tr_var
-  x2=zeros(m*n+n,1);
-  K = K + gpcf.fh.trvar(gpcf, x2);
-
-  if ~isempty(gp.jitterSigma2)
-    K = K + gp.jitterSigma2;
-  end
-
-  if nargout >1
-    C=K;
-    if isfield(gp.lik.fh,'trvar')
-      % Add Gaussian noise to the covariance
-      C = C + gp.lik.fh.trvar(gp.lik, x2);
-    end
-    C(C<eps)=0;
-  end
-  K(K<eps)=0;
-  
 end
+% loop through covariance functions
+for i=1:length(predcf)
+    gpcf = gp.cf{predcf(i)};
+    if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude && ...
+            (~isfield(gp,'comp_cf') || (isfield(gp,'comp_cf') && sum(gp.comp_cf{1}==predcf)))
+        gpcf.magnSigma2=1;
+    else
+        if isfield(gp,'derivobs') && gp.derivobs
+            % derivative observations in use
+            K = K + [gpcf.fh.trvar(gpcf, x1) ; gpcf.fh.ginput2(gpcf, x1, x1, 'takeOnlyDiag')];
+        else
+            % no observations
+            K = K + gpcf.fh.trvar(gpcf, x1);
+        end
+    end
+end
+
+if ~isempty(gp.jitterSigma2)
+    K = K + gp.jitterSigma2;
+end
+
+if nargout >1
+    C=K;
+    if isfield(gp.lik.fh,'trvar')
+        % Add Gaussian noise to the covariance
+        C = C + gp.lik.fh.trvar(gp.lik, x1);
+    end
+end
+
+  

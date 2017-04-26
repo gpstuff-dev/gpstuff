@@ -149,7 +149,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
       [Eft, Covft] = gp_jpred(gp,x,y,xt,'z',z, ...
                               'predcf',predcf,'tstind',tstind);
     end
-    rr = randn(size(xt,1),nsamp);
+    rr = randn(size(Eft,1),nsamp);
     sampft = bsxfun(@plus, Eft, chol(Covft,'lower')*rr);
     if nargout > 1
       sampyt = bsxfun(@plus, Eyt, chol(Covyt,'lower')*rr);
