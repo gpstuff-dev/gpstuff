@@ -31,6 +31,9 @@
 
 %%  Part 2:
 %  Two dimensional example 
+% For testing purposes:
+stack = dbstack;
+if strcmp(stack(end).name, 'runtestset') test = 1; else test = 0; end;
 
 rng(3)
 % The objective function
@@ -150,6 +153,8 @@ while i1 < maxiter && improv>1e-6
     improv = abs(y(end) - y(end-1));
     i1=i1+1;
     
-    pause
+    if test == 0
+        pause
+    end
 end
 

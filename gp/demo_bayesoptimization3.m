@@ -31,6 +31,9 @@
 
 %%  Part 3:
 %  Two dimensional example with constraints 
+% For testing purposes:
+stack = dbstack;
+if strcmp(stack(end).name, 'runtestset') test = 1; else test = 0; end;
 
 rng(3)
 % Construct function handles to objective function (fx) and two constraint
@@ -230,6 +233,8 @@ while i1 < maxiter && improv>1e-6
     end
     i1=i1+1;
     
-    pause
+    if test == 0
+        pause
+    end
 end
 
