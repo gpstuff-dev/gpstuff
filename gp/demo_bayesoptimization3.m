@@ -1,13 +1,14 @@
-%DEMO_BAYESIANOPTIMIZATION  A demonstration program for Bayesian
-%                           optimization
+%DEMO_BAYESIANOPTIMIZATION3  A demonstration program for Bayesian
+%                            optimization with constraints
 %
-%  Part 1:
+% The set of BO demos
+%  Part 1: see demo_bayesoptimization1
 %  One dimensional example 
 %
-%  Part 2:
+%  Part 2: see demo_bayesoptimization3
 %  Two dimensional example 
 %
-%  Part 3:
+%  Part 3: this file
 %  Two dimensional example with constraints 
 %  * The implementation of constraints follows Gelbart et al. (2014)
 % 
@@ -33,7 +34,7 @@
 %  Two dimensional example with constraints 
 % For testing purposes:
 stack = dbstack;
-if strcmp(stack(end).name, 'runtestset') test = 1; else test = 0; end;
+if (~isempty(stack) && strcmp(stack(end).name, 'runtestset')) test = 1; else test = 0; end;
 
 rng(3)
 % Construct function handles to objective function (fx) and two constraint

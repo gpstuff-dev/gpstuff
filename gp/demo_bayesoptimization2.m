@@ -1,13 +1,14 @@
-%DEMO_BAYESIANOPTIMIZATION  A demonstration program for Bayesian
-%                           optimization
+%DEMO_BAYESIANOPTIMIZATION 2 A demonstration program for Bayesian
+%                            optimization in two dimensions
 %
-%  Part 1:
+% The set of BO demos
+%  Part 1: see demo_bayesoptimization1
 %  One dimensional example 
 %
-%  Part 2:
+%  Part 2: this file
 %  Two dimensional example 
 %
-%  Part 3:
+%  Part 3: see demo_bayesoptimization3
 %  Two dimensional example with constraints 
 %  * The implementation of constraints follows Gelbart et al. (2014)
 % 
@@ -23,7 +24,7 @@
 %    Snoek, J., Larochelle, H, Adams, R. P. (2012). Practical Bayesian
 %    Optimization of Machine Learning Algorithms. NIPS 25 
 %
-%  Copyright (c) 2015 Jarno Vanhatalo
+%  Copyright (c) 2015-2017 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -33,7 +34,7 @@
 %  Two dimensional example 
 % For testing purposes:
 stack = dbstack;
-if strcmp(stack(end).name, 'runtestset') test = 1; else test = 0; end;
+if (~isempty(stack) && (strcmp(stack(end).name, 'runtestset') || strcmp(stack(end).name, 'runtests'))) test = 1; else test = 0; end;
 
 rng(3)
 % The objective function
@@ -72,6 +73,7 @@ figure, % figure for visualization
 i1 = 1;
 maxiter = 20;
 improv = inf;   % improvement between two successive query points
+x_new=[];
 while i1 < maxiter && improv>1e-6
 %while i1 < maxiter
 
