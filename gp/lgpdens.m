@@ -343,6 +343,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           if isempty(n_scale)
             n_scale = nParam;
           end
+          n_scale = min(n_scale, nParam);
 
           ll0 = (Ef' * yy) - sum(yy)*log(sum(exp(Ef)));
           e0 = gp_e(gp_pak(gpis), gpis, xxn, Ef);
@@ -698,6 +699,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
           if isempty(n_scale)
             n_scale = nParam;
           end
+          n_scale = min(n_scale, nParam);
           
           if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
             ll0 = (Ef' * yy) - sum(sum(reshape(yy,gridn(2),gridn(1))).*log(sum(reshape(exp(Ef),gridn(2),gridn(1)))));
