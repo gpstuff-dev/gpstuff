@@ -453,7 +453,11 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
                  
                  yj = y(ind); 
                  fj = f(ind);
-                 zj = z(ind);
+                 if isempty(z)
+                     zj = z;
+                 else
+                     zj = z(ind);
+                 end
                  
                  % take the column vectors
                  llg3_tmp = likj.fh.llg3(likj, yj, fj, param, zj);
