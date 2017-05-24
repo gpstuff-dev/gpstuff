@@ -83,12 +83,17 @@ function lik = lik_gaussian(varargin)
     % Set the function handles to the subfunctions
     lik.fh.pak = @lik_gaussian_pak;
     lik.fh.unpak = @lik_gaussian_unpak;
+    lik.fh.ll = @lik_gaussian_ll;
+    lik.fh.llg = @lik_gaussian_llg;    
+    lik.fh.llg2 = @lik_gaussian_llg2;
+    lik.fh.llg3 = @lik_gaussian_llg3;
     lik.fh.lp = @lik_gaussian_lp;
     lik.fh.lpg = @lik_gaussian_lpg;
     lik.fh.cfg = @lik_gaussian_cfg;
     lik.fh.tiltedMoments = @lik_gaussian_tiltedMoments;
     lik.fh.trcov  = @lik_gaussian_trcov;
     lik.fh.trvar  = @lik_gaussian_trvar;
+    lik.fh.siteDeriv = @lik_gaussian_siteDeriv;
     lik.fh.recappend = @lik_gaussian_recappend;
   end
 
@@ -148,6 +153,119 @@ function [lik, w] = lik_gaussian_unpak(lik, w)
     lik.p.sigma2 = p;
   end
 end
+
+
+
+
+function logLik = lik_gaussian_ll(lik, y, f, ~)
+%LIK_GAUSSIAN_LL    Log likelihood
+%
+%  Description
+%    E = LIK_GAUSSIAN_LL(LIK, Y, F, Z) takes a likelihood data
+%    structure LIK, incedence counts Y, expected counts Z, and
+%    latent values F. Returns the log likelihood, log p(y|f,z).
+%    This subfunction is needed when using Laplace approximation
+%    or MCMC for inference with non-Gaussian likelihoods. This 
+%    subfunction is also used in information criteria (DIC, WAIC)
+%    computations.
+%
+%  See also
+%    LIK_GAUSSIAN_LLG, LIK_GAUSSIAN_LLG3, LIK_GAUSSIAN_LLG2, GPLA_E
+
+  s2 = lik.sigma2;
+  r2 = (f-y).^2;  
+  logLik =  sum(-0.5 * r2./s2 - 0.5*log(s2) - 0.5*log(2*pi));
+  
+end
+
+
+function llg = lik_gaussian_llg(lik, y, f, param, ~)
+%LIK_GAUSSIAN_LLG    Gradient of the log likelihood
+%
+%  Description 
+%    G = LIK_GAUSSIAN_LLG(LIK, Y, F, PARAM) takes a likelihood
+%    structure LIK, incedence counts Y, expected counts Z
+%    and latent values F. Returns the gradient of the log
+%    likelihood with respect to PARAM. At the moment PARAM can be
+%    'param' or 'latent'. This subfunction is needed when using 
+%    Laplace approximation or MCMC for inference with non-Gaussian 
+%    likelihoods.
+%
+%  See also
+%    LIK_GAUSSIAN_LL, LIK_GAUSSIAN_LLG2, LIK_GAUSSIAN_LLG3, GPLA_E
+  
+ 
+switch param
+    case 'param'
+        % there is also correction due to the log transformation
+        s2 = lik.sigma2;
+        r2 = (f-y).^2;
+        llg =  0.5.* sum( r2./s2 -1 );
+
+    case 'latent'
+        s2 = lik.sigma2;
+        r = f-y;
+        llg =  - r./s2 ;
+end
+end
+
+
+function llg2 = lik_gaussian_llg2(lik, y, f, param, ~)
+%LIK_GAUSSIAN_LLG2  Second gradients of the log likelihood
+%
+%  Description        
+%    G2 = LIK_GAUSSIAN_LLG2(LIK, Y, F, PARAM) takes a likelihood
+%    structure LIK, incedence counts Y, expected counts Z,
+%    and latent values F. Returns the Hessian of the log
+%    likelihood with respect to PARAM. At the moment PARAM can be
+%    only 'latent'. G2 is a vector with diagonal elements of the
+%    Hessian matrix (off diagonals are zero). This subfunction
+%    is needed when using Laplace approximation or EP for inference 
+%    with non-Gaussian likelihoods.
+
+%
+%  See also
+%    LIK_GAUSSIAN_LL, LIK_GAUSSIAN_LLG, LIK_GAUSSIAN_LLG3, GPLA_E
+
+   
+switch param
+    case 'latent'
+        s2 = lik.sigma2;
+        llg2 =  - ones(size(y))./s2 ;
+    case 'latent+param'
+        % there is also correction due to the log transformation
+        s2 = lik.sigma2;
+        r = f-y;
+        llg2 =  r./s2 ;
+        
+end
+end    
+
+function llg3 = lik_gaussian_llg3(lik, y, f, param, z)
+%LIK_GAUSSIAN_LLG3  Third gradients of the log likelihood
+%
+%  Description
+%    G3 = LIK_GAUSSIAN_LLG3(LIK, Y, F, PARAM) takes a likelihood
+%    structure LIK, incedence counts Y, expected counts Z
+%    and latent values F and returns the third gradients of the
+%    log likelihood with respect to PARAM. At the moment PARAM
+%    can be only 'latent'. G3 is a vector with third gradients.
+%    This subfunction is needed when using Laplace approximation 
+%    for inference with non-Gaussian likelihoods.
+%
+%  See also
+%    LIK_GAUSSIAN_LL, LIK_GAUSSIAN_LLG, LIK_GAUSSIAN_LLG2, GPLA_E, GPLA_G
+
+switch param
+    case 'latent'
+        llg3 = zeros(size(y));
+    case 'latent2+param'
+        % there is also correction due to the log transformation
+        s2 = lik.sigma2;
+        llg3 = ones(size(y))./s2 ;
+end
+end
+
 
 function lp = lik_gaussian_lp(lik)
 %LIK_GAUSSIAN_LP  Evaluate the log prior of likelihood parameters
@@ -211,43 +329,30 @@ function [logM_0, m_1, sigm2hati1] = lik_gaussian_tiltedMoments(lik, y, i1, sigm
 %  See also
 %    GPEP_E
 
-  m_1=myy_i;
-  sigm2hati1=sigm2_i;
-  logM_0=zeros(size(y));
+%   m_1=myy_i;
+%   sigm2hati1=sigm2_i;
+%   logM_0=zeros(size(y));
   
+s2 = lik.sigma2;
+tau = 1./s2 + 1./sigm2_i;
+w = (y(i1)./s2 + myy_i./sigm2_i)./tau;
+Zi = 1 ./( sqrt(2.*pi.*(s2+sigm2_i)) ) .* exp( -0.5*(y(i1)-myy_i).^2./(s2+sigm2_i) );
+
+% m_1 = w;
+% sigm2hati1 = 1./tau;
+% logM_0 = Zi./sqrt(2.*pi./tau);
+
+%g_i = Zi*0.5*( (1/tau + w.^2 -2*w*y(i1) + y(i1).^2 ) /s2 - 1)/s2 * s2;
+
+%m_1 = Zi.*w;
+%sigm2hati1 = Zi.*(1./tau + w.^2 );
+%sigm2hati1 = Zi.*1./tau;
+m_1 = w;
+sigm2hati1 = 1./tau;
+logM_0 = log(Zi);
+
 end
 
-function ll = lik_gaussian_ll(lik, y, f, z)
-%LIK_EPGAUSSIAN_LL  Log likelihood
-%
-%  Description
-%    LL = LIK_EPGAUSSIAN_LL(LIK, Y, F, Z) takes a likelihood
-%    structure LIK, succes counts Y, numbers of trials Z, and
-%    latent values F. Returns the log likelihood, log p(y|f,z).
-%    This subfunction is needed when using Laplace approximation
-%    or MCMC for inference with non-Gaussian likelihoods. This 
-%    subfunction is also used in information criteria (DIC, WAIC)
-%    computations.
-%
-%  See also
-%    LIK_EPGAUSSIAN_LLG, LIK_EPGAUSSIAN_LLG3, LIK_EPGAUSSIAN_LLG2, GPLA_E
-  
-%   if isempty(z)
-%     error(['lik_epgaussian -> lik_epgaussian_ll: missing z!'... 
-%            'EP-Gaussian likelihood needs the expected number of   '...
-%            'occurrences as an extra input z. See, for         '...
-%            'example, lik_epgaussian and gpla_e.             ']);
-%   end
-
-  sigma2=lik.sigma2;
-  ll=sum(norm_lpdf(y,f,sqrt(sigma2)));  
-
-%   
-%   expf = exp(f);
-%   p = expf ./ (1+expf);
-%   N = z;
-%   ll =  sum(gammaln(N+1)-gammaln(y+1)-gammaln(N-y+1)+y.*log(p)+(N-y).*log(1-p));
-end
 
 function DKff = lik_gaussian_cfg(lik, x, x2)
 %LIK_GAUSSIAN_CFG  Evaluate gradient of covariance with respect to
@@ -356,6 +461,65 @@ function C = lik_gaussian_trvar(lik, x)
   end
 
 end
+
+function [g_i] = lik_gaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
+%LIK_NEGBIN_SITEDERIV  Evaluate the expectation of the gradient
+%                      of the log likelihood term with respect
+%                      to the likelihood parameters for EP 
+%
+%  Description [M_0, M_1, M2] =
+%    LIK_NEGBIN_SITEDERIV(LIK, Y, I, S2, MYY, Z) takes a
+%    likelihood structure LIK, incedence counts Y, expected
+%    counts Z, index I and cavity variance S2 and mean MYY. 
+%    Returns E_f [d log p(y_i|f_i) /d a], where a is the
+%    likelihood parameter and the expectation is over the
+%    marginal posterior. This term is needed when evaluating the
+%    gradients of the marginal likelihood estimate Z_EP with
+%    respect to the likelihood parameters (see Seeger (2008):
+%    Expectation propagation for exponential families). This 
+%    subfunction is needed when using EP for inference with 
+%    non-Gaussian likelihoods and there are likelihood parameters.
+%
+%  See also
+%    GPEP_G
+
+% s2 = lik.sigma2;
+% r2 = (f-y).^2;
+% llg =  0.5* ( r2./s2.^2 -1/s2 );
+
+s2 = lik.sigma2;
+tau = 1/s2 + 1/sigm2_i;
+w = (y(i1)/s2 + myy_i/sigm2_i)/tau;
+%Zi = 1/( sqrt(2*pi*(s2+sigm2_i)) )*exp( -0.5*(y(i1)-myy_i)^2/(s2+sigm2_i) );
+
+g_i = 0.5*( (1/tau + w.^2 -2*w*y(i1) + y(i1).^2 ) /s2 - 1)/s2 * s2;
+
+% % testing
+% y= 0.3;
+% s2=0.9;
+% myy_i=1.2;
+% sigm2_i=0.4;
+% 
+% tau = 1/s2 + 1/sigm2_i;
+% w = (y/s2 + myy_i/sigm2_i)/tau;
+% Zi = 1/( sqrt(2*pi*(s2+sigm2_i)) )*exp( -0.5*(y-myy_i)^2/(s2+sigm2_i) );
+% f = linspace(-3,5,100);
+% 
+% pd1 = normpdf(f,y,sqrt(s2)).*normpdf(f,myy_i,sqrt(sigm2_i));
+% pd2 = normpdf(f,w,sqrt(1/tau))*Zi;
+% %pd1 = exp( log(normpdf(f,y,sqrt(s2))) + log(normpdf(f,myy_i,sqrt(sigm2_i))) );
+% %pd2 = exp(-0.5*(f-w).^2.*tau) ./ ( 2*pi*sqrt((s2*sigm2_i)) )*exp( 0.5*(y-myy_i)^2/(s2+sigm2_i) );
+% plot(f,pd1),hold on, plot(f,pd2,'r--')
+% 
+% tf = @(f) normpdf(f,w,sqrt(1/tau))*Zi;
+% td = @(f) 0.5* ( (f-y).^2./s2.^2 - 1/s2 );
+% [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f), -3, 5)
+% Zi*0.5*( (1/tau + w.^2 - 2*w*y + y.^2 ) /s2 - 1)/s2
+
+
+end
+
+
 
 function reclik = lik_gaussian_recappend(reclik, ri, lik)
 %RECAPPEND  Record append
