@@ -242,7 +242,11 @@ function ll = lik_liks_ll(lik, y, ff, z)
      
      yj = y(ind);
      fj = f(ind);
-     zj = z(ind);
+     if isempty(z)
+         zj = z;
+     else
+         zj = z(ind);
+     end
      ll = ll + likj.fh.ll(likj, yj, fj, zj);
      
  end
@@ -288,7 +292,11 @@ function llg = lik_liks_llg(lik, y, ff, param, z)
      
      yj = y(ind); 
      fj = f(ind); 
-     zj = z(ind);
+     if isempty(z)
+         zj = z;
+     else
+         zj = z(ind);
+     end
      
      switch param
          case 'param'
@@ -349,7 +357,11 @@ function llg2 = lik_liks_llg2(lik, y, ff, param, z)
      
      yj = y(ind);
      fj = f(ind);
-     zj = z(ind);
+     if isempty(z)
+         zj = z;
+     else
+         zj = z(ind);
+     end
      
      switch param
          case 'param'
@@ -425,7 +437,11 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
              
              yj = y(ind); 
              fj = f(ind);
-             zj = z(ind);
+             if isempty(z)
+                 zj = z;
+             else
+                 zj = z(ind);
+             end
              
              llg3 = [llg3; likj.fh.llg3(likj, yj, fj, param, zj)];
              
@@ -501,7 +517,11 @@ function [logM_0, m_1, sigm2hati1] = lik_liks_tiltedMoments(lik, y, i1, sigm2_i,
      yj = y(ind); 
      sigm2_ij = sigm2_i(ind);
      myy_ij = myy_i(ind);
-     zj = z(ind);
+     if isempty(z)
+         zj = z;
+     else
+         zj = z(ind);
+     end
      
      [logM_0(ind), m_1(ind), sigm2hati1(ind)] = ...
      likj.fh.tiltedMoments(likj, yj, 1:sizeObs(j), sigm2_ij, myy_ij, zj);
