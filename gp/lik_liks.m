@@ -232,12 +232,9 @@ function ll = lik_liks_ll(lik, y, ff, z)
  end
  
  f = ff(:);
- u = find(diff([-inf; zi; inf]));
-
- ll = 0;
- 
+ ll = 0; 
  for j = 1:nind
-     ind = (u(j) : u(j + 1) - 1);
+     ind = zi==indj(j);
      likj = lik.liks{indj(j)};
      
      yj = y(ind);
@@ -250,6 +247,25 @@ function ll = lik_liks_ll(lik, y, ff, z)
      ll = ll + likj.fh.ll(likj, yj, fj, zj);
      
  end
+
+%  u = find(diff([-inf; zi; inf]));
+% 
+%  ll = 0;
+%  
+%  for j = 1:nind
+%      ind = (u(j) : u(j + 1) - 1);
+%      likj = lik.liks{indj(j)};
+%      
+%      yj = y(ind);
+%      fj = f(ind);
+%      if isempty(z)
+%          zj = z;
+%      else
+%          zj = z(ind);
+%      end
+%      ll = ll + likj.fh.ll(likj, yj, fj, zj);
+%      
+%  end
  
 end
 
@@ -282,12 +298,11 @@ function llg = lik_liks_llg(lik, y, ff, param, z)
  end
  
  f = ff(:);
- u = find(diff([-inf; zi; inf]));
  
  llg = [];
  
  for j = 1:nind
-     ind = (u(j) : u(j + 1) - 1);
+     ind = zi==indj(j);
      likj = lik.liks{indj(j)};
      
      yj = y(ind); 
@@ -311,6 +326,39 @@ function llg = lik_liks_llg(lik, y, ff, param, z)
      end
      
  end
+
+ 
+ 
+ 
+%  u = find(diff([-inf; zi; inf]));
+%  
+%  llg = [];
+%  
+%  for j = 1:nind
+%      ind = (u(j) : u(j + 1) - 1);
+%      likj = lik.liks{indj(j)};
+%      
+%      yj = y(ind); 
+%      fj = f(ind); 
+%      if isempty(z)
+%          zj = z;
+%      else
+%          zj = z(ind);
+%      end
+%      
+%      switch param
+%          case 'param'
+%              if ~isempty(lik.liks{j}.fh.pak(likj))
+%                  llg = [llg likj.fh.llg(likj, yj, fj, param, zj)];
+%                  
+%              end
+%              
+%          case 'latent'
+%              llg = [llg; likj.fh.llg(likj, yj, fj, param, zj)];
+%              
+%      end
+%      
+%  end
 end
 
 
@@ -343,7 +391,6 @@ function llg2 = lik_liks_llg2(lik, y, ff, param, z)
  end
  
  f = ff(:);
- u = find(diff([-inf; zi; inf]));
 
  llg2 = [];
  
@@ -352,7 +399,7 @@ function llg2 = lik_liks_llg2(lik, y, ff, param, z)
  aux(1) = 0;
   
  for j = 1:nind
-     ind  = (u(j) : u(j + 1) - 1);
+     ind = zi==indj(j);
      likj = lik.liks{indj(j)};
      
      yj = y(ind);
@@ -387,6 +434,52 @@ function llg2 = lik_liks_llg2(lik, y, ff, param, z)
      end
      
  end
+ 
+ 
+%  u = find(diff([-inf; zi; inf]));
+% 
+%  llg2 = [];
+%  
+%  nlikpar = length(lik.fh.pak(lik));
+%  z0 = zeros(n, nlikpar);
+%  aux(1) = 0;
+%   
+%  for j = 1:nind
+%      ind  = (u(j) : u(j + 1) - 1);
+%      likj = lik.liks{indj(j)};
+%      
+%      yj = y(ind);
+%      fj = f(ind);
+%      if isempty(z)
+%          zj = z;
+%      else
+%          zj = z(ind);
+%      end
+%      
+%      switch param
+%          case 'param'
+%              
+%          case 'latent'
+%              llg2 = [llg2; likj.fh.llg2(likj, yj, fj, param, zj)];
+%              
+%          case 'latent+param'
+%              if ~isempty(likj.fh.pak(likj))
+%                  % take the column vectors
+%                  llg2_tmp = likj.fh.llg2(likj, yj, fj, param, zj);
+%                  
+%                  % auxiliar indexes
+%                  aux(end + 1) = aux(end) + size(likj.fh.pak(likj), 2);
+%                  
+%                  % auxiliar matrices for derivatives w.r.t. parameters in
+%                  % the specific likelihood j
+%                  z0(ind, (aux(end - 1) + 1) : aux(end)) = llg2_tmp;
+%                  llg2 = [llg2 z0(:, aux(end - 1) + 1 : aux(end))];
+%                  z0(ind, (aux(end - 1) + 1) : aux(end)) = 0;
+%                  
+%              end 
+%      end
+%      
+%  end
 end    
 
 
@@ -418,7 +511,6 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
  end
  
  f = ff(:);
- u = find(diff([-inf; zi; inf]));
   
  llg3 = [];
 
@@ -432,7 +524,7 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
          case 'param'
              
          case 'latent'
-             ind = (u(j) : u(j + 1) - 1);
+             ind = zi==indj(j);
              likj = lik.liks{indj(j)};
              
              yj = y(ind); 
@@ -448,7 +540,7 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
          case 'latent2+param'
              if ~isempty(lik.liks{indj(j)}.fh.pak(lik.liks{indj(j)}))
                  % take indexes and respective observations for specific likelihood
-                 ind = (u(j) : u(j + 1) - 1);
+                 ind = zi==indj(j);
                  likj = lik.liks{indj(j)};
                  
                  yj = y(ind); 
@@ -476,6 +568,66 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
      end
      
  end
+ 
+ 
+%  u = find(diff([-inf; zi; inf]));
+%   
+%  llg3 = [];
+% 
+%  % auxiliar matrix for derivatives of parameters w.r.t. many likelihoods
+%  nlikpar = length(lik.fh.pak(lik));
+%  z0 = zeros(n, nlikpar);
+%  aux(1) = 0;
+%       
+%  for j = 1:nind
+%      switch param
+%          case 'param'
+%              
+%          case 'latent'
+%              ind = (u(j) : u(j + 1) - 1);
+%              likj = lik.liks{indj(j)};
+%              
+%              yj = y(ind); 
+%              fj = f(ind);
+%              if isempty(z)
+%                  zj = z;
+%              else
+%                  zj = z(ind);
+%              end
+%              
+%              llg3 = [llg3; likj.fh.llg3(likj, yj, fj, param, zj)];
+%              
+%          case 'latent2+param'
+%              if ~isempty(lik.liks{indj(j)}.fh.pak(lik.liks{indj(j)}))
+%                  % take indexes and respective observations for specific likelihood
+%                  ind = (u(j) : u(j + 1) - 1);
+%                  likj = lik.liks{indj(j)};
+%                  
+%                  yj = y(ind); 
+%                  fj = f(ind);
+%                  if isempty(z)
+%                      zj = z;
+%                  else
+%                      zj = z(ind);
+%                  end
+%                  
+%                  % take the column vectors
+%                  llg3_tmp = likj.fh.llg3(likj, yj, fj, param, zj);
+%                  
+%                  % auxiliar indexes
+%                  aux(end + 1) = aux(end) + size(likj.fh.pak(likj), 2);
+%                  
+%                  % auxiliar matrices for derivatives w.r.t parameters in
+%                  % the specific likelihood j
+%                  z0(ind, (aux(end - 1) + 1) : aux(end)) = llg3_tmp;
+%                  llg3 = [llg3 z0(:, aux(end - 1) + 1 : aux(end))];
+%                  z0(ind, (aux(end - 1) + 1) : aux(end)) = 0;
+% 
+%              end
+%              
+%      end
+%      
+%  end
 end
 
 
@@ -507,16 +659,13 @@ function [logM_0, m_1, sigm2hati1] = lik_liks_tiltedMoments(lik, y, i1, sigm2_i,
  if n ~= numel(zi)
      error('row-length of y and z are different')
  end
- 
- u = find(diff([-inf; zi; inf]));
- sizeObs = diff(u);
   
  logM_0 = zeros(n, 1);
  m_1 = zeros(n, 1);
  sigm2hati1 = zeros(n, 1);
 
  for j = 1:nind
-     ind = (u(j) : u(j + 1) - 1);
+    ind = zi==indj(j);
      likj = lik.liks{indj(j)};
      yj = y(ind); 
      sigm2_ij = sigm2_i(ind);
@@ -528,8 +677,31 @@ function [logM_0, m_1, sigm2hati1] = lik_liks_tiltedMoments(lik, y, i1, sigm2_i,
      end
      
      [logM_0(ind), m_1(ind), sigm2hati1(ind)] = ...
-     likj.fh.tiltedMoments(likj, yj, 1:sizeObs(j), sigm2_ij, myy_ij, zj);
+     likj.fh.tiltedMoments(likj, yj, 1:length(yj), sigm2_ij, myy_ij, zj);
  end
+ 
+%  u = find(diff([-inf; zi; inf]));
+%  sizeObs = diff(u);
+%   
+%  logM_0 = zeros(n, 1);
+%  m_1 = zeros(n, 1);
+%  sigm2hati1 = zeros(n, 1);
+% 
+%  for j = 1:nind
+%      ind = (u(j) : u(j + 1) - 1);
+%      likj = lik.liks{indj(j)};
+%      yj = y(ind); 
+%      sigm2_ij = sigm2_i(ind);
+%      myy_ij = myy_i(ind);
+%      if isempty(z)
+%          zj = z;
+%      else
+%          zj = z(ind);
+%      end
+%      
+%      [logM_0(ind), m_1(ind), sigm2hati1(ind)] = ...
+%      likj.fh.tiltedMoments(likj, yj, 1:sizeObs(j), sigm2_ij, myy_ij, zj);
+%  end
 end
 
 
@@ -567,8 +739,6 @@ function [g_i] = lik_liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
      error('row-length of y and z are different')
  end
  
- u = find(diff([-inf; zi; inf]));
-
  nlikpar = length(lik.fh.pak(lik));
  g_i = zeros(1, nlikpar);
  aux = 0;
@@ -579,7 +749,7 @@ function [g_i] = lik_liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
          aux = aux + 1;
          
          % indexes for that specific likelihood
-         ind = (u(j) : u(j + 1) - 1);
+         ind = zi==indj(j);
          likj = lik.liks{indj(j)};
 
          if any(ind == i1)
@@ -598,6 +768,38 @@ function [g_i] = lik_liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
      end
          
  end
+ 
+%  u = find(diff([-inf; zi; inf]));
+% 
+%  nlikpar = length(lik.fh.pak(lik));
+%  g_i = zeros(1, nlikpar);
+%  aux = 0;
+%  
+%  for j = 1:nind
+%      if ~isempty(lik.liks{indj(j)}.fh.pak(lik.liks{indj(j)}))
+%          % auxiliar indexes for paramters
+%          aux = aux + 1;
+%          
+%          % indexes for that specific likelihood
+%          ind = (u(j) : u(j + 1) - 1);
+%          likj = lik.liks{indj(j)};
+% 
+%          if any(ind == i1)
+%              i1j = i1;
+%              
+%              % yj = y(ind); 
+%              % zj = z(ind);
+%              
+%              sigm2_ij = sigm2_i;
+%              myy_ij = myy_i;
+%              
+%              % if some specific likelihood has more than one parameter this will not work
+%              g_i(1, aux) = ...
+%              likj.fh.siteDeriv(likj, y, i1j, sigm2_ij, myy_ij, z);
+%          end
+%      end
+%          
+%  end
 end
 
 
@@ -645,7 +847,6 @@ indj = unique(zi);
 nind = numel(indj);
 
 % getting the positions of observations in each vector 
-u = find(diff([-inf; zi; inf]));
 
 % log-density
 lpy = zeros(n, 1);
@@ -655,7 +856,7 @@ if nargout > 1
     Vary = zeros(n, 1);
     
     for j = 1:nind
-        ind = (u(j) : u(j + 1) - 1);
+        ind = zi==indj(j);
         likj = lik.liks{indj(j)};
         
         if numel(yt) ~= 0;
@@ -676,6 +877,39 @@ else
         lpy(ind) = likj.fh.predy(likj, Ef(ind), Varf(ind), yt(ind), zt(ind));
     end
 end
+
+
+% u = find(diff([-inf; zi; inf]));
+% 
+% % log-density
+% lpy = zeros(n, 1);
+% 
+% if nargout > 1
+%     Ey = zeros(n, 1);
+%     Vary = zeros(n, 1);
+%     
+%     for j = 1:nind
+%         ind = (u(j) : u(j + 1) - 1);
+%         likj = lik.liks{indj(j)};
+%         
+%         if numel(yt) ~= 0;
+%            [lpy(ind), Ey(ind), Vary(ind)] = ...
+%            likj.fh.predy(likj, Ef(ind), Varf(ind), yt(ind), zt(ind));
+%            
+%         else
+%            [~, Ey(ind), Vary(ind)] = likj.fh.predy(likj, Ef(ind), Varf(ind), yt, zt(ind));
+%             
+%         end
+%     end
+%     
+% else
+%     for j = 1:nind
+%         ind = (u(j) : u(j + 1) - 1);
+%         likj = lik.liks{indj(j)};
+%         
+%         lpy(ind) = likj.fh.predy(likj, Ef(ind), Varf(ind), yt(ind), zt(ind));
+%     end
+% end
 
 end
 
