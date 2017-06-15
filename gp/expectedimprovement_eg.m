@@ -104,7 +104,13 @@ if nargout>1
     end
     
     % Calculate Derivative of the expected improvement if there are training points for it
-    if ~isempty(x)        
+    if ~isempty(x)
+        if isfield(gp,'deriv')
+            % remove last column when using derivative observations
+            x_new = x_new(:,1:end-1);
+            x = x(:,1:end-1);
+        end
+        
         % derivative of covariance matrix wrt. x
         Kderiv = zeros(length(x_new),1);
         Knxderiv = zeros(length(x_new),size(x,1));
@@ -125,8 +131,6 @@ if nargout>1
         % Derivative of Ef and Varf wrt. x
         dEfdx = Knxderiv*a;
         dVarfdx = Kderiv - (Knxderiv*invCKnxt + (invCKnxt'*Knxderiv')');
-%         dEfdx = Knxderiv(1:size(x_new,1),:)*a(1:size(x,1));
-%         dVarfdx = Kderiv - (Knxderiv(1:size(x_new,1),:)*invCKnxt(1:size(x,1),1:size(x_new,1)) + (invCKnxt(1:size(x,1),1:size(x_new,1))'*Knxderiv(1:size(x_new,1),:)')');
         
         % Derivative of EI
         EIg = -( dEIdEf*dEfdx + dEIdVarf*dVarfdx )';
