@@ -123,8 +123,10 @@ if nargout>1
         dEIdVarf = PDFpart/(2*sqrt(Varf));
         
         % Derivative of Ef and Varf wrt. x
-        dEfdx = Knxderiv(1:size(x_new,1),:)*a(1:size(x,1));
-        dVarfdx = Kderiv - (Knxderiv(1:size(x_new,1),:)*invCKnxt(1:size(x,1),1:size(x_new,1)) + (invCKnxt(1:size(x,1),1:size(x_new,1))'*Knxderiv(1:size(x_new,1),:)')');
+        dEfdx = Knxderiv*a;
+        dVarfdx = Kderiv - (Knxderiv*invCKnxt + (invCKnxt'*Knxderiv')');
+%         dEfdx = Knxderiv(1:size(x_new,1),:)*a(1:size(x,1));
+%         dVarfdx = Kderiv - (Knxderiv(1:size(x_new,1),:)*invCKnxt(1:size(x,1),1:size(x_new,1)) + (invCKnxt(1:size(x,1),1:size(x_new,1))'*Knxderiv(1:size(x_new,1),:)')');
         
         % Derivative of EI
         EIg = -( dEIdEf*dEfdx + dEIdVarf*dVarfdx )';

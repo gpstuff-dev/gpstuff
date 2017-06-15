@@ -1052,7 +1052,7 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2, dims)
     end
   end
   
-  if nargin == 2 || isempty(x2)ginput3
+  if nargin == 2 || isempty(x2)
     K = gpcf.fh.trcov(gpcf, x);
     if isfield(gpcf,'metric')
       dist = gpcf.metric.fh.dist(gpcf.metric, x);
