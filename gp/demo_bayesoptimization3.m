@@ -34,7 +34,7 @@
 %  Two dimensional example with constraints 
 % For testing purposes:
 stack = dbstack;
-if (~isempty(stack) && strcmp(stack(end).name, 'runtestset')) test = 1; else test = 0; end;
+if (~isempty(stack) && (strcmp(stack(end).name, 'runtestset') || strcmp(stack(end).name, 'runtests'))) test = 1; else test = 0; end;
 
 rng(3)
 % Construct function handles to objective function (fx) and two constraint
