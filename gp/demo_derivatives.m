@@ -1,3 +1,21 @@
+%DEMO_DERIVATIVES   Demonstration on use of observations on derivatives,
+%                   monotonicity infomration and predictions for derivative
+%                   of the process  
+%
+%  This demo demonstrates how to use derivative observations in various
+%  settings. 
+%
+%  See also  DEMO_REGRESSION1, DEMO_SPATIAL1
+%
+
+% Copyright (c) 2017 Jarno Vanhatalo
+
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
+
+
 %% One dimensional example with direct derivative observations
 
 % Construct data
@@ -23,8 +41,7 @@ xpredt = [xpred zeros(size(xpred)) ; xpred ones(size(xpred)) ];
 % ======================================================
 lik = lik_gaussian;
 cf = gpcf_sexp;
-gp = gp_set('lik', lik, 'cf', {cf});
-gp.deriv = 2;                                % !!! change gp_set to handle this
+gp = gp_set('lik', lik, 'cf', {cf}, 'deriv', 2);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt(xt(:,2)==0,:),y,'opt',opt);
@@ -47,15 +64,9 @@ title('Only observations from the function')
 
 % Inference with derivative observations
 % ======================================================
-
-lik = lik_gaussian;
-cf = gpcf_sexp('selectedVariables', 1);
-gp = gp_set('lik', lik, 'cf', {cf});
-gp.deriv = 2;                                % !!! change gp_set to handle this
-
-%gradcheck(gp_pak(gp), @gp_e, @gp_g, gp, xt, yt);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
+% gradcheck(gp_pak(gp), @gp_e, @gp_g, gp, xt, yt);
 gp=gp_optim(gp,xt,yt,'opt',opt);
 
 [Ef,Varf] = gp_pred(gp,xt,yt,xpredt);
@@ -63,15 +74,15 @@ subplot(1,2,2)
 plot(xpred,ftarget(xpred),'b')
 hold on
 plot(x,y,'b.','MarkerSize', 10)
-plot(xpred,ftargetDer(xpred), 'r')
-plot(xd,yd,'r.','MarkerSize', 10)
 plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0), 'b--')
 plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0)+2*sqrt(Varf(xpredt(:,2)==0)), 'b:')
+plot(xpred,ftargetDer(xpred), 'r')
+plot(xd,yd,'r.','MarkerSize', 10)
 plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1), 'r--')
 plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)+2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
-legend('true function','observation', 'posterior mean of function', '95% credible int of function', 'derivative function', 'deriv obs', 'posterior mean of derivative', '95% credible int of derivative')
 plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0)-2*sqrt(Varf(xpredt(:,2)==0)), 'b:')
 plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)-2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
+legend('true function','observation', 'posterior mean of function', '95% credible int of function', 'derivative function', 'deriv obs', 'posterior mean of derivative', '95% credible int of derivative')
 title('function + derivative observations')
 
 
@@ -94,14 +105,13 @@ xpredt = [xpred zeros(size(xpred)) ; xpred ones(size(xpred)) ];
 % The "likelihood covariate" which tells which likelihood to use for which
 % row of data
 z = [ones(size(y)) ; 2*ones(size(yd))];
-%zt = [ones(size(xpredt,1),1) ; 2*ones(size(xpredt,1),1)];
 
-cf = gpcf_sexp('selectedVariables', 1);
+% covariance function
+cf = gpcf_sexp;
 
 % -----
 % without monotonicity information
-gp = gp_set('lik', lik_gaussian, 'cf', {cf});
-gp.deriv = 2;
+gp = gp_set('lik', lik_gaussian, 'cf', {cf}, 'deriv', 2);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 gp=gp_optim(gp,xt(xt(:,2)==0,:),y,'opt',opt);
 [Ef1,Varf1] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt); %, 'zt', zt
@@ -126,14 +136,12 @@ title('Only observations from the function')
 
 % With monotonicity information
 %===================
-likpr = lik_probit; 
-likpr.nu = 1e-6;                                                                  % !!! change lik_probit to handle this
+likpr = lik_probit('nu', 1e-6);
 lik = lik_liks('likelihoods', {lik_gaussian,likpr},'classVariables', 1) ;
 
 
 % EP implementation
-gp = gp_set('lik', lik, 'cf', {cf}, 'latent_method', 'EP');
-gp.deriv = 2;
+gp = gp_set('lik', lik, 'cf', {cf}, 'latent_method', 'EP', 'deriv', 2);
 %gradcheck(gp_pak(gp), @gpep_e, @gpep_g, gp, xt, yt, 'z', z);
 
 % Optimize with the scaled conjugate gradient method
@@ -159,15 +167,12 @@ title('EP approximation, with monotonicity information')
 
 % Laplace implementation
 % -----
-gp = gp_set('lik', lik, 'cf', {cf}, 'latent_method', 'Laplace');
-gp.deriv = 2;
+gp = gp_set('lik', lik, 'cf', {cf}, 'latent_method', 'Laplace', 'deriv', 2);
 %gradcheck(gp_pak(gp), @gpla_e, @gpla_g, gp, xt, yt, 'z', z);
 
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt,yt,'opt',opt, 'z', z);
-
-%gp_pak(gp)
 
 [Ef,Varf] = gp_pred(gp,xt,yt,xpredt, 'z', z); %, 'zt', zt
 %figure, 
@@ -175,21 +180,16 @@ subplot(1,3,3)
 plot(xpred,ftarget(xpred) ,'b')
 hold on
 plot(x,y,'b.','MarkerSize', 10)
-plot(xpred, ftargetDer(xpred), 'r')
-plot(xd,yd,'r.','MarkerSize', 10)
 plot(xpredt(xpredt(:,2)==0,1),  Ef(xpredt(:,2)==0) , 'b--')
 plot(xpredt(xpredt(:,2)==0,1), Ef(xpredt(:,2)==0)+2*sqrt(Varf(xpredt(:,2)==0) ), 'b:')
+plot(xpred, ftargetDer(xpred), 'r')
+plot(xd,yd,'r.','MarkerSize', 10)
 plot(xpredt(xpredt(:,2)==1,1),  Ef(xpredt(:,2)==1) , 'r--')
 plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)+2*sqrt(Varf(xpredt(:,2)==1) ), 'r:')
-legend('true function','observation','posterio mean of function','95% credible int of function', 'true derivative','monotonicity observation','posterior mean of derivative','95% credible int of derivative')
 plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0)-2*sqrt(Varf(xpredt(:,2)==0) ), 'b:')
 plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)-2*sqrt(Varf(xpredt(:,2)==1) ), 'r:')
+legend('true function','observation','posterio mean of function','95% credible int of function', 'true derivative','monotonicity observation','posterior mean of derivative','95% credible int of derivative')
 title('Laplace approximation, monotonicity information')
-
-
-
-
-
 
 
 %% 1D example with monotonicity information and non-gaussian likelihoods
@@ -211,16 +211,14 @@ xpredt = [xpred zeros(size(xpred)) ; xpred ones(size(xpred)) ];
 z = [ones(size(y)) ; 2*ones(size(yd))];
 %zt = [ones(size(xpredt,1),1) ; 2*ones(size(xpredt,1),1)];
 
-likpr = lik_probit; 
-likpr.nu = 1e-6;                                                                  % !!! change lik_probit to handle this
+likpr = lik_probit('nu', 1e-6); 
 lik = lik_liks('likelihoods', {lik_poisson,likpr},'classVariables', 1) ;
 cf = gpcf_sexp('selectedVariables', 1);
 
 % EP implementation
 % -----
 % without monotonicity information
-gp = gp_set('lik', lik_poisson, 'cf', {cf}, 'latent_method', 'EP');
-gp.deriv = 2;
+gp = gp_set('lik', lik_poisson, 'cf', {cf}, 'latent_method', 'EP', 'deriv', 2);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 gp=gp_optim(gp,xt(xt(:,2)==0,:),y,'opt',opt);
 %gp=gp_optim(gp,x,y,'opt',opt);
@@ -230,9 +228,7 @@ gp=gp_optim(gp,xt(xt(:,2)==0,:),y,'opt',opt);
 
 % With monotonicity information
 % ------------------------------
-gp = gp_set('lik', lik, 'cf', {cf}, 'latent_method', 'EP');
-gp.deriv = 2;
-
+gp = gp_set('lik', lik, 'cf', {cf}, 'latent_method', 'EP', 'deriv', 2);
 %gradcheck(gp_pak(gp), @gpep_e, @gpep_g, gp, xt, yt, 'z', z);
 
 % Optimize with the scaled conjugate gradient method
@@ -274,8 +270,7 @@ title('EP approximation, monotonicity information')
 
 % Laplace implementation
 % ----------------------
-gp = gp_set('lik', lik, 'cf', {cf}, 'latent_method', 'Laplace');
-gp.deriv = 2;
+gp = gp_set('lik', lik, 'cf', {cf}, 'latent_method', 'Laplace', 'deriv', 2);
 %gradcheck(gp_pak(gp), @gpla_e, @gpla_g, gp, xt, yt, 'z', z);
 
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
@@ -288,24 +283,16 @@ subplot(1,3,3)
 plot(xpred,exp( ftarget(xpred) ),'b')
 hold on
 plot(x,y,'b.','MarkerSize', 10)
-plot(xpred, ftargetDer(xpred), 'r')
-plot(xd,yd,'r.','MarkerSize', 10)
 plot(xpredt(xpredt(:,2)==0,1), exp( Ef(xpredt(:,2)==0) ), 'b--')
 plot(xpredt(xpredt(:,2)==0,1),exp( Ef(xpredt(:,2)==0)+2*sqrt(Varf(xpredt(:,2)==0)) ), 'b:')
+plot(xpred, ftargetDer(xpred), 'r')
+plot(xd,yd,'r.','MarkerSize', 10)
 plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1), 'r--')
 plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)+2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
-legend('true intensity','observation', 'posterior mean of intensity', '95% credible int of intensity','derivative of log intensity', 'deriv obs', 'posterior mean of deriv', '95% credible int of deriv')
 plot(xpredt(xpredt(:,2)==0,1),exp( Ef(xpredt(:,2)==0)-2*sqrt(Varf(xpredt(:,2)==0)) ), 'b:')
 plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)-2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
+legend('true intensity','observation', 'posterior mean of intensity', '95% credible int of intensity','derivative of log intensity', 'deriv obs', 'posterior mean of deriv', '95% credible int of deriv')
 title('Laplace approximation, monotonicity information')
-
-
-
-
-
-
-
-
 
 
 
@@ -342,26 +329,13 @@ yt = [y;yd];
 [X1,X2]=meshgrid(linspace(0,10,50),linspace(0,10,50));
 xpred = [X1(:) X2(:)];
 xpredt = [xpred zeros(size(xpred,1),1) ; xpred ones(size(xpred,1),1) ; xpred 2*ones(size(xpred,1),1) ];
-% figure, % Plot the observations and derivatives
-% mesh(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
-% hold on
-% plot3(x(:,1),x(:,2),y,'k.')
-% plot3(xd(derivInd==1,1),x(derivInd==1,2),yd(derivInd==1),'ko')
-% plot3(xd(derivInd==2,1),x(derivInd==2,2),yd(derivInd==2),'kx')
-% %
-% pcolor(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
-% hold on
-% plot(x(:,1),x(:,2),'k.')
-% plot(xd(derivInd==1,1),x(derivInd==1,2),'ko')
-% plot(xd(derivInd==2,1),x(derivInd==2,2),'kx')
 
 
 % Inference without derivative observations
 % ======================================================
 lik = lik_gaussian;
 cf = gpcf_sexp;
-gp = gp_set('lik', lik, 'cf', {cf});
-gp.deriv = 3;                                % !!! change gp_set to handle this
+gp = gp_set('lik', lik, 'cf', {cf}, 'deriv', 3);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt(xt(:,end)==0,:),y,'opt',opt);
@@ -395,8 +369,7 @@ title('posterior mean of derivative with respect to x_2')
 
 lik = lik_gaussian;
 cf = gpcf_sexp;
-gp = gp_set('lik', lik, 'cf', {cf});
-gp.deriv = 3;                                % !!! change gp_set to handle this
+gp = gp_set('lik', lik, 'cf', {cf}, 'deriv', 3);
 %gradcheck(gp_pak(gp), @gp_e, @gp_g, gp, xt, yt);
 
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
@@ -457,27 +430,13 @@ yt = [y;yd];
 [X1,X2]=meshgrid(linspace(0,10,50),linspace(0,10,50));
 xpred = [X1(:) X2(:)];
 xpredt = [xpred zeros(size(xpred,1),1) ; xpred ones(size(xpred,1),1) ; xpred 2*ones(size(xpred,1),1) ];
-% figure, % Plot the observations and derivatives
-% mesh(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
-% hold on
-% plot3(x(:,1),x(:,2),y,'k.')
-% plot3(xd(derivInd==1,1),x(derivInd==1,2),yd(derivInd==1),'ko')
-% plot3(xd(derivInd==2,1),x(derivInd==2,2),yd(derivInd==2),'kx')
-% %
-% pcolor(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
-% hold on
-% plot(x(:,1),x(:,2),'k.')
-% plot(xd(derivInd==1,1),x(derivInd==1,2),'ko')
-% plot(xd(derivInd==2,1),x(derivInd==2,2),'kx')
-
 
 % Inference without derivative observations
 % ======================================================
 lik = lik_gaussian;
 cf = gpcf_sexp('selectedVariables',1);
 cf2 = gpcf_sexp('selectedVariables',2);
-gp = gp_set('lik', lik, 'cf', {cf cf2});
-gp.deriv = 3;                                % !!! change gp_set to handle this
+gp = gp_set('lik', lik, 'cf', {cf cf2}, 'deriv', 3);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt(xt(:,end)==0,:),y,'opt',opt);
@@ -510,8 +469,7 @@ title('posterior mean of derivative with respect to x_2')
 % ======================================================
 
 lik = lik_gaussian;
-gp = gp_set('lik', lik, 'cf', {cf cf2});
-gp.deriv = 3;                                % !!! change gp_set to handle this
+gp = gp_set('lik', lik, 'cf', {cf cf2}, 'deriv', 3);
 %gradcheck(gp_pak(gp), @gp_e, @gp_g, gp, xt, yt);
 
 opt=optimset('TolFun',1e-3,'TolX',1e-3);

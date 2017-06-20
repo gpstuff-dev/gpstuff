@@ -13,6 +13,7 @@
 %
 %  See also  DEMO_REGRESSION1
 %
+
 % Copyright (c) 2010 Tuomas Nikoskinen
 % Copyright (c) 2017 Jarno Vanhatalo
 
@@ -48,13 +49,11 @@ disp('GP model without derivative obs')
 % Covariance function
 pl = prior_t();
 pm = prior_sqrtt();
-gpcf = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5, 'selectedVariables', 1,...
+gpcf = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5,...
                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Use default Gaussian likelihood
 lik = lik_gaussian('sigma2', 0.06.^2, 'sigma2_prior', prior_fixed);
 gp = gp_set('cf', gpcf, 'lik', lik);
-%gp.lik.sigma2=0.06.^2;
-%gp.lik.p.sigma2=[];
 
 % Set the options for the optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'DerivativeCheck','on');

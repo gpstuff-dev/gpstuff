@@ -25,6 +25,7 @@ function lik = lik_probit(varargin)
   ip=inputParser;
   ip.FunctionName = 'LIK_PROBIT';
   ip.addOptional('lik', [], @isstruct);
+  ip.addParamValue('nu', [], @(x) ~isempty(x) && x>0)
   ip.parse(varargin{:});
   lik=ip.Results.lik;
 
@@ -36,6 +37,10 @@ function lik = lik_probit(varargin)
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
+  end
+  
+  if init || ~ismember('nu',ip.UsingDefaults)
+      lik.nu = ip.Results.nu;
   end
 
   if init
