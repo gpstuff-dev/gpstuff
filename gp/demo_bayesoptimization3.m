@@ -67,7 +67,8 @@ cfl = gpcf_linear('coeffSigma2', 10);
 cfl2 = gpcf_squared('coeffSigma2', 10, 'interactions', 'on');
 lik = lik_gaussian('sigma2', 0.001, 'sigma2_prior', prior_fixed);
 % GP model for objective function
-gp1 = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik);
+%gp1 = gp_set('cf', {cfc, cfl, cfl2, cfse}, 'lik', lik);cfl, cfl2, 
+gp1 = gp_set('cf', {cfc, cfse}, 'lik', lik);
 % GP models for constraint functions
 gpc1 = {gp_set('cf', {cfc, cfse}, 'lik', lik, 'jitterSigma2', 1e-6),...
     gp_set('cf', {cfc, cfse}, 'lik', lik, 'jitterSigma2', 1e-6)};
@@ -149,11 +150,11 @@ while i1 < maxiter && improv>1e-6
     %    optimization so that it does not get stuck in local mode
     % Here we use multiple starting points for the optimization so that we
     % don't crash into suboptimal mode of acquisition function
-    if mod(i1,5)==0  %Do just exploration by finding the maimum variance location        
-        fh_eg = @(x_new) expectedvariance_eg(x_new, gp, x, [], invC);
-    else
+%     if mod(i1,5)==0  %Do just exploration by finding the maimum variance location        
+%         fh_eg = @(x_new) expectedvariance_eg(x_new, gp, x, [], invC);
+%     else
         fh_eg = @(x_new) expectedimprovement_eg(x_new, gp, x, a, invC, fmin, const1, const2);
-    end
+%     end
     nstarts = 20;
     xstart = [repmat(lb,nstarts,1) + repmat(ub-lb,nstarts,1).*rand(nstarts,2) ]; %; repmat(x(indbest,:),2,1)+0.1*randn(2,size(x,2))
     for s1=1:nstarts
