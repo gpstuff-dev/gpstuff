@@ -508,21 +508,28 @@ function [logM_0, m_1, sigm2hati1] = lik_liks_tiltedMoments(lik, y, i1, sigm2_i,
  logM_0 = zeros(n, 1);
  m_1 = zeros(n, 1);
  sigm2hati1 = zeros(n, 1);
-
+ 
  for j = 1:nind
-    ind = zi==indj(j);
      likj = lik.liks{indj(j)};
-     yj = y(ind); 
-     sigm2_ij = sigm2_i(ind);
-     myy_ij = myy_i(ind);
-     if isempty(z)
-         zj = z;
+     ind = zi==indj(j);
+     if numel(sigm2_i)>1
+         yj = y(ind);
+         if isempty(z)
+             zj = z;
+         else
+             zj = z(ind);
+         end
+         sigm2_ij = sigm2_i(ind);
+         myy_ij = myy_i(ind);
+         [logM_0(ind), m_1(ind), sigm2hati1(ind)] = ...
+             likj.fh.tiltedMoments(likj, yj, 1:length(yj), sigm2_ij, myy_ij, zj);
      else
-         zj = z(ind);
+         if any(find(ind)==i1)
+             [logM_0, m_1, sigm2hati1] = ...
+                 likj.fh.tiltedMoments(likj, y, i1, sigm2_i, myy_i, z);
+         end
      end
-     
-     [logM_0(ind), m_1(ind), sigm2hati1(ind)] = ...
-     likj.fh.tiltedMoments(likj, yj, 1:length(yj), sigm2_ij, myy_ij, zj);
+
  end
  
 end
@@ -576,16 +583,8 @@ function [g_i] = lik_liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
          likj = lik.liks{indj(j)};
 
          if any(ind == i1)
-             i1j = i1;
-             
-             % yj = y(ind); 
-             % zj = z(ind);
-             
-             sigm2_ij = sigm2_i;
-             myy_ij = myy_i;
-             
-             % if some specific likelihood has more than one parameter this will not work
-             g_i(1, aux) = likj.fh.siteDeriv(likj, y, i1j, sigm2_ij, myy_ij, z);
+             % !!!! if some specific likelihood has more than one parameter this will not work
+             g_i(1, aux) = likj.fh.siteDeriv(likj, y, i1, sigm2_i, myy_i, z);
          end
      end
          

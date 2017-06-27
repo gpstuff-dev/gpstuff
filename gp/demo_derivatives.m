@@ -40,7 +40,7 @@ xpredt = [xpred zeros(size(xpred)) ; xpred ones(size(xpred)) ];
 % Inference without derivative observations
 % ======================================================
 lik = lik_gaussian;
-cf = gpcf_sexp;
+cf = gpcf_sexp('lengthScale', 1.5);
 gp = gp_set('lik', lik, 'cf', {cf}, 'deriv', 2);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
@@ -107,7 +107,7 @@ xpredt = [xpred zeros(size(xpred)) ; xpred ones(size(xpred)) ];
 z = [ones(size(y)) ; 2*ones(size(yd))];
 
 % covariance function
-cf = gpcf_sexp;
+cf = gpcf_sexp('lengthScale',1.5);
 
 % -----
 % without monotonicity information
@@ -213,7 +213,7 @@ z = [ones(size(y)) ; 2*ones(size(yd))];
 
 likpr = lik_probit('nu', 1e-6); 
 lik = lik_liks('likelihoods', {lik_poisson,likpr},'classVariables', 1) ;
-cf = gpcf_sexp('selectedVariables', 1);
+cf = gpcf_sexp('selectedVariables', 1, 'lengthScale', 1.5);
 
 % EP implementation
 % -----
@@ -229,7 +229,7 @@ gp=gp_optim(gp,xt(xt(:,2)==0,:),y,'opt',opt);
 % With monotonicity information
 % ------------------------------
 gp = gp_set('lik', lik, 'cf', {cf}, 'latent_method', 'EP', 'deriv', 2);
-%gradcheck(gp_pak(gp), @gpep_e, @gpep_g, gp, xt, yt, 'z', z);
+% gradcheck(gp_pak(gp), @gpep_e, @gpep_g, gp, xt, yt, 'z', z);
 
 % Optimize with the scaled conjugate gradient method
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
@@ -334,7 +334,8 @@ xpredt = [xpred zeros(size(xpred,1),1) ; xpred ones(size(xpred,1),1) ; xpred 2*o
 % Inference without derivative observations
 % ======================================================
 lik = lik_gaussian;
-cf = gpcf_sexp;
+cf = gpcf_sexp('lengthScale', 1.5, 'selectedVariables', 1:2);
+%cf = gpcf_sexp;
 gp = gp_set('lik', lik, 'cf', {cf}, 'deriv', 3);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
@@ -368,9 +369,9 @@ title('posterior mean of derivative with respect to x_2')
 % ======================================================
 
 lik = lik_gaussian;
-cf = gpcf_sexp;
+%cf = gpcf_sexp('lengthScale', [1.5 1.5]);
 gp = gp_set('lik', lik, 'cf', {cf}, 'deriv', 3);
-%gradcheck(gp_pak(gp), @gp_e, @gp_g, gp, xt, yt);
+% gradcheck(gp_pak(gp), @gp_e, @gp_g, gp, xt, yt);
 
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
@@ -470,7 +471,7 @@ title('posterior mean of derivative with respect to x_2')
 
 lik = lik_gaussian;
 gp = gp_set('lik', lik, 'cf', {cf cf2}, 'deriv', 3);
-%gradcheck(gp_pak(gp), @gp_e, @gp_g, gp, xt, yt);
+% gradcheck(gp_pak(gp), @gp_e, @gp_g, gp, xt, yt);
 
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
@@ -499,4 +500,108 @@ title('true derivative with respect to x_2')
 subplot(3,2,6)
 mesh(X1,X2,reshape(Ef(xpredt(:,end)==2),size(X1)))
 title('posterior mean of derivative with respect to x_2')
+
+
+
+%% 2D Derivative observations with additive GP
+% Monotonicity information
+% =======================================================================
+
+% Construct data
+% ======================================================
+ftarget    = @(x) sin(x(:,1))+0.1*(x(:,2)-2).^2-0.005.*x(:,2).^3;
+ftargetDer = @(x) [cos(x(:,1)) 0.2*(x(:,2)-2)-0.015.*x(:,2).^2];
+%gradcheck([5 5],ftarget,ftargetDer);
+
+
+%x = 10*rand(5,1);
+% Regular observations
+x = 10*rand(15,2);
+y = ftarget(x) + 0.05*randn(size(x,1),1);
+% Derivative observations
+xd = 10*rand(15,2);                                 % locations of derivative observations
+ydtmp = ftargetDer(xd) + 0.05*randn(size(xd));      % derivative observations for both dimensions
+derivInd = ceil(2*rand(size(ydtmp,1),1));
+yd=zeros(size(xd,1),1);
+for i1 = 1:length(derivInd)
+    yd(i1) = ydtmp(i1,derivInd(i1));               % However, use randomly only one derivative direction per location
+end
+% All observations
+xt = [x zeros(size(x,1),1) ; xd derivInd ];
+yt = [y;yd./abs(yd)];
+% prediction points
+[X1,X2]=meshgrid(linspace(0,10,50),linspace(0,10,50));
+xpred = [X1(:) X2(:)];
+xpredt = [xpred zeros(size(xpred,1),1) ; xpred ones(size(xpred,1),1) ; xpred 2*ones(size(xpred,1),1) ];
+
+% Inference without derivative observations
+% ======================================================
+lik = lik_gaussian;
+cf = gpcf_sexp('selectedVariables',1);
+cf2 = gpcf_sexp('selectedVariables',2);
+gp = gp_set('lik', lik, 'cf', {cf cf2}, 'deriv', 3);
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,xt(xt(:,end)==0,:),y,'opt',opt);
+[Ef,Varf] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt);
+
+figure, 
+subplot(3,2,1)
+mesh(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
+title('true function')
+subplot(3,2,2)
+mesh(X1,X2,reshape(Ef(xpredt(:,end)==0),size(X1)))
+title('posterior mean')
+subplot(3,2,3)
+dertemp=ftargetDer([X1(:),X2(:)]);
+mesh(X1,X2,reshape(dertemp(:,1),size(X1)))
+title('true derivative with respect to x_1')
+subplot(3,2,4)
+mesh(X1,X2,reshape(Ef(xpredt(:,end)==1),size(X1)))
+title('posterior mean of derivative with respect to x_1')
+subplot(3,2,5)
+dertemp=ftargetDer([X1(:),X2(:)]);
+mesh(X1,X2,reshape(dertemp(:,2),size(X1)))
+title('true derivative with respect to x_2')
+subplot(3,2,6)
+mesh(X1,X2,reshape(Ef(xpredt(:,end)==2),size(X1)))
+title('posterior mean of derivative with respect to x_2')
+
+
+% Inference with derivative observations
+% ======================================================
+
+lik = lik_liks('likelihoods', {lik_gaussian, lik_probit('nu',1e-6)}, 'classVariables', 1);
+gp = gp_set('lik', lik, 'cf', {cf cf2}, 'deriv', 3, 'latent_method', 'EP');
+z = [ones(size(y)) ; 2*ones(size(yd))];
+% gradcheck(gp_pak(gp), @gp_e, @gp_g, gp, xt, yt, 'z', z);
+
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,xt,yt,'opt',opt, 'z', z);
+
+[Ef,Varf] = gp_pred(gp,xt,yt,xpredt, 'z', z);
+
+figure
+subplot(3,2,1)
+mesh(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
+title('true function')
+subplot(3,2,2)
+mesh(X1,X2,reshape(Ef(xpredt(:,end)==0),size(X1)))
+title('posterior mean')
+subplot(3,2,3)
+dertemp=ftargetDer([X1(:),X2(:)]);
+mesh(X1,X2,reshape(dertemp(:,1),size(X1)))
+title('true derivative with respect to x_1')
+subplot(3,2,4)
+mesh(X1,X2,reshape(Ef(xpredt(:,end)==1),size(X1)))
+title('posterior mean of derivative with respect to x_1')
+subplot(3,2,5)
+dertemp=ftargetDer([X1(:),X2(:)]);
+mesh(X1,X2,reshape(dertemp(:,2),size(X1)))
+title('true derivative with respect to x_2')
+subplot(3,2,6)
+mesh(X1,X2,reshape(Ef(xpredt(:,end)==2),size(X1)))
+title('posterior mean of derivative with respect to x_2')
+
 

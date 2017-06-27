@@ -10,7 +10,7 @@ function [C, Cinv] = gp_cov(gp, x1, x2, predcf)
 %    which are used for forming the matrix. If empty or not given,
 %    the matrix is formed with all functions.
 %
-% Copyright (c) 2007-2010, 2016 Jarno Vanhatalo
+% Copyright (c) 2007-2017 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen
 
 % This software is distributed under the GNU General Public
@@ -62,16 +62,20 @@ for i=1:length(predcf)
             if sum(ind_Ddim==0)>0 &&  sum(ind_Ddim2==0)>0
                 % non-derivative observation non-derivative prediction
                 Ktemp(ind_Ddim==0,ind_Ddim2==0) = gpcf.fh.cov(gpcf, x1(ind_Ddim==0,:), x2(ind_Ddim2==0,:));
-                % Derivative observation non-derivative prediction
+            end
+            % non-derivative observation, derivative prediction
+            if sum(ind_Ddim==0)>0
+                for u2 = 1:length(uDdim2)
+                    Kdf = gpcf.fh.ginput4(gpcf, x2(ind_Ddim2==uDdim2(u2),:), x1(ind_Ddim==0,:), uDdim2(u2));
+                    Ktemp(ind_Ddim==0,ind_Ddim2==uDdim2(u2)) = Kdf{1}';
+                end
+            end
+            % Derivative observation non-derivative prediction
+            if sum(ind_Ddim2==0)>0                
                 for u1 = 1:length(uDdim)
                     Kdf = gpcf.fh.ginput4(gpcf, x1(ind_Ddim==uDdim(u1),:), x2(ind_Ddim2==0,:), uDdim(u1));
                     Ktemp(ind_Ddim==uDdim(u1),ind_Ddim2==0) = Kdf{1};
                 end
-            end
-            % non-derivative observation, derivative prediction
-            for u2 = 1:length(uDdim2)
-                Kdf = gpcf.fh.ginput4(gpcf, x2(ind_Ddim2==uDdim2(u2),:), x1(ind_Ddim==0,:), uDdim2(u2));
-                Ktemp(ind_Ddim==0,ind_Ddim2==uDdim2(u2)) = Kdf{1}';
             end
             % Derivative observation, derivative prediction
             for u1 = 1:length(uDdim)

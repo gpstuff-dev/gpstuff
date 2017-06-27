@@ -797,16 +797,15 @@ if ~isempty(gpcf.p.lengthScale)
         % In the case ARD is used
         for i=selVars
             dist{i} = bsxfun(@minus,x(:,i),x2(:,i)').^2;
-        end
-        
-        for i=selVars
             for j=1:length(dims)
                 % if structure is to check: is x derivative different from lengthscale
                 % derivative
                 if dims(j)~=i
-                    D{j}= Cdm{j}.*dist{i}.*s(i).^2;
+                    %D{j}= Cdm{j}.*dist{i}.*s(i).^2;
+                    D{j}= Cdm{j}.*dist{i}.*s(i);
                 else
-                    D{j} = Cdm{j}.*(dist{i}.*s(i).^2 - 2);
+                    %D{j} = Cdm{j}.*(dist{i}.*s(i).^2 - 2);
+                    D{j} = Cdm{j}.*(dist{i}.*s(i) - 2);
                 end
             end
             ii1=ii1+1;
@@ -886,12 +885,7 @@ if ~isempty(gpcf.p.lengthScale)
         
     end
     if length(gpcf.lengthScale)==1
-        s = 1./gpcf.lengthScale.^2;
-    else
-        s = zeros(1,m);
-        s(selVars) = 1./gpcf.lengthScale.^2;
-    end
-    if length(gpcf.lengthScale)==1
+        s = 1./gpcf.lengthScale;
         if any(dims1==selVars) && any(dims2==selVars)
             % Weighted distance
             dist = 0;
@@ -903,21 +897,22 @@ if ~isempty(gpcf.p.lengthScale)
                 %diagonal matrices
                 DKff{ii1} = DKdd3{1}.*(dist - 2)-DKdd4{1}.*(dist - 4);
             else
-                DKff{ii1} = DKdd{1}.*(dist.*s.^2-4);
+                DKff{ii1} = DKdd{1}.*(dist-4);
             end
         else
             ii1 = ii1+1;
             DKff{ii1} = zeros(size(DKdd{1}));
         end
     else
+        s = zeros(1,m);
+        s(selVars) = 1./gpcf.lengthScale;
         % Weighted distance
         for i=selVars
             dist = (bsxfun(@minus,x(:,i),x2(:,i)').*s(i) ).^2;
             ii1 = ii1+1;
             if dims1==dims2
-                %diagonal matrices
                 if dims1 == i
-                    DKff{ii1} = DKdd3{1}.*(dist - 2)-DKdd4{1}.*(dist - 4);
+                    DKff{ii1} = DKdd3{1}.*(dist - 2) - DKdd4{1}.*(dist - 4);
                 else
                     DKff{ii1}=DKdd3{1}.*dist - DKdd4{1}.*dist;
                 end
@@ -932,76 +927,6 @@ if ~isempty(gpcf.p.lengthScale)
     end
     
 end
-%         % In the case ARD is used
-%         % Now lengthScale derivatives differ from the case where
-%         % there's only one lengthScale, so here we take that to account
-%         
-%         %Preparing, Di is diagonal help matrix and NDi
-%         %is non-diagonal help matrix
-%         for i=1:m
-%             Di2{i}=zeros(n,n);
-%             NDi{i}=zeros(m*n,m*n);
-%             s(i) = 1./gpcf.lengthScale(i);
-%             D = bsxfun(@minus,x(:,i),x(:,i)').*s(i);
-%             dist{i} = D.^2;
-%         end
-%         
-%         % diagonal matrices for each lengthScale
-%         
-%         for j=1:m
-%             for i=1:m
-%                 % same x and lengthscale derivative
-%                 if i==j
-%                     Di2{i} = DKdd3{i}.*(dist{i} - 2) - DKdd4{i}.*(dist{i} - 4);
-%                 end
-%                 % different x and lengthscale derivative
-%                 if i~=j
-%                     Di2{i}=DKdd3{i}.*dist{j} - DKdd4{i}.*dist{j};
-%                 end
-%             end
-%             Di{j}=blkdiag(Di2{:});
-%         end
-%         
-%         %Non-diagonal matrices
-%         if m==2
-%             for k=1:2
-%                 Dnondiag=DKdda{1}.*(dist{k}-2);
-%                 NDi{k}=[zeros(n,n) Dnondiag;Dnondiag zeros(n,n)];
-%             end
-%         else
-%             for k=1:m
-%                 ii3=0;
-%                 NDi{k}=zeros(m*n,m*n);
-%                 for j=0:m-2
-%                     for i=1+j:m-1
-%                         ii3=ii3+1;
-%                         sar=j*1+1;
-%                         riv=i+1;
-%                         % if lengthscale and either x derivate dimensions
-%                         % are same, else if not.
-%                         if sar==k || riv==k
-%                             Dnondiag{i}=DKdda{ii3}.*(dist{k}-2);
-%                         else
-%                             Dnondiag{i}=DKdda{ii3}.*dist{k};
-%                         end
-%                     end
-%                     kk = zeros(m*n);
-%                     kkk = cat(1,zeros((j+1)*n,n),Dnondiag{1+j:m-1});
-%                     kk(:,j*n+1:(j+1)*n) = kkk;
-%                     kk(j*n+1:(j+1)*n,:) = kk(j*n+1:(j+1)*n,:) + kkk';
-%                     
-%                     NDi{k} = NDi{k} + kk;
-%                 end
-%             end
-%         end
-%         
-%         %and the final matrix is diag. + non-diag matrices
-%         for i=1:m
-%             ii1=ii1+1;
-%             DKff{ii1}=NDi{i}+Di{i};
-%         end
-%     end
-% end
 
 end
 
@@ -1321,7 +1246,6 @@ function DKff = gpcf_sexp_ginput4(gpcf, x, x2, dims)
           s(1:m) = 1./gpcf.lengthScale.^2;
       end
     for i=dims
-      DK = zeros(size(K));
       DK = -s(i).*bsxfun(@minus,x(:,i),x2(:,i)');
       DK = DK.*K;
       ii1 = ii1 + 1;
