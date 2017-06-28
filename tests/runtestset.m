@@ -17,6 +17,9 @@ function log = runtestset(mode)
 %
 %    N.B. The time estimates assumes that SuiteSparse is used. The
 %    estimated runtime of the individual demos (min):
+%       bayesoptimization1     0.076
+%       bayesoptimization2     0.539
+%       bayesoptimization3     1.904
 %       binomial1              0.057
 %       binomial2              2.853
 %       binomial_apc           0.224
