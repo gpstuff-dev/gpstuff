@@ -20,6 +20,7 @@
 
 % Construct data
 % ======================================================
+rng(90)
 ftarget    = @(x) sin(x)+0.1*(x-2).^2-0.005.*x.^3;
 ftargetDer = @(x) cos(x)+0.2*(x-2)-0.015.*x.^2;
 %gradcheck(5,ftarget,ftargetDer);
