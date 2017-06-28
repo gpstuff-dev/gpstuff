@@ -44,6 +44,7 @@ function lik = lik_liks(varargin)
 % Copyright (c) 2011 Aki Vehtari
 % Copyright (c) 2012 Ville Tolvanen
 % ------------- 2015 Marcelo Hartmann
+% Copyright (c) 2017 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -102,6 +103,7 @@ function lik = lik_liks(varargin)
       lik.fh.tiltedMoments = @lik_liks_tiltedMoments;
       lik.fh.siteDeriv = @lik_liks_siteDeriv;
       lik.fh.predy = @lik_liks_predy;
+      lik.fh.invlink = @lik_liks_invlink;
       lik.fh.recappend = @lik_liks_recappend;
   end
     
@@ -280,8 +282,12 @@ function llg = lik_liks_llg(lik, y, ff, param, z)
  
  f = ff(:);
  
- llg = [];
- 
+ switch param
+     case 'param'
+         llg = [];
+     case 'latent'
+         llg=zeros(size(f));
+ end
  for j = 1:nind
      ind = zi==indj(j);
      likj = lik.liks{indj(j)};
@@ -298,14 +304,10 @@ function llg = lik_liks_llg(lik, y, ff, param, z)
          case 'param'
              if ~isempty(lik.liks{j}.fh.pak(likj))
                  llg = [llg likj.fh.llg(likj, yj, fj, param, zj)];
-                 
              end
-             
          case 'latent'
-             llg = [llg; likj.fh.llg(likj, yj, fj, param, zj)];
-             
+             llg(ind) = likj.fh.llg(likj, yj, fj, param, zj);
      end
-     
  end
 
 end
@@ -341,12 +343,16 @@ function llg2 = lik_liks_llg2(lik, y, ff, param, z)
  
  f = ff(:);
 
- llg2 = [];
- 
  nlikpar = length(lik.fh.pak(lik));
  z0 = zeros(n, nlikpar);
  aux(1) = 0;
-  
+
+ switch param
+     case 'latent'
+         llg2=zeros(size(f));
+     case 'latent+param'
+         llg2 = [];
+ end
  for j = 1:nind
      ind = zi==indj(j);
      likj = lik.liks{indj(j)};
@@ -363,7 +369,7 @@ function llg2 = lik_liks_llg2(lik, y, ff, param, z)
          case 'param'
              
          case 'latent'
-             llg2 = [llg2; likj.fh.llg2(likj, yj, fj, param, zj)];
+             llg2(ind) = likj.fh.llg2(likj, yj, fj, param, zj);
              
          case 'latent+param'
              if ~isempty(likj.fh.pak(likj))
@@ -416,8 +422,13 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
  
  f = ff(:);
   
- llg3 = [];
-
+ 
+ switch param
+     case 'latent'
+         llg3=zeros(size(f));
+     case 'latent2+param'
+         llg3 = [];
+ end
  % auxiliar matrix for derivatives of parameters w.r.t. many likelihoods
  nlikpar = length(lik.fh.pak(lik));
  z0 = zeros(n, nlikpar);
@@ -439,7 +450,7 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
                  zj = z(ind);
              end
              
-             llg3 = [llg3; likj.fh.llg3(likj, yj, fj, param, zj)];
+             llg3(ind) = likj.fh.llg3(likj, yj, fj, param, zj);
              
          case 'latent2+param'
              if ~isempty(lik.liks{indj(j)}.fh.pak(lik.liks{indj(j)}))
@@ -667,6 +678,45 @@ else
         lpy(ind) = likj.fh.predy(likj, Ef(ind), Varf(ind), yt(ind), zt(ind));
     end
 end
+
+end
+
+function mu = lik_liks_invlink(lik, f, z)
+%LIK_LIKS_INVLINK  Returns values of inverse link function
+%             
+%  Description 
+%    P = LIK_LIKS_INVLINK(LIK, F) takes a likelihood structure LIK and
+%    latent values F and returns the values MU of inverse link function.
+%    This subfunction is needed when using gp_predprctmu. 
+%
+%     See also
+%     LIK_POISSON_LL, LIK_POISSON_PREDY
+  
+ n  = size(f, 1); 
+ indClass = 1:size(z,2)==lik.classVariables; 
+ zi = z(:, indClass);
+ z  = z(:, ~indClass);
+ 
+ indj = unique(zi); 
+ nind = numel(indj);
+ 
+ if n ~= size(zi,1)
+     error('row-length of f and z are different')
+ end
+ 
+ for j = 1:nind
+     likj = lik.liks{indj(j)};
+     ind = zi==indj(j);
+     fj = f(ind,:);
+     if isempty(z)
+         zj = z;
+     else
+         zj = z(ind);
+     end
+     
+     mu(ind,:) = likj.fh.invlink(likj, fj, zj);
+ end
+
 
 end
 

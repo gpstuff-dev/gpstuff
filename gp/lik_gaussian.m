@@ -39,7 +39,7 @@ function lik = lik_gaussian(varargin)
 % analytically to the covariance matrix, lik_gaussian is internally
 % little between lik_* and gpcf_* functions.
 %
-% Copyright (c) 2007-2010 Jarno Vanhatalo
+% Copyright (c) 2007-2017 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -313,45 +313,6 @@ function lpg = lik_gaussian_lpg(lik)
   end
 end
 
-function [logM_0, m_1, sigm2hati1] = lik_gaussian_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-%LIK_PROBIT_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
-%
-%  Description
-%    [M_0, M_1, M2] = LIK_PROBIT_TILTEDMOMENTS(LIK, Y, I, S2,
-%    MYY) takes a likelihood structure LIK, class labels Y, index
-%    I and cavity variance S2 and mean MYY. Returns the zeroth
-%    moment M_0, mean M_1 and variance M_2 of the posterior
-%    marginal (see Rasmussen and Williams (2006): Gaussian
-%    processes for Machine Learning, page 55). This subfunction 
-%    is needed when using EP for inference with non-Gaussian 
-%    likelihoods.
-%
-%  See also
-%    GPEP_E
-
-%   m_1=myy_i;
-%   sigm2hati1=sigm2_i;
-%   logM_0=zeros(size(y));
-  
-s2 = lik.sigma2;
-tau = 1./s2 + 1./sigm2_i;
-w = (y(i1)./s2 + myy_i./sigm2_i)./tau;
-Zi = 1 ./( sqrt(2.*pi.*(s2+sigm2_i)) ) .* exp( -0.5*(y(i1)-myy_i).^2./(s2+sigm2_i) );
-
-% m_1 = w;
-% sigm2hati1 = 1./tau;
-% logM_0 = Zi./sqrt(2.*pi./tau);
-
-%g_i = Zi*0.5*( (1/tau + w.^2 -2*w*y(i1) + y(i1).^2 ) /s2 - 1)/s2 * s2;
-
-%m_1 = Zi.*w;
-%sigm2hati1 = Zi.*(1./tau + w.^2 );
-%sigm2hati1 = Zi.*1./tau;
-m_1 = w;
-sigm2hati1 = 1./tau;
-logM_0 = log(Zi);
-
-end
 
 
 function DKff = lik_gaussian_cfg(lik, x, x2)
@@ -462,6 +423,38 @@ function C = lik_gaussian_trvar(lik, x)
 
 end
 
+function [logM_0, m_1, sigm2hati1] = lik_gaussian_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+%LIK_PROBIT_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+%
+%  Description
+%    [M_0, M_1, M2] = LIK_PROBIT_TILTEDMOMENTS(LIK, Y, I, S2,
+%    MYY) takes a likelihood structure LIK, class labels Y, index
+%    I and cavity variance S2 and mean MYY. Returns the zeroth
+%    moment M_0, mean M_1 and variance M_2 of the posterior
+%    marginal (see Rasmussen and Williams (2006): Gaussian
+%    processes for Machine Learning, page 55). This subfunction 
+%    is needed when using EP for inference with non-Gaussian 
+%    likelihoods.
+%
+%  See also
+%    GPEP_E
+
+%   m_1=myy_i;
+%   sigm2hati1=sigm2_i;
+%   logM_0=zeros(size(y));
+  
+s2 = lik.sigma2;
+tau = 1./s2 + 1./sigm2_i;
+w = (y(i1)./s2 + myy_i./sigm2_i)./tau;
+%Zi = 1 ./( sqrt( 2.*pi.*(s2+sigm2_i) ) ) .* exp( -0.5*(y(i1)-myy_i).^2./(s2+sigm2_i) );
+
+m_1 = w;
+sigm2hati1 = 1./tau;
+%logM_0 = log(Zi)
+logM_0 = -0.5*log( 2.*pi) - 0.5*log( (s2+sigm2_i) )  + ( -0.5*(y(i1)-myy_i).^2./(s2+sigm2_i) );
+
+end
+
 function [g_i] = lik_gaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_NEGBIN_SITEDERIV  Evaluate the expectation of the gradient
 %                      of the log likelihood term with respect
@@ -483,38 +476,13 @@ function [g_i] = lik_gaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %  See also
 %    GPEP_G
 
-% s2 = lik.sigma2;
-% r2 = (f-y).^2;
-% llg =  0.5* ( r2./s2.^2 -1/s2 );
-
 s2 = lik.sigma2;
 tau = 1/s2 + 1/sigm2_i;
 w = (y(i1)/s2 + myy_i/sigm2_i)/tau;
 %Zi = 1/( sqrt(2*pi*(s2+sigm2_i)) )*exp( -0.5*(y(i1)-myy_i)^2/(s2+sigm2_i) );
 
-g_i = 0.5*( (1/tau + w.^2 -2*w*y(i1) + y(i1).^2 ) /s2 - 1)/s2 * s2;
-
-% % testing
-% y= 0.3;
-% s2=0.9;
-% myy_i=1.2;
-% sigm2_i=0.4;
-% 
-% tau = 1/s2 + 1/sigm2_i;
-% w = (y/s2 + myy_i/sigm2_i)/tau;
-% Zi = 1/( sqrt(2*pi*(s2+sigm2_i)) )*exp( -0.5*(y-myy_i)^2/(s2+sigm2_i) );
-% f = linspace(-3,5,100);
-% 
-% pd1 = normpdf(f,y,sqrt(s2)).*normpdf(f,myy_i,sqrt(sigm2_i));
-% pd2 = normpdf(f,w,sqrt(1/tau))*Zi;
-% %pd1 = exp( log(normpdf(f,y,sqrt(s2))) + log(normpdf(f,myy_i,sqrt(sigm2_i))) );
-% %pd2 = exp(-0.5*(f-w).^2.*tau) ./ ( 2*pi*sqrt((s2*sigm2_i)) )*exp( 0.5*(y-myy_i)^2/(s2+sigm2_i) );
-% plot(f,pd1),hold on, plot(f,pd2,'r--')
-% 
-% tf = @(f) normpdf(f,w,sqrt(1/tau))*Zi;
-% td = @(f) 0.5* ( (f-y).^2./s2.^2 - 1/s2 );
-% [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f), -3, 5)
-% Zi*0.5*( (1/tau + w.^2 - 2*w*y + y.^2 ) /s2 - 1)/s2
+%g_i = 0.5*( (1/tau + w.^2 -2*w*y(i1) + y(i1).^2 ) /s2 - 1)/s2 * s2;
+g_i = 0.5*( (1/tau + w.^2 -2*w*y(i1) + y(i1).^2 ) /s2 - 1);
 
 
 end
