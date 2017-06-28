@@ -138,6 +138,11 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
     end
   end
 
+  
+  if isfield(gp, 'monotonic') && gp.monotonic
+      [gp,x,y,z,xt,zt] = gp.fh.setUpDataForMonotonic(gp,x,y,z,xt,zt);
+  end
+  
   [tn, tnin] = size(x);
   [n, nout] = size(y);
 

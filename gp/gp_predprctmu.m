@@ -92,7 +92,7 @@ function prctmus = gp_predprctmu(gp, x, y, varargin)
       zt=z;
     end
   end
-
+  
   % pass these forward
   options=struct();
   if ~isempty(z);options.z=z;end
@@ -110,14 +110,20 @@ function prctmus = gp_predprctmu(gp, x, y, varargin)
       % in the next step we need just one gp from the array
       gp=gp{1};
     end
+    if isfield(gp, 'monotonic') && gp.monotonic
+        [gp,x,y,z,xt,zt] = gp.fh.setUpDataForMonotonic(gp,x,y,z,xt,zt);
+    end
     if isfield(gp.lik.fh,'trcov')
       % Gaussian likelihood
       prctmus = prctile(sampft', prct)';
     else
       prctmus = prctile(gp.lik.fh.invlink(gp.lik, sampft, zt)', prct)';
     end
-  else  
+  else
     % single GP 
+    if isfield(gp, 'monotonic') && gp.monotonic
+        [gp,x,y,z,xt,zt] = gp.fh.setUpDataForMonotonic(gp,x,y,z,xt,zt);
+    end
     % the latent posterior is Gaussian
     [Eft, Varft] = gp_pred(gp, x, y, xt, 'tstind', tstind, options);
     prct = prct./100;

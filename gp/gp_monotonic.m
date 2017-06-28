@@ -19,6 +19,19 @@ function gp = gp_monotonic(gp, varargin)
 %    the number of true observations. Return monotonic GP structure GP
 %    with optimized hyperparameters.
 %
+%    Note! The monotonic GP constructed by this function is a special case
+%          for GPstuff models that follows (Riihimäki and Vehtari, 2010).
+%          The monotonicity constraints can be set also manually as
+%          described in "demo_derivatives". The difference is that the
+%          monotonic GP structure returned by this function contains the
+%          virtual observations in whereas in the manual approach
+%          ("demo_derivatives") they are included into data.
+%
+%   Note 2! In order for the monotonic GP structure returned by this
+%          function to work correctly it needs to be used through the
+%          generic functions gp_optim, gp_e, gp_g and gp_pred... (do not
+%          use gpep_e, ... directly).
+%
 %    OPTIONS is optional parameter-value pair
 %      z        - Optional observed quantity in triplet (x_i,y_i,z_i)
 %                 Some likelihoods may use this. For example, in case of
@@ -49,7 +62,7 @@ function gp = gp_monotonic(gp, varargin)
 %                 as usual fmin*-functions. Default is @fminscg.
 %
 %  See also
-%    GP_SET
+%    GP_SET, DEMO_MONOTONIC
 %
 %  Reference
 %    Riihimäki and Vehtari (2010). Gaussian processes with
@@ -58,6 +71,7 @@ function gp = gp_monotonic(gp, varargin)
 %
 % Copyright (c) 2014 Ville Tolvanen
 % Copyright (c) 2015 Aki Vehtari
+% Copyright (c) 2017 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -93,14 +107,20 @@ opt=ip.Results.opt;
 optimf=ip.Results.optimf;
 optimize=ip.Results.optimize;
 nvd=ip.Results.nvd;
+
 % Check appropriate fields in GP structure and modify if necessary to make
 % proper monotonic GP structure
-if ~isfield(gp, 'lik_mono') || ~ismember(gp.lik_mono.type, {'Probit', 'Logit'}) 
-  gp.lik_mono=lik_probit();
+if strcmp(gp.lik.type, 'lik_liks')
+    error('gp_monotonic.m has not yet been implemented for many likelihoods (lik_liks)')
 end
-gp.derivobs=1;
-% the strictness of the monotonicity information
-gp.lik_mono.nu=nu;
+if isfield(gp,'deriv')
+    error('gp_monotonic.m has not yet been implemented for models with derivative \n observations (other than the virtual observations used to code monotonicity)')
+end
+lik = lik_liks('likelihoods', {gp.lik, lik_probit('nu', nu)},'classVariables', size(z,2)+1);
+gp = gp_set(gp, 'lik', lik, 'deriv', size(x,2)+1);
+gp.monotonic = true;
+gp.fh.setUpDataForMonotonic = @setUpDataForMonotonic;
+
 % Set the virtual observations, here we use 25% of the observations as
 % virtual points at initialization
 if isempty(nv)
@@ -131,6 +151,13 @@ if ~isfield(gp, 'xv')
   end
 end
 xv=gp.xv;
+% xt = [x zeros(size(x,1),1)];
+% yt = y;
+% for i1=1:nvd
+%     xt = [xt ; xv abs(gp.nvd(i1))*ones(size(xv,1),1)];
+%     yt = [yt ; gp.nvd(i1)./abs(gp.nvd(i1)).*ones(size(xv,1),1)];
+% end
+% zt = [z ones(size(x,1),1) ; z 2*ones(nvd*size(xv,1),1)];
 if isempty(opt) || ~isfield(opt, 'TolX')
   % No options structure given or not a proper options structure
   opt=optimset('TolX',1e-4,'TolFun',1e-4,'Display','iter');
@@ -139,13 +166,15 @@ if ~isfield(gp,'latent_method') || ~strcmpi(gp.latent_method,'EP')
     if display
         fprintf('Switching the latent method to EP.\n');
     end
-    gp=gp_set(gp,'latent_method','EP');
+    gp=gp_set(gp,'latent_method','EP', 'jitterSigma2', 1e-6);
 end
 gp.latent_opt.init_prev='off';
 gp.latent_opt.maxiter=100;
 gpep_e('clearcache',gp);
 if isequal(optimize, 'on')
   % Optimize the parameters
+  %gradcheck(gp_pak(gp), @gp_e, @gp_g, gp, xt, yt, 'z', zt);
+  %gp=gp_optim(gp,xt,yt,'opt',opt, 'z', zt, 'optimf', optimf);
   gp=gp_optim(gp,x,y,'opt',opt, 'z', z, 'optimf', optimf);
 end
 
@@ -159,7 +188,11 @@ if force
     Ef=zeros(size(x,1),nvd);
     for i=1:nblocks
       % Predict in blocks to save memory
-      Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
+      tmp=ones(length(itst{i}),1)*abs(gp.nvd);
+      xtest = [repmat(x(itst{i},:),nvd,1) tmp(:)];
+      %Ef(itst{i},:)=gpep_predgrad(gp,xt,yt,xtest,'z',z);
+      %Ef(itst{i},:)=reshape(gp_pred(gp,xt,yt,xtest,'z',zt),length(itst{i}),nvd);
+      Ef(itst{i},:)=reshape(gp_pred(gp,x,y,xtest,'z',z),length(itst{i}),nvd);
     end
     % Check if monotonicity is satisfied
     yv=round(gp.nvd./abs(gp.nvd));
@@ -180,17 +213,61 @@ if force
       end
       xv=[xv;x(inds,:)];
       gp.xv=xv;
+%       xt = [x zeros(size(x,1),1)];
+%       yt = y;
+%       for i1=1:nvd
+%           xt = [xt ; xv abs(gp.nvd(i1))*ones(size(xv,1),1)];
+%           yt = [yt ; gp.nvd(i1)./abs(gp.nvd(i1)).*ones(size(xv,1),1)];
+%       end
+%       zt = [z ones(size(x,1),1) ; z 2*ones(nvd*size(xv,1),1)];
       gpep_e('clearcache',gp);
       if isequal(optimize, 'on')
+        %gp=gp_optim(gp,xt,yt,'opt',opt,'z',zt, 'optimf', optimf);
         gp=gp_optim(gp,x,y,'opt',opt,'z',z, 'optimf', optimf);
       end
       % Predict gradients at the training points
-      %Ef=gpep_predgrad(gp,x,y,x,'z',z);
       for i=1:nblocks
-        % Predict in blocks to save memory
-        Ef(itst{i},:)=gpep_predgrad(gp,x,y,x(itst{i},:),'z',z);
+          % Predict in blocks to save memory
+          tmp=ones(length(itst{i}),1)*abs(gp.nvd);
+          xtest = [repmat(x(itst{i},:),nvd,1) tmp(:)];
+          %Ef(itst{i},:)=gpep_predgrad(gp,xt,yt,xtest,'z',z);
+          %Ef(itst{i},:)=reshape(gp_pred(gp,xt,yt,xtest,'z',zt),length(itst{i}),nvd);
+          Ef(itst{i},:)=reshape(gp_pred(gp,x,y,xtest,'z',z),length(itst{i}),nvd);
       end
     end
+end
+% gp.monotonic = true;
+
+end
+
+function [gp,x,y,z,xtt,ztt] = setUpDataForMonotonic(gp,x,y,z,xtt,ztt)
+
+xv=gp.xv;
+nvd = length(gp.nvd);
+xt = [x zeros(size(x,1),1)];
+yt = y;
+for i1=1:nvd
+    xt = [xt ; xv abs(gp.nvd(i1))*ones(size(xv,1),1)];
+    yt = [yt ; gp.nvd(i1)./abs(gp.nvd(i1)).*ones(size(xv,1),1)];
+end
+zt = [z ones(size(x,1),1) ; zeros(size(xv,1),1) 2*ones(nvd*size(xv,1),1)];
+x=xt;
+y=yt;
+z=zt;
+gp.monotonic = false;
+if nargin>4
+    if size(xtt,2)~=size(x,2)
+        xtt = [xtt zeros(size(xtt,1),1)];
+    end
+else
+    xtt=[];
+end
+if nargin>5
+    if size(ztt,2)<gp.lik.classVariables
+        ztt = [ztt ones(size(ztt,1),1)];
+    end
+else
+    ztt=[];
 end
 
 

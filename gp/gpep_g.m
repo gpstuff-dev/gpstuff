@@ -52,6 +52,11 @@ gdata_inducing = [];
 gprior_inducing = [];
 sigm2_i=[];
 
+
+if isfield(gp, 'monotonic') && gp.monotonic
+    [gp,x,y,z] = gp.fh.setUpDataForMonotonic(gp,x,y,z);
+end
+
 if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude
     int_magnitude=true;
     gp=gp_unpak(gp, [0 w(2:end)]);
@@ -573,7 +578,7 @@ else
                 else
                     %[e, edata, eprior, tautilde, nutilde, L, tmp, tmp, mu_i, sigm2_i, Z_i, eta] = gpep_e(w, gp, x, y, 'z', z);
                     
-                    if all(tautilde > 0) && ~(isequal(gp.latent_opt.optim_method, 'robust-EP') )  %&& isequal(gp.lik_mono.type, 'Gaussian')))
+                    if all(tautilde > 0) && ~(isequal(gp.latent_opt.optim_method, 'robust-EP') ) 
                         % This is the usual case where likelihood is log concave
                         % for example, Poisson and probit
                         % Stildesqroot=diag(sqrt(tautilde));
@@ -584,7 +589,7 @@ else
                         temp=L\diag(Stildesqroot);
                         invC = temp'*temp;
                         b=nutilde-Stildesqroot.*(L'\(L\(Stildesqroot.*(C*nutilde))));
-                    elseif isequal(gp.latent_opt.optim_method, 'robust-EP') %&& isequal(gp.lik_mono.type, 'Gaussian'))
+                    elseif isequal(gp.latent_opt.optim_method, 'robust-EP') 
                         
                         A=bsxfun(@times,tautilde,L');   % Sf = L'*L;
                         b=nutilde-A*(L*nutilde);        % (eye(n)-diag(tautilde)*Sf)\nutilde
@@ -1492,8 +1497,7 @@ else
             
             % =================================================================
             % Gradient with respect to likelihood function parameters
-            if ~isempty(strfind(gp.infer_params, 'likelihood')) && (isfield(gp.lik.fh, 'siteDeriv') ...
-                    || (isfield(gp, 'lik_mono') && isfield(gp.lik.fh, 'siteDeriv')))
+            if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv') 
                 
                 if isempty(sigm2_i)
                     sigm2_i=p.sigm2vec_i;
@@ -1521,28 +1525,6 @@ else
             
         end
         
-    end
-    
-    if isfield(gp,'lik_mono') && isequal(gp.lik.type, 'Gaussian')
-        % Monotonic GP with Gaussian likelihood
-        s2=gp.lik.sigma2;
-        %       DCff = blkdiag(s2.*eye(n2), zeros(70));
-        %       gdata_lik = -(-0.5.*trace((C+diag(1./tautilde))\DCff) ...
-        %         + 0.5.*(nutilde./tautilde)'*((C+diag(1./tautilde))\(DCff*((C+diag(1./tautilde))\(nutilde./tautilde)))));
-        Sigma=p.La2'*p.La2;
-        mf=Sigma*nutilde;
-        gdata_lik = -sum((-s2+diag(Sigma(1:n2,1:n2))+(mf(1:n2)-y).^2)./(2*s2.^2)).*s2;
-        %       gdata_lik = gdata_lik - n2./2;% + sum(y.^2./(2*s2));
-        lik=gp.lik_mono;
-        if isfield(gp.lik, 'p')  && ~isempty(gp.lik.p.sigma2)
-            gprior_lik = -gp.lik.fh.lpg(gp.lik);
-        else
-            gprior_lik = zeros(size(gdata_lik));
-        end
-        
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior gprior_lik];
     end
     
     % add gradient with respect to inducing inputs (computed in gp.type sepcific way)

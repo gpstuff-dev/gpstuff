@@ -181,6 +181,10 @@ if nargout > 2 && isempty(yt)
     lpyt=[];
 end
 
+if isfield(gp, 'monotonic') && gp.monotonic
+    [gp,x,y,z,xt,zt] = gp.fh.setUpDataForMonotonic(gp,x,y,z,xt,zt);
+end
+
 if isfield(gp.lik, 'nondiagW') && ~ismember(gp.lik.type, {'LGP' 'LGPC'})
     % Likelihoods with non-diagonal Hessian
     y=y(:);

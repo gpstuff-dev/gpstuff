@@ -135,6 +135,9 @@ end
 sampyt=[];
 if isstruct(gp) && numel(gp.jitterSigma2)==1
   % Single GP
+  if isfield(gp, 'monotonic') && gp.monotonic
+      [gp,x,y,z,xt,zt] = gp.fh.setUpDataForMonotonic(gp,x,y,z,xt,zt);
+  end
   
   if (isfield(gp.lik.fh,'trcov') && ~isfield(gp,'lik_mono')) ...
       || isfield(gp, 'latentValues')
