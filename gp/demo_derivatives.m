@@ -46,7 +46,7 @@ gp = gp_set('lik', lik, 'cf', {cf}, 'deriv', 2);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt(xt(:,2)==0,:),y,'opt',opt);
-[Ef,Varf] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt);
+[Ef_p1,Varf_p1] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt);
 
 figure, 
 subplot(1,2,1)
@@ -54,13 +54,13 @@ plot(xpred,ftarget(xpred),'b')
 hold on
 plot(x,y,'b.','MarkerSize', 10)
 plot(xpred,ftargetDer(xpred), 'r')
-plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0), 'b--')
-plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0)+2*sqrt(Varf(xpredt(:,2)==0)), 'b:')
-plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0)-2*sqrt(Varf(xpredt(:,2)==0)), 'b:')
+plot(xpredt(xpredt(:,2)==0,1),Ef_p1(xpredt(:,2)==0), 'b--')
+plot(xpredt(xpredt(:,2)==0,1),Ef_p1(xpredt(:,2)==0)+2*sqrt(Varf_p1(xpredt(:,2)==0)), 'b:')
+plot(xpredt(xpredt(:,2)==0,1),Ef_p1(xpredt(:,2)==0)-2*sqrt(Varf_p1(xpredt(:,2)==0)), 'b:')
 
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1), 'r--')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)+2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)-2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==1,1),Ef_p1(xpredt(:,2)==1), 'r--')
+plot(xpredt(xpredt(:,2)==1,1),Ef_p1(xpredt(:,2)==1)+2*sqrt(Varf_p1(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==1,1),Ef_p1(xpredt(:,2)==1)-2*sqrt(Varf_p1(xpredt(:,2)==1)), 'r:')
 title('Only observations from the function')
 
 % Inference with derivative observations
@@ -70,22 +70,21 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % gradcheck(gp_pak(gp), @gp_e, @gp_g, gp, xt, yt);
 gp=gp_optim(gp,xt,yt,'opt',opt);
 
-[Ef,Varf] = gp_pred(gp,xt,yt,xpredt);
+[Ef_p1,Varf_p1] = gp_pred(gp,xt,yt,xpredt);
 subplot(1,2,2) 
 plot(xpred,ftarget(xpred),'b')
 hold on
 plot(x,y,'b.','MarkerSize', 10)
-plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0), 'b--')
-plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0)+2*sqrt(Varf(xpredt(:,2)==0)), 'b:')
+plot(xpredt(xpredt(:,2)==0,1),Ef_p1(xpredt(:,2)==0), 'b--')
+plot(xpredt(xpredt(:,2)==0,1),Ef_p1(xpredt(:,2)==0)+2*sqrt(Varf_p1(xpredt(:,2)==0)), 'b:')
 plot(xpred,ftargetDer(xpred), 'r')
 plot(xd,yd,'r.','MarkerSize', 10)
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1), 'r--')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)+2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
-plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0)-2*sqrt(Varf(xpredt(:,2)==0)), 'b:')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)-2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==1,1),Ef_p1(xpredt(:,2)==1), 'r--')
+plot(xpredt(xpredt(:,2)==1,1),Ef_p1(xpredt(:,2)==1)+2*sqrt(Varf_p1(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==0,1),Ef_p1(xpredt(:,2)==0)-2*sqrt(Varf_p1(xpredt(:,2)==0)), 'b:')
+plot(xpredt(xpredt(:,2)==1,1),Ef_p1(xpredt(:,2)==1)-2*sqrt(Varf_p1(xpredt(:,2)==1)), 'r:')
 legend('true function','observation', 'posterior mean of function', '95% credible int of function', 'derivative function', 'deriv obs', 'posterior mean of derivative', '95% credible int of derivative')
 title('function + derivative observations')
-
 
 %% 1D example with monotonicity information and gaussian likelihood 
 % for function observations
@@ -115,7 +114,7 @@ cf = gpcf_sexp('lengthScale',1.5);
 gp = gp_set('lik', lik_gaussian, 'cf', {cf}, 'deriv', 2);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 gp=gp_optim(gp,xt(xt(:,2)==0,:),y,'opt',opt);
-[Ef1,Varf1] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt); %, 'zt', zt
+[Ef1_p2,Varf1_p2] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt); %, 'zt', zt
 
 
 figure, 
@@ -124,13 +123,13 @@ plot(xpred,ftarget(xpred),'b')
 hold on
 plot(x,y,'b.','MarkerSize', 10)
 plot(xpred,ftargetDer(xpred), 'r')
-plot(xpredt(xpredt(:,2)==0,1),Ef1(xpredt(:,2)==0), 'b--')
-plot(xpredt(xpredt(:,2)==0,1),Ef1(xpredt(:,2)==0)+2*sqrt(Varf1(xpredt(:,2)==0)), 'b:')
-plot(xpredt(xpredt(:,2)==0,1),Ef1(xpredt(:,2)==0)-2*sqrt(Varf1(xpredt(:,2)==0)), 'b:')
+plot(xpredt(xpredt(:,2)==0,1),Ef1_p2(xpredt(:,2)==0), 'b--')
+plot(xpredt(xpredt(:,2)==0,1),Ef1_p2(xpredt(:,2)==0)+2*sqrt(Varf1_p2(xpredt(:,2)==0)), 'b:')
+plot(xpredt(xpredt(:,2)==0,1),Ef1_p2(xpredt(:,2)==0)-2*sqrt(Varf1_p2(xpredt(:,2)==0)), 'b:')
 
-plot(xpredt(xpredt(:,2)==1,1),Ef1(xpredt(:,2)==1), 'r--')
-plot(xpredt(xpredt(:,2)==1,1),Ef1(xpredt(:,2)==1)+2*sqrt(Varf1(xpredt(:,2)==1)), 'r:')
-plot(xpredt(xpredt(:,2)==1,1),Ef1(xpredt(:,2)==1)-2*sqrt(Varf1(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==1,1),Ef1_p2(xpredt(:,2)==1), 'r--')
+plot(xpredt(xpredt(:,2)==1,1),Ef1_p2(xpredt(:,2)==1)+2*sqrt(Varf1_p2(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==1,1),Ef1_p2(xpredt(:,2)==1)-2*sqrt(Varf1_p2(xpredt(:,2)==1)), 'r:')
 title('Only observations from the function')
 
 
@@ -148,7 +147,7 @@ gp = gp_set('lik', lik, 'cf', {cf}, 'latent_method', 'EP', 'deriv', 2);
 % Optimize with the scaled conjugate gradient method
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 gp=gp_optim(gp,xt,yt,'opt',opt, 'z', z);
-[Ef,Varf] = gp_pred(gp,xt,yt,xpredt, 'z', z); %, 'zt', zt
+[Ef_p2,Varf_p2] = gp_pred(gp,xt,yt,xpredt, 'z', z); %, 'zt', zt
 
 
 subplot(1,3,2)
@@ -157,13 +156,13 @@ hold on
 plot(x,y,'b.','MarkerSize', 10)
 plot(xpred, ftargetDer(xpred), 'r')
 plot(xd,yd,'r.','MarkerSize', 10)
-plot(xpredt(xpredt(:,2)==0,1),  Ef(xpredt(:,2)==0) , 'b--')
-plot(xpredt(xpredt(:,2)==0,1), Ef(xpredt(:,2)==0)+2*sqrt(Varf(xpredt(:,2)==0) ), 'b:')
-plot(xpredt(xpredt(:,2)==1,1),  Ef(xpredt(:,2)==1) , 'r--')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)+2*sqrt(Varf(xpredt(:,2)==1) ), 'r:')
+plot(xpredt(xpredt(:,2)==0,1),  Ef_p2(xpredt(:,2)==0) , 'b--')
+plot(xpredt(xpredt(:,2)==0,1), Ef_p2(xpredt(:,2)==0)+2*sqrt(Varf_p2(xpredt(:,2)==0) ), 'b:')
+plot(xpredt(xpredt(:,2)==1,1),  Ef_p2(xpredt(:,2)==1) , 'r--')
+plot(xpredt(xpredt(:,2)==1,1),Ef_p2(xpredt(:,2)==1)+2*sqrt(Varf_p2(xpredt(:,2)==1) ), 'r:')
 %legend('true function','observation','posterio mean of function','95% credible int of function', 'true derivative','monotonicity observation','posterior mean of derivative','95% credible int of derivative')
-plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0)-2*sqrt(Varf(xpredt(:,2)==0) ), 'b:')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)-2*sqrt(Varf(xpredt(:,2)==1) ), 'r:')
+plot(xpredt(xpredt(:,2)==0,1),Ef_p2(xpredt(:,2)==0)-2*sqrt(Varf_p2(xpredt(:,2)==0) ), 'b:')
+plot(xpredt(xpredt(:,2)==1,1),Ef_p2(xpredt(:,2)==1)-2*sqrt(Varf_p2(xpredt(:,2)==1) ), 'r:')
 title('EP approximation, with monotonicity information')
 
 % Laplace implementation
@@ -175,20 +174,20 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt,yt,'opt',opt, 'z', z);
 
-[Ef,Varf] = gp_pred(gp,xt,yt,xpredt, 'z', z); %, 'zt', zt
+[Ef_l_p2,Varf_l_p2] = gp_pred(gp,xt,yt,xpredt, 'z', z); %, 'zt', zt
 %figure, 
 subplot(1,3,3)
 plot(xpred,ftarget(xpred) ,'b')
 hold on
 plot(x,y,'b.','MarkerSize', 10)
-plot(xpredt(xpredt(:,2)==0,1),  Ef(xpredt(:,2)==0) , 'b--')
-plot(xpredt(xpredt(:,2)==0,1), Ef(xpredt(:,2)==0)+2*sqrt(Varf(xpredt(:,2)==0) ), 'b:')
+plot(xpredt(xpredt(:,2)==0,1),  Ef_l_p2(xpredt(:,2)==0) , 'b--')
+plot(xpredt(xpredt(:,2)==0,1), Ef_l_p2(xpredt(:,2)==0)+2*sqrt(Varf_l_p2(xpredt(:,2)==0) ), 'b:')
 plot(xpred, ftargetDer(xpred), 'r')
 plot(xd,yd,'r.','MarkerSize', 10)
-plot(xpredt(xpredt(:,2)==1,1),  Ef(xpredt(:,2)==1) , 'r--')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)+2*sqrt(Varf(xpredt(:,2)==1) ), 'r:')
-plot(xpredt(xpredt(:,2)==0,1),Ef(xpredt(:,2)==0)-2*sqrt(Varf(xpredt(:,2)==0) ), 'b:')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)-2*sqrt(Varf(xpredt(:,2)==1) ), 'r:')
+plot(xpredt(xpredt(:,2)==1,1),  Ef_l_p2(xpredt(:,2)==1) , 'r--')
+plot(xpredt(xpredt(:,2)==1,1),Ef_l_p2(xpredt(:,2)==1)+2*sqrt(Varf_l_p2(xpredt(:,2)==1) ), 'r:')
+plot(xpredt(xpredt(:,2)==0,1),Ef_l_p2(xpredt(:,2)==0)-2*sqrt(Varf_l_p2(xpredt(:,2)==0) ), 'b:')
+plot(xpredt(xpredt(:,2)==1,1),Ef_l_p2(xpredt(:,2)==1)-2*sqrt(Varf_l_p2(xpredt(:,2)==1) ), 'r:')
 legend('true function','observation','posterio mean of function','95% credible int of function', 'true derivative','monotonicity observation','posterior mean of derivative','95% credible int of derivative')
 title('Laplace approximation, monotonicity information')
 
@@ -224,7 +223,7 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3);
 gp=gp_optim(gp,xt(xt(:,2)==0,:),y,'opt',opt);
 %gp=gp_optim(gp,x,y,'opt',opt);
 %[Ef1,Varf1] = gp_pred(gp,x,y,xpredt(:,1)); %, 'zt', zt
-[Ef1,Varf1] = gp_pred(gp,xt(xt(:,2)==0,:),y,xpredt); %, 'zt', zt
+[Ef1_p3,Varf1_p3] = gp_pred(gp,xt(xt(:,2)==0,:),y,xpredt); %, 'zt', zt
 
 
 % With monotonicity information
@@ -235,7 +234,7 @@ gp = gp_set('lik', lik, 'cf', {cf}, 'latent_method', 'EP', 'deriv', 2);
 % Optimize with the scaled conjugate gradient method
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 gp=gp_optim(gp,xt,yt,'opt',opt, 'z', z);
-[Ef,Varf] = gp_pred(gp,xt,yt,xpredt, 'z', z); %, 'zt', zt
+[Ef_p3,Varf_p3] = gp_pred(gp,xt,yt,xpredt, 'z', z); %, 'zt', zt
 
 
 figure, 
@@ -244,12 +243,12 @@ plot(xpred,exp( ftarget(xpred) ),'b')
 hold on
 plot(x,y,'b.','MarkerSize', 10)
 plot(xpred, ftargetDer(xpred), 'r')
-plot(xpredt(xpredt(:,2)==0,1), exp( Ef1(xpredt(:,2)==0) ), 'b--')
-plot(xpredt(xpredt(:,2)==0,1),exp( Ef1(xpredt(:,2)==0)+2*sqrt(Varf1(xpredt(:,2)==0)) ), 'b:')
-plot(xpredt(xpredt(:,2)==0,1),exp( Ef1(xpredt(:,2)==0)-2*sqrt(Varf1(xpredt(:,2)==0)) ), 'b:')
-plot(xpredt(xpredt(:,2)==1,1),Ef1(xpredt(:,2)==1), 'r--')
-plot(xpredt(xpredt(:,2)==1,1),Ef1(xpredt(:,2)==1)+2*sqrt(Varf1(xpredt(:,2)==1)), 'r:')
-plot(xpredt(xpredt(:,2)==1,1),Ef1(xpredt(:,2)==1)-2*sqrt(Varf1(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==0,1), exp( Ef1_p3(xpredt(:,2)==0) ), 'b--')
+plot(xpredt(xpredt(:,2)==0,1),exp( Ef1_p3(xpredt(:,2)==0)+2*sqrt(Varf1_p3(xpredt(:,2)==0)) ), 'b:')
+plot(xpredt(xpredt(:,2)==0,1),exp( Ef1_p3(xpredt(:,2)==0)-2*sqrt(Varf1_p3(xpredt(:,2)==0)) ), 'b:')
+plot(xpredt(xpredt(:,2)==1,1),Ef1_p3(xpredt(:,2)==1), 'r--')
+plot(xpredt(xpredt(:,2)==1,1),Ef1_p3(xpredt(:,2)==1)+2*sqrt(Varf1_p3(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==1,1),Ef1_p3(xpredt(:,2)==1)-2*sqrt(Varf1_p3(xpredt(:,2)==1)), 'r:')
 title('EP approximation, NO monotonicity information')
 
 
@@ -259,13 +258,13 @@ hold on
 plot(x,y,'b.','MarkerSize', 10)
 plot(xpred, ftargetDer(xpred), 'r')
 plot(xd,yd,'r.','MarkerSize', 10)
-plot(xpredt(xpredt(:,2)==0,1), exp( Ef(xpredt(:,2)==0) ), 'b--')
-plot(xpredt(xpredt(:,2)==0,1),exp( Ef(xpredt(:,2)==0)+2*sqrt(Varf(xpredt(:,2)==0)) ), 'b:')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1), 'r--')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)+2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==0,1), exp( Ef_p3(xpredt(:,2)==0) ), 'b--')
+plot(xpredt(xpredt(:,2)==0,1),exp( Ef_p3(xpredt(:,2)==0)+2*sqrt(Varf_p3(xpredt(:,2)==0)) ), 'b:')
+plot(xpredt(xpredt(:,2)==1,1),Ef_p3(xpredt(:,2)==1), 'r--')
+plot(xpredt(xpredt(:,2)==1,1),Ef_p3(xpredt(:,2)==1)+2*sqrt(Varf_p3(xpredt(:,2)==1)), 'r:')
 %legend('true intensity','observation', 'posterior mean of intensity', '95% credible int of intensity','derivative of log intensity', 'deriv obs', 'posterior mean of deriv', '95% credible int of deriv')
-plot(xpredt(xpredt(:,2)==0,1),exp( Ef(xpredt(:,2)==0)-2*sqrt(Varf(xpredt(:,2)==0)) ), 'b:')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)-2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==0,1),exp( Ef_p3(xpredt(:,2)==0)-2*sqrt(Varf_p3(xpredt(:,2)==0)) ), 'b:')
+plot(xpredt(xpredt(:,2)==1,1),Ef_p3(xpredt(:,2)==1)-2*sqrt(Varf_p3(xpredt(:,2)==1)), 'r:')
 title('EP approximation, monotonicity information')
 
 
@@ -278,20 +277,20 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt,yt,'opt',opt, 'z', z);
 
-[Ef,Varf] = gp_pred(gp,xt,yt,xpredt, 'z', z); %, 'zt', zt
+[Ef_l_p3,Varf_l_p3] = gp_pred(gp,xt,yt,xpredt, 'z', z); %, 'zt', zt
 %figure, 
 subplot(1,3,3)
 plot(xpred,exp( ftarget(xpred) ),'b')
 hold on
 plot(x,y,'b.','MarkerSize', 10)
-plot(xpredt(xpredt(:,2)==0,1), exp( Ef(xpredt(:,2)==0) ), 'b--')
-plot(xpredt(xpredt(:,2)==0,1),exp( Ef(xpredt(:,2)==0)+2*sqrt(Varf(xpredt(:,2)==0)) ), 'b:')
+plot(xpredt(xpredt(:,2)==0,1), exp( Ef_l_p3(xpredt(:,2)==0) ), 'b--')
+plot(xpredt(xpredt(:,2)==0,1),exp( Ef_l_p3(xpredt(:,2)==0)+2*sqrt(Varf_l_p3(xpredt(:,2)==0)) ), 'b:')
 plot(xpred, ftargetDer(xpred), 'r')
 plot(xd,yd,'r.','MarkerSize', 10)
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1), 'r--')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)+2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
-plot(xpredt(xpredt(:,2)==0,1),exp( Ef(xpredt(:,2)==0)-2*sqrt(Varf(xpredt(:,2)==0)) ), 'b:')
-plot(xpredt(xpredt(:,2)==1,1),Ef(xpredt(:,2)==1)-2*sqrt(Varf(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==1,1),Ef_l_p3(xpredt(:,2)==1), 'r--')
+plot(xpredt(xpredt(:,2)==1,1),Ef_l_p3(xpredt(:,2)==1)+2*sqrt(Varf_l_p3(xpredt(:,2)==1)), 'r:')
+plot(xpredt(xpredt(:,2)==0,1),exp( Ef_l_p3(xpredt(:,2)==0)-2*sqrt(Varf_l_p3(xpredt(:,2)==0)) ), 'b:')
+plot(xpredt(xpredt(:,2)==1,1),Ef_l_p3(xpredt(:,2)==1)-2*sqrt(Varf_l_p3(xpredt(:,2)==1)), 'r:')
 legend('true intensity','observation', 'posterior mean of intensity', '95% credible int of intensity','derivative of log intensity', 'deriv obs', 'posterior mean of deriv', '95% credible int of deriv')
 title('Laplace approximation, monotonicity information')
 
@@ -341,28 +340,28 @@ gp = gp_set('lik', lik, 'cf', {cf}, 'deriv', 3);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt(xt(:,end)==0,:),y,'opt',opt);
-[Ef,Varf] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt);
+[Ef1_p4,Varf1_p4] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt);
 
 figure, 
 subplot(3,2,1)
 mesh(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
 title('true function')
 subplot(3,2,2)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==0),size(X1)))
+mesh(X1,X2,reshape(Ef1_p4(xpredt(:,end)==0),size(X1)))
 title('posterior mean')
 subplot(3,2,3)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,1),size(X1)))
 title('true derivative with respect to x_1')
 subplot(3,2,4)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==1),size(X1)))
+mesh(X1,X2,reshape(Ef1_p4(xpredt(:,end)==1),size(X1)))
 title('posterior mean of derivative with respect to x_1')
 subplot(3,2,5)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,2),size(X1)))
 title('true derivative with respect to x_2')
 subplot(3,2,6)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==2),size(X1)))
+mesh(X1,X2,reshape(Ef1_p4(xpredt(:,end)==2),size(X1)))
 title('posterior mean of derivative with respect to x_2')
 
 
@@ -378,28 +377,28 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt,yt,'opt',opt);
 
-[Ef,Varf] = gp_pred(gp,xt,yt,xpredt);
+[Ef_p4,Varf_p4] = gp_pred(gp,xt,yt,xpredt);
 
 figure
 subplot(3,2,1)
 mesh(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
 title('true function')
 subplot(3,2,2)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==0),size(X1)))
+mesh(X1,X2,reshape(Ef_p4(xpredt(:,end)==0),size(X1)))
 title('posterior mean')
 subplot(3,2,3)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,1),size(X1)))
 title('true derivative with respect to x_1')
 subplot(3,2,4)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==1),size(X1)))
+mesh(X1,X2,reshape(Ef_p4(xpredt(:,end)==1),size(X1)))
 title('posterior mean of derivative with respect to x_1')
 subplot(3,2,5)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,2),size(X1)))
 title('true derivative with respect to x_2')
 subplot(3,2,6)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==2),size(X1)))
+mesh(X1,X2,reshape(Ef_p4(xpredt(:,end)==2),size(X1)))
 title('posterior mean of derivative with respect to x_2')
 
 
@@ -442,28 +441,28 @@ gp = gp_set('lik', lik, 'cf', {cf cf2}, 'deriv', 3);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt(xt(:,end)==0,:),y,'opt',opt);
-[Ef,Varf] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt);
+[Ef1_p5,Varf1_p5] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt);
 
 figure, 
 subplot(3,2,1)
 mesh(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
 title('true function')
 subplot(3,2,2)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==0),size(X1)))
+mesh(X1,X2,reshape(Ef1_p5(xpredt(:,end)==0),size(X1)))
 title('posterior mean')
 subplot(3,2,3)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,1),size(X1)))
 title('true derivative with respect to x_1')
 subplot(3,2,4)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==1),size(X1)))
+mesh(X1,X2,reshape(Ef1_p5(xpredt(:,end)==1),size(X1)))
 title('posterior mean of derivative with respect to x_1')
 subplot(3,2,5)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,2),size(X1)))
 title('true derivative with respect to x_2')
 subplot(3,2,6)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==2),size(X1)))
+mesh(X1,X2,reshape(Ef1_p5(xpredt(:,end)==2),size(X1)))
 title('posterior mean of derivative with respect to x_2')
 
 
@@ -478,28 +477,28 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt,yt,'opt',opt);
 
-[Ef,Varf] = gp_pred(gp,xt,yt,xpredt);
+[Ef_p5,Varf_p5] = gp_pred(gp,xt,yt,xpredt);
 
 figure
 subplot(3,2,1)
 mesh(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
 title('true function')
 subplot(3,2,2)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==0),size(X1)))
+mesh(X1,X2,reshape(Ef_p5(xpredt(:,end)==0),size(X1)))
 title('posterior mean')
 subplot(3,2,3)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,1),size(X1)))
 title('true derivative with respect to x_1')
 subplot(3,2,4)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==1),size(X1)))
+mesh(X1,X2,reshape(Ef_p5(xpredt(:,end)==1),size(X1)))
 title('posterior mean of derivative with respect to x_1')
 subplot(3,2,5)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,2),size(X1)))
 title('true derivative with respect to x_2')
 subplot(3,2,6)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==2),size(X1)))
+mesh(X1,X2,reshape(Ef_p5(xpredt(:,end)==2),size(X1)))
 title('posterior mean of derivative with respect to x_2')
 
 
@@ -544,28 +543,28 @@ gp = gp_set('lik', lik, 'cf', {cf cf2}, 'deriv', 3);
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt(xt(:,end)==0,:),y,'opt',opt);
-[Ef,Varf] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt);
+[Ef1_p6,Varf1_p6] = gp_pred(gp,xt(xt(:,end)==0,:),y,xpredt);
 
 figure, 
 subplot(3,2,1)
 mesh(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
 title('true function')
 subplot(3,2,2)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==0),size(X1)))
+mesh(X1,X2,reshape(Ef1_p6(xpredt(:,end)==0),size(X1)))
 title('posterior mean')
 subplot(3,2,3)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,1),size(X1)))
 title('true derivative with respect to x_1')
 subplot(3,2,4)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==1),size(X1)))
+mesh(X1,X2,reshape(Ef1_p6(xpredt(:,end)==1),size(X1)))
 title('posterior mean of derivative with respect to x_1')
 subplot(3,2,5)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,2),size(X1)))
 title('true derivative with respect to x_2')
 subplot(3,2,6)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==2),size(X1)))
+mesh(X1,X2,reshape(Ef1_p6(xpredt(:,end)==2),size(X1)))
 title('posterior mean of derivative with respect to x_2')
 
 
@@ -581,28 +580,28 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,xt,yt,'opt',opt, 'z', z);
 
-[Ef,Varf] = gp_pred(gp,xt,yt,xpredt, 'z', z);
+[Ef_p6,Varf_p6] = gp_pred(gp,xt,yt,xpredt, 'z', z);
 
 figure
 subplot(3,2,1)
 mesh(X1,X2,reshape(ftarget([X1(:),X2(:)]),size(X1)))
 title('true function')
 subplot(3,2,2)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==0),size(X1)))
+mesh(X1,X2,reshape(Ef_p6(xpredt(:,end)==0),size(X1)))
 title('posterior mean')
 subplot(3,2,3)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,1),size(X1)))
 title('true derivative with respect to x_1')
 subplot(3,2,4)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==1),size(X1)))
+mesh(X1,X2,reshape(Ef_p6(xpredt(:,end)==1),size(X1)))
 title('posterior mean of derivative with respect to x_1')
 subplot(3,2,5)
 dertemp=ftargetDer([X1(:),X2(:)]);
 mesh(X1,X2,reshape(dertemp(:,2),size(X1)))
 title('true derivative with respect to x_2')
 subplot(3,2,6)
-mesh(X1,X2,reshape(Ef(xpredt(:,end)==2),size(X1)))
+mesh(X1,X2,reshape(Ef_p6(xpredt(:,end)==2),size(X1)))
 title('posterior mean of derivative with respect to x_2')
 
 

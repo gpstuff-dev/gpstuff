@@ -25,7 +25,7 @@ function lik = lik_probit(varargin)
   ip=inputParser;
   ip.FunctionName = 'LIK_PROBIT';
   ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('nu', [], @(x) ~isempty(x) && x>0)
+  ip.addParamValue('nu', 1.0, @(x) ~isempty(x) && x>0)
   ip.parse(varargin{:});
   lik=ip.Results.lik;
 
