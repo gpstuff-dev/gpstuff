@@ -129,7 +129,7 @@ h1=plot(xt,yt, 'k');
 h2=plot(xt, Eft, xt, Eft-2*std_ft, 'r--', xt, Eft+2*std_ft, 'r--');
 h3=plot(x,y,'b.');
 %plot(xt,yt,'r.')
-legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+-2*std(f)','y',4)
+legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+-2*std(f)','y')
 axis on;
 title('The predictions and the data points (Gaussian noise model with MAP estimate for parameters)');
 drawnow
@@ -182,7 +182,7 @@ h1=plot(xt,yt, 'k');
 h2=plot(xt, Eft, xt, Eft-2*std_ft, 'r--', xt, Eft+2*std_ft, 'r--');
 h3=plot(x,y,'b.');
 %plot(xt,yt,'r.')
-legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+-2*std(f)','y',4)
+legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+-2*std(f)','y')
 axis on;
 title('The predictions and the data points (Scale mixture noise model with MCMC)')
 drawnow
@@ -225,7 +225,7 @@ h1=plot(xt,yt, 'k');
 h2=plot(xt, Eft, xt, Eft-2*std_ft, 'r--', xt, Eft+2*std_ft, 'r--');
 h3=plot(x,y,'b.');
 %plot(xt,yt,'r.')
-legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+-2*std(f)','y',4)
+legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+-2*std(f)','y')
 axis on;
 title(sprintf('The predictions and the data points (Student-t noise model (nu=%.2f,sigma2=%.3f) noise) with Laplace+MAP, ',gp.lik.nu, gp.lik.sigma2));
 drawnow
@@ -270,7 +270,7 @@ hold on
 plot(xt,Eft)
 plot(xt, Eft-2*std_ft, 'r--')
 plot(x,y,'.')
-legend('real f', 'Ef', 'Ef+-2*std(f)','y',4)
+legend('real f', 'Ef', 'Ef+-2*std(f)','y')
 plot(xt, Eft+2*std_ft, 'r--')
 title(sprintf('The predictions and the data points (Student-t noise model, (nu=%.2f,sigma=%.3f) with EP+MAP)',gp.lik.nu, sqrt(gp.lik.sigma2)));
 drawnow
@@ -314,7 +314,7 @@ hold on
 plot(xt,Eft)
 plot(xt, Eft-2*std_ft, 'r--')
 plot(x,y,'.')
-legend('real f', 'Ef', 'Ef+-2*std(f)','y',4)
+legend('real f', 'Ef', 'Ef+-2*std(f)','y')
 plot(xt, Eft+2*std_ft, 'r--')
 title('The predictions and the data points (Student-t noise model, nu fixed (nu=4), with MCMC)')
 drawnow
@@ -357,7 +357,7 @@ hold on
 plot(xt,Eft)
 plot(xt, Eft-2*std_ft, 'r--')
 plot(x,y,'.')
-legend('real f', 'Ef', 'Ef+-2*std(f)','y',4)
+legend('real f', 'Ef', 'Ef+-2*std(f)','y')
 plot(xt, Eft+2*std_ft, 'r--')
 title(sprintf('The predictions and the data points (Student-t noise model, nu fixed (nu=%.2f,sigma=%.3f) with Laplace+MAP)',gp.lik.nu, sqrt(gp.lik.sigma2)));
 drawnow
@@ -399,7 +399,7 @@ hold on
 plot(xt,Eft)
 plot(xt, Eft-2*std_ft, 'r--')
 plot(x,y,'.')
-legend('real f', 'Ef', 'Ef+-2*std(f)','y',4)
+legend('real f', 'Ef', 'Ef+-2*std(f)','y')
 plot(xt, Eft+2*std_ft, 'r--')
 title(sprintf('The predictions and the data points (Student-t noise model, nu fixed (nu=%.2f,sigma=%.3f) with EP+MAP)',gp.lik.nu, sqrt(gp.lik.sigma2)));
 drawnow
