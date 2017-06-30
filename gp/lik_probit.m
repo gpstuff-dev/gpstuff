@@ -111,11 +111,7 @@ function ll = lik_probit_ll(lik, y, f, z)
   if ~isempty(find(abs(y)~=1))
     error('lik_probit: The class labels have to be {-1,1}')
   end
-  if isfield(lik, 'nu')
-    nu=lik.nu;
-  else
-    nu=1;
-  end
+  nu=lik.nu;
   p = y.*f/nu;
   ll = log(norm_cdf(p));
   if any(p<-10)
@@ -252,11 +248,7 @@ function [logM_0, m_1, sigm2hati1] = lik_probit_tiltedMoments(lik, y, i1, sigm2_
 %    error('lik_probit: The class labels have to be {-1,1}')
 %  end
 
-  if isfield(lik, 'nu') 
-    nu=lik.nu;
-  else
-    nu=1;
-  end
+  nu=lik.nu;
   a=realsqrt(1+sigm2_i/nu^2);
   zi=y(i1).*myy_i./(nu*a);
   

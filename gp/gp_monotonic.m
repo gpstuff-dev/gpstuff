@@ -25,12 +25,7 @@ function gp = gp_monotonic(gp, varargin)
 %          described in "demo_derivatives". The difference is that the
 %          monotonic GP structure returned by this function contains the
 %          virtual observations in whereas in the manual approach
-%          ("demo_derivatives") they are included into data.
-%
-%   Note 2! In order for the monotonic GP structure returned by this
-%          function to work correctly it needs to be used through the
-%          generic functions gp_optim, gp_e, gp_g and gp_pred... (do not
-%          use gpep_e, ... directly).
+%          ("demo_derivatives") they are included into data. 
 %
 %    OPTIONS is optional parameter-value pair
 %      z        - Optional observed quantity in triplet (x_i,y_i,z_i)
