@@ -57,7 +57,7 @@ function [e, edata, eprior, param] = gpep_e(w, gp, varargin)
 %    returns many useful quantities produced by EP algorithm.
 %
 % Copyright (c) 2007  Jaakko Riihimäki
-% Copyright (c) 2007-2010  Jarno Vanhatalo
+% Copyright (c) 2007-2017  Jarno Vanhatalo
 % Copyright (c) 2010 Heikki Peura
 % Copyright (c) 2010-2012 Aki Vehtari
 % Copyright (c) 2011 Pasi Jylänki
@@ -105,6 +105,11 @@ elseif strcmp(w, 'clearcache')
   % clear the cache
   gp.fh.ne('clearcache');
 else
+    
+    if isfield(gp, 'monotonic') && gp.monotonic
+        [gp,x,y,z] = gp.fh.setUpDataForMonotonic(gp,x,y,z);
+    end
+    
   % call ep_algorithm using the function handle to the nested function
   % this way each gp has its own peristent memory for EP
   [e, edata, eprior, param] = gp.fh.ne(w, gp, x, y, z);
@@ -564,17 +569,6 @@ end
         
         switch gp.latent_opt.optim_method
           case 'basic-EP'            
-            
-            % Monotonicity, get the virtual observations
-            if isfield(gp, 'lik_mono')
-              x2=x;
-              y2=y;
-              x=gp.xv;
-              %y=gp.yv.*ones(size(x,1).*length(gp.nvd),1);
-              yv=round(gp.nvd./abs(gp.nvd));
-              y=bsxfun(@times, yv, ones(size(gp.xv,1),length(gp.nvd)));
-              y=y(:);
-            end
             
             % The parameters or data have changed since
             % the last call for gpep_e. In this case we need to
@@ -2036,28 +2030,9 @@ end
 %---------------% Skip intendation
 %---------------% -->
                 
-                if ~isfield(gp, 'lik_mono')
-                  [K,C] = gp_trcov(gp, x);
-                else
-                  % Compute the prior covariance of f_joint (f
-                  % and df/dx)
-                  [K,C] = gp_dtrcov(gp, x2, x);
-                  if isequal(gp.lik.type, 'Gaussian')
-                    Cp=K;
-                    C=K(size(x2,1)+1:end, size(x2,1)+1:end);
-                  end
-                  n1=length(y);
-                  n2=length(y2);
-                  n=size(C,1);
-                  nutilde = zeros(size(C,1),1);
-                  tautilde = zeros(size(C,1),1);
-                  muvec_i=zeros(size(C,1),1);
-                  sigm2vec_i=zeros(size(C,1),1);
-                  mf=zeros(size(C,1),1);
-                  logM0 = zeros(size(C,1),1);
-                  muhat = zeros(size(C,1),1);
-                  sigm2hat = zeros(size(C,1),1);
-                end
+                
+                [K,C] = gp_trcov(gp, x);
+                
                 if ~issparse(C)
                   % The EP algorithm for full support covariance function
                   if ~isfield(gp,'meanf')
@@ -2074,17 +2049,6 @@ end
                     logZep_old=logZep;
                     logM0_old=logM0;
                                         
-                    if isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian') ...
-                        && iter > 1
-                      mf_old=mf(1:n2);
-                      sigm_old=Sigm(1:n2,1:n2);
-                      mf=mf(size(x2,1)+1:end);
-                      Sigm=Sigm(size(x2,1)+1:end,size(x2,1)+1:end);
-                      tautilde=tautilde(size(x2,1)+1:end);
-                      nutilde=nutilde(size(x2,1)+1:end);
-                      C=C(size(x2,1)+1:end,size(x2,1)+1:end);
-                    end
-                    
                     if isequal(gp.latent_opt.init_prev, 'on') && iter==1 && ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1) && isequal(datahash,ch.datahash)
                       tautilde=ch.tautilde;
                       nutilde=ch.nutilde;
@@ -2099,23 +2063,7 @@ end
                         sigm2vec_i=1./tau;
                         
                         % compute moments of tilted distributions
-                        
-                        if isfield(gp, 'lik_mono')
-                          % Now we have 2 likelihoods, do atleast one EP
-                          % approximation and check whether the "main"
-                          % likelihood is Gaussian or not
-                          if ~isequal(gp.lik.type, 'Gaussian')
-                            [logM0, muhat, sigm2hat] = gp.lik_mono.fh.tiltedMoments(gp.lik_mono, y, 1:n1, sigm2vec_i(n2+1:end), muvec_i(n2+1:end), z);
-                            [logM02, muhat2, sigm2hat2] = gp.lik.fh.tiltedMoments(gp.lik, y2, 1:n2, sigm2vec_i(1:n2), muvec_i(1:n2), z);                            
-                            logM0=[logM02;logM0];
-                            muhat=[muhat2;muhat];
-                            sigm2hat=[sigm2hat2;sigm2hat];
-                          else                            
-                            [logM0, muhat, sigm2hat] = gp.lik_mono.fh.tiltedMoments(gp.lik_mono, y, 1:n1, sigm2vec_i, muvec_i, z);
-                          end
-                        else
-                          [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
-                        end
+                        [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
                         if any(isnan(logM0))
                           [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
                           return
@@ -2210,11 +2158,6 @@ end
                     
                     % Recompute the approximate posterior parameters
                     % parallel- and sequential-EP
-                    if isfield(gp, 'lik_mono') && isequal(gp.lik.type,'Gaussian')
-                      tautilde=[1./gp.lik.sigma2.*ones(size(x2,1),1); tautilde];
-                      nutilde=[y2./gp.lik.sigma2;nutilde];
-                      C=Cp;
-                    end
                     Stilde=tautilde;
                     Stildesqr=sqrt(Stilde);
                     
@@ -2245,35 +2188,23 @@ end
                       %         0.5*sum(log(sigm2vec_i+1./tautilde))+
                       %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
                       
-                      if isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian')
-                        mutilde=nutilde./tautilde;
-                        mustilde=nutilde./sqrt(tautilde);
-                        
-                        logZep = -0.5.*mustilde'*(L'\(L\mustilde)) ...
-                          - sum(log(diag(L))) + 0.5.*sum(log(tautilde(1:n2))) ...
-                          + sum((muvec_i-mutilde(n2+1:end)).^2./(2.*(sigm2vec_i+1./tautilde(n2+1:end)))) ...
-                          + sum(logM0) + 0.5.*sum(log(sigm2vec_i.*tautilde(n2+1:end)+1));
-                        
-                        logZep = -logZep;
-                      else
-                        % 4. term & 1. term
-                        term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
-                        
-                        % 5. term (1/2 element) & 2. term
-                        T=1./sigm2vec_i;
-                        Cnutilde = C*nutilde;
-                        L2 = V*nutilde;
-                        term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
-                        term52 = term52.*0.5;
-                        
-                        % 5. term (2/2 element)
-                        term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-                        
-                        % 3. term
-                        term3 = sum(logM0);                        
-
-                        logZep = -(term41+term52+term5+term3);
-                      end
+                      % 4. term & 1. term
+                      term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
+                      
+                      % 5. term (1/2 element) & 2. term
+                      T=1./sigm2vec_i;
+                      Cnutilde = C*nutilde;
+                      L2 = V*nutilde;
+                      term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
+                      term52 = term52.*0.5;
+                      
+                      % 5. term (2/2 element)
+                      term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                      
+                      % 3. term
+                      term3 = sum(logM0);
+                      
+                      logZep = -(term41+term52+term5+term3);
                       iter=iter+1;
                       
                     else
@@ -2491,14 +2422,7 @@ end
                   
                 end
                 La2 = B;
-                if isfield(gp, 'lik_mono')
-                  [La2,notpositivedefinite]=chol(Sigm);
-                  if notpositivedefinite
-                    [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
-                    return
-                  end
-%                   iter
-                end
+
                 
 %---------------% <--
 %---------------% Skip intendation   

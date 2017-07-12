@@ -138,6 +138,11 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
     end
   end
 
+  
+  if isfield(gp, 'monotonic') && gp.monotonic
+      [gp,x,y,z,xt,zt] = gp.fh.setUpDataForMonotonic(gp,x,y,z,xt,zt);
+  end
+  
   [tn, tnin] = size(x);
   [n, nout] = size(y);
 
@@ -367,26 +372,14 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
           end
           [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
           
-          if ~isfield(gp, 'lik_mono')
-            [K, C]=gp_trcov(gp,x);
-            kstarstar = gp_trvar(gp, xt, predcf);
-            ntest=size(xt,1);
-            K_nf=gp_cov(gp,xt,x,predcf);
-            [n,nin] = size(x);
-          else
-            x2=x;
-            y2=y;
-            x=gp.xv;
-            [K,C]=gp_dtrcov(gp,x2,x);
-            kstarstar=gp_trvar(rmfield(gp,'derivobs'),xt);
-            ntest=size(xt,1);
-            K_nf=gp_dcov(gp,x2,xt,predcf)';
-            K_nf(ntest+1:end,:)=[];
-          end
+          [K, C]=gp_trcov(gp,x);
+          kstarstar = gp_trvar(gp, xt, predcf);
+          ntest=size(xt,1);
+          K_nf=gp_cov(gp,xt,x,predcf);
+          [n,nin] = size(x);
         
           if all(tautilde > 0) ... 
-                  && ~(isequal(gp.latent_opt.optim_method, 'robust-EP') ...
-                       || isfield(gp, 'lik_mono'))
+                  && ~(isequal(gp.latent_opt.optim_method, 'robust-EP') )
             % This is the usual case where likelihood is log concave
             % for example, Poisson and probit
             sqrttautilde = sqrt(tautilde);
@@ -443,20 +436,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
             
             % An alternative implementation for avoiding negative variances
             [Eft,V]=pred_var(tautilde,K,K_nf,nutilde);
-            Varft=kstarstar-V;
-            
-            if nargout >= 3 && isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian')
-              % Gaussian likelihood with monotonicity -> analytical
-              % predictions for f, see e.g. gp_monotonic, gpep_predgrad
-              Eyt=Eft;
-              Varyt=Varft+gp.lik.sigma2;
-              if ~isempty(yt)
-                lpyt=norm_lpdf(yt, Eyt, sqrt(Varyt));
-              else
-                lpyt=[];
-              end
-              return
-            end
+            Varft=kstarstar-V;            
             
           end
         

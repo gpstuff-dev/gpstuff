@@ -25,6 +25,7 @@ function lik = lik_probit(varargin)
   ip=inputParser;
   ip.FunctionName = 'LIK_PROBIT';
   ip.addOptional('lik', [], @isstruct);
+  ip.addParamValue('nu', 1.0, @(x) ~isempty(x) && x>0)
   ip.parse(varargin{:});
   lik=ip.Results.lik;
 
@@ -36,6 +37,10 @@ function lik = lik_probit(varargin)
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
+  end
+  
+  if init || ~ismember('nu',ip.UsingDefaults)
+      lik.nu = ip.Results.nu;
   end
 
   if init
@@ -106,11 +111,7 @@ function ll = lik_probit_ll(lik, y, f, z)
   if ~isempty(find(abs(y)~=1))
     error('lik_probit: The class labels have to be {-1,1}')
   end
-  if isfield(lik, 'nu')
-    nu=lik.nu;
-  else
-    nu=1;
-  end
+  nu=lik.nu;
   p = y.*f/nu;
   ll = log(norm_cdf(p));
   if any(p<-10)
@@ -247,11 +248,7 @@ function [logM_0, m_1, sigm2hati1] = lik_probit_tiltedMoments(lik, y, i1, sigm2_
 %    error('lik_probit: The class labels have to be {-1,1}')
 %  end
 
-  if isfield(lik, 'nu') 
-    nu=lik.nu;
-  else
-    nu=1;
-  end
+  nu=lik.nu;
   a=realsqrt(1+sigm2_i/nu^2);
   zi=y(i1).*myy_i./(nu*a);
   
@@ -355,7 +352,8 @@ function reclik = lik_probit_recappend(reclik, ri, lik)
 
   if nargin == 2
     reclik.type = 'Probit';
-
+    
+    reclik.nu = 1.0;
     % Set the function handles
     reclik.fh.pak = @lik_probit_pak;
     reclik.fh.unpak = @lik_probit_unpak;

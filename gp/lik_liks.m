@@ -44,6 +44,7 @@ function lik = lik_liks(varargin)
 % Copyright (c) 2011 Aki Vehtari
 % Copyright (c) 2012 Ville Tolvanen
 % ------------- 2015 Marcelo Hartmann
+% Copyright (c) 2017 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -102,6 +103,7 @@ function lik = lik_liks(varargin)
       lik.fh.tiltedMoments = @lik_liks_tiltedMoments;
       lik.fh.siteDeriv = @lik_liks_siteDeriv;
       lik.fh.predy = @lik_liks_predy;
+      lik.fh.invlink = @lik_liks_invlink;
       lik.fh.recappend = @lik_liks_recappend;
   end
     
@@ -232,12 +234,9 @@ function ll = lik_liks_ll(lik, y, ff, z)
  end
  
  f = ff(:);
- u = find(diff([-inf; zi; inf]));
-
- ll = 0;
- 
+ ll = 0; 
  for j = 1:nind
-     ind = (u(j) : u(j + 1) - 1);
+     ind = zi==indj(j);
      likj = lik.liks{indj(j)};
      
      yj = y(ind);
@@ -282,12 +281,15 @@ function llg = lik_liks_llg(lik, y, ff, param, z)
  end
  
  f = ff(:);
- u = find(diff([-inf; zi; inf]));
  
- llg = [];
- 
+ switch param
+     case 'param'
+         llg = [];
+     case 'latent'
+         llg=zeros(size(f));
+ end
  for j = 1:nind
-     ind = (u(j) : u(j + 1) - 1);
+     ind = zi==indj(j);
      likj = lik.liks{indj(j)};
      
      yj = y(ind); 
@@ -302,15 +304,12 @@ function llg = lik_liks_llg(lik, y, ff, param, z)
          case 'param'
              if ~isempty(lik.liks{j}.fh.pak(likj))
                  llg = [llg likj.fh.llg(likj, yj, fj, param, zj)];
-                 
              end
-             
          case 'latent'
-             llg = [llg; likj.fh.llg(likj, yj, fj, param, zj)];
-             
+             llg(ind) = likj.fh.llg(likj, yj, fj, param, zj);
      end
-     
  end
+
 end
 
 
@@ -343,16 +342,19 @@ function llg2 = lik_liks_llg2(lik, y, ff, param, z)
  end
  
  f = ff(:);
- u = find(diff([-inf; zi; inf]));
 
- llg2 = [];
- 
  nlikpar = length(lik.fh.pak(lik));
  z0 = zeros(n, nlikpar);
  aux(1) = 0;
-  
+
+ switch param
+     case 'latent'
+         llg2=zeros(size(f));
+     case 'latent+param'
+         llg2 = [];
+ end
  for j = 1:nind
-     ind  = (u(j) : u(j + 1) - 1);
+     ind = zi==indj(j);
      likj = lik.liks{indj(j)};
      
      yj = y(ind);
@@ -367,7 +369,7 @@ function llg2 = lik_liks_llg2(lik, y, ff, param, z)
          case 'param'
              
          case 'latent'
-             llg2 = [llg2; likj.fh.llg2(likj, yj, fj, param, zj)];
+             llg2(ind) = likj.fh.llg2(likj, yj, fj, param, zj);
              
          case 'latent+param'
              if ~isempty(likj.fh.pak(likj))
@@ -387,6 +389,7 @@ function llg2 = lik_liks_llg2(lik, y, ff, param, z)
      end
      
  end
+ 
 end    
 
 
@@ -418,10 +421,14 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
  end
  
  f = ff(:);
- u = find(diff([-inf; zi; inf]));
   
- llg3 = [];
-
+ 
+ switch param
+     case 'latent'
+         llg3=zeros(size(f));
+     case 'latent2+param'
+         llg3 = [];
+ end
  % auxiliar matrix for derivatives of parameters w.r.t. many likelihoods
  nlikpar = length(lik.fh.pak(lik));
  z0 = zeros(n, nlikpar);
@@ -432,7 +439,7 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
          case 'param'
              
          case 'latent'
-             ind = (u(j) : u(j + 1) - 1);
+             ind = zi==indj(j);
              likj = lik.liks{indj(j)};
              
              yj = y(ind); 
@@ -443,12 +450,12 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
                  zj = z(ind);
              end
              
-             llg3 = [llg3; likj.fh.llg3(likj, yj, fj, param, zj)];
+             llg3(ind) = likj.fh.llg3(likj, yj, fj, param, zj);
              
          case 'latent2+param'
              if ~isempty(lik.liks{indj(j)}.fh.pak(lik.liks{indj(j)}))
                  % take indexes and respective observations for specific likelihood
-                 ind = (u(j) : u(j + 1) - 1);
+                 ind = zi==indj(j);
                  likj = lik.liks{indj(j)};
                  
                  yj = y(ind); 
@@ -476,6 +483,7 @@ function llg3 = lik_liks_llg3(lik, y, ff, param, z)
      end
      
  end
+ 
 end
 
 
@@ -507,29 +515,34 @@ function [logM_0, m_1, sigm2hati1] = lik_liks_tiltedMoments(lik, y, i1, sigm2_i,
  if n ~= numel(zi)
      error('row-length of y and z are different')
  end
- 
- u = find(diff([-inf; zi; inf]));
- sizeObs = diff(u);
   
  logM_0 = zeros(n, 1);
  m_1 = zeros(n, 1);
  sigm2hati1 = zeros(n, 1);
-
+ 
  for j = 1:nind
-     ind = (u(j) : u(j + 1) - 1);
      likj = lik.liks{indj(j)};
-     yj = y(ind); 
-     sigm2_ij = sigm2_i(ind);
-     myy_ij = myy_i(ind);
-     if isempty(z)
-         zj = z;
+     ind = zi==indj(j);
+     if numel(sigm2_i)>1
+         yj = y(ind);
+         if isempty(z)
+             zj = z;
+         else
+             zj = z(ind);
+         end
+         sigm2_ij = sigm2_i(ind);
+         myy_ij = myy_i(ind);
+         [logM_0(ind), m_1(ind), sigm2hati1(ind)] = ...
+             likj.fh.tiltedMoments(likj, yj, 1:length(yj), sigm2_ij, myy_ij, zj);
      else
-         zj = z(ind);
+         if any(find(ind)==i1)
+             [logM_0, m_1, sigm2hati1] = ...
+                 likj.fh.tiltedMoments(likj, y, i1, sigm2_i, myy_i, z);
+         end
      end
-     
-     [logM_0(ind), m_1(ind), sigm2hati1(ind)] = ...
-     likj.fh.tiltedMoments(likj, yj, 1:sizeObs(j), sigm2_ij, myy_ij, zj);
+
  end
+ 
 end
 
 
@@ -567,8 +580,6 @@ function [g_i] = lik_liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
      error('row-length of y and z are different')
  end
  
- u = find(diff([-inf; zi; inf]));
-
  nlikpar = length(lik.fh.pak(lik));
  g_i = zeros(1, nlikpar);
  aux = 0;
@@ -579,25 +590,17 @@ function [g_i] = lik_liks_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
          aux = aux + 1;
          
          % indexes for that specific likelihood
-         ind = (u(j) : u(j + 1) - 1);
+         ind = find(zi==indj(j));
          likj = lik.liks{indj(j)};
 
          if any(ind == i1)
-             i1j = i1;
-             
-             % yj = y(ind); 
-             % zj = z(ind);
-             
-             sigm2_ij = sigm2_i;
-             myy_ij = myy_i;
-             
-             % if some specific likelihood has more than one parameter this will not work
-             g_i(1, aux) = ...
-             likj.fh.siteDeriv(likj, y, i1j, sigm2_ij, myy_ij, z);
+             % !!!! if some specific likelihood has more than one parameter this will not work
+             g_i(1, aux) = likj.fh.siteDeriv(likj, y, i1, sigm2_i, myy_i, z);
          end
      end
          
  end
+ 
 end
 
 
@@ -645,7 +648,6 @@ indj = unique(zi);
 nind = numel(indj);
 
 % getting the positions of observations in each vector 
-u = find(diff([-inf; zi; inf]));
 
 % log-density
 lpy = zeros(n, 1);
@@ -655,7 +657,7 @@ if nargout > 1
     Vary = zeros(n, 1);
     
     for j = 1:nind
-        ind = (u(j) : u(j + 1) - 1);
+        ind = zi==indj(j);
         likj = lik.liks{indj(j)};
         
         if numel(yt) ~= 0;
@@ -676,6 +678,45 @@ else
         lpy(ind) = likj.fh.predy(likj, Ef(ind), Varf(ind), yt(ind), zt(ind));
     end
 end
+
+end
+
+function mu = lik_liks_invlink(lik, f, z)
+%LIK_LIKS_INVLINK  Returns values of inverse link function
+%             
+%  Description 
+%    P = LIK_LIKS_INVLINK(LIK, F) takes a likelihood structure LIK and
+%    latent values F and returns the values MU of inverse link function.
+%    This subfunction is needed when using gp_predprctmu. 
+%
+%     See also
+%     LIK_POISSON_LL, LIK_POISSON_PREDY
+  
+ n  = size(f, 1); 
+ indClass = 1:size(z,2)==lik.classVariables; 
+ zi = z(:, indClass);
+ z  = z(:, ~indClass);
+ 
+ indj = unique(zi); 
+ nind = numel(indj);
+ 
+ if n ~= size(zi,1)
+     error('row-length of f and z are different')
+ end
+ 
+ for j = 1:nind
+     likj = lik.liks{indj(j)};
+     ind = zi==indj(j);
+     fj = f(ind,:);
+     if isempty(z)
+         zj = z;
+     else
+         zj = z(ind);
+     end
+     
+     mu(ind,:) = likj.fh.invlink(likj, fj, zj);
+ end
+
 
 end
 

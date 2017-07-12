@@ -1,14 +1,13 @@
-function test_suite = test_improvemarginals
+function test_suite = test_derivatives
 
 %   Run specific demo, save values and compare the results to the expected.
 %   Works for both xUnit Test Framework package by Steve Eddins and for
 %   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
-%     TEST_ALL, DEMO_IMPROVEMARGINALS
+%     TEST_ALL, DEMO_DERIVATIVEOBS
 %
-% Copyright (c) 2011-2012 Ville Tolvanen
-% Copyright (c) 2014 Tuomas Sivula
+% Copyright (c) 2017 Eero Siivola
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -44,28 +43,41 @@ function testRunDemo(testCase)
   rundemo(getName())
 end
 
-function test_EP_fact(testCase)
-  verifyVarsEqual(testCase, getName(), ...
-    {'pc_ep','fvec_ep','pc_ep_pred','fvec_ep_pred'}, ...
-    {[], @(x)[x(1),x(end)], [], @(x)[x(1),x(end)]}, ...
+function test1DDirectDerivatives(testCase)
+  % Test predictive mean and variance
+  verifyVarsEqual(testCase, getName(), {'Ef_p1','Varf_p1'}, ...
     'RelTolElement', 0.05, 'RelTolRange', 0.01)
 end
 
-function test_Laplace_CM2(testCase)
-  verifyVarsEqual(testCase, getName(), ...
-    {'pc_la','fvec_la','pc_la_pred','fvec_la_pred'}, ...
-    {[], @(x)[x(1),x(end)], [], @(x)[x(1),x(end)]}, ...
+function test1DDirectDerivativesAndGaussianLikelihood(testCase)
+  % Test predictive mean and variance
+  verifyVarsEqual(testCase, getName(), {'Ef_p2','Varf_p2'}, ...
     'RelTolElement', 0.05, 'RelTolRange', 0.01)
 end
 
-
-function test_Laplace_fact(testCase)
-  verifyVarsEqual(testCase, getName(), ...
-    {'pc_la2','fvec_la2','pc_la_pred2','fvec_la_pred2'}, ...
-    {[], @(x)[x(1),x(end)], [], @(x)[x(1),x(end)]}, ...
-    'RelTolElement', 0.1, 'RelTolRange', 0.05)
+function test1DDirectDerivativesAndNonGaussianLikelihood(testCase)
+  % Test predictive mean and variance
+  verifyVarsEqual(testCase, getName(), {'Ef_p3','Varf_p3', 'Ef_l_p3','Varf_l_p3'}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
 end
 
+function test2DDirectDerivatives(testCase)
+  % Test predictive mean and variance
+  verifyVarsEqual(testCase, getName(), {'Ef_p4','Varf_p4'}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function test2DDirectDerivativesWithAdditive(testCase)
+  % Test predictive mean and variance
+  verifyVarsEqual(testCase, getName(), {'Ef_p5','Varf_p5'}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
+
+function test2DDirectDerivativesWithAdditive2(testCase)
+  % Test predictive mean and variance
+  verifyVarsEqual(testCase, getName(), {'Ef_p6','Varf_p6'}, ...
+    'RelTolElement', 0.05, 'RelTolRange', 0.01)
+end
 
 % ------------------------
 %     Helper functions

@@ -1,0 +1,20 @@
+ TolFun reached. Func-count 28. Final f(x)=8.83586. Elapsed time 0.29
+ TolFun reached. Func-count 31. Final f(x)=5.26377. Elapsed time 0.20
+ TolFun reached. Func-count 25. Final f(x)=8.76508. Elapsed time 0.15
+ TolFun reached. Func-count 55. Final f(x)=9.8007. Elapsed time 1.07
+ TolFun reached. Func-count 26. Final f(x)=9.30243. Elapsed time 0.51
+ TolFun reached. Func-count 19. Final f(x)=27.0383. Elapsed time 0.50
+ TolFun reached. Func-count 19. Final f(x)=28.9647. Elapsed time 0.60
+ TolX reached. Func-count 43. Final f(x)=57.4604. Elapsed time 4.95
+ TolFun reached. Func-count 51. Final f(x)=13.8857. Elapsed time 0.29
+ TolX reached. Func-count 28. Final f(x)= 2.899. Elapsed time 0.28
+ TolFun reached. Func-count 27. Final f(x)=7.30701. Elapsed time 0.19
+ TolFun reached. Func-count 30. Final f(x)=-14.7792. Elapsed time 0.40
+ TolFun reached. Func-count 19. Final f(x)=8.95452. Elapsed time 0.13
+ TolFun reached. Func-count 29. Final f(x)=11.6177. Elapsed time 0.94
+
+ gp hyperparameters: 
+ 
+    0.2063    0.5772   -1.1356    1.2508   -5.3190
+
+Demo completed in 0.228 minutes
