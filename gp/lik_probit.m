@@ -352,7 +352,8 @@ function reclik = lik_probit_recappend(reclik, ri, lik)
 
   if nargin == 2
     reclik.type = 'Probit';
-
+    
+    reclik.nu = 1.0;
     % Set the function handles
     reclik.fh.pak = @lik_probit_pak;
     reclik.fh.unpak = @lik_probit_unpak;
