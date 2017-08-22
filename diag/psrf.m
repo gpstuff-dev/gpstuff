@@ -105,3 +105,4 @@ if nargout>1
     thin(di)=ci*2;
   end
 end
+neff=min(neff,N*M);
