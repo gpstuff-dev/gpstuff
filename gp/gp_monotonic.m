@@ -245,7 +245,11 @@ for i1=1:nvd
     xt = [xt ; xv abs(gp.nvd(i1))*ones(size(xv,1),1)];
     yt = [yt ; gp.nvd(i1)./abs(gp.nvd(i1)).*ones(size(xv,1),1)];
 end
-zt = [z ones(size(x,1),1) ; zeros(size(xv,1),1) 2*ones(nvd*size(xv,1),1)];
+if ~isempty(z)
+    zt = [z ones(size(x,1),1) ; zeros(size(xv,1),size(z,2)) 2*ones(nvd*size(xv,1),1)];
+else
+    zt = [ones(size(x,1),1) ; 2*ones(nvd*size(xv,1),1)];
+end
 x=xt;
 y=yt;
 z=zt;
