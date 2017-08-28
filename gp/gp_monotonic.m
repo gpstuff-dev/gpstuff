@@ -182,12 +182,14 @@ if force
     [tmp,itst]=cvit(size(x,1),nblocks);
     Ef=zeros(size(x,1),nvd);
     for i=1:nblocks
-      % Predict in blocks to save memory
-      tmp=ones(length(itst{i}),1)*abs(gp.nvd);
-      xtest = [repmat(x(itst{i},:),nvd,1) tmp(:)];
-      %Ef(itst{i},:)=gpep_predgrad(gp,xt,yt,xtest,'z',z);
-      %Ef(itst{i},:)=reshape(gp_pred(gp,xt,yt,xtest,'z',zt),length(itst{i}),nvd);
-      Ef(itst{i},:)=reshape(gp_pred(gp,x,y,xtest,'z',z),length(itst{i}),nvd);
+      if length(itst{i})>0
+        % Predict in blocks to save memory
+        tmp=ones(length(itst{i}),1)*abs(gp.nvd);
+        xtest = [repmat(x(itst{i},:),nvd,1) tmp(:)];
+        %Ef(itst{i},:)=gpep_predgrad(gp,xt,yt,xtest,'z',z);
+        %Ef(itst{i},:)=reshape(gp_pred(gp,xt,yt,xtest,'z',zt),length(itst{i}),nvd);
+        Ef(itst{i},:)=reshape(gp_pred(gp,x,y,xtest,'z',z),length(itst{i}),nvd);
+      end
     end
     % Check if monotonicity is satisfied
     yv=round(gp.nvd./abs(gp.nvd));
