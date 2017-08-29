@@ -182,12 +182,14 @@ if force
     [tmp,itst]=cvit(size(x,1),nblocks);
     Ef=zeros(size(x,1),nvd);
     for i=1:nblocks
-      % Predict in blocks to save memory
-      tmp=ones(length(itst{i}),1)*abs(gp.nvd);
-      xtest = [repmat(x(itst{i},:),nvd,1) tmp(:)];
-      %Ef(itst{i},:)=gpep_predgrad(gp,xt,yt,xtest,'z',z);
-      %Ef(itst{i},:)=reshape(gp_pred(gp,xt,yt,xtest,'z',zt),length(itst{i}),nvd);
-      Ef(itst{i},:)=reshape(gp_pred(gp,x,y,xtest,'z',z),length(itst{i}),nvd);
+      if length(itst{i})>0
+        % Predict in blocks to save memory
+        tmp=ones(length(itst{i}),1)*abs(gp.nvd);
+        xtest = [repmat(x(itst{i},:),nvd,1) tmp(:)];
+        %Ef(itst{i},:)=gpep_predgrad(gp,xt,yt,xtest,'z',z);
+        %Ef(itst{i},:)=reshape(gp_pred(gp,xt,yt,xtest,'z',zt),length(itst{i}),nvd);
+        Ef(itst{i},:)=reshape(gp_pred(gp,x,y,xtest,'z',z),length(itst{i}),nvd);
+      end
     end
     % Check if monotonicity is satisfied
     yv=round(gp.nvd./abs(gp.nvd));
@@ -222,12 +224,14 @@ if force
       end
       % Predict gradients at the training points
       for i=1:nblocks
-          % Predict in blocks to save memory
-          tmp=ones(length(itst{i}),1)*abs(gp.nvd);
-          xtest = [repmat(x(itst{i},:),nvd,1) tmp(:)];
-          %Ef(itst{i},:)=gpep_predgrad(gp,xt,yt,xtest,'z',z);
-          %Ef(itst{i},:)=reshape(gp_pred(gp,xt,yt,xtest,'z',zt),length(itst{i}),nvd);
-          Ef(itst{i},:)=reshape(gp_pred(gp,x,y,xtest,'z',z),length(itst{i}),nvd);
+          if length(itst{i})>0
+              % Predict in blocks to save memory
+              tmp=ones(length(itst{i}),1)*abs(gp.nvd);
+              xtest = [repmat(x(itst{i},:),nvd,1) tmp(:)];
+              %Ef(itst{i},:)=gpep_predgrad(gp,xt,yt,xtest,'z',z);
+              %Ef(itst{i},:)=reshape(gp_pred(gp,xt,yt,xtest,'z',zt),length(itst{i}),nvd);
+              Ef(itst{i},:)=reshape(gp_pred(gp,x,y,xtest,'z',z),length(itst{i}),nvd);
+          end
       end
     end
 end
@@ -245,7 +249,11 @@ for i1=1:nvd
     xt = [xt ; xv abs(gp.nvd(i1))*ones(size(xv,1),1)];
     yt = [yt ; gp.nvd(i1)./abs(gp.nvd(i1)).*ones(size(xv,1),1)];
 end
-zt = [z ones(size(x,1),1) ; zeros(size(xv,1),1) 2*ones(nvd*size(xv,1),1)];
+if ~isempty(z)
+    zt = [z ones(size(x,1),1) ; zeros(size(xv,1),size(z,2)) 2*ones(nvd*size(xv,1),1)];
+else
+    zt = [ones(size(x,1),1) ; 2*ones(nvd*size(xv,1),1)];
+end
 x=xt;
 y=yt;
 z=zt;
