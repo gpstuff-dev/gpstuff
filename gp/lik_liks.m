@@ -647,11 +647,9 @@ end
 indj = unique(zi); 
 nind = numel(indj);
 
-% getting the positions of observations in each vector 
 
 % log-density
 lpy = zeros(n, 1);
-
 if nargout > 1
     Ey = zeros(n, 1);
     Vary = zeros(n, 1);
@@ -660,19 +658,16 @@ if nargout > 1
         ind = zi==indj(j);
         likj = lik.liks{indj(j)};
         
-        if numel(yt) ~= 0;
+        if numel(yt) ~= 0
            [lpy(ind), Ey(ind), Vary(ind)] = ...
            likj.fh.predy(likj, Ef(ind), Varf(ind), yt(ind), zt(ind));
-           
         else
            [~, Ey(ind), Vary(ind)] = likj.fh.predy(likj, Ef(ind), Varf(ind), yt, zt(ind));
-            
         end
     end
-    
 else
     for j = 1:nind
-        ind = (u(j) : u(j + 1) - 1);
+        ind = zi==indj(j);
         likj = lik.liks{indj(j)};
         
         lpy(ind) = likj.fh.predy(likj, Ef(ind), Varf(ind), yt(ind), zt(ind));
