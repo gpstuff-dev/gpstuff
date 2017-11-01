@@ -1,12 +1,21 @@
-%DEMO_EPINF Demonstration of input dependent noise and magnitude model
+%DEMO_EPINF Demonstration of input dependent noise and magnitude model with EP
 %
-% Description
-%       Uses toy data sets to demonstrate heteroscedastic noise with input
-%       dependent noise and magnitude model. Compare with results from
-%       DEMO_INPUTDEPENDENTNOISE.
+%  Description
+%    Uses toy data sets to demonstrate heteroscedastic noise with
+%    input dependent noise and magnitude model using EP
+%    inference. Compare with results from
+%      DEMO_INPUTDEPENDENTNOISE.
 %
-% See also
-%       DEMO_INPUTDEPENDENTNOISE, LIK_EPGAUSSIAN
+%  Reference:
+%    Ville Tolvanen, Pasi Jylänki and Aki Vehtari (2014). Expectation
+%    propagation for nonstationary heteroscedastic Gaussian process
+%    regression. In Machine Learning for Signal Processing (MLSP),
+%    2014 IEEE International Workshop on,
+%    DOI:10.1109/MLSP.2014.6958906. 
+%    <http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=6958906&tag=1>
+%
+%  See also
+%    DEMO_INPUTDEPENDENTNOISE, DEMO_STOCHASTICVOLATILITY, LIK_EPGAUSSIAN
 %
 %
 % Copyright (c) Ville Tolvanen 2011-2014

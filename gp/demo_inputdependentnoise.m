@@ -1,11 +1,20 @@
 %DEMO_INPUTDEPENDENTNOISE Demonstration of input dependent-noise
-%                         model using Gaussian process prior
+%                         model using Gaussian process prior and Laplace approx
 %
 % Description
 %       Uses toy data sets to demonstrate how inferring
 %       heteroscedastic noise with input dependent noise model
 %       differs from standard noise models (Gaussian, Student-t).
 %
+%  Reference:
+%    Ville Tolvanen, Pasi Jylänki and Aki Vehtari (2014). Expectation
+%    propagation for nonstationary heteroscedastic Gaussian process
+%    regression. In Machine Learning for Signal Processing (MLSP),
+%    2014 IEEE International Workshop on,
+%    DOI:10.1109/MLSP.2014.6958906. 
+%    <http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=6958906&tag=1>
+%
+%  See also DEMO_EPINF, DEMO_STOCHASTICVOLATILITY
 %
 % Copyright (c) Ville Tolvanen 2011-2012
  
