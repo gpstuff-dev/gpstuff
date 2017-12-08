@@ -92,7 +92,7 @@ title('lin + sexp')
 % 4) lin + sexp + monotonicity
 subplot(2,2,4)
 opt=optimset('TolX',1e-1,'TolFun',1e-1,'Display','iter');
-gpbm=gpa;gpbm.xv=xn(2:2:end);
+gpbm=gpb;gpbm.xv=xn(2:2:end);
 gpbm=gp_monotonic(gpb,xn,y,'z',z,'nvd', 1, 'optimize', 'on', ...
                   'opt', opt, 'optimf', @fminlbfgs);
 gpiabm=gp_ia(gpbm,xn,y,'z',z);
