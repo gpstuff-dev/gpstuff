@@ -91,7 +91,7 @@ for i=1:length(predcf)
             end
         else
             Ktemp = zeros(n,n2);
-            Ktemp(ind_Ddim==0,ind_Ddim==0) = gpcf.fh.trcov(gpcf, x1(ind_Ddim==0,:));
+            Ktemp(ind_Ddim==0,ind_Ddim2==0) = gpcf.fh.cov(gpcf, x1(ind_Ddim==0,:),x2(ind_Ddim2==0,:));
         end
         C = C+ Ktemp;
     else
