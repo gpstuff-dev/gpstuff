@@ -24,7 +24,6 @@ function gpcf = gpcf_matern32(varargin)
 %      selectedVariables - vector defining which inputs are used [all]
 %                          selectedVariables is shorthand for using
 %                          metric_euclidean with corresponding components
-%      kalman_deg        - Degree of approximation in type 'KALMAN' [6]
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in
