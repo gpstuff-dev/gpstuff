@@ -10,7 +10,7 @@ function gpcf = gpcf_matern32(varargin)
 %    GPCF = GPCF_MATERN32(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %    modify a covariance function structure with the named
 %    parameters altered with the specified values.
-%  
+%
 %    Parameters for Matern nu=3/2 covariance function [default]
 %      magnSigma2        - magnitude (squared) [0.1]
 %      lengthScale       - length scale for each input. [1]
@@ -40,11 +40,7 @@ function gpcf = gpcf_matern32(varargin)
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-  if nargin>0 && ischar(varargin{1}) && ismember(varargin{1},{'init' 'set'})
-    % remove init and set
-    varargin(1)=[];
-  end
-  
+  % inputParser checks the arguments and assigns some default values
   ip=inputParser;
   ip.FunctionName = 'GPCF_MATERN32';
   ip.addOptional('gpcf', [], @isstruct);
@@ -59,7 +55,7 @@ function gpcf = gpcf_matern32(varargin)
                    (isvector(x) && all(x>0)));
   ip.parse(varargin{:});
   gpcf=ip.Results.gpcf;
-  
+
   if isempty(gpcf)
     init=true;
     gpcf.type = 'gpcf_matern32';
@@ -68,20 +64,6 @@ function gpcf = gpcf_matern32(varargin)
       error('First argument does not seem to be a valid covariance function structure')
     end
     init=false;
-  end
-  if init
-    % Set the function handles to the subfunctions
-    gpcf.fh.pak = @gpcf_matern32_pak;
-    gpcf.fh.unpak = @gpcf_matern32_unpak;
-    gpcf.fh.lp = @gpcf_matern32_lp;
-    gpcf.fh.lpg = @gpcf_matern32_lpg;
-    gpcf.fh.cfg = @gpcf_matern32_cfg;
-    gpcf.fh.ginput = @gpcf_matern32_ginput;
-    gpcf.fh.cov = @gpcf_matern32_cov;
-    gpcf.fh.trcov = @gpcf_matern32_trcov;
-    gpcf.fh.trvar = @gpcf_matern32_trvar;
-    gpcf.fh.recappend = @gpcf_matern32_recappend;
-    gpcf.fh.cf2ss = @gpcf_matern32_cf2ss;
   end
   
   % Initialize parameters
@@ -120,18 +102,10 @@ function gpcf = gpcf_matern32(varargin)
     end
   end
   
-  % selectedVariables options implemented using metric_euclidean
+  % selectedVariables 
   if ~ismember('selectedVariables',ip.UsingDefaults)
     if ~isfield(gpcf,'metric')
-      if ~isempty(ip.Results.selectedVariables)
-        gpcf.selectedVariables = ip.Results.selectedVariables;
-%         gpcf.metric=metric_euclidean('components',...
-%                                      num2cell(ip.Results.selectedVariables),...
-%                                      'lengthScale',gpcf.lengthScale,...
-%                                      'lengthScale_prior',gpcf.p.lengthScale);
-%         gpcf = rmfield(gpcf, 'lengthScale');
-%         gpcf.p = rmfield(gpcf.p, 'lengthScale');
-      end
+      gpcf.selectedVariables = ip.Results.selectedVariables;
     elseif isfield(gpcf,'metric') 
       if ~isempty(ip.Results.selectedVariables)
         gpcf.metric=metric_euclidean(gpcf.metric,...
@@ -156,47 +130,66 @@ function gpcf = gpcf_matern32(varargin)
       end
     end
   end
+  
+  if init
+    % Set the function handles to the subfunctions
+    gpcf.fh.pak = @gpcf_matern32_pak;
+    gpcf.fh.unpak = @gpcf_matern32_unpak;
+    gpcf.fh.lp = @gpcf_matern32_lp;
+    gpcf.fh.lpg= @gpcf_matern32_lpg;
+    gpcf.fh.cfg = @gpcf_matern32_cfg;
+    gpcf.fh.cfdg = @gpcf_matern32_cfdg;
+    gpcf.fh.cfdg2 = @gpcf_matern32_cfdg2;
+    gpcf.fh.ginput = @gpcf_matern32_ginput;
+    gpcf.fh.ginput2 = @gpcf_matern32_ginput2;
+    gpcf.fh.ginput3 = @gpcf_matern32_ginput3;
+    gpcf.fh.ginput4 = @gpcf_matern32_ginput4;
+    gpcf.fh.cov = @gpcf_matern32_cov;
+    gpcf.fh.trcov  = @gpcf_matern32_trcov;
+    gpcf.fh.trvar  = @gpcf_matern32_trvar;
+    gpcf.fh.recappend = @gpcf_matern32_recappend;
+    gpcf.fh.cf2ss = @gpcf_matern32_cf2ss;
+  end
 
 end
 
-function [w,s,h] = gpcf_matern32_pak(gpcf, w)
-%GPCF_MATERN32_PAK  Combine GP covariance function hyper-parameters
-%                   into one vector.
+function [w,s,h] = gpcf_matern32_pak(gpcf)
+%GPCF_MATERN32_PAK  Combine GP covariance function parameters into
+%                   one vector
 %
 %  Description
 %    W = GPCF_MATERN32_PAK(GPCF) takes a covariance function
 %    structure GPCF and combines the covariance function
 %    parameters and their hyperparameters into a single row
-%    vector W. This is a mandatory subfunction used for example 
-%    in energy and gradient computations.
+%    vector W. This is a mandatory subfunction used 
+%    for example in energy and gradient computations.
 %
 %       w = [ log(gpcf.magnSigma2)
-%             (hyperparameters of gpcf.magnSigma2) 
+%             (hyperparameters of gpcf.magnSigma2)
 %             log(gpcf.lengthScale(:))
 %             (hyperparameters of gpcf.lengthScale)]'
 %
 %  See also
 %    GPCF_MATERN32_UNPAK
 
-  w = []; s = {}; h=[];
+  w=[];s={}; h=[];
   
   if ~isempty(gpcf.p.magnSigma2)
     w = [w log(gpcf.magnSigma2)];
     s = [s; 'log(matern32.magnSigma2)'];
     h = [h 1];
     % Hyperparameters of magnSigma2
-    [wh sh hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
+    [wh, sh, hh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
     sh=strcat(repmat('prior-', size(sh,1),1),sh);
     w = [w wh];
     s = [s; sh];
     h = [h 1+hh];
   end        
-  
+
   if isfield(gpcf,'metric')
-    [wm sm hm] = gpcf.metric.fh.pak(gpcf.metric);
-    w = [w wm];
-    s = [s; sm];
-    h = [h hm];
+    [wh sh]=gpcf.metric.fh.pak(gpcf.metric);
+    w = [w wh];
+    s = [s; sh];
   else
     if ~isempty(gpcf.p.lengthScale)
       w = [w log(gpcf.lengthScale)];
@@ -207,28 +200,28 @@ function [w,s,h] = gpcf_matern32_pak(gpcf, w)
       end
       h = [h ones(1,numel(gpcf.lengthScale))];
       % Hyperparameters of lengthScale
-      [wh sh hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
+      [wh  sh, hh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
       sh=strcat(repmat('prior-', size(sh,1),1),sh);
       w = [w wh];
       s = [s; sh];
       h = [h 1+hh];
     end
   end
-  
+
 end
 
 function [gpcf, w] = gpcf_matern32_unpak(gpcf, w)
-%GPCF_MATERN32_UNPAK  Sets the covariance function parameters
-%                     into the structure
+%GPCF_MATERN32_UNPAK  Sets the covariance function parameters into
+%                 the structure
 %
 %  Description
 %    [GPCF, W] = GPCF_MATERN32_UNPAK(GPCF, W) takes a covariance
-%    function structure GPCF and a hyper-parameter vector W,
-%    and returns a covariance function structure identical to
-%    the input, except that the covariance hyper-parameters have
-%    been set to the values in W. Deletes the values set to GPCF
-%    from W and returns the modified W. This is a mandatory 
-%    subfunction used for example in energy and gradient computations.
+%    function structure GPCF and a parameter vector W, and
+%    returns a covariance function structure identical to the
+%    input, except that the covariance parameters have been set
+%    to the values in W. Deletes the values set to GPCF from W
+%    and returns the modified W. This is a mandatory subfunction
+%    used for example in energy and gradient computations.
 %
 %    Assignment is inverse of  
 %       w = [ log(gpcf.magnSigma2)
@@ -238,7 +231,7 @@ function [gpcf, w] = gpcf_matern32_unpak(gpcf, w)
 %
 %  See also
 %    GPCF_MATERN32_PAK
-  
+
   gpp=gpcf.p;
   if ~isempty(gpp.magnSigma2)
     gpcf.magnSigma2 = exp(w(1));
@@ -247,7 +240,7 @@ function [gpcf, w] = gpcf_matern32_unpak(gpcf, w)
     [p, w] = gpcf.p.magnSigma2.fh.unpak(gpcf.p.magnSigma2, w);
     gpcf.p.magnSigma2 = p;
   end
-  
+
   if isfield(gpcf,'metric')
     [metric, w] = gpcf.metric.fh.unpak(gpcf.metric, w);
     gpcf.metric = metric;
@@ -269,17 +262,13 @@ function lp = gpcf_matern32_lp(gpcf)
 %GPCF_MATERN32_LP  Evaluate the log prior of covariance function parameters
 %
 %  Description
-%    LP = GPCF_MATERN32_LP(GPCF, X, T) takes a covariance function
-%    structure GPCF together with a matrix X of input
-%    vectors and a vector T of target vectors and evaluates log
-%    p(th) x J, where th is a vector of MATERN32 parameters and J
-%    is the Jacobian of transformation exp(w) = th. (Note that
-%    the parameters are log transformed, when packed.) This is 
-%    a mandatory subfunction used for example in energy computations.
+%    LP = GPCF_MATERN32_LP(GPCF) takes a covariance function
+%    structure GPCF and returns log(p(th)), where th collects the
+%    parameters. This is a mandatory subfunction used for example 
+%    in energy computations.
 %
 %  See also
-%    GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_LPG, GP_E
-%
+%    GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LPG, GP_LP
 
 % Evaluate the prior contribution to the error. The parameters that
 % are sampled are transformed, e.g., W = log(w) where w is all
@@ -294,8 +283,8 @@ function lp = gpcf_matern32_lp(gpcf)
     lp = lp +gpp.magnSigma2.fh.lp(gpcf.magnSigma2, ...
                    gpp.magnSigma2) +log(gpcf.magnSigma2);
   end
-  
-  if isfield(gpcf,'metric')            
+
+  if isfield(gpcf,'metric')
     lp = lp +gpcf.metric.fh.lp(gpcf.metric);
   elseif ~isempty(gpp.lengthScale)
     lp = lp +gpp.lengthScale.fh.lp(gpcf.lengthScale, ...
@@ -304,14 +293,14 @@ function lp = gpcf_matern32_lp(gpcf)
 end
 
 function lpg = gpcf_matern32_lpg(gpcf)
-%GPCF_MATERN32_LPG  Evaluate gradient of the log prior with respect
+%GPCF_matern32_LPG  Evaluate gradient of the log prior with respect
 %                   to the parameters.
 %
 %  Description
-%    LPG = GPCF_MATERN32_LPG(GPCF) takes a covariance function
+%    LPG = GPCF_matern32_LPG(GPCF) takes a covariance function
 %    structure GPCF and returns LPG = d log (p(th))/dth, where th
 %    is the vector of parameters. This is a mandatory subfunction 
-%    used for example in gradient computations.
+%    used in gradient computations.
 %
 %  See also
 %    GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_LP, GP_G
@@ -326,7 +315,7 @@ function lpg = gpcf_matern32_lpg(gpcf)
   
   if isfield(gpcf,'metric')
     lpg_dist = gpcf.metric.fh.lpg(gpcf.metric);
-    lpg=[lpg lpg_dist];
+    lpg = [lpg lpg_dist];
   else
     if ~isempty(gpcf.p.lengthScale)
       lll = length(gpcf.lengthScale);
@@ -334,6 +323,135 @@ function lpg = gpcf_matern32_lpg(gpcf)
       lpg = [lpg lpgs(1:lll).*gpcf.lengthScale+1 lpgs(lll+1:end)];
     end
   end
+end
+
+function C = gpcf_matern32_cov(gpcf, x1, x2)
+%GP_MATERN32_COV  Evaluate covariance matrix between two input vectors
+%
+%  Description
+%    C = GP_MATERN32_COV(GP, TX, X) takes in covariance function
+%    of a Gaussian process GP and two matrixes TX and X that
+%    contain input vectors to GP. Returns covariance matrix C. 
+%    Every element ij of C contains covariance between inputs i
+%    in TX and j in X. This is a mandatory subfunction used for 
+%    example in prediction and energy computations.
+%
+%
+%  See also
+%    GPCF_MATERN32_TRCOV, GPCF_MATERN32_TRVAR, GP_COV, GP_TRCOV
+  
+  if isempty(x2)
+    x2=x1;
+  end
+
+  if size(x1,2)~=size(x2,2)
+    error('the number of columns of X1 and X2 has to be same')
+  end
+
+  if isfield(gpcf,'metric')
+    dist = gpcf.metric.fh.dist(gpcf.metric, x1, x2);
+    dist(dist<eps) = 0;
+    C = gpcf.magnSigma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
+  else
+    if isfield(gpcf,'selectedVariables')
+      x1 = x1(:,gpcf.selectedVariables);
+      x2 = x2(:,gpcf.selectedVariables);
+    end
+    [n1,m1]=size(x1);
+    [n2,m2]=size(x2);
+    C=zeros(n1,n2);
+    ma2 = gpcf.magnSigma2;
+    
+    % Evaluate the covariance
+    if ~isempty(gpcf.lengthScale)
+      s2 = 1./gpcf.lengthScale.^2;
+      % If ARD is not used make s a vector of
+      % equal elements
+      if size(s2)==1
+        s2 = repmat(s2,1,m1);
+      end
+      dist=zeros(n1,n2);
+      for j=1:m1
+        dist = dist + s2(j).*(bsxfun(@minus,x1(:,j),x2(:,j)')).^2;
+      end
+      dist = sqrt(dist);
+      C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
+    end
+    C(C<eps)=0;
+  end
+end
+
+function C = gpcf_matern32_trcov(gpcf, x)
+%GP_MATERN32_TRCOV  Evaluate training covariance matrix of inputs
+%
+%  Description
+%    C = GP_MATERN32_TRCOV(GP, TX) takes in covariance function
+%    of a Gaussian process GP and matrix TX that contains
+%    training input vectors. Returns covariance matrix C. Every
+%    element ij of C contains covariance between inputs i and j
+%    in TX. This is a mandatory subfunction used for example in
+%    prediction and energy computations.
+%
+%  See also
+%    GPCF_MATERN32_COV, GPCF_MATERN32_TRVAR, GP_COV, GP_TRCOV
+  
+  if isfield(gpcf,'metric')
+    ma2 = gpcf.magnSigma2;
+    dist = gpcf.metric.fh.dist(gpcf.metric, x);
+    C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
+  else
+    % Try to use the C-implementation            
+    C = trcov(gpcf,x);
+    if isnan(C)
+      % If there wasn't C-implementation do here
+      if isfield(gpcf, 'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+      end
+      [n, m] =size(x);
+      
+      s2 = 1./(gpcf.lengthScale).^2;
+      if size(s2)==1
+        s2 = repmat(s2,1,m);
+      end
+      ma2 = gpcf.magnSigma2;
+      
+      % Here we take advantage of the
+      % symmetry of covariance matrix
+      C=zeros(n,n);
+      for i1=2:n
+        i1n=(i1-1)*n;
+        for i2=1:i1-1
+          ii=i1+(i2-1)*n;
+          for i3=1:m
+            C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
+          end
+          C(i1n+i2)=C(ii);
+        end
+      end
+      dist = sqrt(C);
+      C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
+      C(C<eps)=0;
+    end
+  end
+end
+
+function C = gpcf_matern32_trvar(gpcf, x)
+%GP_MATERN32_TRVAR  Evaluate training variance vector
+%
+%  Description
+%    C = GP_MATERN32_TRVAR(GPCF, TX) takes in covariance function
+%    of a Gaussian process GPCF and matrix TX that contains
+%    training inputs. Returns variance vector C. Every element i
+%    of C contains variance of input i in TX. This is a mandatory 
+%    subfunction used for example in prediction and energy computations.
+%
+%
+%  See also
+%    GPCF_MATERN32_COV, GP_COV, GP_TRCOV        
+  [n, m] =size(x);
+
+  C = ones(n,1).*gpcf.magnSigma2;
+  C(C<eps)=0;
 end
 
 function DKff = gpcf_matern32_cfg(gpcf, x, x2, mask,i1)
@@ -564,6 +682,237 @@ function DKff = gpcf_matern32_cfg(gpcf, x, x2, mask,i1)
   end
 end
 
+function DKff = gpcf_matern32_cfdg(gpcf, x, x2, dims)
+%GPCF_MATERN32_CFDG  Evaluate gradient of covariance function, of
+%                which has been taken partial derivative with
+%                respect to x, with respect to parameters.
+%
+%  Description
+%    DKff = GPCF_MATERN32_CFDG(GPCF, X) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of derivatived covariance matrix
+%    dK(df,f)/dhyp = d(d k(X,X)/dx)/dhyp, with respect to the
+%    parameters
+%
+%    Evaluate: DKff{1:m} = d Kff / d magnSigma2
+%              DKff{m+1:2m} = d Kff / d lengthScale_m
+%    m is the dimension of inputs. If ARD is used, then multiple
+%    lengthScales. This subfunction is needed when using derivative 
+%    observations.
+%
+%         dims - is a vector of input dimensions with respect to which the
+%                derivatives of the covariance function have been calculated
+%                [by default dims=1:size(x,2)]
+%
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
+%  See also
+%    GPCF_MATERN32_GINPUT
+
+if isfield(gpcf,'metric')
+    error('Metric doesnt work with grad.obs')
+end
+
+ii1=0;
+[~, m] =size(x);
+if nargin <3 || isempty(x2)
+    x2=x;
+end
+if nargin < 4 || isempty(dims)
+    dims = 1:m;
+end
+
+Cdm = gpcf.fh.ginput4(gpcf, x, x2, dims);
+
+% grad with respect to MAGNSIGMA
+if ~isempty(gpcf.p.magnSigma2)
+    DKffapu = cat(1,Cdm{1:end});
+    ii1=ii1+1;
+    DKff{ii1}=DKffapu;
+end
+
+% grad with respect to LENGTHSCALE
+if ~isempty(gpcf.p.lengthScale)
+    
+    s = zeros(1,m);
+    if isfield(gpcf,'selectedVariables')
+        selVars = gpcf.selectedVariables;
+    else
+        selVars = 1:m;
+    end
+    s(selVars) = 1./gpcf.lengthScale.^2;
+    
+    dist = 0;
+    for i=selVars
+        dist = dist + s(i).*(bsxfun(@minus,x(:,i),x2(:,i)')).^2;
+    end
+    dist = sqrt(3*dist);
+    invdist = 1./dist;
+    invdist(dist==0) = 0;
+    
+    % loop over all the lengthScales
+    if length(gpcf.lengthScale) == 1
+        % In the case of isotropic MATERN32
+        for i=1:length(dims)
+            G{i} = Cdm{i}.*(dist - 2);
+        end
+        DKffapu=cat(1,G{1:end});
+        ii1 = ii1+1;
+        DKff{ii1} = DKffapu;
+    else
+        % In the case ARD is used
+        for i=selVars
+            for j=1:length(dims)
+                % if structure is to check: is x derivative different from lengthscale
+                % derivative
+                if dims(j)~=i
+                    D{j}= 3*Cdm{j}.*bsxfun(@minus,x(:,i),x2(:,i)').^2.*s(i).*invdist;
+                else
+                    D{j} = Cdm{j}.*(3*bsxfun(@minus,x(:,i),x2(:,i)').^2.*s(i).*invdist - 2);
+                end
+            end
+            ii1=ii1+1;
+            DKffapu2=cat(1,D{1:end});
+            DKff{ii1}=DKffapu2;
+        end
+    end
+end
+end
+
+function DKff = gpcf_matern32_cfdg2(gpcf, x, x2, dims1, dims2)
+%GPCF_MATERN32_CFDG2  Evaluate gradient of covariance function, of
+%                     which has been taken partial derivatives with
+%                     respect to both input variables x and x2 with respect
+%                     to parameters.
+%
+%  Description
+%    DKff = GPCF_MATERN32_CFDG2(GPCF, X) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of derivative covariance matrix
+%    dK(df,df)/dhyp = d(d^2 k(X1,X2)/dX1dX2)/dhyp with respect to
+%    the parameters
+%
+%    Evaluate: DKff{1-m} = d Kff / d magnSigma2
+%              DKff{m+1-2m} = d Kff / d lengthScale_m
+%    m is the dimension of inputs. If ARD is used, then multiple
+%    lengthScales. This subfunction is needed when using derivative 
+%    observations.
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
+%  See also
+%   GPCF_MATERN32_GINPUT, GPCF_MATERN32_GINPUT2 
+  
+if isfield(gpcf,'metric')
+    error('metric doesnt work with grad.obs')
+end
+
+
+[~, m] =size(x);
+if nargin <3 || isempty(x2)
+    x2=x;
+end
+if nargin < 4 || isempty(dims1)
+    %dims1 = 1:m;
+    error('dims1 needs to be given')
+end
+if nargin < 5 || isempty(dims2)
+    %dims2 = 1:m;
+    error('dims2 needs to be given')
+end
+
+% NOTICE. AS OF NOW we assume that dims1 and dims2 are scalars
+
+DKff = {};
+ii1=0;
+if dims1 == dims2
+    [DKdd, DKdd3, DKdd4] = gpcf.fh.ginput2(gpcf, x, x2, dims1);
+else
+    DKdd=gpcf.fh.ginput3(gpcf, x, x2, dims1, dims2);
+end
+
+if ~isempty(gpcf.p.magnSigma2)
+    ii1 = ii1 +1;
+    DKff{ii1} = DKdd{1};
+end
+
+% grad with respect to LENGTHSCALE
+% metric doesn't work with grad obs
+if ~isempty(gpcf.p.lengthScale)
+    if isfield(gpcf,'selectedVariables')
+        selVars = gpcf.selectedVariables;
+    else
+        selVars = 1:m;
+        
+    end
+        s = zeros(1,m);
+    if isfield(gpcf,'selectedVariables')
+        selVars = gpcf.selectedVariables;
+    else
+        selVars = 1:m;
+    end
+    s(selVars) = 1./gpcf.lengthScale.^2;
+    
+    if length(gpcf.lengthScale)==1
+        s = 1./gpcf.lengthScale.^2;
+        if any(dims1==selVars) && any(dims2==selVars)
+            % Weighted distance
+            dist = 0;
+            for i=selVars
+                dist = dist + s.*bsxfun(@minus,x(:,i),x2(:,i)').^2;
+            end
+            dist = sqrt(3*dist);
+            ii1 = ii1+1;
+            if dims1==dims2
+                %diagonal matrices
+                DKff{ii1} = DKdd3{1}.*(dist - 2)-DKdd4{1}.*(dist - 3);
+            else
+                DKff{ii1} = DKdd{1}.*(dist-3);
+            end
+        else
+            ii1 = ii1+1;
+            DKff{ii1} = zeros(size(DKdd{1}));
+        end
+    else
+        s = zeros(1,m);
+        s(selVars) = 1./gpcf.lengthScale.^2;
+        % Weighted distance
+        for i=selVars
+            dist = 0;
+            for i2=1:m
+                dist = dist + s(i2)*(bsxfun(@minus,x(:,i2),x2(:,i2)')).^2;
+            end
+            dist = sqrt(3*dist);
+            invdist = 1./dist;
+            invdist(dist==0) = 0;
+            const = 3*s(i).*bsxfun(@minus,x(:,i),x2(:,i)').^2.*invdist;
+            ii1 = ii1+1;
+            if dims1==dims2
+                if dims1 == i
+                    DKff{ii1} = DKdd3{1}.*(const - 2) - DKdd4{1}.*(const.*(invdist+1) - 4);
+                else
+                    DKff{ii1} = DKdd3{1}.*const - DKdd4{1}.*const.*(invdist+1);
+                end
+            else
+                if dims1==i || dims2==i
+                    DKff{ii1} = DKdd{1}.*(const.*(invdist+1)-2);
+                else
+                    DKff{ii1} = DKdd{1}.*const.*(invdist+1);
+                end
+            end
+        end
+    end
+    
+end
+
+end
+
+
 function DKff = gpcf_matern32_ginput(gpcf, x, x2, i1)
 %GPCF_MATERN32_GINPUT  Evaluate gradient of covariance function with 
 %                      respect to x.
@@ -637,7 +986,7 @@ function DKff = gpcf_matern32_ginput(gpcf, x, x2, i1)
       for j = 1:n
         for i=i1
           D1 = zeros(n,n);
-          D1(j,:) = (s(i)).*bsxfun(@minus,x(j,i),x(:,i)');
+          D1(j,:) = (-s(i)).*bsxfun(@minus,x(j,i),x(:,i)');
           D1 = D1 + D1';
           DK = -3.*ma2.*exp(-sqrt(3.*dist)).*D1;
           
@@ -683,133 +1032,218 @@ function DKff = gpcf_matern32_ginput(gpcf, x, x2, i1)
   end
 end
 
-function C = gpcf_matern32_cov(gpcf, x1, x2)
-%GP_MATERN32_COV  Evaluate covariance matrix between two input vectors
+function [DKff, DKff1, DKff2]  = gpcf_matern32_ginput2(gpcf, x, x2, dims, takeOnlyDiag)
+%GPCF_MATERN32_GINPUT2  Evaluate gradient of covariance function with
+%                   respect to both input variables x and x2 (in
+%                   same dimension).
 %
 %  Description
-%    C = GP_MATERN32_COV(GP, TX, X) takes in covariance function
-%    of a Gaussian process GP and two matrixes TX and X that
-%    contain input vectors to GP. Returns covariance matrix C. 
-%    Every element ij of C contains covariance between inputs i
-%    in TX and j in X. This is a mandatory subfunction used for 
-%    example in prediction and energy computations.
-%
+%    DKff = GPCF_MATERN32_GINPUT2(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of twice derivatived covariance
+%    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
+%    elements). Input variable's dimensions are expected to be
+%    same. The function returns also DKff1 and DKff2 which are
+%    parts of DKff and needed with CFDG2. DKff = DKff1 -
+%    DKff2. This subfunction is needed when using derivative 
+%    observations.
+%   
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
 %
 %  See also
-%    GPCF_MATERN32_TRCOV, GPCF_MATERN32_TRVAR, GP_COV, GP_TRCOV
+%    GPCF_MATERN32_GINPUT, GPCF_MATERN32_GINPUT2, GPCF_MATERN32_CFDG2 
   
-  if isempty(x2)
-    x2=x1;
-  end
-
-  if size(x1,2)~=size(x2,2)
-    error('the number of columns of X1 and X2 has to be same')
-  end
-
-  if isfield(gpcf,'metric')
-    dist = gpcf.metric.fh.dist(gpcf.metric, x1, x2);
-    dist(dist<eps) = 0;
-    C = gpcf.magnSigma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
-  else
-    if isfield(gpcf,'selectedVariables')
-      x1 = x1(:,gpcf.selectedVariables);
-      x2 = x2(:,gpcf.selectedVariables);
-    end
-    [n1,m1]=size(x1);
-    [n2,m2]=size(x2);
-    C=zeros(n1,n2);
-    ma2 = gpcf.magnSigma2;
-    
-    % Evaluate the covariance
-    if ~isempty(gpcf.lengthScale)
-      s2 = 1./gpcf.lengthScale.^2;
-      % If ARD is not used make s a vector of
-      % equal elements
-      if size(s2)==1
-        s2 = repmat(s2,1,m1);
-      end
-      dist=zeros(n1,n2);
-      for j=1:m1
-        dist = dist + s2(j).*(bsxfun(@minus,x1(:,j),x2(:,j)')).^2;
-      end
-      dist = sqrt(dist);
-      C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
-    end
-    C(C<eps)=0;
-  end
-end
-
-function C = gpcf_matern32_trcov(gpcf, x)
-%GP_MATERN32_TRCOV  Evaluate training covariance matrix of inputs
-%
-%  Description
-%    C = GP_MATERN32_TRCOV(GP, TX) takes in covariance function
-%    of a Gaussian process GP and matrix TX that contains
-%    training input vectors. Returns covariance matrix C. Every
-%    element ij of C contains covariance between inputs i and j
-%    in TX. This is a mandatory subfunction used for example in
-%    prediction and energy computations.
-%
-%  See also
-%    GPCF_MATERN32_COV, GPCF_MATERN32_TRVAR, GP_COV, GP_TRCOV
-  
-  if isfield(gpcf,'metric')
-    ma2 = gpcf.magnSigma2;
-    dist = gpcf.metric.fh.dist(gpcf.metric, x);
-    C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
-  else
-    % Try to use the C-implementation            
-    C = trcov(gpcf,x);
-    if isnan(C)
-      % If there wasn't C-implementation do here
-      if isfield(gpcf, 'selectedVariables')
-        x = x(:,gpcf.selectedVariables);
-      end
-      [n, m] =size(x);
-      
-      s2 = 1./(gpcf.lengthScale).^2;
-      if size(s2)==1
-        s2 = repmat(s2,1,m);
-      end
-      ma2 = gpcf.magnSigma2;
-      
-      % Here we take advantage of the
-      % symmetry of covariance matrix
-      C=zeros(n,n);
-      for i1=2:n
-        i1n=(i1-1)*n;
-        for i2=1:i1-1
-          ii=i1+(i2-1)*n;
-          for i3=1:m
-            C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
-          end
-          C(i1n+i2)=C(ii);
-        end
-      end
-      dist = sqrt(C);
-      C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
-      C(C<eps)=0;
-    end
-  end
-end
-
-function C = gpcf_matern32_trvar(gpcf, x)
-%GP_MATERN32_TRVAR  Evaluate training variance vector
-%
-%  Description
-%    C = GP_MATERN32_TRVAR(GPCF, TX) takes in covariance function
-%    of a Gaussian process GPCF and matrix TX that contains
-%    training inputs. Returns variance vector C. Every element i
-%    of C contains variance of input i in TX. This is a mandatory 
-%    subfunction used for example in prediction and energy computations.
-%
-%
-%  See also
-%    GPCF_MATERN32_COV, GP_COV, GP_TRCOV        
   [n, m] =size(x);
+  ii1 = 0;
+  if nargin < 3
+    error('Needs at least 3 input arguments')
+  end
+  if nargin<4 || isempty(dims)
+      dims=1:m;
+  end
+  s = zeros(1, m);
+  if isfield(gpcf,'selectedVariables')
+      s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
+  else
+      s(1:m) = 1./gpcf.lengthScale.^2;
+  end
+  
+  if nargin==5 && isequal(takeOnlyDiag,'takeOnlyDiag')
+      for i=dims
+          ii1 = ii1 + 1;
+          DKff{ii1} = repelem(3*gpcf.magnSigma2.*s(i)',n,1);
+      end
+  else
+      
+      %metric doesn't work with grad.obs on
+      if isfield(gpcf,'metric')
+          error('Metric doesnt work with grad.obs')
+      else
+          dist = 0;
+          for i2=1:m
+              dist = dist + s(i2).*(bsxfun(@minus,x(:,i2),x2(:,i2)')).^2;
+          end
+          dist = sqrt(3*dist);
+          invdist = 1./dist;
+          invdist(dist==0) = 0;
+          expdist = exp(-dist);
+          invdist_expdist = invdist.*expdist;
+          ma2 = gpcf.magnSigma2;
+          for i=dims
+              DK2 = 9*ma2*s(i).^2.*bsxfun(@minus,x(:,i),x2(:,i)').^2.*invdist_expdist;
+              DK = 3*ma2*s(i).*expdist;
+              ii1 = ii1 + 1;
+              DKff1{ii1} = DK;
+              DKff2{ii1} = DK2;
+              DKff{ii1} = DK - DK2;
+          end
+      end
+  end
+end
 
-  C = ones(n,1).*gpcf.magnSigma2;
-  C(C<eps)=0;
+function DKff = gpcf_matern32_ginput3(gpcf, x, x2, dims1, dims2)
+%GPCF_MATERN32_GINPUT3  Evaluate gradient of covariance function with
+%                   respect to both input variables x and x2 (in
+%                   different dimensions).
+%
+%  Description
+%    DKff = GPCF_MATERN32_GINPUT3(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of twice derivatived covariance
+%    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
+%    elements). The derivative is calculated in multidimensional
+%    problem between input's observation dimensions which are not
+%    same. This subfunction is needed when using derivative 
+%    observations.
+%
+%    ---- !!note this help text needs to be corrected !! ---
+%    DKff is a cell array with the following elements:
+%      DKff{1} = dk(X1,X2)/dX1_1dX2_2
+%      DKff{2} = dk(X1,X2)/dX1_1dX2_3
+%       ... 
+%      DKff{m-1} = dk(X1,X2)/dX1_1dX2_m
+%      DKff{m} = dk(X1,X2)/dX1_2dX2_3
+%       ...
+%      DKff{m} = dk(X1,X2)/dX1_(m-1)dX2_m
+%    where _m denotes the input dimension with respect to which the
+%    gradient is calculated.
+%     ---- clip ---
+%   
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
+%  See also
+%    GPCF_MATERN32_GINPUT, GPCF_MATERN32_GINPUT2, GPCF_MATERN32_CFDG2 
+  
+  [n, m] =size(x);
+  if nargin < 3
+    error('Needs at least 3 input arguments')
+  end
+  if nargin<4 || isempty(dims1)
+      dims1=1:m;
+  end
+  if nargin<5 || isempty(dims2)
+      dims2=1:m;
+  end
+  
+  % --- help Needs to be corrected ---
+  % Derivative the cov.function with respect to both input variables
+  % but in different dimensions. Resulting matrices are for the
+  % cov. matrix k(df/dx,df/dx) non-diagonal part. Matrices are
+  % added to DKff in columnwise order for ex. dim=3:
+  % k(df/dx1,df/dx2),(..dx1,dx3..),(..dx2,dx3..)
+  %    --- clip ---
+  
+  if isfield(gpcf,'metric')
+    error('Metric doesnt work with ginput3')
+  else
+      s = zeros(1, m);
+      if isfield(gpcf,'selectedVariables')
+          s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
+      else
+          s(1:m) = 1./gpcf.lengthScale.^2;
+      end
+      dist = 0;
+      for i2=1:m
+          dist = dist + s(i2).*(bsxfun(@minus,x(:,i2),x2(:,i2)')).^2;
+      end
+      dist = sqrt(3*dist);
+      invdist = 1./dist;
+      invdist(dist==0) = 0;
+      expdist = exp(-dist);
+      invdist_expdist = invdist.*expdist;
+      ma2 = gpcf.magnSigma2;
+      ii3=0;
+      for i=dims1
+          for j=dims2
+              ii3=ii3+1;
+              DKff{ii3} = -9*ma2*s(i).*bsxfun(@minus,x(:,i),x2(:,i)').*s(j).*bsxfun(@minus,x(:,j),x2(:,j)').*invdist_expdist;
+          end
+      end
+  end
+end
+
+function DKff = gpcf_matern32_ginput4(gpcf, x, x2, dims)
+%GPCF_MATERN32_GINPUT4  Evaluate gradient of covariance function with 
+%                       respect to x. Simplified and faster version of
+%                       matern32_ginput, returns full matrices.
+%
+%  Description
+%    DKff = GPCF_MATERN32_GHYPER(GPCF, X) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of covariance matrix Kff = k(X,X) with
+%    respect to X (whole matrix). This subfunction is needed when 
+%    using derivative observations.
+%
+%    DKff = GPCF_MATERN32_GHYPER(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2) with respect to X (whole matrix). This subfunction 
+%    is needed when using derivative observations.
+%
+%    DKff = GPCF_MATERN32_GHYPER(GPCF, X, X2, DIMS) returns DKff, the gradients
+%    of covariance matrix Kff = k(X,X2) with respect to dimensions DIMS of
+%    X. 
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
+%  See also
+%    GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_LP, GP_G
+  
+  [n, m] =size(x);
+  ii1 = 0;
+  if nargin==2 || isempty(x2) 
+    x2 = x;
+  end
+  if nargin<4
+    dims=1:m;
+  end
+    
+  if isfield(gpcf,'metric')
+    error('no metric implemented')
+  else
+      s = zeros(1, m);
+      if isfield(gpcf,'selectedVariables')
+          s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
+      else
+          s(1:m) = 1./gpcf.lengthScale.^2;
+      end
+      dist = 0;
+      for i2=1:m
+          dist = dist + s(i2).*(bsxfun(@minus,x(:,i2),x2(:,i2)')).^2;
+      end
+      expdist = exp(-sqrt(3*dist));
+      ma2 = gpcf.magnSigma2;
+      for i=dims
+          ii1 = ii1 + 1;
+          DKff{ii1} = -3*ma2*s(i).*bsxfun(@minus,x(:,i),x2(:,i)').*expdist;
+      end
+  end
 end
 
 function reccf = gpcf_matern32_recappend(reccf, ri, gpcf)
@@ -819,9 +1253,9 @@ function reccf = gpcf_matern32_recappend(reccf, ri, gpcf)
 %    RECCF = GPCF_MATERN32_RECAPPEND(RECCF, RI, GPCF) takes a
 %    covariance function record structure RECCF, record index RI
 %    and covariance function structure GPCF with the current MCMC
-%    samples of the parameters. Returns RECCF which contains
-%    all the old samples and the current samples from GPCF.
-%    This subfunction is needed when using MCMC sampling (gp_mc).
+%    samples of the parameters. Returns RECCF which contains all
+%    the old samples and the current samples from GPCF. This 
+%    subfunction is needed when using MCMC sampling (gp_mc).
 %
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND
@@ -840,6 +1274,12 @@ function reccf = gpcf_matern32_recappend(reccf, ri, gpcf)
     reccf.fh.lp = @gpcf_matern32_lp;
     reccf.fh.lpg = @gpcf_matern32_lpg;
     reccf.fh.cfg = @gpcf_matern32_cfg;
+    reccf.fh.cfdg = @gpcf_matern32_cfdg;
+    reccf.fh.cfdg2 = @gpcf_matern32_cfdg2;
+    reccf.fh.ginput = @gpcf_matern32_ginput;
+    reccf.fh.ginput2 = @gpcf_matern32_ginput2;
+    reccf.fh.ginput3 = @gpcf_matern32_ginput3;
+    reccf.fh.ginput4 = @gpcf_matern32_ginput4;
     reccf.fh.cov = @gpcf_matern32_cov;
     reccf.fh.trcov  = @gpcf_matern32_trcov;
     reccf.fh.trvar  = @gpcf_matern32_trvar;
@@ -850,7 +1290,7 @@ function reccf = gpcf_matern32_recappend(reccf, ri, gpcf)
     if isfield(ri.p,'lengthScale') && ~isempty(ri.p.lengthScale)
       reccf.p.lengthScale = ri.p.lengthScale;
     end
-    if ~isempty(ri.p.magnSigma2)
+    if isfield(ri.p,'magnSigma2') && ~isempty(ri.p.magnSigma2)
       reccf.p.magnSigma2 = ri.p.magnSigma2;
     end
     if isfield(ri, 'selectedVariables')
@@ -858,8 +1298,9 @@ function reccf = gpcf_matern32_recappend(reccf, ri, gpcf)
     end
   else
     % Append to the record
+    
     gpp = gpcf.p;
-
+    
     if ~isfield(gpcf,'metric')
       % record lengthScale
       reccf.lengthScale(ri,:)=gpcf.lengthScale;
@@ -867,11 +1308,13 @@ function reccf = gpcf_matern32_recappend(reccf, ri, gpcf)
         reccf.p.lengthScale = gpp.lengthScale.fh.recappend(reccf.p.lengthScale, ri, gpcf.p.lengthScale);
       end
     end
+    
     % record magnSigma2
     reccf.magnSigma2(ri,:)=gpcf.magnSigma2;
     if isfield(gpp,'magnSigma2') && ~isempty(gpp.magnSigma2)
       reccf.p.magnSigma2 = gpp.magnSigma2.fh.recappend(reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
     end
+  
   end
 end
 
@@ -910,4 +1353,3 @@ function [F,L,Qc,H,Pinf,dF,dQc,dPinf,params] = gpcf_matern32_cf2ss(gpcf,x)
   dPinf = dPinf(:,:,ind);
   
 end
-
