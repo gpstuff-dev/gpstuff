@@ -42,7 +42,7 @@
 %   and that N1(t)|f1(t) is independent of N2(t)|f2(t). The expression exp(f1(t)) 
 %   is the expected value of N1 given f1 and exp(f2(t)) is the expected value 
 %   of N2 given f2. The correlation is now introduced through the multivariate
-%   Gaussian process model assuming the linear model of coregionalization, i.e.,
+%   Gaussian process prior assuming the linear model of coregionalization, i.e.,
 %
 %       [f1(t), f2(t')] ~ MGP(0, K)
 % 
@@ -132,9 +132,12 @@ k = gpcf_covar('numberClass', 2, 'classVariables', 2, ...
     'R_prior', prior_corrunif('nu', 3), 'corrFun', {k1 k2});
 
 % set gp structure
+% for the EP approximation
 gp = gp_set('lik', lik, 'cf', k, 'latent_method', 'EP');
-% gp = gp_set('lik', lik, 'cf', k, 'latent_method', 'Laplace');
 
+% For the Laplace approximation
+%gp = gp_set('lik', lik, 'cf', k, 'latent_method', 'Laplace'); 
+ 
 % optimzation options
 opt = optimset('TolFun', 1e-3, 'TolX', 1e-5, 'Display', 'iter');   
 
@@ -150,8 +153,10 @@ gp = gp_optim(gp, x, y, 'z', z, 'opt', opt);
 % take the parameters, hyperparameters estimates
 [th ss] = gp_pak(gp);
 
-% correlation estimate
-rho = k.fh.RealToRho(th(end - 2 - 2), 1, [])
+% correlation matrix estimate
+%rho = k.fh.RealToRho(th(end - 2 - 2), 1, [])
+Corr = gp.cf{1}.fh.sigma(gp.cf{1}, 'corr');
+Corr{1}
 
 % prediction
 np = 200;

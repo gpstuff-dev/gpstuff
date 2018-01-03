@@ -35,7 +35,7 @@ function p = prior_corrunif(varargin)
 % Copyright (c) 2000-2001,2010 Aki Vehtari
 % Copyright (c) 2009,2015 Jarno Vanhatalo
 % Copyright (c) 2010 Jaakko Riihimäki
-% ------------ 2015 Marcelo Hartmann 
+% ───────────── 2015, 2018 Marcelo Hartmann 
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -93,7 +93,7 @@ function p = prior_corrunif(varargin)
     % set functions
     p.fh.pak = @prior_corrunif_pak;
     p.fh.unpak = @prior_corrunif_unpak;
-  % p.fh.RealToRho = @prior_corrunif_RealToRho;
+    % p.fh.RealToRho = @prior_corrunif_RealToRho;
     p.fh.lp = @prior_corrunif_lp;
     p.fh.lpg = @prior_corrunif_lpg;
     p.fh.recappend = @prior_corrunif_recappend;
