@@ -23,7 +23,7 @@ function gpcf = gpcf_covar(varargin)
 %    parameters altered with the specified values.
 %  
 %   ─ Parameters (of the gpstuff structure) for the covariance structure [default]
-%     R_prior             - prior for correlation matrix  [prior_R]
+%     R_prior             - prior for correlation matrix  [prior_corrunif()]
 %     V_prior             - prior for the variances. Must be a structure 
 %                           with each component being also a structure (the
 %                           priors). Otherwise, just use prior_fixed.
