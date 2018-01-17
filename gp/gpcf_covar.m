@@ -76,7 +76,7 @@ function gpcf = gpcf_covar(varargin)
   ip.addParamValue('R', 0.01, @(x) isvector(x) && ~any(abs(x) > 1));  
   ip.addParamValue('V', 1, @(x) isvector(x) && ~any(x < 0)); 
   ip.addParamValue('R_prior', prior_corrunif(), @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('V_prior', prior_t('s2', 10), @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('V_prior', prior_t('s2', 2), @(x) isstruct(x) || isempty(x));
   ip.addParamValue('corrFun', {}, @(x) ~isempty(x) && iscell(x));
   ip.addParamValue('classVariables', [], @(x) ~isempty(x) && mod(x, 1) == 0 && x > 0);
   ip.addParamValue('numberClass', [], @(x) mod(x, 1) == 0 && x > 1);
@@ -192,7 +192,10 @@ function gpcf = gpcf_covar(varargin)
   else
       var = [repmat('var', gpcf.numberClass , 1), num2str((1:gpcf.numberClass)')];
       for ind = 1:size(var, 1)
-          Vpriors.(var(ind, :)).p = ip.Results.V_prior;
+          var_aux = var(ind, :); 
+          var_aux = var_aux(~isspace(var_aux));
+          Vpriors.(var_aux).p = ip.Results.V_prior;
+          %Vpriors.(var(ind, :)).p = ip.Results.V_prior;
       end
       gpcf.p.V = Vpriors;
       gpcf.varfields = (fields(gpcf.p.V)');
