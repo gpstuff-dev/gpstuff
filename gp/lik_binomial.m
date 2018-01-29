@@ -320,10 +320,10 @@ function [lpy, Ey, Vary] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
   end
   
   if nargout > 1
-  % Here we approximate the logistic function by a linear combination of probit function
+  % Here we approximate the inverse logistic function by a linear combination of inverse probit function
   % logitinv(f) = a probit_inv(f/c1S) + (1 - a) probit_inv(f/c2s)
   % see Demidenko (2004). Mixed models: Theory and applications
-      p1 = 0.4353;   p2 = 0.5647; % this are a and (1 - a)
+      p1 = 0.4353;   p2 = 0.5647; % these are a and (1 - a)
       c1S = 2.2967^2;  c2S = 1.3017^2;
       
       z1 = Ef ./ sqrt(c1S + Varf);
