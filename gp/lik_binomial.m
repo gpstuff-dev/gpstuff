@@ -320,22 +320,63 @@ function [lpy, Ey, Vary] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
   end
   
   if nargout > 1
-    nt=length(Ef);
-    Ey=zeros(nt,1);
-    EVary = zeros(nt,1);
-    VarEy = zeros(nt,1);
-    for i1=1:nt
-      ci = sqrt(Varf(i1));
-      F  = @(x)zt(i1)./(1+exp(-x)).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-      Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+  % Here we approximate the inverse logistic function by a linear combination of inverse probit function
+  % logitinv(f) = a probit_inv(f/c1S) + (1 - a) probit_inv(f/c2s)
+  % see Demidenko (2004). Mixed models: Theory and applications
+      p1 = 0.4353;   p2 = 0.5647; % these are a and (1 - a)
+      c1S = 2.2967^2;  c2S = 1.3017^2;
       
-      F2  = @(x)zt(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-      EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
+      z1 = Ef ./ sqrt(c1S + Varf);
+      z2 = Ef ./ sqrt(c2S + Varf);
       
-      F3  = @(x)(zt(i1)./(1+exp(-x))).^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-      VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
-    end
-    Vary = EVary+VarEy;
+      % unconditional expectation 
+      p = (p1 .* normcdf(z1) + p2 .* normcdf(z2));
+      Ey = zt .* p;
+       
+      % unconditional variance
+      if any(zt ~= 1)
+          nt = length(Ef);
+          zz11 = zeros(nt, 1);
+          zz12 = zeros(nt, 1);
+          zz22 = zeros(nt, 1);
+          
+          for i = 1:length(Ef)
+              zz11(i) = mvncdf([Ef(i) Ef(i)], [0 0], ... 
+                  [Varf(i) + c1S Varf(i); Varf(i) Varf(i) + c1S]);
+              
+              zz12(i) = mvncdf([Ef(i) Ef(i)], [0 0], ...
+                  [Varf(i) + c1S Varf(i); Varf(i) Varf(i) + c2S]);
+              
+              zz22(i) = mvncdf([Ef(i) Ef(i)], [0 0], ...
+                  [Varf(i) + c2S Varf(i); Varf(i) Varf(i) + c2S]);
+              
+          end
+          Ey12 = p1^2 * zz11 + 2*p1*p2 * zz12 + p2^2 * zz22;
+          
+      else
+          Ey12 = 0;
+          
+      end
+      
+      % unconditional variance
+      Vary = zt .* (p - Ey12) + zt.^2 .* (Ey12 - p.^2);
+      
+  %     nt=length(Ef);
+  %     Ey=zeros(nt,1);
+  %     EVary = zeros(nt,1);
+  %     VarEy = zeros(nt,1);
+  %     for i1=1:nt
+  %        ci = sqrt(Varf(i1));
+  %       F  = @(x)zt(i1)./(1+exp(-x)).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+  %        Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+  %       
+  %       F2  = @(x)zt(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+  %       EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
+  %       
+  %       F3  = @(x)(zt(i1)./(1+exp(-x))).^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+  %       VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
+  %     end
+  %     Vary = EVary+VarEy;
   end
   
   nt=length(yt);
