@@ -104,8 +104,8 @@ lik = lik_coxph('S', S);
 
 % NOTE! if multiple covariance functions per latent is used, define
 % gp.comp_cf as follows:
-% gp = gp_set(..., 'comp_cf' {[1 2] [5 6]};
-% where [1 2] are for hazard function, and [5 6] for proportional part
+% gp = gp_set(..., 'comp_cf' {[1 2 3] [4 5]};
+% where [1 2 3] are for hazard function, and [4 5] for proportional part
 gp = gp_set('lik', lik, 'cf', {cfhc cfhl cfhs cfl cfs}, 'jitterSigma2', 1e-6, 'comp_cf', {[1 2 3] [4 5]});
 
 % Set the approximate inference method to Laplace

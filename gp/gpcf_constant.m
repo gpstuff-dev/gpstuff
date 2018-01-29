@@ -276,7 +276,7 @@ function DKff = gpcf_constant_cfg(gpcf, x, x2, mask, i1)
 end
 
 
-function DKff = gpcf_constant_cfdg(gpcf, x, x2)
+function DKff = gpcf_constant_cfdg(gpcf, x, x2, dims)
 %GPCF_CONSTANT_CFDG  Evaluate gradient of covariance function, of
 %                which has been taken partial derivative with
 %                respect to x, with respect to parameters.
@@ -300,19 +300,21 @@ function DKff = gpcf_constant_cfdg(gpcf, x, x2)
 if nargin<3
     x2=x;
 end
+if nargin < 4 || isempty(dims)
+    dims = 1:m;
+end
 ii1=0;
 DKff={};
 if ~isempty(gpcf.p.constSigma2)
-  dd=zeros(size(x,1),size(x2,1));
-  for i=1:m
-    DK{i}=dd;
-  end
-  ii1=ii1+1;
-  DKff{ii1}=cat(1,DK{1:m});
+    dd=zeros(size(x,1),size(x2,1));
+    for i=dims
+        ii1=ii1+1;
+        DKff{ii1}=dd;
+    end
 end
 end
 
-function DKff = gpcf_constant_cfdg2(gpcf, x)
+function DKff = gpcf_constant_cfdg2(gpcf, x, x2, dims1, dims2)
 %GPCF_CONSTANT_CFDG2  Evaluate gradient of covariance function, of
 %                 which has been taken partial derivatives with
 %                 respect to both input variables x, with respect
@@ -333,18 +335,22 @@ function DKff = gpcf_constant_cfdg2(gpcf, x)
 %  See also
 %   GPCF_CONSTANT_GINPUT, GPCF_CONSTANT_GINPUT2
 
+if nargin < 4 || isempty(dims1)
+    %dims1 = 1:m;
+    error('dims1 needs to be given')
+end
+if nargin < 5 || isempty(dims2)
+    %dims2 = 1:m;
+    error('dims2 needs to be given')
+end
+
 [n,m]=size(x);
 ii1=0;
 dd=zeros(size(x,1),size(x,1));
 DKff={};
 if ~isempty(gpcf.p.constSigma2)
-  for k=1:m
-    for j=1:m
-      DK{k,j}=dd;
-    end
-  end
   ii1=ii1+1;
-  DKff{ii1}=cell2mat(DK);
+  DKff{ii1}=dd;
 end
 end
 
@@ -418,7 +424,7 @@ function DKff = gpcf_constant_ginput(gpcf, x, x2, i1)
 end
 
 
-function DKff = gpcf_constant_ginput2(gpcf, x, x2, takeOnlyDiag)
+function DKff = gpcf_constant_ginput2(gpcf, x, x2, dims, takeOnlyDiag)
 %GPCF_CONSTANT_GINPUT2  Evaluate gradient of covariance function with
 %                   respect to both input variables x and x2 (in
 %                   same dimension).
@@ -438,19 +444,26 @@ function DKff = gpcf_constant_ginput2(gpcf, x, x2, takeOnlyDiag)
 %    GPCF_CONSTANT_GINPUT, GPCF_CONSTANT_GINPUT2, GPCF_CONSTANT_CFDG2       
 
 [n,m]=size(x);
-if nargin==4 && isequal(takeOnlyDiag,'takeOnlyDiag')
-    DKff = kron(zeros(m,1),zeros(n,1));
+if nargin<4 || isempty(dims)
+    dims=1:m;
+end
+ii1=0;
+if nargin==5 && isequal(takeOnlyDiag,'takeOnlyDiag')
+    for i=dims
+        ii1=ii1+1;
+        DKff{ii1} = kron(0,zeros(n,1));
+    end
+    %DKff = kron(zeros(m,1),zeros(n,1));
 else
-    ii1=0;
     DK=zeros(size(x,1),size(x2,1));
-    for i=1:m
+    for i=dims
         ii1=ii1+1;
         DKff{ii1}=DK;
     end
 end
 end
 
-function DKff = gpcf_constant_ginput3(gpcf, x, x2)
+function DKff = gpcf_constant_ginput3(gpcf, x, x2, dims1, dims2)
 %GPCF_CONSTANT_GINPUT3  Evaluate gradient of covariance function with
 %                   respect to both input variables x and x2 (in
 %                   different dimensions).
@@ -468,18 +481,25 @@ function DKff = gpcf_constant_ginput3(gpcf, x, x2)
 %  See also
 %    GPCF_CONSTANT_GINPUT, GPCF_CONSTANT_GINPUT2, GPCF_CONSTANT_CFDG2        
 
+if nargin<4 || isempty(dims1)
+    dims1=1:m;
+end
+if nargin<5 || isempty(dims2)
+    dims2=1:m;
+end
+
 [n,m]=size(x);
 ii1=0;
 DK=zeros(size(x,1),size(x2,1));
-for i=1:m-1
-  for j=i+1:m
+for i=dims1
+  for j=dims2
     ii1=ii1+1;
     DKff{ii1}=DK;
   end
 end
 end
 
-function DKff = gpcf_constant_ginput4(gpcf, x, x2)
+function DKff = gpcf_constant_ginput4(gpcf, x, x2, dims)
 %GPCF_CONSTANT_GINPUT  Evaluate gradient of covariance function with 
 %                  respect to x. Simplified and faster version of
 %                  constant_ginput, returns full matrices.
@@ -501,13 +521,15 @@ function DKff = gpcf_constant_ginput4(gpcf, x, x2)
 %    GPCF_CONSTANT_PAK, GPCF_CONSTANT_UNPAK, GPCF_CONSTANT_LP, GP_G
 
 [n,m]=size(x);
-i1=1:m;
+if nargin<4
+    dims=1:m;
+end
 ii1=0;
 if nargin==2
   x2=x;
 end
 DK=zeros(size(x,1),size(x2,1));
-for i=i1
+for i=dims
   ii1=ii1+1;
   DKff{ii1}=DK;
 end

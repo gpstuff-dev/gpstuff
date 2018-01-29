@@ -1,14 +1,13 @@
-function test_suite = test_improvemarginals
+function test_suite = test_multivariategp
 
 %   Run specific demo, save values and compare the results to the expected.
 %   Works for both xUnit Test Framework package by Steve Eddins and for
 %   the built-in Unit Testing Framework (as of Matlab version 2013b).
 %
 %   See also
-%     TEST_ALL, DEMO_IMPROVEMARGINALS
+%     TEST_ALL, DEMO_DERIVATIVEOBS
 %
-% Copyright (c) 2011-2012 Ville Tolvanen
-% Copyright (c) 2014 Tuomas Sivula
+% Copyright (c) 2017 Eero Siivola
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -44,29 +43,11 @@ function testRunDemo(testCase)
   rundemo(getName())
 end
 
-function test_EP_fact(testCase)
-  verifyVarsEqual(testCase, getName(), ...
-    {'pc_ep','fvec_ep','pc_ep_pred','fvec_ep_pred'}, ...
-    {[], @(x)[x(1),x(end)], [], @(x)[x(1),x(end)]}, ...
+function testPredictions(testCase)
+  % Test predictive mean and variance
+  verifyVarsEqual(testCase, getName(), {'Ef', 'Varf'}, ...
     'RelTolElement', 0.05, 'RelTolRange', 0.01)
 end
-
-function test_Laplace_CM2(testCase)
-  verifyVarsEqual(testCase, getName(), ...
-    {'pc_la','fvec_la','pc_la_pred','fvec_la_pred'}, ...
-    {[], @(x)[x(1),x(end)], [], @(x)[x(1),x(end)]}, ...
-    'RelTolElement', 0.05, 'RelTolRange', 0.01)
-end
-
-
-function test_Laplace_fact(testCase)
-  verifyVarsEqual(testCase, getName(), ...
-    {'pc_la2','fvec_la2','pc_la_pred2','fvec_la_pred2'}, ...
-    {[], @(x)[x(1),x(end)], [], @(x)[x(1),x(end)]}, ...
-    'RelTolElement', 0.1, 'RelTolRange', 0.05)
-end
-
-
 % ------------------------
 %     Helper functions
 % ------------------------

@@ -17,11 +17,15 @@ function log = runtestset(mode)
 %
 %    N.B. The time estimates assumes that SuiteSparse is used. The
 %    estimated runtime of the individual demos (min):
+%       bayesoptimization1     0.076
+%       bayesoptimization2     0.539
+%       bayesoptimization3     1.904
 %       binomial1              0.057
 %       binomial2              2.853
 %       binomial_apc           0.224
 %       classific              1.058
 %       derivativeobs          0.020
+%       derivatives            0.591
 %       epinf                 76.727
 %       hierprior              2.734
 %       hurdle                 2.286
@@ -37,6 +41,7 @@ function log = runtestset(mode)
 %       multiclass            42.372
 %       multiclass_nested_ep   1.088
 %       multinom               1.027
+%       multivariategp         0.405
 %       neuralnetcov           0.076
 %       periodic               0.380
 %       quantilegp             2.862
@@ -79,6 +84,7 @@ fast_tests = {'test_binomial1' ...
 'test_kalman1' ...
 'test_lgcp' ...
 'test_monotonic2' ...
+'test_multivariategp' ...
 'test_neuralnetcov' ...
 'test_periodic' ...
 'test_regression_additive1' ...

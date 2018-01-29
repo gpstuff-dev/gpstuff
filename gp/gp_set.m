@@ -149,9 +149,13 @@ function gp = gp_set(varargin)
 %                     is a matrix of data inputs then x(tr_index{i},:) 
 %                     are the inputs belonging to the i'th block.
 %
-%    The additional fields needed with derivative observations
-%      derivobs     - Tells whether derivative observations are
-%                     used: 'on' or 'off' (default).
+%    The additional fields needed when derivatives are also modeled
+%      deriv        - Tells whether derivatives are modeled or not. 
+%                     []          no derivatives, default
+%                     integer>0   derivatives are modeled, the integer
+%                                 tells the column of x that tells the
+%                                 direction of modeled derivative.
+%                                 (see demo_derivatives)
 %
 %    The additional fields needed with SVI (stochastic variational
 %    inference) GP model are:
@@ -218,8 +222,7 @@ function gp = gp_set(varargin)
                    iscell(x));
   ip.addParamValue('tr_index', [], @(x) ~isempty(x) || iscell(x))    
   ip.addParamValue('comp_cf', [], @(x) iscell(x))    
-  ip.addParamValue('derivobs','off', @(x) islogical(x) || isscalar(x) || ...
-                   (ischar(x) && ismember(x,{'on' 'off'})));
+  ip.addParamValue('deriv',[], @(x) isscalar(x) && x>0 && mod(x,floor(x))==0);
   ip.addParamValue('savememory','off', @(x) islogical(x) || isscalar(x) || ...
                    (ischar(x) && ismember(x,{'on' 'off'})));
 %   ip.addParamValue('optim_method', [], @(x) isreal(x) && (x==1 || x==2) &&  ...
@@ -280,21 +283,13 @@ function gp = gp_set(varargin)
     gp.jitterSigma2=ip.Results.jitterSigma2;
   end
   % Gradient observation
-  if init || ~ismember('derivobs',ip.UsingDefaults) || ~isfield(gp,'derivobs')
-    derivobs=ip.Results.derivobs;
-    if ~ischar(derivobs)
-      if derivobs
-        derivobs='on';
-      else
-        derivobs='off';
-      end
-    end
-    switch derivobs
-      case 'on'
-        gp.derivobs=true;
-      case 'off'
-        if isfield(gp,'derivobs')
-          gp=rmfield(gp,'derivobs');
+  if init || ~ismember('deriv',ip.UsingDefaults) 
+    deriv=ip.Results.deriv;
+    if ~isempty(deriv)
+        gp.deriv = deriv;
+    else
+        if isfield(gp,'deriv')
+            gp=rmfield(gp,'derivobs');
         end
     end
   end

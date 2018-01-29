@@ -10,7 +10,7 @@ function [C, Cinv] = gp_cov(gp, x1, x2, predcf)
 %    which are used for forming the matrix. If empty or not given,
 %    the matrix is formed with all functions.
 %
-% Copyright (c) 2007-2010, 2016 Jarno Vanhatalo
+% Copyright (c) 2007-2017 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen
 
 % This software is distributed under the GNU General Public
@@ -24,10 +24,25 @@ ncf = length(gp.cf);
 [n,m]=size(x1);
 [n2,m2]=size(x2);
 
-C = sparse(0);
+C = sparse(n,n2);
 if nargin < 4 || isempty(predcf)
     predcf = 1:ncf;
 end
+% derivative observations in use
+if isfield(gp,'deriv') && gp.deriv  % derivative observations in use
+    ind_Ddim = x1(:,gp.deriv);
+    ind_Ddim_derivs = ind_Ddim(ind_Ddim>0);
+    uDdim = unique(ind_Ddim_derivs);
+    ind_Ddim2 = x2(:,gp.deriv);
+    ind_Ddim_derivs2 = ind_Ddim2(ind_Ddim2>0);
+    uDdim2 = unique(ind_Ddim_derivs2);
+    x1 = x1(:,setdiff(1:m,gp.deriv));   % Take only the non-index columns
+    x2 = x2(:,setdiff(1:m,gp.deriv));   % Take only the non-index columns
+    if any(strcmp(gp.type,{'FIC' 'PIC' 'PIC_BLOCK' 'CS+FIC' 'VAR' 'DTC' 'SOR'}))
+        error('derivative observations have not been implemented for sparse GPs')
+    end
+end
+% Loop through the covariance functions
 for i=1:length(predcf)
     gpcf = gp.cf{predcf(i)};
     if isfield(gp.lik, 'int_magnitude') && gp.lik.int_magnitude
@@ -36,57 +51,51 @@ for i=1:length(predcf)
         end
     end
     % derivative observations in use
-    if isfield(gp,'derivobs') && gp.derivobs
-        if m==1
-            Kff = gpcf.fh.cov(gpcf, x1, x2);
-            Kdf = gpcf.fh.ginput4(gpcf, x1, x2);
-            Kdf=Kdf{1};
-            Kfd = gpcf.fh.ginput4(gpcf, x2, x1); 
-            Kfd=Kfd{1}';     % Notice, Kfd is calculated with lower left 
-                             % parts. Hence, we need a transpose             
-            Kdd = gpcf.fh.ginput2(gpcf, x1, x2);
-            
-            C = C + [Kff Kfd; Kdf Kdd{1}];
-            
-        else % Input dimension is >1            
+    if isfield(gp,'deriv') && gp.deriv
+        
+        if (~isfield(gpcf, 'selectedVariables') || any(ismember(gpcf.selectedVariables,uDdim)) || any(ismember(gpcf.selectedVariables,uDdim2)))
+            % !!! Note. The check whether to calculate derivative
+            % matrices for a covariance function could/should be made
+            % nicer
+            Ktemp = sparse(n,n2);
             % the block of covariance matrix
-            Kff = gpcf.fh.cov(gpcf, x1, x2);
-            % the blocks on the left side, below Kff 
-            Kdf = gpcf.fh.ginput4(gpcf, x1, x2);
-            Kdf=cat(1,Kdf{1:m});
-            % the blocks on the right side, next to Kff 
-            Kfd = gpcf.fh.ginput4(gpcf, x2, x1);
-            Kfd=cat(1,Kfd{1:m})';   % Notice, Kfd is calculated with lower 
-                                    % left parts. Hence, we need a transpose 
-            % the diagonal blocks of double derivatives
-            D = gpcf.fh.ginput2(gpcf, x1, x2);
-            % the off diagonal blocks of double derivatives on the
-            % upper right corner. See e.g. gpcf_squared -> ginput3
-            Kdf12 = gpcf.fh.ginput3(gpcf, x1 ,x2);
-            Kdf21 = gpcf.fh.ginput3(gpcf, x2, x1);
-            
-            % Now build up Kdd m*n x m*n2 matrix, which contains all the
-            % both partial derivative" -matrices
-            
-            % Add the diagonal matrices
-            Kdd=blkdiag(D{1:m});
-            % Add the non-diagonal matrices to Kdd
-            ii3=0;
-            for j=0:m-2
-                for i=1+j:m-1
-                    ii3=ii3+1;
-                    Kdd(i*n+1:(i+1)*n,j*n2+1:j*n2+n2) = Kdf21{ii3}';  % down left 
-                    % Notice, Kdf12 is calculated with upper right parts.
-                    % Hence we need transpose above
-                    Kdd(j*n+1:j*n+n,i*n2+1:(i+1)*n2) = Kdf12{ii3};    % up right
+            if sum(ind_Ddim==0)>0 &&  sum(ind_Ddim2==0)>0
+                % non-derivative observation non-derivative prediction
+                Ktemp(ind_Ddim==0,ind_Ddim2==0) = gpcf.fh.cov(gpcf, x1(ind_Ddim==0,:), x2(ind_Ddim2==0,:));
+            end
+            % non-derivative observation, derivative prediction
+            if sum(ind_Ddim==0)>0
+                for u2 = 1:length(uDdim2)
+                    Kdf = gpcf.fh.ginput4(gpcf, x2(ind_Ddim2==uDdim2(u2),:), x1(ind_Ddim==0,:), uDdim2(u2));
+                    Ktemp(ind_Ddim==0,ind_Ddim2==uDdim2(u2)) = Kdf{1}';
                 end
             end
-            
-            % Gather all the matrices into one final matrix K which is the
-            % training covariance matrix
-            C = C + [Kff Kfd; Kdf Kdd];
+            % Derivative observation non-derivative prediction
+            if sum(ind_Ddim2==0)>0                
+                for u1 = 1:length(uDdim)
+                    Kdf = gpcf.fh.ginput4(gpcf, x1(ind_Ddim==uDdim(u1),:), x2(ind_Ddim2==0,:), uDdim(u1));
+                    Ktemp(ind_Ddim==uDdim(u1),ind_Ddim2==0) = Kdf{1};
+                end
+            end
+            % Derivative observation, derivative prediction
+            for u1 = 1:length(uDdim)
+                for u2=1:length(uDdim2)
+                    if uDdim(u1) == uDdim2(u2)
+                        Kdf2 = gpcf.fh.ginput2(gpcf, x1(ind_Ddim==uDdim(u1),:) ,x2(ind_Ddim2==uDdim2(u2),:), uDdim(u1));
+                    else
+                        Kdf2 = gpcf.fh.ginput3(gpcf, x1(ind_Ddim==uDdim(u1),:) ,x2(ind_Ddim2==uDdim2(u2),:), uDdim(u1), uDdim2(u2));
+                    end
+                    Ktemp(ind_Ddim==uDdim(u1),ind_Ddim2==uDdim2(u2)) = Kdf2{1};
+                end
+                
+            end
+        else
+            Ktemp = zeros(n,n2);
+            Ktemp(ind_Ddim==0,ind_Ddim2==0) = gpcf.fh.cov(gpcf, x1(ind_Ddim==0,:),x2(ind_Ddim2==0,:));
         end
+        C = C+ Ktemp;
     else
+        % Regular GP without derivative observations
         C = C + gpcf.fh.cov(gpcf, x1, x2);
     end
 end
@@ -199,18 +208,3 @@ end
 % end
 % 
 % end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -152,7 +152,7 @@ plot(xt,Eyt_full+2.*sqrt(Varyt_full),'g--')
 axis tight
 caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.lik.sigma2);
 title(caption1)
-legend('Data point', 'predicted mean', '2\sigma error',4)
+legend('Data point', 'predicted mean', '2\sigma error')
 
 subplot(2,1,2)
 [AX, H1, H2] = plotyy(xt, Eft_full2, xt, Eft_full1);

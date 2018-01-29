@@ -374,7 +374,7 @@ function DKff = gpcf_squared_cfg(gpcf, x, x2, mask, i1)
   end
 end
 
-function DKff = gpcf_squared_cfdg(gpcf, x, x2)
+function DKff = gpcf_squared_cfdg(gpcf, x, x2, dims)
 %GPCF_SQUARED_CFDG  Evaluate gradient of covariance function, of
 %                  which has been taken partial derivative with
 %                  respect to x, with respect to parameters.
@@ -397,26 +397,37 @@ function DKff = gpcf_squared_cfdg(gpcf, x, x2)
 %  See also
 %    GPCF_SQUARED_GINPUT
 
-[n,m]=size(x);
+[~,m]=size(x);
 if nargin<3
     x2=x;
 end
+if nargin < 4 || isempty(dims)
+    dims = 1:m;
+end
+ii1=0;
+DKff={};
+if isfield(gpcf,'selectedVariables')
+    selVars = gpcf.selectedVariables;
+else
+    selVars = 1:m;
+end
+c = gpcf.coeffSigma2;
+
 h = x.^2;
 h2 = x2.^2;
 
 ii1=0;
 DKff={};
-c=gpcf.coeffSigma2;
 if ~isempty(gpcf.p.coeffSigma2)
   if length(gpcf.coeffSigma2)==1
     % One coeffSigma2
-    for i1=1:m
+    for i1=dims
       if isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i1)==0
         DK{i1}=zeros(size(x,1),size(x2,1));
       else
         DK{i1}=c(1).*2*x(:,i1)*h2(:,i1)';
         if isequal(gpcf.interactions,'on')
-            for xi2=1:m
+            for xi2=selVars
                 if xi2~=i1
                     DK{i1} = DK{i1} + c(1)*x(:,xi2)*(x2(:,i1).*x2(:,xi2))';
                 end
@@ -425,25 +436,25 @@ if ~isempty(gpcf.p.coeffSigma2)
       end
     end
     ii1=ii1+1;
-    DKff{ii1}=cat(1,DK{1:m});
+    DKff{ii1}=cat(1,DK{1:end});
   else
       % vector of coeffSigma2s
-      for i1=1:m
-          for j=1:m
-              if i1~=j || (isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i1)==0)
+      for i1=1:length(selVars)
+          for j=dims
+              if selVars(i1)~=j %|| (isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i1)==0)
                   DK{j}=zeros(size(x,1),size(x2,1));
               else
                   DK{j}=c(i1).*2*x(:,j)*h2(:,j)';
               end
           end
           ii1=ii1+1;
-          DKff{ii1}=cat(1,DK{1:m});
+          DKff{ii1}=cat(1,DK{1:end});
       end
       if isequal(gpcf.interactions,'on')
-          for xi1=1:m
-              for xi2=xi1+1:m
+          for xi1=1:length(selVars)
+              for xi2=xi1+1:length(selVars)
                   i1=i1+1;
-                  for j=1:m
+                  for j=dims
                       if j==xi1 
                           DK{j} = c(i1)*x(:,xi2)*(x2(:,xi1).*x2(:,xi2))';
                       elseif j==xi2
@@ -453,7 +464,7 @@ if ~isempty(gpcf.p.coeffSigma2)
                       end
                   end
                   ii1=ii1+1;
-                  DKff{ii1}=cat(1,DK{1:m});
+                  DKff{ii1}=cat(1,DK{1:end});
               end
           end
       end
@@ -462,7 +473,7 @@ end
 
 end
 
-function DKff = gpcf_squared_cfdg2(gpcf, x)
+function DKff = gpcf_squared_cfdg2(gpcf, x, x2, dims1, dims2)
 %GPCF_SQUARED_CFDG2  Evaluate gradient of covariance function, of which has
 %                    been taken partial derivatives with respect to both
 %                    input variables x, with respect to parameters.
@@ -486,77 +497,86 @@ function DKff = gpcf_squared_cfdg2(gpcf, x)
 %   GPCF_SQUARED_GINPUT, GPCF_SQUARED_GINPUT2
 
 
-[n,m]=size(x);
+[~, m] =size(x);
+if nargin <3 || isempty(x2)
+    x2=x;
+end
+if nargin < 4 || isempty(dims1)
+    %dims1 = 1:m;
+    error('dims1 needs to be given')
+end
+if nargin < 5 || isempty(dims2)
+    %dims2 = 1:m;
+    error('dims2 needs to be given')
+end
+if isfield(gpcf,'selectedVariables')
+    selVars = gpcf.selectedVariables;
+else
+    selVars = 1:m;
+end
+% NOTICE. AS OF NOW we assume that dims1 and dims2 are scalars
+
 ii1=0;
 if length(gpcf.coeffSigma2)==1
-    c=repmat(gpcf.coeffSigma2,1,(1+m)*m/2);
+    c=repmat(gpcf.coeffSigma2,1,(1+length(selVars))*length(selVars)/2);
 else
     c=gpcf.coeffSigma2;
 end
 if length(gpcf.coeffSigma2)==1
     % One coeffSigma2
-    for k=1:m
-        for j=1:m
-            if k~=j || (isfield(gpcf, 'selectedVariables') && ...
-                    (sum(gpcf.selectedVariables==j)==0 || sum(gpcf.selectedVariables==k)==0))
-                DK{k,j}=zeros(size(x,1),size(x,1));
-                if isequal(gpcf.interactions,'on') && ~(isfield(gpcf, 'selectedVariables') ...
-                        && (sum(gpcf.selectedVariables==j)==0 || sum(gpcf.selectedVariables==k)==0))
-                    DK{k,j} = c(1)*x(:,j)*x(:,k)';
-                end
-            else
-                DK{k,j}=c(1).*4.*x(:,k)*x(:,j)';
-                if isequal(gpcf.interactions,'on')
-                    for xi2=1:m
-                        if xi2~=j
-                            DK{k,j} = DK{k,j} + c(1)*x(:,xi2)*x(:,xi2)';
-                        end
-                    end
+    if dims1~=dims2 %|| (isfield(gpcf, 'selectedVariables') && (sum(gpcf.selectedVariables==j)==0 || sum(gpcf.selectedVariables==k)==0))
+        DK=zeros(size(x,1),size(x2,1));
+        if isequal(gpcf.interactions,'on') && (sum(selVars==dims1)>0 || sum(selVars==dims2)>0)
+            DK = c(1)*x(:,dims1)*x2(:,dims2)';
+        end
+    else
+        if sum(selVars==dims1)==0
+            DK=zeros(size(x,1),size(x2,1));
+        else
+            DK=c(1).*4.*x(:,dims1)*x2(:,dims2)';
+        end
+        if isequal(gpcf.interactions,'on') && sum(selVars==dims1)>0
+            for xi2=selVars
+                if xi2~=dims1
+                    DK = DK + c(1)*x(:,xi2)*x2(:,xi2)';
                 end
             end
         end
     end
     ii1=ii1+1;
-    DKff{ii1}=cell2mat(DK);
+    DKff{ii1}=DK;
 else
     % vector of coeffSigma2s
-    for i1=1:m
-        for k=1:m
-            for j=1:m
-                if k~=j || j~=i1 || (isfield(gpcf, 'selectedVariables') ...
-                        && sum(gpcf.selectedVariables==i1)==0)
-                    DK{k,j}=zeros(size(x,1),size(x,1));
-                else
-                    DK{k,j}=c(i1).*4.*x(:,k)*x(:,j)';
-                end
-            end
+    for i1=1:length(selVars)
+        if dims1~=dims2 || dims2~=selVars(i1)
+            DK=zeros(size(x,1),size(x2,1));
+        else
+            DK=c(i1).*4.*x(:,dims1)*x2(:,dims2)';
         end
         ii1=ii1+1;
-        DKff{ii1}=cell2mat(DK);
+        DKff{ii1}=DK;
     end
     if isequal(gpcf.interactions,'on')
-        for xi1=1:m
-            for xi2=xi1+1:m
+        for xi1=1:length(selVars)
+            for xi2=xi1+1:length(selVars)
                 i1=i1+1;
-                for k=1:m
-                    for j=1:m
-                        if k==xi1 && j==xi2
-                            DK{k,j} = c(i1)*x(:,xi2)*x(:,xi1)';
-                            %DK{k,j} = (c(i1)*x(:,xi1)*x(:,xi2)')';
-                        elseif k==xi2 && j==xi1 
-                            DK{k,j} = c(i1)*x(:,xi1)*x(:,xi2)';
-                            %DK{k,j} = c(i1)*(x(:,xi2)*x(:,xi1)')';
-                        elseif k==j && k==xi1
-                            DK{k,j} = c(i1)*x(:,xi2)*x(:,xi2)';
-                        elseif k==j && k==xi2
-                            DK{k,j} = c(i1)*x(:,xi1)*x(:,xi1)';
-                        else
-                            DK{k,j}=zeros(size(x,1),size(x,1));
-                        end
-                    end
+                %if k==xi1 && j==xi2
+                if dims1==xi1 && dims2==xi2
+                    DK = c(i1)*x(:,xi2)*x2(:,xi1)';
+                %elseif k==xi2 && j==xi1
+                elseif dims1==xi2 && dims2==xi1
+                    DK = c(i1)*x(:,xi1)*x2(:,xi2)';
+                %elseif k==j && k==xi1
+                elseif dims1==dims2 && dims1==xi1    
+                    DK = c(i1)*x(:,xi2)*x2(:,xi2)';
+                %elseif k==j && k==xi2
+                elseif dims1==dims2 && dims1==xi2
+                    DK = c(i1)*x(:,xi1)*x2(:,xi1)';
+                else
+                    DK=zeros(size(x,1),size(x2,1));
                 end
                 ii1=ii1+1;
-                DKff{ii1}=cell2mat(DK);
+                DKff{ii1}=DK;
             end
         end
     end
@@ -672,10 +692,10 @@ end
 
 end
 
-function DKff = gpcf_squared_ginput2(gpcf, x, x2, takeOnlyDiag)
+function DKff = gpcf_squared_ginput2(gpcf, x, x2, dims,takeOnlyDiag)
 %GPCF_SQUARED_GINPUT2  Evaluate gradient of covariance function with
-%                   respect to both input variables x and x2 (in
-%                   same dimension).
+%                   respect to both input variables x and x2 in
+%                   same dimension.
 %
 %  Description
 %    DKff = GPCF_SQUARED_GINPUT2(GPCF, X, X2) takes a covariance
@@ -693,50 +713,65 @@ function DKff = gpcf_squared_ginput2(gpcf, x, x2, takeOnlyDiag)
 %  See also
 %    GPCF_SQUARED_GINPUT, GPCF_SQUARED_GINPUT2, GPCF_SQUARED_CFDG2       
 
-[n,m]=size(x);
+[~,m]=size(x);
 ii1=0;
+if nargin<4 || isempty(dims)
+    dims=1:m;
+end
 if length(gpcf.coeffSigma2)==1
-  c=repmat(gpcf.coeffSigma2,1,(1+m)*m/2);
+    c=repmat(gpcf.coeffSigma2,1,(1+m)*m/2);
 else
     c=gpcf.coeffSigma2;
 end
-if nargin==4 && isequal(takeOnlyDiag,'takeOnlyDiag')
-    if isequal(gpcf.interactions,'on')
-        DKff=[];
-        for i1=1:m
+if isfield(gpcf, 'selectedVariables')
+    sv = gpcf.selectedVariables;
+else 
+    sv = 1:m;
+end
+
+if nargin==5 && isequal(takeOnlyDiag,'takeOnlyDiag')
+    for i1=dims
+        if ~any(sv==i1)%isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i1)==0
+            DK=zeros(size(x,1),1);
+        else
             DK=c(i1).*4.*(x(:,i1).*x2(:,i1));
-            i2=m;
-            for xi1=1:m
-                for xi2=xi1+1:m
-                    i2=i2+1;
-                    if i1==xi1
-                        DK = DK + c(i2)*x(:,xi2).*x2(:,xi2);
-                    elseif i1==xi2
-                        DK = DK + c(i2)*x(:,xi1).*x2(:,xi1);
+            if isequal(gpcf.interactions,'on')
+                i2=length(sv);
+                for xi1=1:length(sv)
+                    for xi2=xi1+1:length(sv)
+                        if any(sv==xi1) && any(sv==xi2)
+                            i2=i2+1;
+                            if i1==xi1
+                                DK = DK + c(i2)*x(:,xi2).*x2(:,xi2);
+                            elseif i1==xi2
+                                DK = DK + c(i2)*x(:,xi1).*x2(:,xi1);
+                            end
+                        end
                     end
                 end
             end
-            DKff = [DKff ; DK];
         end
-    else
-        DKff = kron(c(1:m)',ones(n,1)).*4.*x(:).^2;
+        ii1=ii1+1;
+        DKff{ii1}=DK;
     end
 else
-    for i1=1:m
-        if isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i1)==0
+    for i1=dims
+        if ~any(sv==i1)%isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i1)==0
             DK=zeros(size(x,1),size(x2,1));
         else
             DK=c(i1).*4.*(x(:,i1)*x2(:,i1)');
-        end
-        if isequal(gpcf.interactions,'on')
-            i2=m;
-            for xi1=1:m
-                for xi2=xi1+1:m
-                    i2=i2+1;
-                    if i1==xi1
-                        DK = DK + c(i2)*x(:,xi2)*x2(:,xi2)';
-                    elseif i1==xi2
-                        DK = DK + c(i2)*x(:,xi1)*x2(:,xi1)';
+            if isequal(gpcf.interactions,'on')
+                i2=length(sv);
+                for xi1=1:length(sv)
+                    for xi2=xi1+1:length(sv)
+                        if any(sv==xi1) && any(sv==xi2)
+                            i2=i2+1;
+                            if i1==xi1
+                                DK = DK + c(i2)*x(:,xi2)*x2(:,xi2)';
+                            elseif i1==xi2
+                                DK = DK + c(i2)*x(:,xi1)*x2(:,xi1)';
+                            end
+                        end
                     end
                 end
             end
@@ -747,7 +782,7 @@ else
 end
 end
 
-function DKff = gpcf_squared_ginput3(gpcf, x, x2)
+function DKff = gpcf_squared_ginput3(gpcf, x, x2, dims1, dims2)
 %GPCF_SQUARED_GINPUT3  Evaluate gradient of covariance function with
 %                   respect to both input variables x and x2 (in
 %                   different dimensions).
@@ -781,7 +816,22 @@ function DKff = gpcf_squared_ginput3(gpcf, x, x2)
 %    GPCF_SQUARED_GINPUT, GPCF_SQUARED_GINPUT2, GPCF_SQUARED_CFDG2        
 
 
-[n,m]=size(x);
+[~,m]=size(x);
+if nargin < 3
+    error('Needs at least 3 input arguments')
+end
+if nargin<4 || isempty(dims1)
+    dims1=1:m;
+end
+if nargin<5 || isempty(dims2)
+    dims2=1:m;
+end
+if isfield(gpcf, 'selectedVariables')
+    sv = gpcf.selectedVariables;
+else 
+    sv = 1:m;
+end
+
 ii1=0;
 if length(gpcf.coeffSigma2)==1
   c=repmat(gpcf.coeffSigma2,1,(1+m)*m/2);
@@ -790,12 +840,11 @@ else
 end
 DK=zeros(size(x,1),size(x2,1));
 i2=m;
-for i=1:m-1
-    for j=i+1:m
-        i2=i2+1;
+for i=dims1
+    for j=dims2
         ii1=ii1+1;
-        if isequal(gpcf.interactions,'on') &&...
-                ~(isfield(gpcf, 'selectedVariables') && (sum(gpcf.selectedVariables==i)==0 || sum(gpcf.selectedVariables==j)==0))
+        if isequal(gpcf.interactions,'on') && any(sv==i) && any(sv==j)
+            i2 = min(i,j)*length(sv) - 0.5*min(i,j)*(min(i,j)-1) + max(i,j)-min(i,j);
             DKff{ii1} = c(i2)*x(:,j)*x2(:,i)';
         else
             DKff{ii1}=DK;
@@ -803,9 +852,26 @@ for i=1:m-1
     end
 end
 
+% i2=m;
+% for i=1:m-1
+%     for j=i+1:m
+%         i2=i2+1;
+%         if any(dims1==i) && any(dims2==j)
+%             ii1=ii1+1;
+%             if isequal(gpcf.interactions,'on') && any(sv==i) && any(sv==j)
+% %             if isequal(gpcf.interactions,'on') &&...
+% %                     ~(isfield(gpcf, 'selectedVariables') && (sum(gpcf.selectedVariables==i)==0 || sum(gpcf.selectedVariables==j)==0))
+%                 DKff{ii1} = c(i2)*x(:,j)*x2(:,i)';
+%             else
+%                 DKff{ii1}=DK;
+%             end
+%         end
+%     end
+% end
+
 end
 
-function DKff = gpcf_squared_ginput4(gpcf, x, x2)
+function DKff = gpcf_squared_ginput4(gpcf, x, x2, dims)
 %GPCF_SQUARED_GINPUT  Evaluate gradient of covariance function with respect
 %                    to x. Simplified and faster version of squared_ginput,
 %                    returns full matrices. 
@@ -827,14 +893,66 @@ function DKff = gpcf_squared_ginput4(gpcf, x, x2)
 %    GPCF_SQUARED_PAK, GPCF_SQUARED_UNPAK, GPCF_SQUARED_LP, GP_G
 
 
-if isfield(gpcf, 'selectedVariables') 
-    error('The selectedVariables option has not yet been implemented for gpcf_squared with derivobs=''on'' ')
-    % notice, some parts of the code already take into account the
-    % selectedVariables but the code has not been checked
-end
+% if isfield(gpcf, 'selectedVariables') 
+%     error('The selectedVariables option has not yet been implemented for gpcf_squared with derivobs=''on'' ')
+%     % notice, some parts of the code already take into account the
+%     % selectedVariables but the code has not been checked
+% end
+% 
+% if isfield(gpcf, 'selectedVariables')
+%     m = length(gpcf.selectedVariables);
+%     sv = gpcf.selectedVariables;
+% else 
+%     [~,m]=size(x);
+%     sv = 1:m;
+% end
+% if nargin==2
+%     x2=x;
+% end
+% if nargin<4
+%     dims=1:size(x,2);
+% end
+% if length(gpcf.coeffSigma2)==1    
+%     c=repmat(gpcf.coeffSigma2,1,(1+m)*m/2);
+% else
+%     % If coeffSigma is vector, we trust it is of rigth length
+%     c=gpcf.coeffSigma2;
+% end
+% h2=x2.^2;
+% ii1=0;
+% for i=dims
+%     if ~any(sv==i) %isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i)==0
+%         DK=zeros(size(x,1),size(x2,1));
+%     else
+%         DK=c(i).*2.*x(:,i)*h2(:,i)';
+%         if isequal(gpcf.interactions,'on')
+%             i2=m;
+%             for xi1=sv
+%                 sv2 = sv(sv>xi1);
+%                 for xi2=sv2 %xi1+1:m
+%                     i2 = i2+1;
+%                     if i==xi1
+%                         DK = DK + c(i2)*x(:,xi2)*(x2(:,i).*x2(:,xi2))';
+%                     elseif i==xi2
+%                         DK = DK + c(i2)*x(:,xi1)*(x2(:,i).*x2(:,xi1))';
+%                     end
+%                 end
+%             end
+%         end
+%     end
+%     ii1=ii1+1;
+%     DKff{ii1}=DK;
+% end
 
 [n,m]=size(x);
-i1=1:m;
+if nargin<4
+    dims=1:m;
+end
+if isfield(gpcf, 'selectedVariables')
+    sv = gpcf.selectedVariables;
+else 
+    sv = 1:m;
+end
 ii1=0;
 if nargin==2
     x2=x;
@@ -845,21 +963,24 @@ if length(gpcf.coeffSigma2)==1
 else
     c=gpcf.coeffSigma2;
 end
-for i=i1
-    if isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i)==0
+for i=dims
+    if ~any(sv==i) % isfield(gpcf, 'selectedVariables') && sum(gpcf.selectedVariables==i)==0
         DK=zeros(size(x,1),size(x2,1));
     else
         DK=c(i).*2.*x(:,i)*h2(:,i)';
-    end
-    if isequal(gpcf.interactions,'on')
-        i2=m;
-        for xi1=1:m
-            for xi2=xi1+1:m
-                i2=i2+1;
-                if i==xi1
-                    DK = DK + c(i2)*x(:,xi2)*(x2(:,i).*x2(:,xi2))';
-                elseif i==xi2
-                    DK = DK + c(i2)*x(:,xi1)*(x2(:,i).*x2(:,xi1))';
+        if isequal(gpcf.interactions,'on')
+            i2=length(sv);
+            for xi1=1:length(sv)
+                for xi2=xi1+1:length(sv)
+                    if any(sv==xi1) && any(sv==xi2)
+                        i2=i2+1;
+%                        i2 = min(i,j)*length(sv) - 0.5*min(i,j)*(min(i,j)-1) + max(i,j)-min(i,j)
+                        if i==xi1
+                            DK = DK + c(i2)*x(:,xi2)*(x2(:,i).*x2(:,xi2))';
+                        elseif i==xi2
+                            DK = DK + c(i2)*x(:,xi1)*(x2(:,i).*x2(:,xi1))';
+                        end
+                    end
                 end
             end
         end
@@ -867,7 +988,6 @@ for i=i1
     ii1=ii1+1;
     DKff{ii1}=DK;
 end
-
 end
 
 function C = gpcf_squared_cov(gpcf, x1, x2, varargin)

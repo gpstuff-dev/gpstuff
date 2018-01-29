@@ -104,18 +104,28 @@ if nargout>1
     end
     
     % Calculate Derivative of the expected improvement if there are training points for it
-    if ~isempty(x)        
-        % derivative of covariance matrix wrt. x
-        Kderiv = zeros(length(x_new),1);
-        Knxderiv = zeros(length(x_new),size(x,1));
-        for i1 = 1:length(gp.cf)
-            gpcf = gp.cf{i1};
-            DK = gpcf.fh.ginput(gpcf, x_new);
-            DKnx = gpcf.fh.ginput(gpcf, x_new, x);
-            for j1=1:length(x_new)
-                Kderiv(j1) = Kderiv(j1) + DK{j1};
-                Knxderiv(j1,:) = Knxderiv(j1,:) + DKnx{j1};
+    if ~isempty(x)
+        if ~isfield(gp,'deriv')
+            % derivative of covariance matrix wrt. x
+            % !! The below for loops are needed since fh.ginput is
+            %    implemented for most of the cov fun but the other derivatives
+            %    of covariance matrix are not.
+            Kderiv = zeros(length(x_new),1);
+            Knxderiv = zeros(length(x_new),size(x,1));
+            for i1 = 1:length(gp.cf)
+                gpcf = gp.cf{i1};
+                DK = gpcf.fh.ginput(gpcf, x_new);
+                DKnx = gpcf.fh.ginput(gpcf, x_new, x);
+                for j1=1:length(x_new)
+                    Kderiv(j1) = Kderiv(j1) + DK{j1};
+                    Knxderiv(j1,:) = Knxderiv(j1,:) + DKnx{j1};
+                end
             end
+        else
+            x_newt = [repmat(x_new,size(x_new,2)-1,1)];
+            x_newt(:,end) = 1:size(x_newt,2)-1;
+            Knxderiv = gp_cov(gp, x_newt, x);
+            Kderiv = 2*gp_cov(gp, x_newt, x_new);
         end
         
         % derivative of EI wrt. Ef and Varf
@@ -123,8 +133,8 @@ if nargout>1
         dEIdVarf = PDFpart/(2*sqrt(Varf));
         
         % Derivative of Ef and Varf wrt. x
-        dEfdx = Knxderiv(1:size(x_new,1),:)*a(1:size(x,1));
-        dVarfdx = Kderiv - (Knxderiv(1:size(x_new,1),:)*invCKnxt(1:size(x,1),1:size(x_new,1)) + (invCKnxt(1:size(x,1),1:size(x_new,1))'*Knxderiv(1:size(x_new,1),:)')');
+        dEfdx = Knxderiv*a;
+        dVarfdx = Kderiv - (Knxderiv*invCKnxt + (invCKnxt'*Knxderiv')');
         
         % Derivative of EI
         EIg = -( dEIdEf*dEfdx + dEIdVarf*dVarfdx )';
