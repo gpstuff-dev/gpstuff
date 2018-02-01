@@ -9,7 +9,7 @@ function gpcf = gpcf_prod(varargin)
 %  See also
 %    GP_SET, GPCF_*
 %
-% Copyright (c) 2009-2010 Jarno Vanhatalo
+% Copyright (c) 2009-2010, 2018 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2014 Arno Solin and Jukka Koskenranta
 
@@ -54,7 +54,12 @@ function gpcf = gpcf_prod(varargin)
     gpcf.fh.lp = @gpcf_prod_lp;
     gpcf.fh.lpg = @gpcf_prod_lpg;
     gpcf.fh.cfg = @gpcf_prod_cfg;
+    gpcf.fh.cfdg = @gpcf_prod_cfdg;
+    gpcf.fh.cfdg2 = @gpcf_prod_cfdg2;
     gpcf.fh.ginput = @gpcf_prod_ginput;
+    gpcf.fh.ginput2 = @gpcf_prod_ginput2;
+    gpcf.fh.ginput3 = @gpcf_prod_ginput3;
+    gpcf.fh.ginput4 = @gpcf_prod_ginput4;
     gpcf.fh.cov = @gpcf_prod_cov;
     gpcf.fh.trcov  = @gpcf_prod_trcov;
     gpcf.fh.trvar  = @gpcf_prod_trvar;
@@ -341,6 +346,201 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask, i1)
   end
 end
 
+function DKff = gpcf_prod_cfdg(gpcf, x, x2, dims)
+%GPCF_SEXP_CFDG  Evaluate gradient of covariance function, of
+%                which has been taken partial derivative with
+%                respect to x, with respect to parameters.
+%
+%  Description
+%    DKff = GPCF_SEXP_CFDG(GPCF, X) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of derivatived covariance matrix
+%    dK(df,f)/dhyp = d(d k(X,X)/dx)/dhyp, with respect to the
+%    parameters
+%
+%    Evaluate: DKff{1:m} = d Kff / d magnSigma2
+%              DKff{m+1:2m} = d Kff / d lengthScale_m
+%    m is the dimension of inputs. If ARD is used, then multiple
+%    lengthScales. This subfunction is needed when using derivative 
+%    observations.
+%
+%         dims - is a vector of input dimensions with respect to which the
+%                derivatives of the covariance function have been calculated
+%                [by default dims=1:size(x,2)]
+%
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
+%  See also
+%    GPCF_SEXP_GINPUT
+
+[n, m] =size(x);
+ncf = length(gpcf.cf);
+
+if nargin <3 || isempty(x2)
+    x2=x;
+end
+if nargin < 4 || isempty(dims)
+    dims = 1:m;
+end
+
+% check whether there are any covariance functions that depend on dims
+% covariate
+ind = [];
+DKff = {};
+for i1 = 1:ncf
+    if (~isfield(gpcf.cf{i1}, 'selectedVariables') || any(ismember(gpcf.cf{i1}.selectedVariables,dims)))
+        ind(end+1) = i1;
+    end
+end
+if ~isempty(ind)
+    % Calculate derivative
+    
+    % calculate the individual covariance functions
+    Ci = {};
+    C = 1;
+    for i1=1:ncf
+        Ci{i1} = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
+        C = C.*Ci{i1};
+    end
+    
+    for i1=1:ncf
+        if any(i1 == ind)
+            DK = gpcf.cf{i1}.fh.cfdg(gpcf.cf{i1}, x, x2, dims);
+            for i2 = 1:length(DK)
+                DKff{end+1} = DK{i2}.*C./Ci{i1};
+            end
+        else
+            DK = gpcf.cf{i1}.fh.lpg(gpcf.cf{i1});
+            for i2 = 1:length(DK)
+                DKff{end+1} = 0;
+            end
+        end
+    end
+else
+    DK = gpcf.fh.lpg(gpcf);
+    for i2 = 1:length(DK)
+        DKff{end+1} = 0;
+    end
+end
+% 
+% 
+% % Evaluate the gradients
+% ind = 1:ncf;
+% DKff = {};
+% i3=1:ncf;
+% for i=i3
+%     cf = gpcf.cf{i};
+%     DK = cf.fh.cfg(cf, x,x2);
+%     
+%     CC = 1;
+%     for kk = ind(ind~=i)
+%         CC = CC.*C{kk};
+%     end
+%     
+%     for j = 1:length(DK)
+%         DKff{end+1} = DK{j}.*CC;
+%     end
+% end
+
+
+
+
+
+end
+
+
+function DKff = gpcf_prod_cfdg2(gpcf, x, x2, dims1, dims2)
+%GPCF_SEXP_CFDG  Evaluate gradient of covariance function, of
+%                which has been taken partial derivative with
+%                respect to x, with respect to parameters.
+%
+%  Description
+%    DKff = GPCF_SEXP_CFDG(GPCF, X) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of derivatived covariance matrix
+%    dK(df,f)/dhyp = d(d k(X,X)/dx)/dhyp, with respect to the
+%    parameters
+%
+%    Evaluate: DKff{1:m} = d Kff / d magnSigma2
+%              DKff{m+1:2m} = d Kff / d lengthScale_m
+%    m is the dimension of inputs. If ARD is used, then multiple
+%    lengthScales. This subfunction is needed when using derivative 
+%    observations.
+%
+%         dims - is a vector of input dimensions with respect to which the
+%                derivatives of the covariance function have been calculated
+%                [by default dims=1:size(x,2)]
+%
+%
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
+%  See also
+%    GPCF_SEXP_GINPUT
+
+[n, m] =size(x);
+ncf = length(gpcf.cf);
+
+if nargin <3 || isempty(x2)
+    x2=x;
+end
+if nargin < 4 || isempty(dims1)
+    %dims1 = 1:m;
+    error('dims1 needs to be given')
+end
+if nargin < 5 || isempty(dims2)
+    %dims2 = 1:m;
+    error('dims2 needs to be given')
+end
+
+
+% check whether there are any covariance functions that depend on dims
+% covariate
+ind = [];
+DKff = {};
+for i1 = 1:ncf
+    if (~isfield(gpcf.cf{i1}, 'selectedVariables') || any(ismember(gpcf.cf{i1}.selectedVariables,dims1)) || any(ismember(gpcf.cf{i1}.selectedVariables,dims2)))
+        ind(end+1) = i1;
+    end
+end
+if ~isempty(ind)
+    % Calculate derivative
+    
+    % calculate the individual covariance functions
+    Ci = {};
+    C = 1;
+    for i1=1:ncf
+        Ci{i1} = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
+        C = C.*Ci{i1};
+    end
+    
+    for i1=1:ncf
+        if any(i1 == ind)
+            DK = gpcf.cf{i1}.fh.cfdg2(gpcf.cf{i1}, x, x2, dims1, dims2);
+            for i2 = 1:length(DK)
+                DKff{end+1} = DK{i2}.*C./Ci{i1};
+            end
+        else
+            DK = gpcf.cf{i1}.fh.lpg(gpcf.cf{i1});
+            for i2 = 1:length(DK)
+                DKff{end+1} = 0;
+            end
+        end
+    end
+else
+    DK = gpcf.fh.lpg(gpcf);
+    for i2 = 1:length(DK)
+        DKff{end+1} = 0;
+    end
+end
+
+end
+
+
 
 function DKff = gpcf_prod_ginput(gpcf, x, x2, i1)
 %GPCF_PROD_GINPUT  Evaluate gradient of covariance function with 
@@ -466,6 +666,190 @@ function DKff = gpcf_prod_ginput(gpcf, x, x2, i1)
   end
   
 end
+
+
+function [DKff, DKff1, DKff2]  = gpcf_prod_ginput2(gpcf, x, x2, dims, takeOnlyDiag)
+%GPCF_PROD_GINPUT2  Evaluate gradient of covariance function with
+%                   respect to both input variables x and x2 (in
+%                   same dimension).
+%
+%  Description
+%    DKff = GPCF_PROD_GINPUT2(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of twice derivatived covariance
+%    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
+%    elements). Input variable's dimensions are expected to be
+%    same. The function returns also DKff1 and DKff2 which are
+%    parts of DKff and needed with CFDG2. DKff = DKff1 -
+%    DKff2. This subfunction is needed when using derivative 
+%    observations.
+%   
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
+%  See also
+%    GPCF_PROD_GINPUT, GPCF_PROD_GINPUT2, GPCF_PROD_CFDG2 
+if nargin < 5
+    takeOnlyDiag=[];
+end
+
+ncf = length(gpcf.cf);
+
+% check whether there are any covariance functions that depend on dims
+% covariate
+ind = [];
+for i1 = 1:ncf
+    if (~isfield(gpcf.cf{i1}, 'selectedVariables') || any(ismember(gpcf.cf{i1}.selectedVariables,dims)))
+        ind(end+1) = i1;
+    end
+end
+% Calculate derivative
+if ~isempty(ind)
+    % evaluate the individual covariance functions
+    C = 1;
+    K = 0;
+    for i1=1:ncf
+        Ci = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
+        C = C.*Ci;
+        if any(i1 == ind)
+            Dt = gpcf.cf{i1}.fh.ginput2(gpcf.cf{i1}, x, x2, dims, takeOnlyDiag);
+            if length(Dt)>1
+                error('gpcf_prod->ginput2: something is wrong')
+            end
+            K = K+Dt{1}./Ci;
+        end
+    end
+    DKff = {C.*K};
+else
+    DKff = {0};
+end
+
+end
+
+
+function DKff = gpcf_prod_ginput3(gpcf, x, x2, dims1, dims2)
+%GPCF_PROD_GINPUT3  Evaluate gradient of covariance function with
+%                   respect to both input variables x and x2 (in
+%                   different dimensions).
+%
+%  Description
+%    DKff = GPCF_PROD_GINPUT3(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of twice derivatived covariance
+%    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
+%    elements). The derivative is calculated in multidimensional
+%    problem between input's observation dimensions which are not
+%    same. This subfunction is needed when using derivative 
+%    observations.
+%
+%    ---- !!note this help text needs to be corrected !! ---
+%    DKff is a cell array with the following elements:
+%      DKff{1} = dk(X1,X2)/dX1_1dX2_2
+%      DKff{2} = dk(X1,X2)/dX1_1dX2_3
+%       ... 
+%      DKff{m-1} = dk(X1,X2)/dX1_1dX2_m
+%      DKff{m} = dk(X1,X2)/dX1_2dX2_3
+%       ...
+%      DKff{m} = dk(X1,X2)/dX1_(m-1)dX2_m
+%    where _m denotes the input dimension with respect to which the
+%    gradient is calculated.
+%     ---- clip ---
+%   
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
+%  See also
+%    GPCF_PROD_GINPUT, GPCF_PROD_GINPUT2, GPCF_PROD_CFDG2 
+
+ncf = length(gpcf.cf);
+
+% check whether there are any covariance functions that depend on dims
+% covariate
+ind = [];
+for i1 = 1:ncf
+    if (~isfield(gpcf.cf{i1}, 'selectedVariables') || any(ismember(gpcf.cf{i1}.selectedVariables,dims1)) || any(ismember(gpcf.cf{i1}.selectedVariables,dims2)) )
+        ind(end+1) = i1;
+    end
+end
+% Calculate derivative
+if ~isempty(ind)
+    % evaluate the individual covariance functions
+    C = 1;
+    K = 0;
+    for i1=1:ncf
+        Ci = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
+        C = C.*Ci;
+        if any(i1 == ind)
+            Dt = gpcf.cf{i1}.fh.ginput3(gpcf.cf{i1}, x, x2, dims1, dims2);
+            if length(Dt)>1
+                error('gpcf_prod->ginput2: something is wrong')
+            end
+            K = K+Dt{1}./Ci;
+        end
+    end
+    DKff = {C.*K};
+else
+    DKff = {0};
+end
+
+
+end
+
+function DKff = gpcf_prod_ginput4(gpcf, x, x2, dims)
+%GPCF_PROD_GINPUT4  Evaluate gradient of covariance function with 
+%                  respect to x. Simplified and faster version of
+%                  sexp_ginput, returns full matrices.
+%
+%  Description
+%    DKff = GPCF_PROD_GINPUT4takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of covariance matrix Kff = k(X,X) with
+%    respect to X (whole matrix). This subfunction is needed when 
+%    using derivative observations.
+%   
+%    Note! When coding the derivatives of the covariance function, remember
+%    to double check them. See gp_cov for lines of code to check the
+%    matrices
+%
+%  See also
+%    GPCF_PROD_GINPUT, GPCF_PROD_GINPUT2, GPCF_PROD_CFDG2 
+
+ncf = length(gpcf.cf);
+
+% check whether there are any covariance functions that depend on dims
+% covariate
+ind = [];
+for i1 = 1:ncf
+    if (~isfield(gpcf.cf{i1}, 'selectedVariables') || any(ismember(gpcf.cf{i1}.selectedVariables,dims)))
+        ind(end+1) = i1;
+    end
+end
+% Calculate derivative
+if ~isempty(ind)
+    % evaluate the individual covariance functions
+    C = 1;
+    K = 0;
+    for i1=1:ncf
+        Ci = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
+        C = C.*Ci;
+        if any(i1 == ind)            
+            Dt = gpcf.cf{i1}.fh.ginput4(gpcf.cf{i1}, x, x2, dims);
+            if length(Dt)>1
+                error('gpcf_prod->ginput2: something is wrong')
+            end
+            K = K+Dt{1}./Ci;
+        end
+    end
+    DKff = {C.*K};
+else
+    DKff = {0};
+end
+
+
+end
+
 
 
 function C = gpcf_prod_cov(gpcf, x1, x2)

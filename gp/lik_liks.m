@@ -671,7 +671,11 @@ else
         ind = zi==indj(j);
         likj = lik.liks{indj(j)};
         
-        lpy(ind) = likj.fh.predy(likj, Ef(ind), Varf(ind), yt(ind), zt(ind));
+        if isempty(zt)
+            lpy(ind) = likj.fh.predy(likj, Ef(ind), Varf(ind), yt(ind), []);
+        else
+            lpy(ind) = likj.fh.predy(likj, Ef(ind), Varf(ind), yt(ind), zt(ind));
+        end
     end
 end
 
