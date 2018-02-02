@@ -376,15 +376,19 @@ function DKff = gpcf_prod_cfdg(gpcf, x, x2, dims)
 %  See also
 %    GPCF_SEXP_GINPUT
 
-[n, m] =size(x);
+
+
 ncf = length(gpcf.cf);
 
+[~, m] =size(x);
 if nargin <3 || isempty(x2)
     x2=x;
 end
 if nargin < 4 || isempty(dims)
-    dims = 1:m;
+    %dims1 = 1:m;
+    error('dims1 needs to be given')
 end
+
 
 % check whether there are any covariance functions that depend on dims
 % covariate
@@ -397,7 +401,6 @@ for i1 = 1:ncf
 end
 if ~isempty(ind)
     % Calculate derivative
-    
     % calculate the individual covariance functions
     Ci = {};
     C = 1;
@@ -405,18 +408,33 @@ if ~isempty(ind)
         Ci{i1} = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
         C = C.*Ci{i1};
     end
-    
-    for i1=1:ncf
-        if any(i1 == ind)
-            DK = gpcf.cf{i1}.fh.cfdg(gpcf.cf{i1}, x, x2, dims);
-            for i2 = 1:length(DK)
-                DKff{end+1} = DK{i2}.*C./Ci{i1};
-            end
-        else
-            DK = gpcf.cf{i1}.fh.lpg(gpcf.cf{i1});
-            for i2 = 1:length(DK)
-                DKff{end+1} = 0;
-            end
+      
+    if ncf==2
+        DKdx1 = gpcf.cf{1}.fh.cfdg(gpcf.cf{1}, x, x2, dims);
+        DKdx2 = gpcf.cf{2}.fh.cfdg(gpcf.cf{2}, x, x2, dims);
+        DKx1 = gpcf.cf{1}.fh.ginput4(gpcf.cf{1}, x, x2, dims);
+        DKx2 = gpcf.cf{2}.fh.ginput4(gpcf.cf{2}, x, x2, dims);
+        DK1 = gpcf.cf{1}.fh.cfg(gpcf.cf{1}, x, x2);
+        DK2 = gpcf.cf{2}.fh.cfg(gpcf.cf{2}, x, x2);
+        
+        for i2 = 1:length(DK1)
+            DKff{end+1} = DKdx1{i2}.*C./Ci{1} + DK1{i2}.*DKx2{1};
+        end
+        for i2 = 1:length(DK2)
+            DKff{end+1} = DKdx2{i2}.*C./Ci{2} + DK2{i2}.*DKx1{1};
+        end
+        
+    else
+        error('not implemented yet')
+        for i1=1:ncf
+            
+            DKdx = gpcf.cf{i1}.fh.cfdg(gpcf.cf{i1}, x, x2, dims);
+            DK = gpcf.cf{i1}.fh.cfg(gpcf.cf{i1}, x, x2);
+            
+            gpcftmp = gpcf;
+            gpcftmp.cf = {gpcftmp.cf(1:ncf~=i1)};
+            % continue from here
+            %DKx2 =
         end
     end
 else
@@ -425,28 +443,6 @@ else
         DKff{end+1} = 0;
     end
 end
-% 
-% 
-% % Evaluate the gradients
-% ind = 1:ncf;
-% DKff = {};
-% i3=1:ncf;
-% for i=i3
-%     cf = gpcf.cf{i};
-%     DK = cf.fh.cfg(cf, x,x2);
-%     
-%     CC = 1;
-%     for kk = ind(ind~=i)
-%         CC = CC.*C{kk};
-%     end
-%     
-%     for j = 1:length(DK)
-%         DKff{end+1} = DK{j}.*CC;
-%     end
-% end
-
-
-
 
 
 end
@@ -482,9 +478,9 @@ function DKff = gpcf_prod_cfdg2(gpcf, x, x2, dims1, dims2)
 %  See also
 %    GPCF_SEXP_GINPUT
 
-[n, m] =size(x);
 ncf = length(gpcf.cf);
 
+[~, m] =size(x);
 if nargin <3 || isempty(x2)
     x2=x;
 end
@@ -497,6 +493,7 @@ if nargin < 5 || isempty(dims2)
     error('dims2 needs to be given')
 end
 
+% NOTICE. AS OF NOW we assume that dims1 and dims2 are scalars
 
 % check whether there are any covariance functions that depend on dims
 % covariate
@@ -509,26 +506,58 @@ for i1 = 1:ncf
 end
 if ~isempty(ind)
     % Calculate derivative
-    
     % calculate the individual covariance functions
     Ci = {};
     C = 1;
     for i1=1:ncf
         Ci{i1} = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
-        C = C.*Ci{i1};
+        %C = C.*Ci{i1};
     end
-    
-    for i1=1:ncf
-        if any(i1 == ind)
-            DK = gpcf.cf{i1}.fh.cfdg2(gpcf.cf{i1}, x, x2, dims1, dims2);
-            for i2 = 1:length(DK)
-                DKff{end+1} = DK{i2}.*C./Ci{i1};
-            end
+      
+    if ncf==2
+        DKdx11 = gpcf.cf{1}.fh.cfdg(gpcf.cf{1}, x, x2, dims1);
+        DKdx21 = gpcf.cf{2}.fh.cfdg(gpcf.cf{2}, x, x2, dims1);
+        
+        DKdx12 = gpcf.cf{1}.fh.cfdg(gpcf.cf{1}, x2, x, dims2);
+        DKdx22 = gpcf.cf{2}.fh.cfdg(gpcf.cf{2}, x2, x, dims2);        
+        
+        DKdx1_2 = gpcf.cf{1}.fh.cfdg2(gpcf.cf{1}, x, x2, dims1, dims2);
+        DKdx2_2 = gpcf.cf{2}.fh.cfdg2(gpcf.cf{2}, x, x2, dims1, dims2);
+        
+        DKx11 = gpcf.cf{1}.fh.ginput4(gpcf.cf{1}, x, x2, dims1);
+        DKx21 = gpcf.cf{2}.fh.ginput4(gpcf.cf{2}, x, x2, dims1);
+        DKx12 = gpcf.cf{1}.fh.ginput4(gpcf.cf{1}, x2, x, dims2);
+        DKx22 = gpcf.cf{2}.fh.ginput4(gpcf.cf{2}, x2, x, dims2);
+        
+        if dims1==dims2
+            D2Kx1 = gpcf.cf{1}.fh.ginput2(gpcf.cf{1}, x, x2, dims1, dims2);
+            D2Kx2 = gpcf.cf{2}.fh.ginput2(gpcf.cf{2}, x, x2, dims1, dims2);
         else
-            DK = gpcf.cf{i1}.fh.lpg(gpcf.cf{i1});
-            for i2 = 1:length(DK)
-                DKff{end+1} = 0;
-            end
+            D2Kx1 = gpcf.cf{1}.fh.ginput3(gpcf.cf{1}, x, x2, dims1, dims2);
+            D2Kx2 = gpcf.cf{2}.fh.ginput3(gpcf.cf{2}, x, x2, dims1, dims2);
+        end
+        
+        DK1 = gpcf.cf{1}.fh.cfg(gpcf.cf{1}, x, x2);
+        DK2 = gpcf.cf{2}.fh.cfg(gpcf.cf{2}, x, x2);
+        
+        for i2 = 1:length(DK1)
+            DKff{end+1} = DKdx1_2{i2}.*Ci{2} + DKdx11{i2}.*DKx22{1}' + DKdx12{i2}'.*DKx21{1} + DK1{i2}.*D2Kx2{1};
+        end
+        for i2 = 1:length(DK2)
+            DKff{end+1} = DKdx2_2{i2}.*Ci{1} + DKdx21{i2}.*DKx12{1}' + DKdx22{i2}'.*DKx11{1} + DK2{i2}.*D2Kx1{1};
+        end
+        
+    else
+        error('not implemented yet')
+        for i1=1:ncf
+            
+            DKdx = gpcf.cf{i1}.fh.cfdg(gpcf.cf{i1}, x, x2, dims);
+            DK = gpcf.cf{i1}.fh.cfg(gpcf.cf{i1}, x, x2);
+            
+            gpcftmp = gpcf;
+            gpcftmp.cf = {gpcftmp.cf(1:ncf~=i1)};
+            % continue from here
+            %DKx2 =
         end
     end
 else
@@ -537,6 +566,62 @@ else
         DKff{end+1} = 0;
     end
 end
+
+% [n, m] =size(x);
+% ncf = length(gpcf.cf);
+% 
+% if nargin <3 || isempty(x2)
+%     x2=x;
+% end
+% if nargin < 4 || isempty(dims1)
+%     %dims1 = 1:m;
+%     error('dims1 needs to be given')
+% end
+% if nargin < 5 || isempty(dims2)
+%     %dims2 = 1:m;
+%     error('dims2 needs to be given')
+% end
+% 
+% 
+% % check whether there are any covariance functions that depend on dims
+% % covariate
+% ind = [];
+% DKff = {};
+% for i1 = 1:ncf
+%     if (~isfield(gpcf.cf{i1}, 'selectedVariables') || any(ismember(gpcf.cf{i1}.selectedVariables,dims1)) || any(ismember(gpcf.cf{i1}.selectedVariables,dims2)))
+%         ind(end+1) = i1;
+%     end
+% end
+% if ~isempty(ind)
+%     % Calculate derivative
+%     
+%     % calculate the individual covariance functions
+%     Ci = {};
+%     C = 1;
+%     for i1=1:ncf
+%         Ci{i1} = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
+%         C = C.*Ci{i1};
+%     end
+%     
+%     for i1=1:ncf
+%         if any(i1 == ind)
+%             DK = gpcf.cf{i1}.fh.cfdg2(gpcf.cf{i1}, x, x2, dims1, dims2);
+%             for i2 = 1:length(DK)
+%                 DKff{end+1} = DK{i2}.*C./Ci{i1};
+%             end
+%         else
+%             DK = gpcf.cf{i1}.fh.lpg(gpcf.cf{i1});
+%             for i2 = 1:length(DK)
+%                 DKff{end+1} = 0;
+%             end
+%         end
+%     end
+% else
+%     DK = gpcf.fh.lpg(gpcf);
+%     for i2 = 1:length(DK)
+%         DKff{end+1} = 0;
+%     end
+% end
 
 end
 
@@ -779,14 +864,26 @@ if ~isempty(ind)
     C = 1;
     K = 0;
     for i1=1:ncf
-        Ci = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
-        C = C.*Ci;
+        Ci{i1} = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
+        C = C.*Ci{i1};
+    end
+    for i1=1:ncf
         if any(i1 == ind)
+            % double derivative of i'th covariance function
             Dt = gpcf.cf{i1}.fh.ginput3(gpcf.cf{i1}, x, x2, dims1, dims2);
             if length(Dt)>1
-                error('gpcf_prod->ginput2: something is wrong')
+                error('gpcf_prod->ginput3: something is wrong')
             end
-            K = K+Dt{1}./Ci;
+            K = K+Dt{1}./Ci{i1};
+            % pairwise derivatives of i'th and j'th covariance functions
+            Dti1 = gpcf.cf{i1}.fh.ginput4(gpcf.cf{i1}, x, x2, dims1);
+            Dti2 = gpcf.cf{i1}.fh.ginput4(gpcf.cf{i1}, x2, x, dims2);
+            for j1=i1+1:ncf
+                Dtj1 = gpcf.cf{i1}.fh.ginput4(gpcf.cf{j1}, x, x2, dims1);
+                Dtj2 = gpcf.cf{i1}.fh.ginput4(gpcf.cf{j1}, x2, x, dims2);
+                
+                K = K + (Dti1{1}.*Dtj2{1}' + Dtj1{1}.*Dti2{1}')./Ci{i1}./Ci{j1};
+            end
         end
     end
     DKff = {C.*K};
@@ -837,7 +934,7 @@ if ~isempty(ind)
         if any(i1 == ind)            
             Dt = gpcf.cf{i1}.fh.ginput4(gpcf.cf{i1}, x, x2, dims);
             if length(Dt)>1
-                error('gpcf_prod->ginput2: something is wrong')
+                error('gpcf_prod->ginput4: something is wrong')
             end
             K = K+Dt{1}./Ci;
         end
