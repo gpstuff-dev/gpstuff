@@ -410,11 +410,21 @@ if ~isempty(ind)
     end
       
     if ncf==2
-        DKdx1 = gpcf.cf{1}.fh.cfdg(gpcf.cf{1}, x, x2, dims);
-        DKdx2 = gpcf.cf{2}.fh.cfdg(gpcf.cf{2}, x, x2, dims);
-        DKx1 = gpcf.cf{1}.fh.ginput4(gpcf.cf{1}, x, x2, dims);
-        DKx2 = gpcf.cf{2}.fh.ginput4(gpcf.cf{2}, x, x2, dims);
+        if any(ind==1)
+            DKdx1 = gpcf.cf{1}.fh.cfdg(gpcf.cf{1}, x, x2, dims);
+            DKx1 = gpcf.cf{1}.fh.ginput4(gpcf.cf{1}, x, x2, dims);
+        else
+            DKdx1{1} = 0;
+            DKx1{1} = 0;
+        end
         DK1 = gpcf.cf{1}.fh.cfg(gpcf.cf{1}, x, x2);
+        if any(ind==2)
+            DKdx2 = gpcf.cf{2}.fh.cfdg(gpcf.cf{2}, x, x2, dims);
+            DKx2 = gpcf.cf{2}.fh.ginput4(gpcf.cf{2}, x, x2, dims);
+        else
+            DKdx2{1} = 0;
+            DKx2{1} = 0;
+        end
         DK2 = gpcf.cf{2}.fh.cfg(gpcf.cf{2}, x, x2);
         
         for i2 = 1:length(DK1)
@@ -515,26 +525,57 @@ if ~isempty(ind)
     end
       
     if ncf==2
-        DKdx11 = gpcf.cf{1}.fh.cfdg(gpcf.cf{1}, x, x2, dims1);
-        DKdx21 = gpcf.cf{2}.fh.cfdg(gpcf.cf{2}, x, x2, dims1);
-        
-        DKdx12 = gpcf.cf{1}.fh.cfdg(gpcf.cf{1}, x2, x, dims2);
-        DKdx22 = gpcf.cf{2}.fh.cfdg(gpcf.cf{2}, x2, x, dims2);        
-        
-        DKdx1_2 = gpcf.cf{1}.fh.cfdg2(gpcf.cf{1}, x, x2, dims1, dims2);
-        DKdx2_2 = gpcf.cf{2}.fh.cfdg2(gpcf.cf{2}, x, x2, dims1, dims2);
-        
-        DKx11 = gpcf.cf{1}.fh.ginput4(gpcf.cf{1}, x, x2, dims1);
-        DKx21 = gpcf.cf{2}.fh.ginput4(gpcf.cf{2}, x, x2, dims1);
-        DKx12 = gpcf.cf{1}.fh.ginput4(gpcf.cf{1}, x2, x, dims2);
-        DKx22 = gpcf.cf{2}.fh.ginput4(gpcf.cf{2}, x2, x, dims2);
+        if any(ind==1)
+            DKdx11 = gpcf.cf{1}.fh.cfdg(gpcf.cf{1}, x, x2, dims1);
+            DKdx12 = gpcf.cf{1}.fh.cfdg(gpcf.cf{1}, x2, x, dims2);
+            DKdx1_2 = gpcf.cf{1}.fh.cfdg2(gpcf.cf{1}, x, x2, dims1, dims2);
+            DKx11 = gpcf.cf{1}.fh.ginput4(gpcf.cf{1}, x, x2, dims1);
+            DKx12 = gpcf.cf{1}.fh.ginput4(gpcf.cf{1}, x2, x, dims2);
+        else
+            DKdx11{1} = 0;
+            DKdx12{1} = 0;
+            DKdx1_2{1} = 0;
+            DKx11{1} = 0;
+            DKx12{1} = 0;
+        end
+        if any(ind==2)
+            DKdx21 = gpcf.cf{2}.fh.cfdg(gpcf.cf{2}, x, x2, dims1);
+            DKdx22 = gpcf.cf{2}.fh.cfdg(gpcf.cf{2}, x2, x, dims2);
+            DKdx2_2 = gpcf.cf{2}.fh.cfdg2(gpcf.cf{2}, x, x2, dims1, dims2);
+            DKx21 = gpcf.cf{2}.fh.ginput4(gpcf.cf{2}, x, x2, dims1);
+            DKx22 = gpcf.cf{2}.fh.ginput4(gpcf.cf{2}, x2, x, dims2);
+        else
+            DKdx21{1} = 0;
+            DKdx22{1} = 0;
+            DKdx2_2{1} = 0;
+            DKx21{1} = 0;
+            DKx22{1} = 0;
+        end
         
         if dims1==dims2
-            D2Kx1 = gpcf.cf{1}.fh.ginput2(gpcf.cf{1}, x, x2, dims1, dims2);
-            D2Kx2 = gpcf.cf{2}.fh.ginput2(gpcf.cf{2}, x, x2, dims1, dims2);
+            if any(ind==1)
+                D2Kx1 = gpcf.cf{1}.fh.ginput2(gpcf.cf{1}, x, x2, dims1, dims2);
+            else
+                D2Kx1{1} = 0;
+            end
+            if any(ind==2)
+                D2Kx2 = gpcf.cf{2}.fh.ginput2(gpcf.cf{2}, x, x2, dims1, dims2);
+            else
+                D2Kx2{1} = 0;
+            end
         else
-            D2Kx1 = gpcf.cf{1}.fh.ginput3(gpcf.cf{1}, x, x2, dims1, dims2);
-            D2Kx2 = gpcf.cf{2}.fh.ginput3(gpcf.cf{2}, x, x2, dims1, dims2);
+%             D2Kx1 = gpcf.cf{1}.fh.ginput3(gpcf.cf{1}, x, x2, dims1, dims2);
+%             D2Kx2 = gpcf.cf{2}.fh.ginput3(gpcf.cf{2}, x, x2, dims1, dims2);
+            if any(ind==1)
+                D2Kx1 = gpcf.cf{1}.fh.ginput3(gpcf.cf{1}, x, x2, dims1, dims2);
+            else
+                D2Kx1{1} = 0;
+            end
+            if any(ind==2)
+                D2Kx2 = gpcf.cf{2}.fh.ginput3(gpcf.cf{2}, x, x2, dims1, dims2);
+            else
+                D2Kx2{1} = 0;
+            end
         end
         
         DK1 = gpcf.cf{1}.fh.cfg(gpcf.cf{1}, x, x2);
@@ -795,7 +836,11 @@ if ~isempty(ind)
     C = 1;
     K = 0;
     for i1=1:ncf
-        Ci = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
+        if ~isempty(takeOnlyDiag) && strcmp(takeOnlyDiag, 'takeOnlyDiag')
+            Ci = gpcf.cf{i1}.fh.trvar(gpcf.cf{i1}, x);
+        else
+            Ci = gpcf.cf{i1}.fh.cov(gpcf.cf{i1}, x, x2);
+        end
         C = C.*Ci;
         if any(i1 == ind)
             Dt = gpcf.cf{i1}.fh.ginput2(gpcf.cf{i1}, x, x2, dims, takeOnlyDiag);
@@ -879,10 +924,12 @@ if ~isempty(ind)
             Dti1 = gpcf.cf{i1}.fh.ginput4(gpcf.cf{i1}, x, x2, dims1);
             Dti2 = gpcf.cf{i1}.fh.ginput4(gpcf.cf{i1}, x2, x, dims2);
             for j1=i1+1:ncf
-                Dtj1 = gpcf.cf{i1}.fh.ginput4(gpcf.cf{j1}, x, x2, dims1);
-                Dtj2 = gpcf.cf{i1}.fh.ginput4(gpcf.cf{j1}, x2, x, dims2);
-                
-                K = K + (Dti1{1}.*Dtj2{1}' + Dtj1{1}.*Dti2{1}')./Ci{i1}./Ci{j1};
+                if any(j1 == ind)
+                    Dtj1 = gpcf.cf{j1}.fh.ginput4(gpcf.cf{j1}, x, x2, dims1);
+                    Dtj2 = gpcf.cf{j1}.fh.ginput4(gpcf.cf{j1}, x2, x, dims2);
+                    
+                    K = K + (Dti1{1}.*Dtj2{1}' + Dtj1{1}.*Dti2{1}')./Ci{i1}./Ci{j1};
+                end
             end
         end
     end
