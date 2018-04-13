@@ -346,7 +346,8 @@ end
 
 [n,m]=size(x);
 ii1=0;
-dd=zeros(size(x,1),size(x,1));
+%dd=zeros(size(x,1),size(x2,1));
+dd=0;
 DKff={};
 if ~isempty(gpcf.p.constSigma2)
   ii1=ii1+1;
