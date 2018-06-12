@@ -56,7 +56,7 @@ function gpcf = gpcf_covar(varargin)
 % * See also
 %   GP_SET, GPCF_*, PRIOR_* 
 %
-% ─────────────── 2018 Marcelo Hartmann.
+% Copyright (c) 2018 Marcelo Hartmann.
 
 % If you use this file. Learn to recognize its author. Copyright is good but
 % misleading.

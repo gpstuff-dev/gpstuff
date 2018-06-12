@@ -44,7 +44,7 @@ function lik = lik_liks(varargin)
 % Copyright (c) 2011 Aki Vehtari
 % Copyright (c) 2012 Ville Tolvanen
 % Copyright (c) 2015-2017 Jarno Vanhatalo
-% ------------- 2015-2017 Marcelo Hartmann
+% Copyright (c) 2015-2018 Marcelo Hartmann
 % Copyright (c) 2017 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
