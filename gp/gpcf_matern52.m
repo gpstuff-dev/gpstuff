@@ -406,7 +406,7 @@ function C = gpcf_matern52_trcov(gpcf, x)
     C = trcov(gpcf,x);
     if isnan(C)
       % If there wasn't C-implementation do here
-      if isfield(gpcf, 'selectedVariable')
+      if isfield(gpcf, 'selectedVariables')
         x = x(:,gpcf.selectedVariables);
       end
       [n, m] =size(x);
@@ -549,7 +549,7 @@ function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask, i1)
       if ~savememory
         i1=1:m;
       else
-        if i1==1
+        if i1==1 && ~isempty(gpcf.p.magnSigma2)
           DKff=DKff{1};
           return
         end
@@ -578,8 +578,7 @@ function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask, i1)
           end
           dist=sqrt(dist);
           for i=i1
-            D = ma2.*s(i).*((5+5.*sqrt(5).*dist)/3).*(bsxfun(@minus,x(:,i),x(:,i)')).^2.*exp(-sqrt(5).*dist);
-            
+            D = ma2.*s(i).*((5+5.*sqrt(5).*dist)/3).*(bsxfun(@minus,x(:,i),x(:,i)')).^2.*exp(-sqrt(5).*dist);        
             ii1 = ii1+1;
             DKff{ii1} = D;
           end
@@ -610,7 +609,7 @@ function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask, i1)
         DKff{ii1} = DKff{ii1} - ma2.*(1+sqrt(5).*dist+5.*dist.^2./3).*exp(-sqrt(5).*dist).*sqrt(5).*distg{i};
       end
     else
-      if isfield(gpcf, 'selectedVariables')
+      if isfield(gpcf,'selectedVariables')
         x = x(:,gpcf.selectedVariables);
         x2 = x2(:,gpcf.selectedVariables);
       end
@@ -851,16 +850,7 @@ if ~isempty(gpcf.p.lengthScale)
         selVars = gpcf.selectedVariables;
     else
         selVars = 1:m;
-        
-    end
-        s = zeros(1,m);
-    if isfield(gpcf,'selectedVariables')
-        selVars = gpcf.selectedVariables;
-    else
-        selVars = 1:m;
-    end
-    s(selVars) = 1./gpcf.lengthScale.^2;
-    
+    end  
     if length(gpcf.lengthScale)==1
         s = 1./gpcf.lengthScale.^2;
         if any(dims1==selVars) && any(dims2==selVars)
@@ -975,11 +965,11 @@ function DKff = gpcf_matern52_ginput(gpcf, x, x2, i1)
         DKff{ii1} = DKff{ii1} - ma2.*(1+sqrt(5).*dist+5.*dist.^2./3).*exp(-sqrt(5).*dist).*sqrt(5).*gdist{i};
       end
     else
-      if length(gpcf.lengthScale) == 1
-        % In the case of an isotropic
-        s = repmat(1./gpcf.lengthScale.^2, 1, m);
+      s = zeros(1, m);
+      if isfield(gpcf,'selectedVariables')
+          s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
       else
-        s = 1./gpcf.lengthScale.^2;
+          s(1:m) = 1./gpcf.lengthScale.^2;
       end
       dist=0;
       for i2=1:m
@@ -1014,10 +1004,11 @@ function DKff = gpcf_matern52_ginput(gpcf, x, x2, i1)
       end
     else
       [n2, m2] =size(x2);
-      if length(gpcf.lengthScale) == 1
-        s = repmat(1./gpcf.lengthScale.^2, 1, m);
+      s = zeros(1, m);
+      if isfield(gpcf,'selectedVariables')
+          s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
       else
-        s = 1./gpcf.lengthScale.^2;
+          s(1:m) = 1./gpcf.lengthScale.^2;
       end
       dist=0; 
       for i2=1:m
