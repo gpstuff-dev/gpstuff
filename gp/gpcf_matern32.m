@@ -812,7 +812,6 @@ if isfield(gpcf,'metric')
     error('metric doesnt work with grad.obs')
 end
 
-
 [~, m] =size(x);
 if nargin <3 || isempty(x2)
     x2=x;
@@ -847,17 +846,8 @@ if ~isempty(gpcf.p.lengthScale)
     if isfield(gpcf,'selectedVariables')
         selVars = gpcf.selectedVariables;
     else
-        selVars = 1:m;
-        
+        selVars = 1:m;       
     end
-        s = zeros(1,m);
-    if isfield(gpcf,'selectedVariables')
-        selVars = gpcf.selectedVariables;
-    else
-        selVars = 1:m;
-    end
-    s(selVars) = 1./gpcf.lengthScale.^2;
-    
     if length(gpcf.lengthScale)==1
         s = 1./gpcf.lengthScale.^2;
         if any(dims1==selVars) && any(dims2==selVars)
@@ -970,11 +960,11 @@ function DKff = gpcf_matern32_ginput(gpcf, x, x2, i1)
         DKff{ii1} = -K./(1+sqrt(3)*dist).*3.*dist.*gdist{ii1};
       end
     else
-      if length(gpcf.lengthScale) == 1
-        % In the case of an isotropic
-        s = repmat(1./gpcf.lengthScale.^2, 1, m);
+      s = zeros(1, m);
+      if isfield(gpcf,'selectedVariables')
+          s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
       else
-        s = 1./gpcf.lengthScale.^2;
+          s(1:m) = 1./gpcf.lengthScale.^2;
       end
       dist=0;
       for i2=1:m
@@ -988,8 +978,7 @@ function DKff = gpcf_matern32_ginput(gpcf, x, x2, i1)
           D1 = zeros(n,n);
           D1(j,:) = (-s(i)).*bsxfun(@minus,x(j,i),x(:,i)');
           D1 = D1 + D1';
-          DK = -3.*ma2.*exp(-sqrt(3.*dist)).*D1;
-          
+          DK = -3.*ma2.*exp(-sqrt(3.*dist)).*D1;        
           ii1 = ii1 + 1;
           DKff{ii1} = DK;
         end
@@ -1006,10 +995,11 @@ function DKff = gpcf_matern32_ginput(gpcf, x, x2, i1)
       end
     else
       [n2, m2] =size(x2);
-      if length(gpcf.lengthScale) == 1
-        s = repmat(1./gpcf.lengthScale.^2, 1, m);
+      s = zeros(1, m);
+      if isfield(gpcf,'selectedVariables')
+          s(gpcf.selectedVariables) = 1./gpcf.lengthScale.^2;
       else
-        s = 1./gpcf.lengthScale.^2;
+          s(1:m) = 1./gpcf.lengthScale.^2;
       end
       dist=0; 
       for i2=1:m
