@@ -920,7 +920,7 @@ xC = x(:, gpcf.classVariables);
 
 % checking
 if ~issorted(xC) 
-    error('class variable should increasing downwards');
+    error('class variable should increase downwards');
 end
 
 % number of observations
@@ -994,19 +994,54 @@ function C = gpcf_covar_trvar(gpcf, x)
 %  * See also:
 %    GPCF_COVAR_COV, GP_COV, GP_TRCOV  
 
- % take indicator class
- x = x(:, gpcf.classVariables);
-  
- % information of the classes in the data
- a = unique(x);
- 
- % locate each class
- nb = find(diff([-inf x' inf]));
- 
- % number of observation in each class
- diffnb = diff(nb);
- 
- C = repelem(gpcf.V(a), diffnb)';
+% takes the class variables
+xC = x(:, gpcf.classVariables);
+
+% checking
+if ~issorted(xC) 
+    error('class variable should increase downwards');
+end
+
+% number of observations
+n = size(xC, 1);
+
+% getting the information of the classes in the data
+a = unique(xC); % na = size(a, 1);
+
+% checking
+if max(a) > gpcf.numberClass
+    error('more or less classes than given to the model');
+end
+
+% number of observations in each class
+nb = find(diff([-inf xC' inf]));
+diffnb = diff(nb);
+
+M = gpcf.fh.sigma(gpcf, 'cov');
+L = M{2};
+
+% full vector;
+C = zeros(n, 1); 
+
+for k = 1:gpcf.numberClass
+    % T_k = diag(a_k * a_k') matrices,
+    diagTk =  repelem(L(:, k).^2, diffnb);    
+
+    cf = gpcf.corrFun{k};
+    C = C + cf.fh.trvar(cf, x) .* diagTk;
+end
+
+C(abs(C) < eps) = 0;
+
+%  % take indicator class
+%  xC = x(:, gpcf.classVariables);
+%  % information of the classes in the data
+%  a = unique(xC);
+%  % locate each class
+%  nb = find(diff([-inf xC' inf]));
+%  % number of observation in each class
+%  diffnb = diff(nb);
+%  C = repelem(gpcf.V(a), diffnb)';
  end
 
 
