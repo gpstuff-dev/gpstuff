@@ -3,7 +3,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
 % 
 %  Description  
 %    LGPDENS(X,OPTIONS) Compute and plot LGP density estimate. X is
-%    1D or 2D point data. For 1D data plot the mean and 95% region. 
+%    1D or 2D point data. For 1D data plot the mean and 90% region. 
 %    For 2D data plot the density contours.
 %  
 %    [P,PQ,XT] = LGPDENS(X,OPTIONS) Compute LGP density estimate
@@ -52,6 +52,8 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
 %      bounded   - in 1D case tells if the density is bounded from left
 %                  or right (default is [0 0]). In unbounded case,
 %                  decreasing tails are assumed.
+%      percentiles - the percentiles [x_low x_high] for the LGP density
+%                    estimate.  Default is [5, 95].
 %
 %  Reference
 %
@@ -86,6 +88,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
   ip.addParamValue('cond_dens',[], @(x) ismember(x,{'on' 'off'}));
   ip.addParamValue('basis','gaussian', @(x) ismember(x,{'gaussian' 'exp' 'off'}));
   ip.addParamValue('bounded',[0 0], @(x) isnumeric(x) && min(size(x))==1 && max(size(x))==2);
+  ip.addParamValue('percentiles', [5 95], @(x) isnumeric(x) && min(size(x))==1 && max(size(x))==2);
   
   % additional undocumented parameters for importance sampling
   ip.addParamValue('n_is',8000, @(x) isnumeric(x) && x>=0);
@@ -108,6 +111,7 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
   cond_dens=ip.Results.cond_dens;
   basis=ip.Results.basis;
   bounded=ip.Results.bounded;
+  percentiles=ip.Results.percentiles;
   
   
   % additional undocumented parameters for importance sampling
@@ -469,10 +473,10 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
       
       if ~strcmpi(imp_sampling,'off')
         pp=wmean(pjr',ws)';
-        ppq=wprctile(pjr', [5 95], ws)';
+        ppq=wprctile(pjr', percentiles, ws)';
       else
         pp=mean(pjr')';
-        ppq=prctile(pjr',[5 95])';
+        ppq=prctile(pjr',percentiles)';
       end  
       
       if nargout<1
@@ -823,10 +827,10 @@ function [p,pq,xx,pjr,gp,ess,eig,q,r] = lgpdens(x,varargin)
       
       if ~strcmpi(imp_sampling,'off')
         pp=wmean(pjr',ws)';
-        ppq=wprctile(pjr', [5 95], ws)';
+        ppq=wprctile(pjr', percentiles, ws)';
       else
         pp=mean(pjr')';
-        ppq=prctile(pjr',[5 95])';
+        ppq=prctile(pjr',percentiles)';
       end  
       
       if nargout<1
