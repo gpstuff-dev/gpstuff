@@ -90,9 +90,11 @@ for i=1:length(predcf)
                 Ktemp(ind_Ddim==0,ind_Ddim==0) = gpcf.fh.trcov(gpcf, x1(ind_Ddim==0,:));
                 for u1 = 1:length(uDdim)
                     % the blocks on the left side, below Kff
-                    Kdf = gpcf.fh.ginput4(gpcf, x1(ind_Ddim==uDdim(u1),:), x1(ind_Ddim==0,:), uDdim(u1));
-                    Ktemp(ind_Ddim==uDdim(u1),ind_Ddim==0) = Kdf{1};
-                    Ktemp(ind_Ddim==0,ind_Ddim==uDdim(u1)) = Kdf{1}';
+                    if sum(ind_Ddim==0)>0
+                        Kdf = gpcf.fh.ginput4(gpcf, x1(ind_Ddim==uDdim(u1),:), x1(ind_Ddim==0,:), uDdim(u1));
+                        Ktemp(ind_Ddim==uDdim(u1),ind_Ddim==0) = Kdf{1};
+                        Ktemp(ind_Ddim==0,ind_Ddim==uDdim(u1)) = Kdf{1}';
+                    end
                     D = gpcf.fh.ginput2(gpcf, x1(ind_Ddim==uDdim(u1),:), x1(ind_Ddim==uDdim(u1),:), uDdim(u1));
                     Ktemp(ind_Ddim==uDdim(u1),ind_Ddim==uDdim(u1)) = D{1};
                     
