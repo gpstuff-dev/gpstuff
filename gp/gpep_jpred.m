@@ -557,9 +557,11 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
     [sampft] = gp_rnd(gp,x,y, xt, 'z', z, 'zt', zt, 'nsamp', 500);
     lpyt = zeros(500,1);
     for i=1:size(sampft,2)
-      lpyt(i) = gp.lik.fh.ll(gp.lik, yt, sampft(:,i), z);
+      lpyt(i) = gp.lik.fh.ll(gp.lik, yt, sampft(:,i), zt);
     end
-    ljpyt = sumlogs(lpyt);
+    %ljpyt = sumlogs(lpyt);
+    maxlpyt=max(lpyt);
+    ljpyt=maxlpyt+log(mean(exp(lpyt-maxlpyt)));
   end
   
   if nargout > 3
