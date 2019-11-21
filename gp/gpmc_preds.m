@@ -161,9 +161,9 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
   
   tn = size(x,1);
 
-  if nargout > 2 && isempty(yt)
-    error('mc_pred -> If lpy is wanted you must provide the vector yt as an optional input.')
-  end
+%   if nargout > 2 && isempty(yt)
+%     error('mc_pred -> If lpy is wanted you must provide the vector yt as an optional input.')
+%   end
   
   nin  = size(x,2);
   nmc=size(gp.jitterSigma2,1);
@@ -217,7 +217,11 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
         if isfield(gp, 'lik_mono') && isequal(gp.lik.type, 'Gaussian')
           Eyt=Ef(:,i1);
           Varyt=Varf(:,i1)+Gp.lik.sigma2;
-          lpy(:,i1)=norm_lpdf(yt, Eyt, sqrt(Varyt));
+          if isempty(yt)
+              lpy=[];
+          else
+              lpy(:,i1)=norm_lpdf(yt, Eyt, sqrt(Varyt));
+          end
         else
           [lpy(:,i1), Eyt, Varyt] = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
         end
@@ -233,9 +237,19 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
       if nargout <= 2
         [Ef(:,i1), Varf(:,:,i1)] = gp_pred(Gp, x, y, xt, options);
       elseif nargout <=3
-        [Ef(:,i1), Varf(:,:,i1), lpy(:,i1)] = gp_pred(Gp, x, y, xt, options);
+          if isempty(yt)
+              lpy=[];
+              [Ef(:,i1), Varf(:,:,i1)] = gp_pred(Gp, x, y, xt, options);
+          else
+              [Ef(:,i1), Varf(:,:,i1), lpy(:,i1)] = gp_pred(Gp, x, y, xt, options);
+          end
       else
-        [Ef(:,i1), Varf(:,:,i1), lpy(:,i1), Ey(:,i1), Vary(:,:,i1)] = gp_pred(Gp, x, y, xt, options); 
+          if isempty(yt)
+              lpy=[];
+              [Ef(:,i1), Varf(:,:,i1), ~, Ey(:,i1), Vary(:,:,i1)] = gp_pred(Gp, x, y, xt, options);
+          else
+              [Ef(:,i1), Varf(:,:,i1), lpy(:,i1), Ey(:,i1), Vary(:,:,i1)] = gp_pred(Gp, x, y, xt, options);
+          end
       end
     end            
   end
