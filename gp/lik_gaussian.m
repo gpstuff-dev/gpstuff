@@ -93,6 +93,7 @@ function lik = lik_gaussian(varargin)
     lik.fh.tiltedMoments = @lik_gaussian_tiltedMoments;
     lik.fh.trcov  = @lik_gaussian_trcov;
     lik.fh.trvar  = @lik_gaussian_trvar;
+    lik.fh.predy = @lik_gaussian_predy;    
     lik.fh.siteDeriv = @lik_gaussian_siteDeriv;
     lik.fh.recappend = @lik_gaussian_recappend;
   end
@@ -423,6 +424,39 @@ function C = lik_gaussian_trvar(lik, x)
 
 end
 
+
+function [lpy, Ey, Vary] = lik_gaussian_predy(lik, Ef, Varf, yt, zt)
+%LIK_Gaussian_PREDY    Returns the predictive mean, variance and density of y
+%
+%  Description  
+%    LPY = LIK_POISSON_PREDY(LIK, EF, VARF YT, ZT)
+%    Returns also the predictive density of YT, that is 
+%        p(yt | y,zt) = \int p(yt | f, zt) p(f|y) df.
+%    This requires also the incedence counts YT, expected counts ZT.
+%    This subfunction is needed when computing posterior predictive 
+%    distributions for future observations.
+%
+%    [LPY, EY, VARY] = LIK_POISSON_PREDY(LIK, EF, VARF, YT, ZT) 
+%    takes a likelihood structure LIK, posterior mean EF and 
+%    posterior variance VARF of the latent variable and returns the
+%    posterior predictive mean EY and variance VARY of the
+%    observations related to the latent variables. This subfunction
+%    is needed when computing posterior predictive distributions for 
+%    future observations.
+%        
+%
+%  See also 
+%    GPLA_PRED, GPEP_PRED, GPMC_PRED
+
+  lpy = zeros(size(Ef));
+  Ey = Ef;
+  EVary = lik.sigma2;
+  VarEy = Varf; 
+  Vary = EVary + VarEy;
+  lpy = norm_lpdf(yt,Ey,sqrt(Vary));
+
+end
+
 function [logM_0, m_1, sigm2hati1] = lik_gaussian_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_PROBIT_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
@@ -520,6 +554,7 @@ function reclik = lik_gaussian_recappend(reclik, ri, lik)
     reclik.fh.cfg = @lik_gaussian_cfg;
     reclik.fh.trcov  = @lik_gaussian_trcov;
     reclik.fh.trvar  = @lik_gaussian_trvar;
+    lik.fh.predy = @lik_gaussian_predy;
     reclik.fh.recappend = @lik_gaussian_recappend;  
     reclik.p=[];
     reclik.p.sigma2=[];

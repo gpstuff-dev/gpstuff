@@ -1,6 +1,6 @@
 # GPstuff: Gaussian process models for Bayesian analysis
 
-Maintainer: Aki Vehtari <aki.vehtari@aalto.fi>
+Maintainers: Jarno Vanhatalo <jarno.vanhatalo@helsinki.fi> and Aki Vehtari <aki.vehtari@aalto.fi>
 
 ## REFERENCE
 
