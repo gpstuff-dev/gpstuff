@@ -551,11 +551,17 @@ function reclik = lik_gaussian_recappend(reclik, ri, lik)
     reclik.fh.lp = @lik_gaussian_lp;
     reclik.fh.lpg = @lik_gaussian_lpg;
     reclik.fh.ll= @lik_gaussian_ll;
+    reclik.fh.llg = @lik_gaussian_llg;
+    reclik.fh.llg2 = @lik_gaussian_llg2;
+    reclik.fh.llg3 = @lik_gaussian_llg3;
+    reclik.fh.tiltedMoments = @lik_gaussian_tiltedMoments;
+    reclik.fh.siteDeriv = @lik_gaussian_siteDeriv;
     reclik.fh.cfg = @lik_gaussian_cfg;
     reclik.fh.trcov  = @lik_gaussian_trcov;
     reclik.fh.trvar  = @lik_gaussian_trvar;
-    lik.fh.predy = @lik_gaussian_predy;
+    reclik.fh.predy = @lik_gaussian_predy;
     reclik.fh.recappend = @lik_gaussian_recappend;  
+        
     reclik.p=[];
     reclik.p.sigma2=[];
     if ~isempty(ri.p.sigma2)
