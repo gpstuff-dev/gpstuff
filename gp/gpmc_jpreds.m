@@ -204,11 +204,11 @@ function [Ef, Covf, ljpy, Ey, Covy] = gpmc_jpreds(gp, x, y, varargin)
     end
     
     if nargout < 3
-      [Ef(:,i1), Covf(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
+      [Ef(:,i1), Covf(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), varargin{:});
     else 
       if isfield(gp, 'latentValues')
         
-        [Ef(:,i1), Covf(:,:,i1), ljpy(i1), Ey(:,i1), Covy(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
+        [Ef(:,i1), Covf(:,:,i1), ljpy(i1), Ey(:,i1), Covy(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), varargin{:});
         
         if any(diag(Covf(:,:,i1))<=0)
           nzero = find(Covf(:,:,i1)<=0);
@@ -222,10 +222,15 @@ function [Ef, Covf, ljpy, Ey, Covy] = gpmc_jpreds(gp, x, y, varargin)
         end
         
       else
-        if nargout < 3
-          [Ef(:,i1), Covf(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
-        else
-          [Ef(:,i1), Covf(:,:,i1), ljpy(i1), Ey(:,i1), Covy(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
+        switch nargout
+            case 2
+                [Ef(:,i1), Covf(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), varargin{:});
+            case 3
+                [Ef(:,i1), Covf(:,:,i1), ljpy(i1)] = gp_jpred(Gp, x, y(:,i1), varargin{:});
+            case 4
+                [Ef(:,i1), Covf(:,:,i1), ljpy(i1), Ey(:,i1)] = gp_jpred(Gp, x, y(:,i1), varargin{:});
+            case 5
+                [Ef(:,i1), Covf(:,:,i1), ljpy(i1), Ey(:,i1), Covy(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), varargin{:});
         end
       end            
     end
