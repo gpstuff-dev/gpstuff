@@ -95,7 +95,7 @@ gp=gp_optim(gp,x,y,'z',ye,'opt',opt,'optimf',@fminlbfgs);
 % CCD integration over parameters
 gpia=gp_ia(gp,x,y,'z',ye,'opt_optim',opt,'optimf',[]);
 % Leave-one-out cross-validation
-[~,~,lploo]=gp_loopred(gpia,x,y,'z',ye);sum(lploo)
+[~,~,lploo]=gp_loopred(gp,x,y,'z',ye);sum(lploo)
 % -1629 for linear + squared exponential
 % -1662 for linear only
 
@@ -104,7 +104,7 @@ set(gcf,'units','centimeters');
 set(gcf,'pos',[29 6 24 6])
 subplot('position',[0.07 0.21 0.20 0.77]);
 i1=2;i2=1;
-[pmu,~,xtc]=gp_cpred(gpia, x, y, x, [i1 i2], 'z', ye, 'target','mu');
+[pmu,~,xtc]=gp_cpred(gp, x, y, x, [i1 i2], 'z', ye, 'target','mu');
 xtc{1}=denormdata(xtc{1},xmean(i2),xstd(i2));
 xtc{2}=denormdata(xtc{2},xmean(i2),xstd(i2));
 h1=semilogy(xtc{1},pmu{1}*geomean(y0),'k--');
@@ -120,7 +120,7 @@ ylabel('Expected lifetime (days)')
 
 subplot('position',[0.31 0.21 0.20 0.77]);
 i1=2;i2=3;
-[pmu,~,xtc]=gp_cpred(gpia, x, y, x, [i1 i2], 'z', ye, 'target','mu');
+[pmu,~,xtc]=gp_cpred(gp, x, y, x, [i1 i2], 'z', ye, 'target','mu');
 xtc{1}=denormdata(xtc{1},xmean(i2),xstd(i2));
 xtc{2}=denormdata(xtc{2},xmean(i2),xstd(i2));
 h1=semilogy(xtc{1},pmu{1}*geomean(y0),'k--');
@@ -137,7 +137,7 @@ xlabel('WBC (log_{10}(50\times10^9/L))')
 
 subplot('position',[0.55 0.21 0.20 0.77]);
 i1=2;i2=4;
-[pmu,~,xtc]=gp_cpred(gpia, x, y, x, [i1 i2], 'z', ye, 'target','mu');
+[pmu,~,xtc]=gp_cpred(gp, x, y, x, [i1 i2], 'z', ye, 'target','mu');
 xtc{1}=denormdata(xtc{1},xmean(i2),xstd(i2));
 xtc{2}=denormdata(xtc{2},xmean(i2),xstd(i2));
 h1=semilogy(xtc{1},pmu{1}*geomean(y0),'k--');
@@ -154,11 +154,11 @@ xlabel('Townsend deprivation index (TDI)')
 
 subplot('position',[0.79 0.21 0.20 0.77]);
 i2=3;cla
-[pmu,~,xtc]=gp_cpred(gpia, x, y, x, i2, 'z', ye,'var',[NaN -1 NaN -.368],'target','mu');
+[pmu,~,xtc]=gp_cpred(gp, x, y, x, i2, 'z', ye,'var',[NaN -1 NaN -.368],'target','mu');
 xtc=denormdata(xtc,xmean(i2),xstd(i2));
 h1=semilogy(xtc,pmu*geomean(y0),'k--');
 set(h1(2),'LineWidth',2)
-[pmu,~,xtc]=gp_cpred(gpia, x, y, x, i2, 'z', ye,'var',[NaN -1 NaN 1.56],'target','mu');
+[pmu,~,xtc]=gp_cpred(gp, x, y, x, i2, 'z', ye,'var',[NaN -1 NaN 1.56],'target','mu');
 xtc=denormdata(xtc,xmean(i2),xstd(i2));
 hold on
 h2=semilogy(xtc,pmu*geomean(y0),'k-');
