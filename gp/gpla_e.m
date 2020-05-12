@@ -2126,7 +2126,7 @@ function [e, g, h] = egh(f, varargin)
   h = -gp.lik.fh.llg2(gp.lik, y, f', 'latent', z);
 end
 function ikf = iKf(f, varargin)
-  
+  ind2depo = {}
   switch gp.type
     case {'PIC' 'PIC_BLOCK'}
       iLaf = zeros(size(f));
