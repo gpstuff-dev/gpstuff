@@ -20,7 +20,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                    'hmc' for hybrid Monte Carlo sampling (started at the
 %                    mode)
 %       validate  - perform some checks to investigate approximation error.
-%                   1 gives warning only if necessary, 2 gives more dbit etails
+%                   1 gives warning only if necessary, 2 gives more details
 %       predcf    - index vector telling which covariance functions are
 %                   used for prediction. Default is all (1:gpcfn). See
 %                   GP_PRED for additional information.
