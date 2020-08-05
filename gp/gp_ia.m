@@ -691,7 +691,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             % predictions if needed
             for i1 = 1 : size(th,1)
               [Ef_grid(i1,:), Varf_grid(i1,:)]=...
-                  fh_p(gp,x,y,xt,options);
+                  fh_p(gp_array{i1},x,y,xt,options);
             end
           end
           
