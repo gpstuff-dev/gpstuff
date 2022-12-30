@@ -448,13 +448,14 @@ function [lpy, Ey, Vary] = lik_gaussian_predy(lik, Ef, Varf, yt, zt)
 %  See also 
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
-  lpy = zeros(size(Ef));
+  lpy = [];
   Ey = Ef;
   EVary = lik.sigma2;
   VarEy = Varf; 
   Vary = EVary + VarEy;
-  lpy = norm_lpdf(yt,Ey,sqrt(Vary));
-
+  if numel(yt) ~= 0
+      lpy = norm_lpdf(yt,Ey,sqrt(Vary));
+  end
 end
 
 function [logM_0, m_1, sigm2hati1] = lik_gaussian_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
